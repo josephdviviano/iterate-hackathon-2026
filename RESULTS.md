@@ -1505,3 +1505,65 @@ Reading:
 | Command | Wrapper from `committee.calibrate.aci` over `level_steps` and over the live logs' `shares` and `truth_share` (logged since this commit); data in `artifacts/abstention_score.json` |
 | Commit | this session, after a4d8c33 |
 
+## R30. The wrapper's step size, chosen leave-one-level-out, and the price of a wrong commitment
+
+Two sensitivities of R29, on the seven recorded levels. First, the wrapper's
+step gamma (R22 used 0.05, the usual value) swept over 0.02, 0.05, 0.1, 0.2,
+0.3 at alpha 0.10, and chosen for each level by the mean selective score on
+the other six. Second, the selective score with the penalty for a wrong
+commitment c at 0.5, 1 and 2 (abstention stays 0).
+
+| Level | gamma 0.05: coverage, commit, score | gamma 0.3: coverage, commit, score | Leave-one-out choice | Always commit |
+|---|---|---|---|---|
+| ar25 L3 | 0.95, 0.14, +0.09 | 0.91, 0.18, +0.09 | 0.3 | -0.05 |
+| m0r0 L3 | 0.91, 0.77, +0.59 | 0.91, 0.77, +0.59 | 0.3 | +0.55 |
+| sk48 L2 | 0.88, 0.66, +0.57 | 0.90, 0.60, +0.57 | 0.3 | +0.38 |
+| ar25 L7 | 0.98, 0.01, +0.02 | 0.92, 0.23, +0.23 | 0.3 | -0.17 |
+| ls20 L3 | 0.90, 0.59, +0.46 | 0.90, 0.64, +0.58 | 0.3 | +0.73 |
+| ka59 L2 | 0.95, 0.14, +0.09 | 0.91, 0.16, +0.07 | 0.3 | +0.64 |
+| g50t L1 | 0.96, 0.12, +0.12 | 0.90, 0.27, +0.19 | 0.3 | +0.04 |
+
+Penalty sensitivity at gamma 0.05, wrapper against always commit:
+
+| Level | c = 0.5 | c = 1 | c = 2 |
+|---|---|---|---|
+| ar25 L3 | +0.10 vs +0.22 | +0.09 vs -0.04 | +0.07 vs -0.57 |
+| m0r0 L3 | +0.64 vs +0.66 | +0.59 vs +0.55 | +0.50 vs +0.32 |
+| sk48 L2 | +0.60 vs +0.54 | +0.57 vs +0.38 | +0.53 vs +0.07 |
+| ar25 L7 | +0.01 vs +0.12 | +0.01 vs -0.17 | +0.01 vs -0.75 |
+| ls20 L3 | +0.49 vs +0.80 | +0.46 vs +0.73 | +0.39 vs +0.59 |
+| ka59 L2 | +0.10 vs +0.73 | +0.09 vs +0.64 | +0.07 vs +0.46 |
+| g50t L1 | +0.12 vs +0.28 | +0.12 vs +0.04 | +0.12 vs -0.44 |
+
+Reading:
+
+1. A larger step helps where the committee is mostly wrong: at gamma 0.3
+   the wrapper commits on 23 percent of ar25 L7 and 27 percent of g50t L1
+   instead of 1 and 12 percent, with coverage still at or above 0.90, and the
+   selective score rises from +0.02 to +0.23 and +0.12 to +0.19. Where the
+   committee is mostly right nothing changes. The leave-one-out choice is 0.3
+   for every held-out level, and the held-out score under it is at least the
+   gamma 0.05 score on six of seven levels (ka59: 0.07 against 0.09). The
+   R22 default stays 0.05 in the code; 0.3 is the recorded alternative.
+2. ka59's over-abstention is not a step-size problem. Its seven members show
+   six behaviours, so the plurality's share is low even when it is right;
+   the wrapper can only commit a single state when one candidate carries the
+   quantile, and here none does. A calibration map from vote share to
+   P(correct) (R22's leave-one-level-out map) is the tool for that case, and
+   always committing wins there at every price.
+3. The wrapper's value depends on the price of a wrong commitment. At c =
+   0.5 always committing beats the wrapper on five of seven levels; at c = 1
+   the wrapper wins five of seven; at c = 2 it wins the same five by wider
+   margins. The wrapper is the right policy when a wrong answer costs at
+   least as much as a right one earns, which is the setting of an agent
+   acting on its prediction.
+
+| Item | Value |
+|---|---|
+| Metric | Coverage, commit share, selective score at c = 0.5, 1, 2 |
+| Runs | Deterministic from stored committees, 7 levels, 5 step sizes |
+| Split | As R22; leave-one-level-out for the choice of gamma |
+| Baseline | gamma 0.05 (R22), always commit |
+| Command | `committee.calibrate.aci` over `level_steps`; data in `artifacts/wrapper_gamma.json` |
+| Commit | this session, after ebfba59 |
+

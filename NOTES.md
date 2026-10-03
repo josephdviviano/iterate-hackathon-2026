@@ -232,3 +232,14 @@
     - The wrapper over-abstains on ls20 L3 and ka59 L2 (selective score 0.46 against 0.73 always-commit, 0.09 against 0.64). A less conservative start (gamma, quantile with few samples) is a one-parameter study from stored data.
   ABANDONED:
     - Probing by disagreement as a selection step. R23 and R28 close it: refutation is what the probe buys.
+
+- [jdv] - Wrapper step size and the price of a wrong commitment - ebfba59
+  One-parameter study the user asked for, plus the score's penalty sensitivity, from stored data.
+  DONE:
+    - R30: gamma 0.3, chosen leave-one-level-out (the same choice for every held-out level), raises the commit share where the committee is mostly wrong (ar25 L7 0.01 to 0.23, g50t 0.12 to 0.27) at coverage 0.90 or above; no change where it is mostly right. ka59's over-abstention is a low plurality share with six behaviours among seven members, not the step. At c = 0.5 always committing wins 5 of 7; at c = 1 and 2 the wrapper wins 5 of 7. Default stays 0.05; 0.3 is the recorded alternative.
+    - Report page version 13 carries R28 to R30.
+  DEFERRED:
+    - A calibration map from vote share to P(correct) as the commit rule for diverse-but-right committees (ka59). R22's leave-one-level-out map is the starting point.
+    - A second batch of eight per arm on at least one level, to bound batch variance. This is the largest gap in every claim.
+  ABANDONED:
+    - None.
