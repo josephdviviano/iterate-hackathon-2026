@@ -13,7 +13,9 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    stages=[[16, 4], [24, 3], [32, 4]],  # [resolution, epochs] in training order
+    # [resolution, epochs, frozen leading blocks] in training order. Frozen blocks run
+    # without gradients (FreezeOut-style), which makes the full-resolution stage cheap.
+    stages=[[16, 4, 0], [24, 3, 0], [32, 4, 3]],
     batch_size=768,
     lr=0.5,
     momentum=0.9,
@@ -29,7 +31,6 @@ DEFAULTS = dict(
     muon_lr=0.14,
     muon_momentum=0.6,
     ns_steps=3,
-    freeze={"32": 3},  # resolution -> number of leading blocks frozen while training at it
     alt_flip=True,
 )
 
@@ -207,11 +208,12 @@ def build(context: BuildContext):
 
     model.train()
     state.xs, state.steps = {}, {}
-    for res in sorted({r for r, _ in cfg["stages"]}):
-        step = make_step(cfg["freeze"].get(str(res), 0))
-        x = torch.zeros(bs, 3, res, res, device=device, dtype=torch.bfloat16)
-        x = x.contiguous(memory_format=torch.channels_last)
-        state.xs[res] = x
+    for res, frozen in sorted({(r, f) for r, _, f in cfg["stages"]}):
+        step = make_step(frozen)
+        if res not in state.xs:
+            x = torch.zeros(bs, 3, res, res, device=device, dtype=torch.bfloat16)
+            state.xs[res] = x.contiguous(memory_format=torch.channels_last)
+        x = state.xs[res]
         if cuda and cfg.get("graph", True):
             # Warm up on a side stream, then capture the whole step as one CUDA graph.
             x.normal_()
@@ -225,9 +227,9 @@ def build(context: BuildContext):
             graph = torch.cuda.CUDAGraph()
             with torch.cuda.graph(graph):
                 step(x)
-            state.steps[res] = graph.replay
+            state.steps[res, frozen] = graph.replay
         else:
-            state.steps[res] = lambda x=x: step(x)
+            state.steps[res, frozen] = lambda x=x, step=step: step(x)
     if cuda and cfg.get("graph", True):
         # Warm up the remaining kernels and the allocator with a short synthetic trial.
         n = 50_000
@@ -287,7 +289,7 @@ def train(state, max_steps=None) -> nn.Module:
     n = state.labels.numel()
     bs = cfg["batch_size"]
     steps_per_epoch = n // bs
-    epochs = [r for r, e in cfg["stages"] for _ in range(e)]
+    epochs = [(r, f) for r, e, f in cfg["stages"] for _ in range(e)]
     total = len(epochs) * steps_per_epoch
     warm = int(cfg["warmup"] * total)
     peak = cfg["lr"]
@@ -295,7 +297,7 @@ def train(state, max_steps=None) -> nn.Module:
     flip = None
     if cfg["alt_flip"]:
         flip = torch.rand(n, device=state.device, generator=state.gen) < 0.5
-    for res in epochs:
+    for res, frozen in epochs:
         x_all = augment(state.images, state.gen, flip)
         if flip is not None:
             flip = ~flip
@@ -310,7 +312,7 @@ def train(state, max_steps=None) -> nn.Module:
             torch.index_select(state.labels, 0, idx, out=state.y)
             lr = peak * step / warm if step < warm else peak * (total - step) / (total - warm)
             state.lr.fill_(lr)
-            state.steps[res]()
+            state.steps[res, frozen]()
             step += 1
             if max_steps is not None and step >= max_steps:
                 return model
