@@ -74,14 +74,53 @@ class Net(nn.Module):
 def build(context: BuildContext):
     cfg = {**DEFAULTS, **(context.parameters or {})}
     device = context.device
+    cuda = device.type == "cuda"
     model = Net(context.num_classes, cfg["width"]).to(device).to(memory_format=torch.channels_last)
     state = SimpleNamespace(model=model, context=context, cfg=cfg, device=device)
-    state.step_fn = (
-        torch.compile(model.features, dynamic=False) if device.type == "cuda" else model.features
+    features = torch.compile(model.features, dynamic=False) if cuda else model.features
+    bs = cfg["batch_size"]
+    state.x = torch.zeros(bs, 3, 32, 32, device=device, dtype=torch.bfloat16).contiguous(
+        memory_format=torch.channels_last
     )
-    # Warm up compilation, kernels and the allocator with a short synthetic trial.
-    # Everything it touches is reset in prepare.
-    if device.type == "cuda":
+    state.y = torch.zeros(bs, dtype=torch.long, device=device)
+    state.lr = torch.zeros((), device=device)
+    params = list(model.parameters())
+    decay = [p for p in params if p.ndim > 1]
+    state.bufs = [torch.zeros_like(p) for p in params]
+    mom, wd, ls = cfg["momentum"], cfg["weight_decay"], cfg["label_smoothing"]
+
+    def step():
+        # Forward, backward and nesterov SGD (coupled weight decay) on static buffers.
+        with torch.autocast(device.type, dtype=torch.bfloat16):
+            loss = F.cross_entropy(features(state.x), state.y, label_smoothing=ls)
+        loss.backward()
+        with torch.no_grad():
+            grads = [p.grad for p in params]
+            torch._foreach_add_([p.grad for p in decay], decay, alpha=wd)
+            torch._foreach_mul_(state.bufs, mom)
+            torch._foreach_add_(state.bufs, grads)
+            torch._foreach_add_(grads, state.bufs, alpha=mom)
+            torch._foreach_mul_(grads, state.lr)
+            torch._foreach_sub_(params, grads)
+
+    model.train()
+    if cuda:
+        # Warm up on a side stream, then capture the whole step as one CUDA graph.
+        state.x.normal_()
+        state.y.random_(0, context.num_classes)
+        side = torch.cuda.Stream()
+        side.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(side):
+            for _ in range(3):
+                model.zero_grad(set_to_none=True)
+                step()
+        torch.cuda.current_stream().wait_stream(side)
+        model.zero_grad(set_to_none=True)
+        graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(graph):
+            step()
+        state.step = graph.replay
+        # Warm up the remaining kernels and the allocator with a short synthetic trial.
         n = 50_000
         fake = TrainingData(
             torch.randint(0, 256, (n, 3, 32, 32), dtype=torch.uint8),
@@ -90,31 +129,29 @@ def build(context: BuildContext):
         prepare(state, fake, 0)
         train(state, max_steps=10)
         torch.cuda.synchronize()
+    else:
+
+        def eager_step():
+            model.zero_grad(set_to_none=True)
+            step()
+
+        state.step = eager_step
     return state
 
 
 def prepare(state, data: TrainingData, seed: int) -> None:
+    # Reset everything learned, in place (the CUDA graph holds these addresses).
     model = state.model
-    for m in model.modules():
-        if isinstance(m, (nn.Conv2d, nn.Linear, nn.BatchNorm2d)):
-            m.reset_parameters()
-        if isinstance(m, nn.BatchNorm2d):
-            m.reset_running_stats()
+    with torch.no_grad():
+        for m in model.modules():
+            if isinstance(m, (nn.Conv2d, nn.Linear, nn.BatchNorm2d)):
+                m.reset_parameters()
+            if isinstance(m, nn.BatchNorm2d):
+                m.reset_running_stats()
+        for b in state.bufs:
+            b.zero_()
     model.train()
-    cfg = state.cfg
     device = state.device
-    decay, no_decay = [], []
-    for name, p in model.named_parameters():
-        (no_decay if p.ndim <= 1 else decay).append(p)
-    state.optimizer = torch.optim.SGD(
-        [
-            dict(params=decay, weight_decay=cfg["weight_decay"]),
-            dict(params=no_decay, weight_decay=0.0),
-        ],
-        lr=cfg["lr"],
-        momentum=cfg["momentum"],
-        nesterov=True,
-    )
     mean = torch.tensor(MEAN, device=device).view(1, 3, 1, 1)
     std = torch.tensor(STD, device=device).view(1, 3, 1, 1)
     images = data.images.to(device, non_blocking=True).float().div_(255)
@@ -143,33 +180,29 @@ def augment(padded, gen):
 
 def train(state, max_steps=None) -> nn.Module:
     cfg = state.cfg
-    model, opt = state.model, state.optimizer
+    model = state.model
     n = state.labels.numel()
     bs = cfg["batch_size"]
     steps_per_epoch = n // bs
     total = cfg["epochs"] * steps_per_epoch
     warm = int(cfg["warmup"] * total)
     peak = cfg["lr"]
-    ls = cfg["label_smoothing"]
     step = 0
     for epoch in range(cfg["epochs"]):
         x_all = augment(state.images, state.gen)
         perm = torch.randperm(n, device=state.device, generator=state.gen)
         for i in range(steps_per_epoch):
             idx = perm[i * bs:(i + 1) * bs]
-            x, y = x_all[idx], state.labels[idx]
+            torch.index_select(x_all, 0, idx, out=state.x)
+            torch.index_select(state.labels, 0, idx, out=state.y)
             lr = peak * step / warm if step < warm else peak * (total - step) / (total - warm)
-            for g in opt.param_groups:
-                g["lr"] = lr
-            with torch.autocast("cuda", dtype=torch.bfloat16):
-                loss = F.cross_entropy(state.step_fn(x), y, label_smoothing=ls)
-            opt.zero_grad(set_to_none=True)
-            loss.backward()
-            opt.step()
+            state.lr.fill_(lr)
+            state.step()
             step += 1
             if max_steps is not None and step >= max_steps:
                 return model
         # Keep the CPU from running far ahead of the GPU (slows the first trial).
-        torch.cuda.synchronize()
+        if state.device.type == "cuda":
+            torch.cuda.synchronize()
     model.eval()
     return model
