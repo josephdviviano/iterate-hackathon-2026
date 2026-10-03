@@ -24,7 +24,7 @@ def _members(cond: Path, train, test) -> list[Member]:
 
 
 def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
-             baseline: str = "baseline", committee: str = "committee", lam: float = 0.01, top: int = 3) -> None:
+             baseline: str = "baseline", committee: str = "committee", lam: float = 0.0, top: int = 3) -> None:
     transitions = build_buffer(game)
     train, test = temporal_split(transitions, level, train_frac, test_level)
     where = f"level {level}" + (f", tested on level {test_level}" if test_level else "")
@@ -91,7 +91,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--level", type=int, default=3)
     parser.add_argument("--train-frac", type=float, default=0.4)
     parser.add_argument("--test-level", type=int, default=None)
-    parser.add_argument("--lam", type=float, default=0.01)
+    parser.add_argument("--lam", type=float, default=0.0, help="MDL prior strength; 0 = equal weights")
     parser.add_argument("--baseline", default="baseline_devin", help="condition name of the single-program runs")
     parser.add_argument("--committee", default="committee_devin", help="condition name of the seeded runs")
     args = parser.parse_args(argv)

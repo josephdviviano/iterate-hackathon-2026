@@ -7,6 +7,11 @@ transitions, test is the rest of that level or all of the next level. RESET
 and level-closing transitions are removed from both sides from R2 onward (R1
 still had them in train). Test transitions never enter a prompt.
 
+Weighting. R3 to R13 used an MDL prior (λ = 0.01 per gzip byte) for the
+vote and equal-weight disagreement for uncertainty. After R14 the default
+is equal weights for both; the MDL prior is an opt-in ablation (`--lam`).
+Where the two differ for a reported vote accuracy, both are given.
+
 ## R1. Baseline single program, tr87 level 1
 
 | Item | Value |
@@ -431,6 +436,33 @@ agreeing, and it exposes rows where members disagree about the mechanism
 itself, which the transition-level disagreement does not show. Both
 methods would need a predicate form (thresholds, relations) rather than raw
 value strata to validate a split at this data size.
+
+## R17. sk48 level 2, 40% train: third informative level
+
+Backend Devin. 45 train, 68 test. Chosen before any result was seen, as an
+out-of-sample level for the judge combination (R11) and for every
+transition- and row-level claim.
+
+| | Value |
+|---|---|
+| Single programs, held-out accuracy | 1.00, 0.63, 0.97 (mean 0.87) |
+| Seeded committee of 8, members | 0.60 to 0.97, mean 0.74; 6 distinct behaviours; 8 of 8 admitted |
+| Vote accuracy | 0.69 equal weights; 0.76 with the MDL prior |
+| Unanimous transitions, error | 41, 0.00 |
+| Split transitions, error | 27, 0.59 (low 2 at 0.00, medium 20 at 0.55, high 5 at 1.00) |
+| AUROC, disagreement vs error | 1.00 |
+| Rows touched by held-out transitions | 28, 3 unseen in train |
+| Row-level AUROC: η_committee vs η_counts on seen rows | 1.00 vs 0.22 |
+| Zero-entropy rows: n, error | 18, 0.00 |
+| Open loop | all 8 members exact for 8 steps, first miss at step 9; vote 0.64 → 0.00 beyond 10 steps; disagreement 0.22 → 0.29 |
+| Commit | see the commit that adds artifacts/sk48 |
+
+Reading: the strongest case so far for the uncertainty claim: every
+unanimous prediction is right, every high-disagreement prediction is
+wrong, and OPINE-World's count-based η is anti-informative on the same
+rows. The accuracy picture is the opposite of ar25: here two of three
+single programs beat the committee's vote, and the MDL prior would have
+helped. Uncertainty is the robust benefit; accuracy is not.
 
 ## H1. Hoeffding's problem, baselines on all instances
 

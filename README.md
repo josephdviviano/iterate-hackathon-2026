@@ -2,8 +2,8 @@
 
 A world-model agent that knows what it does not know. Instead of one
 synthesized program per game, it keeps a committee of programs that all replay
-the observed transitions exactly, weights them by simplicity, and reports where
-they disagree. Disagreement is the uncertainty it flags and the probe it asks
+the observed transitions exactly, lets them vote with equal weight, and reports
+where they disagree. Disagreement is the uncertainty it flags and the probe it asks
 for next.
 
 Track 2.3, epistemological agents. See DESIGN_DOC.md for the architecture and
@@ -24,12 +24,13 @@ ar25 level 3, trained on the first 40% of the level, tested on the rest
 | Held-out effect rows never seen in train | η undefined on 51 of 90 | entropy on all 90 |
 | Probes until a counterexample falsifies every hypothesis | OPINE-World count priority: 7 | disagreement: 1 (random: 2.7) |
 
-Across four splits (R4 to R7), 8 seeded programs each:
+Across five splits (R4 to R7, R17), 8 seeded programs each:
 
 | Split | Unanimous transitions, error | Split transitions, error | Probes to falsify: disagreement / count priority / random |
 |---|---|---|---|
 | ar25 L3 | 27, 0.30 | 17, 0.83 to 1.00 | 1 / 7 / 2.7 |
 | m0r0 L3 | 38, 0.16 | 6, 0.67 | 1 / 10 / 4.8 |
+| sk48 L2 | 41, 0.00 | 27, 0.59 | |
 | tr87 L1 to L2 | 28, 0.00 | 0 | |
 | ft09 L5 | 31, 0.00 | 0 | |
 

@@ -1,12 +1,12 @@
 """A weighted committee of exact-replay-consistent programs.
 
 Every member replays the train transitions exactly, so likelihood cannot
-separate them. Weights come from a simplicity prior: w_i proportional to
-exp(-lambda * L_i), with L_i the gzip length of the member's source after
-comments and docstrings are stripped (Rissanen, 1978, minimum description
-length). The committee predicts by weighted plurality over the members' next
-states. Its disagreement on a transition is the normalised entropy of that
-vote, and is the uncertainty the committee reports.
+separate them. By default all members weigh the same: the committee predicts
+by plurality over the members' next states and reports the normalised
+entropy of that vote as its uncertainty. An optional simplicity prior,
+w_i proportional to exp(-lambda * L_i) with L_i the gzip length of the
+stripped source (Rissanen, 1978), is kept for ablation; on this data it did
+not track held-out accuracy (RESULTS R14).
 """
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ class Vote:
 
 
 class Committee:
-    def __init__(self, members: list[Member], lam: float = 0.01):
+    def __init__(self, members: list[Member], lam: float = 0.0):
         if not members:
             raise ValueError("a committee needs at least one member")
         self.members = members

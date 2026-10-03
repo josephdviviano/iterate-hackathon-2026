@@ -106,7 +106,7 @@ def simulate(members: list[Member], test: list[Transition], strategy: str, lam: 
 
 
 def compare_strategies(members: list[Member], train: list[Transition], test: list[Transition],
-                       lam: float = 0.01, n_random: int = 20) -> dict:
+                       lam: float = 0.0, n_random: int = 20) -> dict:
     out: dict = {}
     for s in ("disagreement", "counts"):
         tr = simulate(members, test, s, lam, train)

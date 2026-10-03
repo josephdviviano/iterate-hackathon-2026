@@ -47,7 +47,7 @@ def summarize_single(runs) -> dict:
     }
 
 
-def evaluate_condition(game: str, level: int, train_frac: float, condition: str, lam: float = 0.01,
+def evaluate_condition(game: str, level: int, train_frac: float, condition: str, lam: float = 0.0,
                        include_inconsistent: bool = False, test_level: int | None = None) -> dict:
     cond = condition_dir(game, level, train_frac, condition, test_level)
     train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
@@ -67,7 +67,7 @@ def evaluate_condition(game: str, level: int, train_frac: float, condition: str,
     return out
 
 
-def member_curve(game: str, level: int, train_frac: float, condition: str, lam: float = 0.01,
+def member_curve(game: str, level: int, train_frac: float, condition: str, lam: float = 0.0,
                  test_level: int | None = None, start: int = 1) -> list[dict]:
     """Committee metrics as members are added in run order: how fast each construction order
     gains accuracy and calibration per synthesized program."""
@@ -128,7 +128,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--level", type=int, required=True)
     parser.add_argument("--train-frac", type=float, default=0.6)
     parser.add_argument("--condition", default="baseline")
-    parser.add_argument("--lam", type=float, default=0.01)
+    parser.add_argument("--lam", type=float, default=0.0, help="MDL prior strength; 0 = equal weights (default, see R14)")
     parser.add_argument("--include-inconsistent", action="store_true")
     parser.add_argument("--test-level", type=int, default=None)
     parser.add_argument("--curve", action="store_true", help="metrics as members are added in run order")
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     main()
 
 
-def k_sweep(game: str, level: int, train_frac: float, condition: str, lam: float = 0.01,
+def k_sweep(game: str, level: int, train_frac: float, condition: str, lam: float = 0.0,
             test_level: int | None = None, ks: tuple[int, ...] = (2, 4, 8), n_boot: int = 1000, seed: int = 0) -> dict:
     """Calibration against committee size: every subset of the stored members for each K (sampled
     when there are many), and a transition bootstrap of the full committee's AUROC."""
