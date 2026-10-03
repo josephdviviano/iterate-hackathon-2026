@@ -57,9 +57,31 @@ R33 is a pilot: the port's first task text, and ten members lost to a Devin
 suspension (21:19 to at least 21:56, every new session suspended within a
 minute). The user reports Devin is usable again. Be judicious.
 
+## The story: five questions (user, 2026-10-03 23:05)
+
+The results are too many to navigate. The submission answers five
+questions and nothing else is a headline; everything else is appendix.
+Write R34 to R37, the README results section, the report page and the
+pitch in this order, one answer per question, with the number and the
+entry.
+
+| Question | Answer so far | Entries | Which step updates it |
+|---|---|---|---|
+| 1. Does a committee predict better than a single program? | No. The vote equals or sits just under the best single program; the oracle equals the best member. Same in OPINE's environment (pilot). | R3, R23, R33 | P1 |
+| 2. Are its predictions calibrated? | The vote share is not (ECE 0.22); the adaptive conformal sets hold 0.90 on all eight levels (0.88 to 0.99) and live (0.91 to 0.96); where the committee is mostly wrong the coverage is bought by abstention, and the selective score prices that. | R22, R27, R29, R30 | P1 (calibrate on the new conditions), P3 |
+| 3. Is disagreement higher when it is wrong? | Yes: unanimous error 0.00 to 0.30, split 0.26 to 1.00; AUROC 0.68 to 1.00, pooled 0.75 (0.66 to 0.84); live split error 0.87 to 1.00. Shared blind spots are not flagged. | R4, R10, R27, R25, R26 | P1, P3 |
+| 4. Does resynthesis after a high-disagreement probe help? | The probe refutes in one move and never selects; resynthesis on it lifts where the observation names one mechanic (ar25 L3 0.48 to 1.00 in three rounds; sk48 0.70 to 0.86; live 0.40 to 0.71 and 0.86), null on three, loss on one; passive control 0.00 to -0.06; the new committee converges. | R23, R24, R26, R27, R28 | P2, P3 |
+| 5. Does resynthesis aimed at the missing mechanism help more? | Yes where the rule is in reach: ar25 L3 to 1.00 in one round (object diff 0.925, three rounds); equal on three; keeps diversity on ar25 L7; cannot move ka59 because the object state hid the walls, which the OPINE environment fixes (ka59 0.89 with no repair). | R31, R32, R33 | P2 |
+
+Appendix material, never a headline: MDL prior (R14), targeted growth
+(R8), judge confidence (R11, R18), learned ensembles (R9), unseeded
+resampling (R12), mechanism library (R19, R20), row disentanglement (R16),
+rollouts (R15), probe policy (R28), wrapper step size (R30), terrain objects
+(R32), reward hacking (RH), Hoeffding (H), ONC-AGI (O), bio (B).
+
 ## The plan
 
-Budget: 101 Devin sessions in the base plan, 33 more on one contingency; four steps, P1 to P4; plus 36 in the reward-hacking queue (Q) handed over at 22:45, 137 in all (170 with the contingency).
+Budget: 101 Devin sessions in the base plan, 33 more on one contingency; four steps, P1 to P4; plus 36 in the reward-hacking queue (Q), last and optional. Every step feeds one of the five questions above.
 A session is 2 to 10 minutes; run arms at `--parallel 4` and keep about 20
 sessions concurrent at most (that worked all day). Set a time limit per
 step; at the limit record the result, positive or negative.
