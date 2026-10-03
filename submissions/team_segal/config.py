@@ -15,7 +15,7 @@ class RecipeConfig:
     """
 
     widths: tuple[int, int, int] = (128, 384, 640)
-    epochs: float = 7.75
+    epochs: float = 8.5
     batch_size: int = 1024
     lr: float = 11.5
     momentum: float = 0.85
@@ -33,6 +33,11 @@ class RecipeConfig:
     translate: int = 2
     # Progressive resizing: ((start_fraction, size), ...), ending at the 32 px test resolution.
     res_schedule: tuple[tuple[float, int], ...] = ((0.0, 20), (0.5, 32))
+    # Convs per stage; 3 adds the residual conv-BN-GELU branch.
+    stage_depths: tuple[int, int, int] = (3, 2, 3)
+    # (start, end) fractions of training: stage 1's lr ramps to zero between them, and from
+    # ``end`` stage 1 runs without autograd (exact, since its lr is already zero).
+    stage1_freeze: tuple[float, float] | None = (0.6, 0.8)
     compile: bool = True
     # max-autotune adds Inductor autotuning and CUDA graphs (about 2 min of untimed build).
     compile_mode: str = "max-autotune"
@@ -48,6 +53,10 @@ class RecipeConfig:
         values = dict(parameters)
         if "widths" in values:
             values["widths"] = tuple(values["widths"])
+        if "stage_depths" in values:
+            values["stage_depths"] = tuple(values["stage_depths"])
+        if values.get("stage1_freeze") is not None:
+            values["stage1_freeze"] = tuple(values["stage1_freeze"])
         if "res_schedule" in values:
             values["res_schedule"] = tuple(tuple(entry) for entry in values["res_schedule"])
         config = cls(**values)
@@ -75,6 +84,11 @@ class RecipeConfig:
             raise ValueError("lr_peak_frac must be in (0, 1)")
         if self.translate < 0 or self.weight_decay < 0:
             raise ValueError("translate and weight_decay must be non-negative")
+        if len(self.stage_depths) != 3 or any(d not in (2, 3) for d in self.stage_depths):
+            raise ValueError("stage_depths must be three values of 2 or 3")
+        freeze = self.stage1_freeze
+        if freeze is not None and (len(freeze) != 2 or not 0 <= freeze[0] < freeze[1] < 1):
+            raise ValueError("stage1_freeze must be (start, end) with 0 <= start < end < 1")
         modes = ("default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs")
         if self.compile_mode not in modes:
             raise ValueError(f"compile_mode must be one of {modes}")

@@ -1,0 +1,24 @@
+schema_version: '1.0'
+decision_id: D-012
+task_id: T-019
+question: Which budget-reallocation changes enter the submission after S44-S48?
+decision: Stage 2 without its residual conv, stage-1 lr cooldown from 60% to 80% with stage 1 frozen (no
+  autograd) from 80%, 8.5 epochs (408 steps).
+rationale: About -10.7% local paired time (S48; -13.7% at 8.25 epochs in S46 plus 3% for the extra quarter
+  epoch) at control accuracy (75.20% vs 75.20% in S47, 40 fresh seeds); the freeze is exact and both changes
+  are bit-identical to the lab.
+alternatives:
+- Depth-2 stage 2 alone at 8.25 epochs (-6.3%, equal accuracy; safer but slower)
+- Stack at 8.25 epochs (-13.7% but about 75.11%, too little qualification margin)
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s48a-final-timing-table.csv
+  locator: research/evidence/T-019/s48a-final-timing-table.csv
+  sha256: 0f47e6a6e3b1b478e4ac8d2d2baecc2cf8b335af81a589e68e2cfcfb50ea04cb
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: settled

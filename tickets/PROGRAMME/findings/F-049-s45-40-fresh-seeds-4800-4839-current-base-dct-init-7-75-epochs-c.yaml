@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-049
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S45 (40 fresh seeds 4800-4839, current base: DCT init, 7.75 epochs; control 75.20%): stage-1
+  cooldown + freeze from 80% 75.11%; from 75% 75.05%; depth-2 stage 1 at 8.0 epochs 74.97%; depth-2 stage
+  2 at 8.25 epochs 75.25%; freeze 80% + depth-2 stage 2 at 8.25 epochs 75.14%. S46 local paired timing
+  (same arms on GPU 0 and reversed on GPU 1, 10 seeds each, max-autotune): -6.0%, -7.7%, -5.7%, -6.9%
+  and -13.7% respectively, with the two GPUs within 1.3 points of each other.'
+interpretation: 'Removing stage 2''s residual conv saves more time than the 0.5 extra epochs it needs:
+  depth-2 stage 2 at 8.25 epochs is -6.9% at unchanged accuracy. The stage-1 freeze from 80% saves 6.0%
+  for about -0.09 pp. Stacked they give -13.7% for -0.06 to -0.08 pp (60 seeds pooled), far better than
+  the exchange rate, but the stack''s 75.13% leaves a thin qualification margin. Depth-2 stage 1 only
+  breaks even.'
+decision_implication: Price the stack's budget (8.25 / 8.5 epochs, freeze 80% / 85%) and depth-only at
+  8.0 / 8.25 on fresh seeds (S47) before adopting; reject depth-2 stage 1.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: local Blackwell timing is a proxy; the freeze and depth cuts remove the same work on an A100,
+    so the relative saving should transfer
+  discriminating_test: official A100 run if requested
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s46-paired-timing.md
+  locator: research/evidence/T-019/s46-paired-timing.md
+  sha256: ddadc2fa7ccecad2070645b98eb731080e270c68e6590c31300468ad2642c437
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

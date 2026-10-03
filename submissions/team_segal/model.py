@@ -52,19 +52,23 @@ class Conv(nn.Conv2d):
 
 
 class ConvGroup(nn.Module):
-    """conv-pool-BN-GELU, then conv-BN-GELU and a residual conv-BN-GELU branch."""
+    """conv-pool-BN-GELU, then conv-BN-GELU; depth 3 adds a residual conv-BN-GELU branch."""
 
-    def __init__(self, cin: int, cout: int, bn_momentum: float) -> None:
+    def __init__(self, cin: int, cout: int, depth: int, bn_momentum: float) -> None:
         super().__init__()
         self.conv1 = Conv(cin, cout)
         self.norm1 = BatchNorm(cout, bn_momentum)
         self.conv2 = Conv(cout, cout)
         self.norm2 = BatchNorm(cout, bn_momentum)
-        self.residual = nn.Sequential(Conv(cout, cout), BatchNorm(cout, bn_momentum))
+        self.residual = (
+            nn.Sequential(Conv(cout, cout), BatchNorm(cout, bn_momentum)) if depth == 3 else None
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = F.gelu(self.norm1(F.max_pool2d(self.conv1(x), 2)))
         y = F.gelu(self.norm2(self.conv2(x)))
+        if self.residual is None:
+            return y
         return x + F.gelu(self.residual(y))
 
 
@@ -79,17 +83,25 @@ class Net(nn.Module):
         self.whiten = nn.Conv2d(3, whiten_width, WHITEN_KERNEL, padding=0, bias=True)
         self.whiten.weight.requires_grad = False
         momentum = config.bn_momentum
+        d1, d2, d3 = config.stage_depths
         self.groups = nn.Sequential(
-            ConvGroup(whiten_width, w1, momentum),
-            ConvGroup(w1, w2, momentum),
-            ConvGroup(w2, w3, momentum),
+            ConvGroup(whiten_width, w1, d1, momentum),
+            ConvGroup(w1, w2, d2, momentum),
+            ConvGroup(w2, w3, d3, momentum),
         )
+        # Set by ``fit``: stage 1 (and the whitening conv) run without autograd once frozen.
+        self.stage1_frozen = False
         self.head = nn.Linear(w3, NUM_CLASSES, bias=False)
         self.scale = config.scaling_factor
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.normalize(x, self.whiten.weight.dtype)
-        x = self.groups(F.gelu(self.whiten(x)))
+        if self.stage1_frozen and self.training:
+            with torch.no_grad():
+                x = self.groups[:1](F.gelu(self.whiten(x)))
+            x = self.groups[1:](x)
+        else:
+            x = self.groups(F.gelu(self.whiten(x)))
         # Global max over the flattened map; its backward is an index gather, avoiding the
         # slower atomic-scatter backward of adaptive_max_pool2d.
         x = x.flatten(2).max(2).values

@@ -1,0 +1,36 @@
+schema_version: '2.0'
+finding_id: F-051
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S49 (local dev stack, the submission folder with its D-012 defaults, 40 fresh random uint32
+  seeds over GPUs 0 and 1): 75.129% (SD 0.243) and 75.180% (SD 0.279), pooled 75.154% (SE 0.041). With
+  S47 (75.199%, 40 seeds) and S48 (75.13%, 20 seeds) the stack at 8.5 epochs averages about 75.17% over
+  100 seeds.'
+interpretation: The submission reproduces the lab result and clears 75% by about 3.8 SE on 40 seeds. Earlier
+  A100 qualifications matched local means to within 0.03 pp (M7a vs S41, M8 vs S43), so the estimated
+  risk that an official 40-seed mean falls below 75% is well under 1%, though thinner than at the previous
+  defaults.
+decision_implication: Keep D-012; an official-equivalent A100 PCIe run would confirm absolute time and
+  margin if the user wants Modal used.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: cross-stack offset measured at -0.04 pp (SE 0.035) in T-004 would trim the margin; recent
+    A100 runs showed no offset
+  discriminating_test: official-equivalent run
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s49-submission-check.txt
+  locator: research/evidence/T-019/s49-submission-check.txt
+  sha256: ca54cdf4cef80756d3f66f53a227b3f95d84a50678f04433107ab57867a689c1
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Submission defaults verified locally.

@@ -380,6 +380,26 @@
 - **Interpretation:** Cooling stage 1's lr to zero by 80% costs about 0.05 pp, and the freeze that then skips stage 1's backward is exact (identical accuracy), saving an estimated 6-9% because it removes backward work in the expensive 32 px tail. Freezing from 70% costs 0.25 pp. Depth-2 stage cuts trade about 0.02 pp per 1% time, below the 0.054 exchange rate. The 18 px phase saves nothing measurable and costs accuracy.
 - **Decision consequence:** Confirm freeze (80%, 75%), depth cuts and the freeze + depth stack on 40 fresh seeds on the current base (S45) and time them same-host on A100 (M9); reject the 18 px phase.
 
+### F-049 — open, material
+
+- **Observation:** S45 (40 fresh seeds 4800-4839, current base: DCT init, 7.75 epochs; control 75.20%): stage-1 cooldown + freeze from 80% 75.11%; from 75% 75.05%; depth-2 stage 1 at 8.0 epochs 74.97%; depth-2 stage 2 at 8.25 epochs 75.25%; freeze 80% + depth-2 stage 2 at 8.25 epochs 75.14%. S46 local paired timing (same arms on GPU 0 and reversed on GPU 1, 10 seeds each, max-autotune): -6.0%, -7.7%, -5.7%, -6.9% and -13.7% respectively, with the two GPUs within 1.3 points of each other.
+- **Interpretation:** Removing stage 2's residual conv saves more time than the 0.5 extra epochs it needs: depth-2 stage 2 at 8.25 epochs is -6.9% at unchanged accuracy. The stage-1 freeze from 80% saves 6.0% for about -0.09 pp. Stacked they give -13.7% for -0.06 to -0.08 pp (60 seeds pooled), far better than the exchange rate, but the stack's 75.13% leaves a thin qualification margin. Depth-2 stage 1 only breaks even.
+- **Decision consequence:** Price the stack's budget (8.25 / 8.5 epochs, freeze 80% / 85%) and depth-only at 8.0 / 8.25 on fresh seeds (S47) before adopting; reject depth-2 stage 1.
+
+### F-050 — resolved, material
+
+- **Observation:** S47 (40 fresh seeds 5100-5139, current base control 75.20%): depth-2 stage 2 at 8.0 / 8.25 epochs 75.03 / 75.21%; stack (stage-1 cooldown 0.6-0.8 + freeze 0.8 + depth-2 stage 2) at 8.25 / 8.5 epochs 75.07 / 75.20%; stack with freeze from 85% at 8.25 epochs 75.12%. S48 local paired timing (GPU 0 in order, GPU 1 reversed, 10 seeds each): stack at 8.5 epochs -9.2 / -12.2% (mean -10.7%), depth-2 stage 2 at 8.25 epochs -5.5 / -7.1% (mean -6.3%); accuracies 75.13 / 75.17 vs control 75.22% (20 seeds).
+- **Interpretation:** The stack at 8.5 epochs matches control accuracy (about 75.18 vs 75.21% pooled over 60 seeds) at about 10.7% less time; at 8.25 epochs it saves more (-13.7%) but leaves only about 75.11%. Depth-2 stage 2 alone at 8.25 epochs is a safe -6.3% at equal accuracy.
+- **Decision consequence:** Adopt the stack at 8.5 epochs (408 steps) as submission defaults (D-012).
+- **Resolution:** Adopted: stage-1 freeze + depth-2 stage 2 at 8.5 epochs.
+
+### F-051 — resolved, material
+
+- **Observation:** S49 (local dev stack, the submission folder with its D-012 defaults, 40 fresh random uint32 seeds over GPUs 0 and 1): 75.129% (SD 0.243) and 75.180% (SD 0.279), pooled 75.154% (SE 0.041). With S47 (75.199%, 40 seeds) and S48 (75.13%, 20 seeds) the stack at 8.5 epochs averages about 75.17% over 100 seeds.
+- **Interpretation:** The submission reproduces the lab result and clears 75% by about 3.8 SE on 40 seeds. Earlier A100 qualifications matched local means to within 0.03 pp (M7a vs S41, M8 vs S43), so the estimated risk that an official 40-seed mean falls below 75% is well under 1%, though thinner than at the previous defaults.
+- **Decision consequence:** Keep D-012; an official-equivalent A100 PCIe run would confirm absolute time and margin if the user wants Modal used.
+- **Resolution:** Submission defaults verified locally.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -470,6 +490,13 @@
 - **Decision:** Adopt the DCT init for the non-identity rows of each stage's widening conv and cut the budget to 7.75 epochs (372 steps).
 - **Rationale:** Replicated in S42 and S43 (+0.11 to +0.17 pp); at 7.75 epochs it matches the 8.0-epoch control on 40 fresh seeds, a 3% step cut at no time cost; bit-identical to the lab on CPU.
 - **Alternatives:** Keep 8.0 epochs and bank the accuracy margin (+0.11 pp); 7.5 epochs (untested; margin would likely fall below 75%)
+
+### D-012 — settled
+
+- **Question:** Which budget-reallocation changes enter the submission after S44-S48?
+- **Decision:** Stage 2 without its residual conv, stage-1 lr cooldown from 60% to 80% with stage 1 frozen (no autograd) from 80%, 8.5 epochs (408 steps).
+- **Rationale:** About -10.7% local paired time (S48; -13.7% at 8.25 epochs in S46 plus 3% for the extra quarter epoch) at control accuracy (75.20% vs 75.20% in S47, 40 fresh seeds); the freeze is exact and both changes are bit-identical to the lab.
+- **Alternatives:** Depth-2 stage 2 alone at 8.25 epochs (-6.3%, equal accuracy; safer but slower); Stack at 8.25 epochs (-13.7% but about 75.11%, too little qualification margin)
 
 ## Deferred or rejected work
 

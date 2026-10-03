@@ -25,6 +25,9 @@ LAB_EQUIVALENT = SMALL | {
     "whiten_grad_off": True,
     "bias_scaler": 16.0,
     "conv_init": "dct",
+    "stage_depths": [3, 2, 3],
+    "stage1_cooldown": [0.6, 0.8],
+    "freeze_schedule": [[0.8, 1]],
 }
 
 
@@ -47,7 +50,12 @@ def test_defaults_are_the_converged_recipe():
     from benchmark._submission.config import RecipeConfig
 
     config = RecipeConfig()
-    assert config.widths == (128, 384, 640) and config.epochs == 7.75 and config.bias_scaler == 16.0
+    assert (
+        config.widths == (128, 384, 640)
+        and config.epochs == 8.5
+        and config.stage_depths == (3, 2, 3)
+        and config.bias_scaler == 16.0
+    )
     assert config.res_schedule == ((0.0, 20), (0.5, 32)) and config.translate == 2
     assert config.scaling_factor == pytest.approx(1 / 6)
     assert config.compile and config.fused_sgd and config.compile_mode == "max-autotune"
@@ -87,3 +95,16 @@ def test_official_harness_smoke(tmp_path):
         config=config,
     )
     assert summary["complete"] is True, summary["run_error"]
+
+
+def test_full_depth_without_freeze_matches_the_lab():
+    seeds = [3, 5]
+    simplified = train_states(
+        SUBMISSION, SMALL | {"stage_depths": [3, 3, 3], "stage1_freeze": None}, seeds
+    )
+    dropped = ("stage1_cooldown", "freeze_schedule")
+    lab_params = {k: v for k, v in LAB_EQUIVALENT.items() if k not in dropped}
+    lab = train_states(LAB, lab_params | {"stage_depths": [3, 3, 3]}, seeds)
+    for ours, theirs in zip(simplified, lab, strict=True):
+        assert ours.keys() == theirs.keys()
+        assert all(torch.equal(ours[k], theirs[k]) for k in ours)

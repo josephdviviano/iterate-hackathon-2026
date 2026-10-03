@@ -43,30 +43,44 @@ def make_optimizer(
     params = [p for p in model.parameters() if p.requires_grad]
     norms = [p for p in params if id(p) in norm_ids]
     others = [p for p in params if id(p) not in norm_ids and p is not whiten]
+    stage1 = {id(p) for p in model.groups[0].parameters()} if config.stage1_freeze else set()
+    norms1 = [p for p in norms if id(p) in stage1]
+    others1 = [p for p in others if id(p) in stage1]
+    norms = [p for p in norms if id(p) not in stage1]
+    others = [p for p in others if id(p) not in stage1]
     kilostep = 1024 * (1 + 1 / (1 - config.momentum))
     lr = config.lr / kilostep
     wd = config.weight_decay * config.batch_size / kilostep
     lr_bias = lr * config.bias_scaler
-    groups = [
-        {"params": norms, "lr": lr_bias, "weight_decay": wd / lr_bias},
-        {"params": others, "lr": lr, "weight_decay": wd / lr},
-        {"params": [whiten], "lr": lr, "weight_decay": wd / lr},
-    ]
-    optimizer = torch.optim.SGD(
-        groups, momentum=config.momentum, nesterov=True, fused=config.fused_sgd or None
-    )
     schedule = triangle(total_steps, config.lr_start, config.lr_peak_frac, config.lr_end)
     whiten_steps = ceil(config.whiten_bias_epochs * steps_per_epoch)
 
     def whiten_schedule(i: int) -> float:
         return schedule(i) if i < whiten_steps else 0.0
 
-    norm_group, other_group, whiten_group = optimizer.param_groups
-    schedules = [
-        (norm_group, norm_group["lr"], schedule),
-        (other_group, other_group["lr"], schedule),
-        (whiten_group, whiten_group["lr"], whiten_schedule),
+    cooled = schedule
+    if config.stage1_freeze:
+        start, end = (f * total_steps for f in config.stage1_freeze)
+
+        def cooled(i: int) -> float:
+            # FreezeOut-style: stage 1's lr ramps linearly to zero between the two fractions.
+            return schedule(i) * min(1.0, max(0.0, (end - i) / max(1.0, end - start)))
+
+    groups = [
+        ({"params": norms, "lr": lr_bias, "weight_decay": wd / lr_bias}, schedule),
+        ({"params": others, "lr": lr, "weight_decay": wd / lr}, schedule),
+        ({"params": [whiten], "lr": lr, "weight_decay": wd / lr}, whiten_schedule),
+        ({"params": norms1, "lr": lr_bias, "weight_decay": wd / lr_bias}, cooled),
+        ({"params": others1, "lr": lr, "weight_decay": wd / lr}, cooled),
     ]
+    groups = [(g, s) for g, s in groups if g["params"]]
+    optimizer = torch.optim.SGD(
+        [g for g, _ in groups],
+        momentum=config.momentum,
+        nesterov=True,
+        fused=config.fused_sgd or None,
+    )
+    schedules = [(g, g["lr"], s) for g, (_, s) in zip(optimizer.param_groups, groups, strict=True)]
     return optimizer, schedules
 
 
@@ -103,6 +117,10 @@ def fit(model: Net, step_model: nn.Module, stream: TrainingStream, config: Recip
     step = 0
     for epoch in range(ceil(config.epochs)):
         for inputs, labels in stream.epoch(epoch):
+            if config.stage1_freeze:
+                # Stage 1's lr is zero from here, so skipping its backward is exact; the frozen
+                # graph is compiled by the build warm-up.
+                model.stage1_frozen = step >= config.stage1_freeze[1] * total_steps
             size = resolution(config, step, total_steps)
             if size is not None and size != inputs.size(-1):
                 inputs = F.interpolate(
@@ -128,5 +146,6 @@ def fit(model: Net, step_model: nn.Module, stream: TrainingStream, config: Recip
             if step >= total_steps:
                 break
     model.whiten.bias.requires_grad_(True)
+    model.stage1_frozen = False
     if lookahead is not None:
         lookahead.update(decay=1.0)

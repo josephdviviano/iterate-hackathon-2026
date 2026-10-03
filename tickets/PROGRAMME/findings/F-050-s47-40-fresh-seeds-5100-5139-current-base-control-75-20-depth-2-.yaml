@@ -1,0 +1,35 @@
+schema_version: '2.0'
+finding_id: F-050
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S47 (40 fresh seeds 5100-5139, current base control 75.20%): depth-2 stage 2 at 8.0 / 8.25
+  epochs 75.03 / 75.21%; stack (stage-1 cooldown 0.6-0.8 + freeze 0.8 + depth-2 stage 2) at 8.25 / 8.5
+  epochs 75.07 / 75.20%; stack with freeze from 85% at 8.25 epochs 75.12%. S48 local paired timing (GPU
+  0 in order, GPU 1 reversed, 10 seeds each): stack at 8.5 epochs -9.2 / -12.2% (mean -10.7%), depth-2
+  stage 2 at 8.25 epochs -5.5 / -7.1% (mean -6.3%); accuracies 75.13 / 75.17 vs control 75.22% (20 seeds).'
+interpretation: The stack at 8.5 epochs matches control accuracy (about 75.18 vs 75.21% pooled over 60
+  seeds) at about 10.7% less time; at 8.25 epochs it saves more (-13.7%) but leaves only about 75.11%.
+  Depth-2 stage 2 alone at 8.25 epochs is a safe -6.3% at equal accuracy.
+decision_implication: Adopt the stack at 8.5 epochs (408 steps) as submission defaults (D-012).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: relative savings measured on the local Blackwell GPUs; the freeze and depth cut remove the
+    same work on an A100
+  discriminating_test: official A100 run if requested
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s47-stack-budget-table.csv
+  locator: research/evidence/T-019/s47-stack-budget-table.csv
+  sha256: 63f4de381b2d4df146844dff151ce2d2e963fb247e16a809e3c6e2005e01b190
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: 'Adopted: stage-1 freeze + depth-2 stage 2 at 8.5 epochs.'

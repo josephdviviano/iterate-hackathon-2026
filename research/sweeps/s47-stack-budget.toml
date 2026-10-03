@@ -1,0 +1,47 @@
+# Budget for the freeze + depth stack (X-005): S45/S46 give depth-2 stage 2 at 8.25 epochs -6.9%
+# time at equal accuracy, and with the stage-1 freeze from 80% -13.7% at -0.06 to -0.08 pp (thin
+# margin). Price the stack at 8.25 / 8.5 epochs, a later freeze (85%), and depth-only at 8.0 /
+# 8.25. 40 fresh seeds, both GPUs, current submission base.
+name = "s47-stack-budget"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [5100, 5101, 5102, 5103, 5104, 5105, 5106, 5107, 5108, 5109, 5110, 5111, 5112, 5113, 5114, 5115, 5116, 5117, 5118, 5119, 5120, 5121, 5122, 5123, 5124, 5125, 5126, 5127, 5128, 5129, 5130, 5131, 5132, 5133, 5134, 5135, 5136, 5137, 5138, 5139]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+epochs = 7.75
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+stage_depths = [3, 2, 3]
+epochs = 8.0
+[[configs]]
+stage_depths = [3, 2, 3]
+epochs = 8.25
+[[configs]]                                   # stack at 8.25
+stage_depths = [3, 2, 3]
+epochs = 8.25
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+[[configs]]                                   # stack at 8.5
+stage_depths = [3, 2, 3]
+epochs = 8.5
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+[[configs]]                                   # stack with a later freeze
+stage_depths = [3, 2, 3]
+epochs = 8.25
+stage1_cooldown = [0.65, 0.85]
+freeze_schedule = [[0.85, 1]]
