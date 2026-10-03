@@ -35,6 +35,10 @@ DEFAULTS = {
     "warmup": 0.23,  # fraction of steps spent ramping the learning rate up
     "final_lr": 0.07,  # learning-rate multiplier reached at the last step
     "muon_final_lr": 0.05,  # same, for the Muon groups
+    "decay_end": 0.96,  # fraction of steps at which the LR reaches its floor (then held)
+    "tail_steps": 8,  # last steps use a light final EMA instead of the lookahead
+    "tail_every": 4,
+    "tail_weight": 0.3,
     "whiten_bias_epochs": 3,
     "translate": 2,
     "cutout": 0,
@@ -316,6 +320,8 @@ def build(context: BuildContext):
         classifier=Classifier(net, dtype).to(device),
         float_state=float_state,
         ema=[t.clone() for t in float_state],
+        tail_params=[p for p in net.parameters()],
+        tail_ema=[p.detach().clone() for p in net.parameters()],
         muon_update=update,
     )
 
@@ -430,6 +436,8 @@ def _fit(state, total_steps, size=None):
     hyp, net, optimizer = state.hyp, state.net, state.optimizer
     labels, batch_size, steps_per_epoch = state.labels, state.batch_size, state.steps_per_epoch
     warmup_steps = int(total_steps * hyp["warmup"])
+    decay_steps = max(warmup_steps + 1, round(total_steps * hyp["decay_end"]))
+    tail_start = total_steps - hyp["tail_steps"] if size is None else total_steps + 1
     ema_decay = 0.95**5 * (torch.arange(total_steps + 1) / total_steps) ** 3
     step = 0
     net.train()
@@ -465,15 +473,26 @@ def _fit(state, total_steps, size=None):
                     frac = step / warmup_steps
                     scale = 0.2 * (1 - frac) + frac
                 else:
-                    frac = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+                    frac = min(1.0, (step - warmup_steps) / (decay_steps - warmup_steps))
                     scale = (1 - frac) + final_lr * frac
                 for group in opt.param_groups:
                     group["lr"] = group["initial_lr"] * scale
                 opt.step()
             step += 1
-            if hyp["ema_every"] and step % hyp["ema_every"] == 0:
+            if step == tail_start:
+                if hyp["ema_every"]:
+                    _lookahead(state, 1.0)
+                torch._foreach_copy_(state.tail_ema, [p.detach() for p in state.tail_params])
+            elif step > tail_start:
+                if (step - tail_start) % hyp["tail_every"] == 0:
+                    with torch.no_grad():
+                        torch._foreach_lerp_(state.tail_ema, state.tail_params, hyp["tail_weight"])
+            elif hyp["ema_every"] and step % hyp["ema_every"] == 0:
                 _lookahead(state, ema_decay[step].item())
-    if hyp["ema_every"]:
+    if step > tail_start:
+        with torch.no_grad():  # evaluate the final EMA weights; BN buffers stay from the net
+            torch._foreach_copy_(state.tail_params, state.tail_ema)
+    elif hyp["ema_every"]:
         _lookahead(state, 1.0)
 
 
