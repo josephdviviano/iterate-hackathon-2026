@@ -33,8 +33,7 @@ HYP = {
     "head_lr_mult": 2.0,
     "contrast": 0.13,  # per-image contrast/brightness jitter amplitudes (uniform +-)
     "brightness": 0.14,
-    "lowres_epochs": 1.5,  # first epochs train on whole images downsampled to lowres_size
-    "lowres_size": 20,
+    "res_schedule": ((1.5, 20), (3.0, 28)),  # (until epoch, size): whole images downsampled; 32px afterwards
     "muon_lr": 0.16,
     "muon_momentum": 0.8,
     "ns_steps": 3,
@@ -275,7 +274,7 @@ def build(context: BuildContext):
     y = torch.randint(0, context.num_classes, (bs,), device=device)
     model.train()
     opt = make_optimizer(model, hyp, 10)
-    for xs in (downsample(x, hyp["lowres_size"]), x):
+    for xs in [downsample(x, size) for _, size in hyp["res_schedule"]] + [x]:
         for bias_grad in (True, False):
             model.whiten_bias_grad = bias_grad
             for _ in range(3):
@@ -338,7 +337,7 @@ def train(state) -> nn.Module:
     n = len(state.labels)
     r = hyp["translate"]
     alpha = ((0.97**5) * (torch.arange(total + 1) / total) ** 3).tolist()
-    lowres_steps = int((n // bs) * hyp["lowres_epochs"])
+    res_steps = [(int((n // bs) * until), size) for until, size in hyp["res_schedule"]]
     step = 0
     epoch = 0
     while step < total:
@@ -357,8 +356,10 @@ def train(state) -> nn.Module:
             for g in optimizer[1].param_groups:
                 g["lr"] = g["base_lr"] * f
             xb = imgs[i * bs : (i + 1) * bs]
-            if step < lowres_steps:
-                xb = downsample(xb, hyp["lowres_size"])
+            for until, size in res_steps:
+                if step < until:
+                    xb = downsample(xb, size)
+                    break
             train_step(state, optimizer, xb, labels[i * bs : (i + 1) * bs])
             step += 1
             if state.lookahead is not None and step % 5 == 0:
