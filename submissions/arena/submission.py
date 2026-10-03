@@ -10,6 +10,7 @@ Timed prepare() resets all learned state, moves the images to the GPU, normalize
 them, and initializes the patch-whitening layer from training images.
 """
 
+import hashlib
 import math
 from types import SimpleNamespace
 
@@ -18,6 +19,9 @@ import torch.nn.functional as F
 from torch import nn
 
 from benchmark.api import BuildContext, TrainingData
+
+with open(__file__, "rb") as _f:
+    SOURCE_HASH = hashlib.sha256(_f.read()).hexdigest()[:12]
 
 # Override any value with --params, e.g. '{"epochs": 9, "widths": [128, 384, 768]}'.
 DEFAULTS = {
@@ -44,6 +48,7 @@ DEFAULTS = {
     "muon_momentum": 0.6,
     "muon_ns_steps": 3,
     "muon_head": True,  # also train the linear head with Muon (without renormalization)
+    "muon_head_lr_scale": 0.5,  # head Muon LR relative to the filters'
     # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
     "res_schedule": [[0.375, 16], [0.5, 24]],
 }
@@ -66,8 +71,10 @@ class Conv(nn.Conv2d):
 
     def reset_parameters(self):
         super().reset_parameters()
-        w = self.weight.data
-        nn.init.dirac_(w[: w.size(1)])
+        # Vectorized nn.init.dirac_ (which loops in Python with a host sync per channel).
+        w = self.weight.data[: self.weight.size(1)]
+        w.zero_()
+        w[:, :, 1, 1].diagonal().fill_(1)
 
 
 class ConvGroup(nn.Module):
@@ -342,12 +349,14 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     net.reset()
     net.train()
 
-    raw = data.images.to(device, non_blocking=True).float().div_(255)
-    mean = raw.mean(dim=(0, 2, 3), keepdim=True)
-    std = raw.std(dim=(0, 2, 3), keepdim=True)
-    state.classifier.mean.copy_(mean)
-    state.classifier.std.copy_(std)
-    images = ((raw - mean) / std).to(state.dtype, memory_format=torch.channels_last)
+    raw = data.images.to(device, non_blocking=True).to(state.dtype)  # 0..255, exact in fp16
+    var, mean = torch.var_mean(raw, dim=(0, 2, 3), keepdim=True)
+    mean, std = mean.float(), var.float().sqrt()
+    state.classifier.mean.copy_(mean / 255)
+    state.classifier.std.copy_(std / 255)
+    images = ((raw - mean.to(state.dtype)) / std.to(state.dtype)).contiguous(
+        memory_format=torch.channels_last
+    )
     del raw
     net.init_whiten(images[:5000])
     torch._foreach_copy_(state.ema, state.float_state)
@@ -372,7 +381,8 @@ def prepare(state, data: TrainingData, seed: int) -> None:
         filters = [p for p in others if p.ndim == 4]
         muon_groups = [dict(params=filters)]
         if hyp["muon_head"]:
-            muon_groups.append(dict(params=[net.head.weight], renorm=False))
+            head_lr = hyp["muon_lr"] * hyp["muon_head_lr_scale"]
+            muon_groups.append(dict(params=[net.head.weight], renorm=False, lr=head_lr))
         muon_params = {id(p) for g in muon_groups for p in g["params"]}
         others = [p for p in others if id(p) not in muon_params]
         muon = Muon(
@@ -403,6 +413,9 @@ def prepare(state, data: TrainingData, seed: int) -> None:
 
 def train(state) -> nn.Module:
     _fit(state, state.total_steps)
+    if state.device.type == "cuda":  # instrumentation (H4.4.1): checksum of the final weights and BN buffers
+        tensors = [t.float().sum() for t in state.net.state_dict().values() if t.is_floating_point()]
+        print(f"weights-checksum {torch.stack(tensors).sum().item():.6e} source {SOURCE_HASH}", flush=True)
     return state.classifier
 
 
