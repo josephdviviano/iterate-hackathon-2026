@@ -21,20 +21,30 @@ uncertainty: null
 dependencies:
 - T-004
 - T-005
-status: proposed
+status: completed
 acceptance:
 - criterion_id: AC-01
   statement: A decision record selects the regime from the frontier table and A100 timings, with rejected
     alternatives and reopening conditions
   expected_evidence: decision record
-  status: pending
-  evidence_ids: []
+  status: verified
+  evidence_ids:
+  - E-001
   rationale: null
 evidence_requirements: []
 out_of_scope: []
 risks: []
-evidence: []
-completion_summary: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: D-008-which-base-regime-does-the-entry-use-given-the-frontier-and-a100.yaml
+  locator: tickets/PROGRAMME/decisions/D-008-which-base-regime-does-the-entry-use-given-the-frontier-and-a100.yaml
+  sha256: d528ccc4233ee11917ecb21ba8bf6c28852f2efb9edde354ec034ee6993a48c4
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+completion_summary: Regime settled on 128/384/640 at 8.25 epochs from the frontier and A100 timings (D-008).
 blocker_ids: []
 ---
 
@@ -56,5 +66,13 @@ Fixes the base for the add-ons workset and states reopening conditions.
 
 ## Acceptance
 
-- [ ] AC-01: A decision record selects the regime from the frontier table and A100 timings, with rejected alternatives and reopening conditions
+- [x] AC-01: A decision record selects the regime from the frontier table and A100 timings, with rejected alternatives and reopening conditions
   Evidence: decision record
+
+## Evidence
+
+- E-001: D-008-which-base-regime-does-the-entry-use-given-the-frontier-and-a100.yaml — `tickets/PROGRAMME/decisions/D-008-which-base-regime-does-the-entry-use-given-the-frontier-and-a100.yaml` (verified)
+
+## Resolution
+
+Regime settled on 128/384/640 at 8.25 epochs from the frontier and A100 timings (D-008).

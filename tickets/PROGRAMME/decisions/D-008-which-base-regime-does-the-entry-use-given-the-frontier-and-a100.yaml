@@ -1,0 +1,35 @@
+schema_version: '1.0'
+decision_id: D-008
+task_id: T-006
+question: Which base regime does the entry use, given the frontier and A100 timings?
+decision: 128/384/640 airbench96-style net (three convs per block with a residual), translate 2, 20 px
+  then 32 px at half-way, logit scale 1/6, max-autotune compile with flatten-max pooling, 8.25 epochs.
+rationale: Lowest local proxy time to the target across the frontier and climb (F-003, F-014, F-017, F-021);
+  on the A100 stack it reaches 75.24% over 40 fresh seeds at 8.25 epochs (F-031) and about 6.1 s per trial
+  on A100 80GB PCIe (F-030); accuracy transfers between stacks within 0.1 pp.
+alternatives:
+- '128/384/512: 74.67% at 8.25 epochs on A100 PCIe (5.76 s), below the target; rejected.'
+- '128/384/768: 75.59% at 8.25 epochs on A100 SXM4; reaches the target in fewer epochs but costs more
+  per epoch; same-host timing would be needed to beat 640 (reopening condition).'
+- 'Two-conv 2x width and ResNet-9: slower to target (F-003, F-004).'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: cross-stack-pairs.txt
+  locator: research/evidence/T-004/cross-stack-pairs.txt
+  sha256: 8959a6121066aa47c1a27dbe9a2e9902889a6644747669ee94e669e100a27ee0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: m1-a100-details.txt
+  locator: research/evidence/T-004/m1-a100-details.txt
+  sha256: f149a85da8d3680660102c8febeaf42c41afa3f8a18fdc5ac5c4c485733a02c0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: settled

@@ -55,9 +55,40 @@
         "DCT or frequency-domain input"
       ],
       "why_material": "Considered and subsumed: both are linear transforms of 2x2 patches, which PCA whitening already absorbs."
+    },
+    {
+      "dimension": "lineage-optimiser",
+      "current_assumption": "SGD with lookahead.",
+      "alternatives": [
+        "hiverge Muon stack",
+        "momentum, weight decay, BN momentum values from the lineage",
+        "lookahead flush"
+      ],
+      "why_material": "The CIFAR-10 record uses Muon."
+    },
+    {
+      "dimension": "lineage-augmentation",
+      "current_assumption": "Translate 2 and alternating flip.",
+      "alternatives": [
+        "colour jitter",
+        "cutout",
+        "mixup",
+        "random flip"
+      ],
+      "why_material": "Record recipes add jitter."
+    },
+    {
+      "dimension": "execution",
+      "current_assumption": "Default compile, adaptive max pool.",
+      "alternatives": [
+        "CUDA graphs",
+        "flatten-max pool",
+        "resize inside compile"
+      ],
+      "why_material": "Execution levers change time at fixed accuracy."
     }
   ],
-  "disposition": "test_ready",
+  "disposition": "closed",
   "exploration_id": "X-003",
   "hypotheses": [
     {
@@ -73,7 +104,7 @@
       "evidence_needed": [
         "S24"
       ],
-      "status": "selected"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "R2",
@@ -88,7 +119,7 @@
       "evidence_needed": [
         "S24"
       ],
-      "status": "selected"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "R3",
@@ -103,7 +134,7 @@
       "evidence_needed": [
         "S24"
       ],
-      "status": "selected"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "R4",
@@ -118,7 +149,7 @@
       "evidence_needed": [
         "S24"
       ],
-      "status": "selected"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "R5",
@@ -133,7 +164,7 @@
       "evidence_needed": [
         "S24"
       ],
-      "status": "selected"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "R6",
@@ -179,6 +210,86 @@
         "Only if R2 or R5 show label-softness gains"
       ],
       "status": "dormant"
+    },
+    {
+      "hypothesis_id": "L1",
+      "proposition": "The hiverge Muon stack beats SGD with lookahead.",
+      "mechanism": "Transfer of a CIFAR-10 record or competitor lever to single-view CIFAR-100.",
+      "changed_dimensions": [
+        "lineage-optimiser"
+      ],
+      "prediction": "Higher accuracy at equal time.",
+      "disconfirming_result": "Accuracy below control (observed -1.5 to -3.3 pp, F-025).",
+      "decision_changed": "Whether the lever enters the submission.",
+      "evidence_needed": [
+        "S22"
+      ],
+      "status": "rejected"
+    },
+    {
+      "hypothesis_id": "L2",
+      "proposition": "Lineage augmentation, activation or whitening variants raise accuracy.",
+      "mechanism": "Transfer of a CIFAR-10 record or competitor lever to single-view CIFAR-100.",
+      "changed_dimensions": [
+        "lineage-augmentation",
+        "architecture-family"
+      ],
+      "prediction": "+0.2 pp at fixed epochs.",
+      "disconfirming_result": "No arm beyond 2 SE (F-028).",
+      "decision_changed": "Whether the lever enters the submission.",
+      "evidence_needed": [
+        "S21"
+      ],
+      "status": "rejected"
+    },
+    {
+      "hypothesis_id": "L3",
+      "proposition": "Lineage hyperparameters (momentum, wd, BN momentum) improve the recipe.",
+      "mechanism": "Transfer of a CIFAR-10 record or competitor lever to single-view CIFAR-100.",
+      "changed_dimensions": [
+        "lineage-optimiser"
+      ],
+      "prediction": "+0.2 pp on fresh seeds.",
+      "disconfirming_result": "Momentum 0.8 regressed to +0.06 pp on 20 fresh seeds (F-029).",
+      "decision_changed": "Whether the lever enters the submission.",
+      "evidence_needed": [
+        "S21",
+        "S27"
+      ],
+      "status": "rejected"
+    },
+    {
+      "hypothesis_id": "L4",
+      "proposition": "Fable execution levers (flatten-max pool, CUDA graphs) cut time at equal accuracy.",
+      "mechanism": "Transfer of a CIFAR-10 record or competitor lever to single-view CIFAR-100.",
+      "changed_dimensions": [
+        "execution"
+      ],
+      "prediction": "2-4% lower time, accuracy unchanged.",
+      "disconfirming_result": "No consistent gain across interleaved blocks.",
+      "decision_changed": "Whether the lever enters the submission.",
+      "evidence_needed": [
+        "S23",
+        "S26",
+        "m2"
+      ],
+      "status": "tested"
+    },
+    {
+      "hypothesis_id": "L5",
+      "proposition": "Competitor levers (lookahead flush, max+mean pool, optimiser restart) improve the recipe.",
+      "mechanism": "Transfer of a CIFAR-10 record or competitor lever to single-view CIFAR-100.",
+      "changed_dimensions": [
+        "lineage-optimiser",
+        "architecture-family"
+      ],
+      "prediction": "+0.2 pp.",
+      "disconfirming_result": "Neutral or negative (F-028; codex F-010).",
+      "decision_changed": "Whether the lever enters the submission.",
+      "evidence_needed": [
+        "S21"
+      ],
+      "status": "rejected"
     }
   ],
   "interpretation_forks": [],
@@ -188,7 +299,10 @@
     "loss",
     "optimisation-geometry",
     "compute-allocation",
-    "input-representation"
+    "input-representation",
+    "lineage-optimiser",
+    "lineage-augmentation",
+    "execution"
   ],
   "observations": [
     {
@@ -202,6 +316,20 @@
           "locator": "research/evidence/T-013/s18-shorter40-table.csv",
           "state": "verified",
           "sha256": "6ccf8ad97026fcfcc842a2ef3017173536b24d9cbe640cf6fe89fcbdd777088d"
+        }
+      ]
+    },
+    {
+      "observation_id": "OBS-inventory",
+      "statement": "The CIFAR-10 record code (hiverge, Fable e1-e5) and the competitor's programme contain strategies never tested on the converged recipe: hiverge Muon stack, SiLU, colour jitter, Fable flatten-max pool and CUDA graphs, lookahead flush, max+mean pooling and lineage hyperparameters.",
+      "evidence": [
+        {
+          "evidence_id": "E-002",
+          "kind": "file",
+          "label": "strategy coverage matrix (final)",
+          "locator": "research/evidence/T-018/strategy-coverage-final.md",
+          "state": "verified",
+          "sha256": "86a2783d6a33d484c1bf6eed4c604a45d4565ae74e66f6549bf4c057e0f65fc0"
         }
       ]
     }
@@ -226,19 +354,40 @@
       "decision_rule": "Promote any arm beating control by more than 2 combined SE at equal or lower time (or with time saving exceeding accuracy cost) to a fresh-seed confirmation.",
       "information_gain": "Covers five distinct representation mechanisms in one pass.",
       "resource_bound": "9 configurations, 90 trials on GPU 1.",
-      "status": "ready"
+      "status": "run",
+      "result_finding_ids": [
+        "F-026",
+        "F-027"
+      ]
+    },
+    {
+      "probe_id": "S21-S27",
+      "hypothesis_ids": [
+        "L1",
+        "L2",
+        "L3",
+        "L4",
+        "L5"
+      ],
+      "method": "Coverage sweeps S21 (18 levers), S22 (hiverge Muon), S23 and S26a/b (execution, interleaved), S27 (momentum confirmation), m2 (CUDA graphs on A100 PCIe).",
+      "decision_rule": "Adopt only levers beating control beyond two combined SE on fresh seeds or, for execution levers, consistently across interleaved blocks.",
+      "information_gain": "Covers the full lineage and competitor strategy space.",
+      "resource_bound": "About 60 configurations.",
+      "status": "run",
+      "result_finding_ids": [
+        "F-025",
+        "F-028",
+        "F-029",
+        "F-030"
+      ]
     }
   ],
   "question": "Do representation or learning approaches outside the airbench convnet-SGD-CE family lower time to a 75% single-view CIFAR-100 mean?",
   "schema_version": "1.0",
   "selected_hypothesis_ids": [
-    "R1",
-    "R2",
-    "R3",
-    "R4",
-    "R5"
+    "L4"
   ],
-  "synthesis": "One pass (S24) tests five distinct representation mechanisms at the converged recipe; colour-space and DCT inputs are subsumed by patch whitening; transformers, MLP-Mixers and self-distillation stay dormant unless S24 shows the related mechanism helps.",
+  "synthesis": "Coverage pass complete. Of every lineage and competitor strategy only Fable's flatten-max global pool and CUDA-graph compilation (max-autotune) survive: about 3% lower time at unchanged accuracy, now submission defaults. Muon (both ports), colour jitter, activations, whitening variants, cutout, mixup and hyperparameter changes do not transfer to single-view CIFAR-100. All five representation alternatives (progressive deepening, superclass loss, RepVGG branches, PolyLoss/squentropy, ConvMixer) were rejected; colour-space/DCT inputs are subsumed by whitening; ViT/MLP-Mixer and self-distillation stay dormant because their triggers were not met.",
   "task_id": "T-018",
   "trigger": "explicit_request"
 }

@@ -1,0 +1,40 @@
+schema_version: '2.0'
+finding_id: F-031
+task_id: T-004
+result_kind: positive
+importance: material
+observation: 'm3 (Modal, torch 2.4.0, 40 fresh seeds 1700-1739, current submission): 75.24% at 8.25 epochs
+  (A100 SXM4, 5.24 s), 75.24% at 8.5 (SXM4, 5.73 s), 75.43% at 8.75 (A100 80GB PCIe, 6.45 s); untimed
+  build 121-191 s; evaluation about 0.1 s. Its local twin s29 on the same seeds gives 75.27%, 75.31% and
+  75.46%. Paired A100 minus local: -0.03, -0.07 and -0.03 pp; pooled -0.043 pp (SE 0.035, n=120).'
+interpretation: Accuracy transfers between the dev stack and the pinned A100 stack to within 0.1 pp (R-007
+  satisfied); m1's -0.16 pp at 10 seeds was noise. The 8.25-epoch budget meets the 75.2% development criterion
+  on the target stack. SXM hosts differ by up to 9% in time, so official-equivalent timing needs a PCIe
+  host.
+decision_implication: Keep 8.25 epochs (D-007 confirmed); run the official-equivalent 40-seed check on
+  an A100 80GB PCIe host (T-015).
+requirement_ids:
+- R-007
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: cross-stack-pairs.txt
+  locator: research/evidence/T-004/cross-stack-pairs.txt
+  sha256: 8959a6121066aa47c1a27dbe9a2e9902889a6644747669ee94e669e100a27ee0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: m3-a100-qualify-table.csv
+  locator: research/evidence/T-004/m3-a100-qualify-table.csv
+  sha256: 04cda57a6e8d47d396c338db34d8b3c4109df2b0c8da17b85ccb7283305104ac
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Cross-stack agreement established; budget confirmed.

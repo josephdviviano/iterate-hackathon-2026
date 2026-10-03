@@ -27,7 +27,7 @@ uncertainty: null
 dependencies:
 - T-014
 - T-004
-status: proposed
+status: in_progress
 acceptance:
 - criterion_id: AC-01
   statement: summary.json reports complete with no evaluation timeout and a margin meeting the R-001 risk

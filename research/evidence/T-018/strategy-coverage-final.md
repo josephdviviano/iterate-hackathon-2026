@@ -1,4 +1,4 @@
-# Strategy coverage matrix (T-018, exploration portfolio X-003)
+# Strategy coverage matrix (T-018; lineage portfolio X-005, representation portfolio X-003)
 
 Every strategy known from the CIFAR-10 record lineage, the competitor (Codex, GPU 0) and novel
 alternatives, with its status on single-view CIFAR-100. "Converged" means the 8.25-epoch

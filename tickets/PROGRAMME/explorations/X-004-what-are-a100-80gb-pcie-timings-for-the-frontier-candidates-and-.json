@@ -1,0 +1,107 @@
+{
+  "connections": [],
+  "design_space": [
+    {
+      "dimension": "timing-transfer",
+      "current_assumption": "Local per-epoch time ranks configurations as the A100 does.",
+      "alternatives": [
+        "A100 power capping changes the ranking",
+        "host-to-host variance dominates small gaps"
+      ],
+      "why_material": "The score is A100 PCIe time."
+    },
+    {
+      "dimension": "accuracy-transfer",
+      "current_assumption": "torch 2.7 Blackwell accuracy equals torch 2.4 A100 accuracy.",
+      "alternatives": [
+        "kernel and numeric differences shift accuracy"
+      ],
+      "why_material": "Budget selection relies on local accuracy near the threshold."
+    }
+  ],
+  "disposition": "closed",
+  "exploration_id": "X-004",
+  "hypotheses": [
+    {
+      "hypothesis_id": "C1",
+      "proposition": "Local proxy speed-ups transfer to the A100 PCIe.",
+      "mechanism": "Both GPUs are compute-bound on the same kernels.",
+      "changed_dimensions": [
+        "timing-transfer"
+      ],
+      "prediction": "Compile-mode gains of 1-3% reproduce on A100 PCIe.",
+      "disconfirming_result": "Opposite or absent gains.",
+      "decision_changed": "Compile mode and width choice.",
+      "evidence_needed": [
+        "m1",
+        "m2"
+      ],
+      "status": "tested"
+    },
+    {
+      "hypothesis_id": "C2",
+      "proposition": "Accuracy agrees across stacks within 0.1 pp.",
+      "mechanism": "Same algorithm and fp16 numerics; kernels differ only in rounding.",
+      "changed_dimensions": [
+        "accuracy-transfer"
+      ],
+      "prediction": "Paired difference within two SE.",
+      "disconfirming_result": "Paired difference above 0.1 pp at 40+ seeds.",
+      "decision_changed": "Final budget.",
+      "evidence_needed": [
+        "m3",
+        "s29"
+      ],
+      "status": "tested"
+    }
+  ],
+  "interpretation_forks": [],
+  "material_dimensions": [
+    "timing-transfer",
+    "accuracy-transfer"
+  ],
+  "observations": [
+    {
+      "observation_id": "OBS-blocked",
+      "statement": "All frontier and climb timing came from a local Blackwell proxy until A100 access arrived via Modal.",
+      "evidence": [
+        {
+          "evidence_id": "E-001",
+          "kind": "file",
+          "label": "m1 details",
+          "locator": "research/evidence/T-004/m1-a100-details.txt",
+          "state": "verified",
+          "sha256": "f149a85da8d3680660102c8febeaf42c41afa3f8a18fdc5ac5c4c485733a02c0"
+        }
+      ]
+    }
+  ],
+  "omitted_dimensions": [],
+  "probes": [
+    {
+      "probe_id": "m1-m3",
+      "hypothesis_ids": [
+        "C1",
+        "C2"
+      ],
+      "method": "Modal A100 runs of the pinned stack: widths 512/640/768 and eager (m1), compile modes (m2), and 40-seed budgets 8.25/8.5/8.75 with a local twin on the same seeds (m3, s29).",
+      "decision_rule": "Adopt A100 timings for R-005 and accept local accuracy if pooled paired difference is within two SE of zero.",
+      "information_gain": "Settles both transfer assumptions.",
+      "resource_bound": "About 40 A100-minutes.",
+      "status": "run",
+      "result_finding_ids": [
+        "F-030",
+        "F-031"
+      ]
+    }
+  ],
+  "question": "What are A100 80GB PCIe timings for the frontier candidates, and does dev-stack accuracy transfer to the pinned A100 stack?",
+  "schema_version": "1.0",
+  "selected_hypothesis_ids": [
+    "C1",
+    "C2"
+  ],
+  "synthesis": "C1 and C2 hold: compile-mode gains reproduce on A100 PCIe (-1.4% / -2.3%) and accuracy agrees within 0.043 pp (SE 0.035) over 120 paired seeds; host-to-host timing varies 1.5-9%, so timing comparisons must be same-host.",
+  "task_id": "T-004",
+  "trigger": "programme_start"
+}
