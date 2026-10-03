@@ -1,0 +1,47 @@
+# Structural exploration round 1 (X-005): ensembles that use the untimed evaluation budget,
+# closed-form head refit, lr shapes, lookahead dynamics and class-balanced batches, each
+# against the converged recipe (lab equivalent; default compile for faster builds). 10 seeds.
+name = "s30-structure"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+epochs = 8.25
+
+[[configs]]                                   # control
+[[configs]]
+snapshot_fracs = [0.85]                       # snapshot ensemble, 2 members
+[[configs]]
+snapshot_fracs = [0.7, 0.85]                  # snapshot ensemble, 3 members
+[[configs]]
+members = 2                                   # joint ensemble at equal FLOPs
+widths = [96, 256, 448]
+[[configs]]
+exit_weight = 0.3                             # multi-exit, averaged at eval
+exit_eval_weight = 0.3
+[[configs]]
+head_refit_lambda = 0.001                     # closed-form head refit
+[[configs]]
+head_refit_lambda = 0.01
+[[configs]]
+lr_shape = "wsd"
+lr_decay_start = 0.6
+[[configs]]
+lr_shape = "cosine"
+[[configs]]
+lookahead_every = 3
+[[configs]]
+lookahead_power = 2.0
+[[configs]]
+order = "balanced"

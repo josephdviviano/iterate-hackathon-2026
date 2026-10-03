@@ -1,0 +1,24 @@
+schema_version: '1.0'
+decision_id: D-009
+task_id: T-019
+question: Which exact systems levers enter the submission after M5 and M6?
+decision: Adopt whitening-bias autograd removal after the freeze (H2); do not adopt loss-in-graph (H5),
+  coordinate-descent tuning (H4), cuDNN benchmark limit 0 (H3) or skipping pool-discarded rows (H1).
+rationale: H2 saves 2.96% (SE 0.09) on the official A100 PCIe and is exact; H5/H3/H4 gains on PCIe are
+  within noise and H3+H4 push the cold build to 409 s of 600 s; H1 is 1.2% slower.
+alternatives:
+- Adopt the full four-lever stack (-3.41% on PCIe, not significantly better than H2 alone, larger build-time
+  risk)
+- 'Adopt nothing until a PCIe-only timing run (unnecessary: H2 is exact and consistent on every host-block)'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: m6-paired-report.md
+  locator: research/evidence/T-019/m6-paired-report.md
+  sha256: 70f1cd46cb88eff8aedaa0711d669e0719dea6e27a0c66cf45715cceaf0b260f
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: settled

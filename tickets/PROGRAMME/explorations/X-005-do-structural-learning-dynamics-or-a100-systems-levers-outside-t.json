@@ -1,0 +1,791 @@
+{
+ "connections": [],
+ "design_space": [
+  {
+   "dimension": "evaluation-budget",
+   "current_assumption": "One network evaluated once.",
+   "alternatives": [
+    "snapshot ensemble",
+    "jointly trained ensemble at equal FLOPs",
+    "multi-exit head averaged at evaluation"
+   ],
+   "why_material": "Evaluation is untimed (up to 5 s) and may use multiple jointly trained components."
+  },
+  {
+   "dimension": "head",
+   "current_assumption": "Bias-free linear head, logit scale 1/6, flatten-max pool.",
+   "alternatives": [
+    "closed-form ridge refit",
+    "1x1 expansion before pooling",
+    "cosine head with sub-centres",
+    "class-mean initialisation",
+    "fixed simplex-ETF head",
+    "annealed log-sum-exp pooling at low resolution"
+   ],
+   "why_material": "The logit scale mattered (F-019): head geometry is live."
+  },
+  {
+   "dimension": "targets",
+   "current_assumption": "Uniform label smoothing 0.2.",
+   "alternatives": [
+    "online label smoothing",
+    "per-sample temporal self-distillation (PS-KD)",
+    "smoothing annealed to 0"
+   ],
+   "why_material": "Smoothing level is flat (F-022) but its shape is untested."
+  },
+  {
+   "dimension": "pooling-geometry",
+   "current_assumption": "Floor-mode 2x2 pools drop odd borders.",
+   "alternatives": [
+    "overlapping 3x3 stride-2 pools on odd maps",
+    "ceil mode in stage 3"
+   ],
+   "why_material": "Every stage discards a row and column of conv output."
+  },
+  {
+   "dimension": "schedule",
+   "current_assumption": "Triangular lr, cubic lookahead decay every 5 steps, warm-up 23%.",
+   "alternatives": [
+    "warmup-stable-decay",
+    "cosine",
+    "lookahead cadence and power",
+    "momentum reset or resolution blend at the switch"
+   ],
+   "why_material": "Gains must come from early and mid-run steps."
+  },
+  {
+   "dimension": "optimiser-numerics",
+   "current_assumption": "fp16 weights and momentum updated in place.",
+   "alternatives": [
+    "fp32 master weights",
+    "per-group weight-decay and lr multipliers",
+    "conv init gain (rotational warm start)"
+   ],
+   "why_material": "Late updates fall below fp16 resolution; wd x0.5 costs 1.15 pp."
+  },
+  {
+   "dimension": "data-order",
+   "current_assumption": "Random order, translate 2 throughout.",
+   "alternatives": [
+    "class-balanced batches",
+    "clean (untranslated) tail epochs"
+   ],
+   "why_material": "Train/test distribution mismatch matters in this network (F-009)."
+  },
+  {
+   "dimension": "execution",
+   "current_assumption": "max-autotune CUDA graphs, cross-entropy outside the graph.",
+   "alternatives": [
+    "skip pool-discarded conv rows (exact)",
+    "whitening-bias autograd off after freeze",
+    "cuDNN benchmark limit 0",
+    "coordinate-descent tuning",
+    "loss inside the compiled graph",
+    "12->16 channel padding",
+    "fused per-epoch data kernel",
+    "whole-step manual CUDA graph"
+   ],
+   "why_material": "Every exact time saving converts directly into score."
+  }
+ ],
+ "disposition": "test_ready",
+ "exploration_id": "X-005",
+ "hypotheses": [
+  {
+   "hypothesis_id": "N1",
+   "proposition": "A snapshot ensemble raises single-view accuracy at no timed cost.",
+   "mechanism": "Averaging earlier weights from the same run in the untimed evaluation.",
+   "changed_dimensions": [
+    "evaluation-budget"
+   ],
+   "prediction": "+0.2 pp or more.",
+   "disconfirming_result": "Ensemble below control.",
+   "decision_changed": "Whether train returns an ensemble.",
+   "evidence_needed": [
+    "S30"
+   ],
+   "status": "rejected"
+  },
+  {
+   "hypothesis_id": "N2",
+   "proposition": "A jointly trained ensemble at equal FLOPs beats one wide net.",
+   "mechanism": "Two narrower nets trained on the same batches; ensembles are more accurate per FLOP at convergence.",
+   "changed_dimensions": [
+    "evaluation-budget"
+   ],
+   "prediction": "Gain worth its time.",
+   "disconfirming_result": "Gain below the 1 pp per 12% exchange rate.",
+   "decision_changed": "Whether the submission trains members.",
+   "evidence_needed": [
+    "S30"
+   ],
+   "status": "rejected"
+  },
+  {
+   "hypothesis_id": "N3",
+   "proposition": "A stage-2 exit head improves accuracy.",
+   "mechanism": "Deep supervision plus evaluation-time averaging.",
+   "changed_dimensions": [
+    "evaluation-budget",
+    "head"
+   ],
+   "prediction": "+0.1 pp.",
+   "disconfirming_result": "Below control.",
+   "decision_changed": "Whether to keep an aux head.",
+   "evidence_needed": [
+    "S30"
+   ],
+   "status": "rejected"
+  },
+  {
+   "hypothesis_id": "N4",
+   "proposition": "A closed-form ridge refit of the head improves accuracy.",
+   "mechanism": "Optimal linear head on final features in one solve.",
+   "changed_dimensions": [
+    "head"
+   ],
+   "prediction": "+0.1 pp.",
+   "disconfirming_result": "Below control.",
+   "decision_changed": "Whether train ends with a refit.",
+   "evidence_needed": [
+    "S30"
+   ],
+   "status": "rejected"
+  },
+  {
+   "hypothesis_id": "N5",
+   "proposition": "A warmup-stable-decay schedule beats the triangle.",
+   "mechanism": "Holding peak lr longer, through the 32 px switch.",
+   "changed_dimensions": [
+    "schedule"
+   ],
+   "prediction": "+0.1 pp at equal time.",
+   "disconfirming_result": "Not confirmed on fresh seeds.",
+   "decision_changed": "lr schedule shape.",
+   "evidence_needed": [
+    "S30",
+    "S33"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "N6",
+   "proposition": "Lookahead cadence or power changes help.",
+   "mechanism": "Different averaging horizon.",
+   "changed_dimensions": [
+    "schedule"
+   ],
+   "prediction": "+0.1 pp.",
+   "disconfirming_result": "Below control.",
+   "decision_changed": "Lookahead settings.",
+   "evidence_needed": [
+    "S30"
+   ],
+   "status": "rejected"
+  },
+  {
+   "hypothesis_id": "N7",
+   "proposition": "Class-balanced batches help.",
+   "mechanism": "Lower-variance gradients across 100 classes.",
+   "changed_dimensions": [
+    "data-order"
+   ],
+   "prediction": "+0.1 pp.",
+   "disconfirming_result": "Not confirmed on fresh seeds.",
+   "decision_changed": "Batch order.",
+   "evidence_needed": [
+    "S30",
+    "S33"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "R1",
+   "proposition": "Online label smoothing beats uniform smoothing.",
+   "mechanism": "Smoothing mass follows the model's own class confusions (teacher-free dark knowledge).",
+   "changed_dimensions": [
+    "targets"
+   ],
+   "prediction": "+0.15 to 0.4 pp.",
+   "disconfirming_result": "Gain below 0.1 pp.",
+   "decision_changed": "Target distribution.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "R2",
+   "proposition": "A wide 1x1 expansion before global max-pool adds cheap capacity.",
+   "mechanism": "More position-wise detectors at the cheapest resolution.",
+   "changed_dimensions": [
+    "head"
+   ],
+   "prediction": "+0.2 to 0.5 pp at about +3% time.",
+   "disconfirming_result": "Gain below 0.25 pp.",
+   "decision_changed": "Head architecture.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "R3",
+   "proposition": "Border-preserving pooling improves accuracy.",
+   "mechanism": "Overlapping pools cover every position; ceil mode adds stage-3 positions.",
+   "changed_dimensions": [
+    "pooling-geometry"
+   ],
+   "prediction": "Overlap +0.05 to 0.2 pp at 0% time; ceil needs +0.4 pp.",
+   "disconfirming_result": "No gain or 1% slower.",
+   "decision_changed": "Pooling.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "R4",
+   "proposition": "Per-sample temporal soft targets (PS-KD) help.",
+   "mechanism": "Each image's previous softmax as an instance-specific target, ramped after the switch.",
+   "changed_dimensions": [
+    "targets"
+   ],
+   "prediction": "+0.1 to 0.3 pp.",
+   "disconfirming_result": "No gain.",
+   "decision_changed": "Targets.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "R5",
+   "proposition": "A cosine head with sub-centres helps.",
+   "mechanism": "Removes the feature-norm shortcut and class-norm imbalance.",
+   "changed_dimensions": [
+    "head"
+   ],
+   "prediction": "-0.2 to +0.3 pp.",
+   "disconfirming_result": "Every cell below control.",
+   "decision_changed": "Head geometry.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "R6",
+   "proposition": "Class-mean head initialisation helps.",
+   "mechanism": "Head starts aligned with dirac-trunk features, saving early steps.",
+   "changed_dimensions": [
+    "head"
+   ],
+   "prediction": "+0.05 to 0.15 pp.",
+   "disconfirming_result": "Below 0.05 pp.",
+   "decision_changed": "Head init.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "R7",
+   "proposition": "Annealing label smoothing to 0 helps.",
+   "mechanism": "Smoothing stabilises early; late commitment raises margins.",
+   "changed_dimensions": [
+    "targets"
+   ],
+   "prediction": "-0.1 to +0.2 pp.",
+   "disconfirming_result": "No gain.",
+   "decision_changed": "Smoothing schedule.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "R8",
+   "proposition": "Evaluation-time fp32 or resized single-view input helps.",
+   "mechanism": "Removes fp16 ties; resolution convention.",
+   "changed_dimensions": [
+    "head"
+   ],
+   "prediction": "About 0 pp.",
+   "disconfirming_result": "No gain.",
+   "decision_changed": "Evaluation path.",
+   "evidence_needed": [
+    "organiser confirmation"
+   ],
+   "status": "dormant"
+  },
+  {
+   "hypothesis_id": "O1",
+   "proposition": "fp32 master weights recover late-run updates lost to fp16 rounding.",
+   "mechanism": "Late per-element updates fall below fp16 resolution and round to no update.",
+   "changed_dimensions": [
+    "optimiser-numerics"
+   ],
+   "prediction": "+0.05 to 0.2 pp at under 0.5% time.",
+   "disconfirming_result": "Gain below 0.04 pp.",
+   "decision_changed": "Optimiser numerics.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "O2",
+   "proposition": "An untranslated clean tail helps.",
+   "mechanism": "Closes the train/test distribution gap in the final low-lr steps.",
+   "changed_dimensions": [
+    "data-order"
+   ],
+   "prediction": "+0.05 to 0.2 pp.",
+   "disconfirming_result": "Both arms at or below control.",
+   "decision_changed": "Augmentation schedule.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "O4",
+   "proposition": "The weight-decay sensitivity sits in one parameter group.",
+   "mechanism": "Convs are scale-invariant (wd sets effective lr); the head is not (wd sets logit norm).",
+   "changed_dimensions": [
+    "optimiser-numerics"
+   ],
+   "prediction": "One arm gains 0.1 pp or more (about 30%).",
+   "disconfirming_result": "All arms within 0.08 pp.",
+   "decision_changed": "Per-group lr and wd.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "O5",
+   "proposition": "A conv init gain below 1 speeds the approach to rotational equilibrium.",
+   "mechanism": "Effective lr of scale-invariant weights is lr/|w|^2; smaller init raises the early angular update rate.",
+   "changed_dimensions": [
+    "optimiser-numerics"
+   ],
+   "prediction": "0 to +0.15 pp, rising as gain falls.",
+   "disconfirming_result": "No monotone gain.",
+   "decision_changed": "Initialisation scale.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "O6",
+   "proposition": "Softening the 20->32 px switch saves recovery steps.",
+   "mechanism": "Partial momentum reset or stochastic resolution blend around the switch.",
+   "changed_dimensions": [
+    "schedule"
+   ],
+   "prediction": "+0.05 to 0.1 pp.",
+   "disconfirming_result": "No gain.",
+   "decision_changed": "Switch handling.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "O7",
+   "proposition": "A fixed simplex-ETF head matches or beats a learned head.",
+   "mechanism": "Features chase fixed maximally separated targets from step 1 (neural collapse).",
+   "changed_dimensions": [
+    "head"
+   ],
+   "prediction": "-0.2 to +0.2 pp.",
+   "disconfirming_result": "Best arm below control.",
+   "decision_changed": "Head parametrisation.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "O8",
+   "proposition": "Annealed log-sum-exp pooling in the 20 px phase helps.",
+   "mechanism": "Dense gradients to all terminal positions early, exact max at 32 px and evaluation.",
+   "changed_dimensions": [
+    "head",
+    "pooling-geometry"
+   ],
+   "prediction": "0 to +0.1 pp.",
+   "disconfirming_result": "At or below control.",
+   "decision_changed": "Low-res pooling.",
+   "evidence_needed": [
+    "S31"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "H1",
+   "proposition": "Skipping pool-discarded conv outputs saves time exactly.",
+   "mechanism": "Odd maps lose their last conv row/column to floor pooling; top-left padding with an unpadded conv never computes them.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "4-5% less time, identical outputs.",
+   "disconfirming_result": "No paired time saving.",
+   "decision_changed": "Conv padding.",
+   "evidence_needed": [
+    "S32",
+    "M5"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "H2",
+   "proposition": "Removing the frozen whitening bias from autograd saves time exactly.",
+   "mechanism": "Drops the 12-channel input-gradient GEMM and GELU backward after freeze.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "1.5-3% less time.",
+   "disconfirming_result": "No paired saving.",
+   "decision_changed": "Autograd scope.",
+   "evidence_needed": [
+    "S32",
+    "M5"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "H3",
+   "proposition": "Unlimited cuDNN benchmarking finds faster algorithms.",
+   "mechanism": "Default benchmarking times only 10 candidates.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "0-3%.",
+   "disconfirming_result": "No paired saving.",
+   "decision_changed": "cuDNN settings.",
+   "evidence_needed": [
+    "M5"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "H4",
+   "proposition": "Coordinate-descent tuning speeds reduction kernels.",
+   "mechanism": "Inductor tunes BN/pool block sizes not covered by max-autotune.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "0.5-2%.",
+   "disconfirming_result": "No paired saving.",
+   "decision_changed": "Inductor settings.",
+   "evidence_needed": [
+    "M5"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "H5",
+   "proposition": "Loss inside the compiled graph saves time.",
+   "mechanism": "Fuses 12-16 eager cross-entropy kernels into the CUDA graph.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "About 1%.",
+   "disconfirming_result": "No paired saving.",
+   "decision_changed": "Compile scope.",
+   "evidence_needed": [
+    "M5"
+   ],
+   "status": "selected"
+  },
+  {
+   "hypothesis_id": "H6",
+   "proposition": "Padding the whitening output to 16 channels speeds group-1 conv.",
+   "mechanism": "Tensor-core alignment.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "0-2%.",
+   "disconfirming_result": "Microbenchmark shows no gain.",
+   "decision_changed": "Channel padding.",
+   "evidence_needed": [
+    "after M5"
+   ],
+   "status": "candidate"
+  },
+  {
+   "hypothesis_id": "H7",
+   "proposition": "A fused per-epoch data kernel saves time.",
+   "mechanism": "One gather instead of per-epoch crops, flips and per-step gathers.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "0.3-0.6%.",
+   "disconfirming_result": "No paired saving.",
+   "decision_changed": "Data pipeline.",
+   "evidence_needed": [
+    "after M5"
+   ],
+   "status": "candidate"
+  },
+  {
+   "hypothesis_id": "H8",
+   "proposition": "A whole-step manual CUDA graph saves time.",
+   "mechanism": "Removes eager optimiser kernels and gaps.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "1-2%.",
+   "disconfirming_result": "No paired saving.",
+   "decision_changed": "Execution design.",
+   "evidence_needed": [
+    "after M5"
+   ],
+   "status": "dormant"
+  },
+  {
+   "hypothesis_id": "H9",
+   "proposition": "Autotuning at throttled clocks picks faster kernels.",
+   "mechanism": "Build-time autotune runs at boost clock.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "0-2%.",
+   "disconfirming_result": "No gain.",
+   "decision_changed": "Build warm-up.",
+   "evidence_needed": [
+    "organiser confirmation"
+   ],
+   "status": "dormant"
+  },
+  {
+   "hypothesis_id": "H11",
+   "proposition": "A fused Triton pool+BN+GELU kernel saves time.",
+   "mechanism": "One pass instead of re-reading pooled activations.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "1.5% or less.",
+   "disconfirming_result": "Generated code already fuses.",
+   "decision_changed": "Custom kernels.",
+   "evidence_needed": [
+    "profile"
+   ],
+   "status": "dormant"
+  },
+  {
+   "hypothesis_id": "H12",
+   "proposition": "fp16 BatchNorm or bf16 speeds training.",
+   "mechanism": "Lower precision normalisation.",
+   "changed_dimensions": [
+    "execution"
+   ],
+   "prediction": "Expected to fail: eps 1e-12 underflows in fp16; bf16 has no tensor-core advantage.",
+   "disconfirming_result": "n/a",
+   "decision_changed": "None.",
+   "evidence_needed": [
+    "analysis"
+   ],
+   "status": "rejected"
+  }
+ ],
+ "interpretation_forks": [],
+ "material_dimensions": [
+  "evaluation-budget",
+  "head",
+  "targets",
+  "pooling-geometry",
+  "schedule",
+  "optimiser-numerics",
+  "data-order",
+  "execution"
+ ],
+ "observations": [
+  {
+   "observation_id": "OBS-saturated",
+   "statement": "After T-013 and the T-018 coverage pass every lineage, competitor and representation strategy has a disposition; only flatten-max pooling and max-autotune CUDA graphs survived. The recipe sits at 75.27% over 40 seeds at 6.03 s on A100 PCIe with no remaining hyperparameter lever beyond seed noise.",
+   "evidence": [
+    {
+     "evidence_id": "E-001",
+     "kind": "file",
+     "label": "strategy coverage matrix at T-019 start",
+     "locator": "research/evidence/T-019/strategy-coverage-start.md",
+     "state": "verified",
+     "sha256": "1fd74a858a8a6bc1d5e207fb451d238d0b63ee0abd20984f0712c4b563986e14"
+    }
+   ]
+  },
+  {
+   "observation_id": "OBS-s30",
+   "statement": "S30: ensembles within the untimed evaluation budget, multi-exit and head refit all lose 0.7-1.2 pp; WSD (+0.24 pp) and balanced order (+0.15 pp) are candidates.",
+   "evidence": [
+    {
+     "evidence_id": "E-002",
+     "kind": "file",
+     "label": "S30 table",
+     "locator": "research/evidence/T-019/s30-structure-table.csv",
+     "state": "verified",
+     "sha256": "05cff873de5c5d60a1889bc047b914af784c7cf19c98927a64ff8af7b4703803"
+    }
+   ]
+  },
+  {
+   "observation_id": "OBS-ideation-r1",
+   "statement": "Three read-only ideation agents (representation, optimisation dynamics, A100 systems) proposed 29 hypotheses with mechanisms, probes and kill rules.",
+   "evidence": [
+    {
+     "evidence_id": "E-003",
+     "kind": "file",
+     "label": "ideation round 1: representation",
+     "locator": "research/evidence/T-019/ideation-r1-representation.md",
+     "state": "verified",
+     "sha256": "c367e34c5157ec6f04945cb9de286ae7cc9fdabddd05b31f7b936748bdbe03b5"
+    },
+    {
+     "evidence_id": "E-004",
+     "kind": "file",
+     "label": "ideation round 1: optimisation dynamics",
+     "locator": "research/evidence/T-019/ideation-r1-optimisation.md",
+     "state": "verified",
+     "sha256": "0631ba2c56cc279e6304f7ae5e9cd7f1180943dc832faf8113911f2fd86aee47"
+    },
+    {
+     "evidence_id": "E-005",
+     "kind": "file",
+     "label": "ideation round 1: A100 systems",
+     "locator": "research/evidence/T-019/ideation-r1-systems.md",
+     "state": "verified",
+     "sha256": "98beb9c6ffbf482d73d8f49410c8636d19e42692924bf64f1f7ed432d7d3cec9"
+    }
+   ]
+  }
+ ],
+ "omitted_dimensions": [
+  {
+   "dimension": "evaluation-transform",
+   "rationale": "Single-view evaluation at a different input resolution is close to test-time augmentation; not pursued without organiser confirmation."
+  }
+ ],
+ "probes": [
+  {
+   "probe_id": "S30",
+   "hypothesis_ids": [
+    "N1",
+    "N2",
+    "N3",
+    "N4",
+    "N5",
+    "N6",
+    "N7"
+   ],
+   "method": "12 configurations at the converged recipe, 10 seeds 2000-2009, in-sweep control.",
+   "information_gain": "Covers the evaluation-budget, refit, schedule-shape, lookahead and order dimensions in one pass.",
+   "decision_rule": "Promote arms beyond two combined SE to fresh-seed confirmation; reject the rest.",
+   "resource_bound": "120 trials on GPU 1.",
+   "status": "run",
+   "result_finding_ids": [
+    "F-033"
+   ]
+  },
+  {
+   "probe_id": "S33",
+   "hypothesis_ids": [
+    "N5",
+    "N7"
+   ],
+   "method": "20 fresh seeds 3300-3319: WSD decay start 0.5/0.6/0.7, balanced order, WSD 0.6 plus balanced, control.",
+   "information_gain": "Separates real gains from best-of-11 selection.",
+   "decision_rule": "Adopt if the fresh-seed gain exceeds two combined SE (about 0.16 pp).",
+   "resource_bound": "120 trials on GPU 1.",
+   "status": "ready",
+   "result_finding_ids": []
+  },
+  {
+   "probe_id": "S31",
+   "hypothesis_ids": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "O1",
+    "O2",
+    "O4",
+    "O5",
+    "O6",
+    "O7",
+    "O8"
+   ],
+   "method": "28 configurations, 20 shared seeds 3000-3019, in-sweep control (batch B and C levers).",
+   "information_gain": "Screens every zero- or low-cost accuracy lever of ideation round 1 at the detection limit (SE of a paired difference about 0.08 pp).",
+   "decision_rule": "Promote arms at +0.10 pp or more to fresh-seed confirmation; time-costing arms must beat the exchange rate.",
+   "resource_bound": "560 trials on GPU 1.",
+   "status": "ready",
+   "result_finding_ids": []
+  },
+  {
+   "probe_id": "S32",
+   "hypothesis_ids": [
+    "H1",
+    "H2"
+   ],
+   "method": "GPU smoke of all exact systems levers under max-autotune, 2 seeds.",
+   "information_gain": "Catches compile or CUDA-graph failures before paid A100 time.",
+   "decision_rule": "Proceed to M5 only if the combined arm builds, trains and matches control accuracy.",
+   "resource_bound": "2 trials.",
+   "status": "ready",
+   "result_finding_ids": []
+  },
+  {
+   "probe_id": "M5",
+   "hypothesis_ids": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5"
+   ],
+   "method": "Modal A100 same-host interleave: 7 arms x 2 hosts x 2 alternating-order blocks x 5 seeds; paired differences against control within host-block.",
+   "information_gain": "Measures exact savings free of the 1.5-9% host-to-host variance.",
+   "decision_rule": "Adopt a lever if its paired saving is consistent across host-blocks and exceeds two SE; exact levers need no accuracy rerun beyond a 40-seed final check.",
+   "resource_bound": "About 2 GPU-hours on Modal.",
+   "status": "proposed",
+   "result_finding_ids": []
+  }
+ ],
+ "question": "Do structural, learning-dynamics or A100 systems levers outside the climbed parameter space lower A100 PCIe time to a 75.2% single-view mean beyond seed and host noise?",
+ "schema_version": "1.0",
+ "selected_hypothesis_ids": [
+  "N5",
+  "N7",
+  "R1",
+  "R2",
+  "R3",
+  "R4",
+  "R5",
+  "R6",
+  "R7",
+  "O1",
+  "O2",
+  "O4",
+  "O5",
+  "O6",
+  "O7",
+  "O8",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5"
+ ],
+ "synthesis": "Round 1 (test-ready): S30 rejected the evaluation-budget ensembles, multi-exit and head refit and left WSD and balanced order as candidates (S33 confirms). S31 screens 14 representation and optimisation-dynamics hypotheses at 20 seeds; S32 then M5 measure the exact systems levers H1-H5 by same-host paired timing on A100. A second ideation round runs when these probes converge.",
+ "task_id": "T-019",
+ "trigger": "plateau"
+}

@@ -1,0 +1,52 @@
+NVIDIA A100-SXM4-80GB, 400.00 W, 1410 MHz, 81920 MiB, 580.95.05
+total self CUDA time 10807.9 ms over 199 kernels
+  conv/gemm       5308.5 ms   49.1%
+  triton          2417.7 ms   22.4%
+  conv-wgrad      1346.8 ms   12.5%
+  conv-dgrad      1201.8 ms   11.1%
+  copy             287.8 ms    2.7%
+  other            164.8 ms    1.5%
+  sgd               76.7 ms    0.7%
+  pool               3.8 ms    0.0%
+
+top 40 kernels by self CUDA time
+  2595.8 ms  24.0% calls   3564  aten::convolution_backward
+  1319.1 ms  12.2% calls  40986  triton_
+  1238.7 ms  11.5% calls   3960  aten::cudnn_convolution
+  1019.3 ms   9.4% calls   2574  void cutlass__5x_cudnn::Kernel<cutlass_tensorop_f16_s16816fprop_optimized_f16_128x128_32x3_nhwc_align8>(cutlas
+   959.9 ms   8.9% calls   2772  void cutlass__5x_cudnn::Kernel<cutlass_tensorop_f16_s16816dgrad_optimized_f16_128x128_32x4_nhwc_unity_stride_a
+   849.7 ms   7.9% calls   1980  sm80_xmma_wgrad_implicit_gemm_indexed_f16f16_f16f32_f32_nhwckrsc_nhwc_tilesize128x128x32_stage4_warpsize2x2x1_
+   333.0 ms   3.1% calls    792  _ZN17cutlass__5x_cudnn6KernelINS_4conv6kernel23ImplicitGemmConvolutionINS1_11threadblock22ImplicitGemmMultista
+   163.8 ms   1.5% calls    792  void cutlass__5x_cudnn::Kernel<cutlass_tensorop_f16_s16816fprop_optimized_f16_64x128_64x3_nhwc_align8>(cutlass
+   136.0 ms   1.3% calls    198  sm80_xmma_dgrad_implicit_gemm_f16f16_f16f32_f32_nhwckrsc_nhwc_tilesize256x32x32_stage4_warpsize4x1x1_g1_tensor
+    93.8 ms   0.9% calls    792  triton_poi_fused__native_batch_norm_legit_functional_convolution_backward_gelu_gelu_backward_native_batch_norm
+    84.5 ms   0.8% calls    792  triton_red_fused__native_batch_norm_legit_functional_gelu_gelu_backward_native_batch_norm_backward_23
+    82.4 ms   0.8% calls   1188  triton_poi_fused__native_batch_norm_legit_functional_gelu_22
+    78.0 ms   0.7% calls    396  triton_poi_fused_max_pool2d_with_indices_max_pool2d_with_indices_backward_native_batch_norm_backward_28
+    63.1 ms   0.6% calls    396  sm80_xmma_wgrad_implicit_gemm_indexed_f16f16_f16f32_f32_nhwckrsc_nhwc_tilesize64x128x32_stage5_warpsize2x2x1_g
+    63.0 ms   0.6% calls    792  triton_red_fused__native_batch_norm_legit_functional_gelu_gelu_backward_native_batch_norm_backward_16
+    62.3 ms   0.6% calls    198  sm80_xmma_wgrad_implicit_gemm_indexed_f16f16_f16f32_f32_nhwckrsc_nhwc_tilesize128x128x64_stage3_warpsize2x2x2_
+    59.9 ms   0.6% calls    792  triton_poi_fused__native_batch_norm_legit_functional_convolution_backward_gelu_gelu_backward_native_batch_norm
+    56.4 ms   0.5% calls    396  triton_poi_fused__native_batch_norm_legit_functional_add_gelu_gelu_backward_native_batch_norm_backward_27
+    54.5 ms   0.5% calls    198  sm80_xmma_dgrad_implicit_gemm_f16f16_f16f32_f32_nhwckrsc_nhwc_tilesize256x64x32_stage3_warpsize4x1x1_g1_tensor
+    53.9 ms   0.5% calls    396  triton_poi_fused_max_pool2d_with_indices_max_pool2d_with_indices_backward_native_batch_norm_backward_21
+    52.5 ms   0.5% calls    396  triton_poi_fused_max_pool2d_with_indices_2
+    52.2 ms   0.5% calls   1188  triton_poi_fused__native_batch_norm_legit_functional_gelu_15
+    51.5 ms   0.5% calls    396  void cutlass__5x_cudnn::Kernel<cutlass_tensorop_f16_s16816dgrad_optimized_f16_64x128_64x3_nhwc_align8>(cutlass
+    50.1 ms   0.5% calls    396  triton_red_fused__native_batch_norm_legit_functional_add_gelu_gelu_backward_native_batch_norm_backward_26
+    47.4 ms   0.4% calls    792  triton_poi_fused__native_batch_norm_legit_functional_gelu_6
+    43.2 ms   0.4% calls   7697  aten::copy_
+    41.0 ms   0.4% calls    882  aten::index
+    39.2 ms   0.4% calls    396  Optimizer.step#SGD.step
+    38.4 ms   0.4% calls   1188  aten::_fused_sgd_
+    37.9 ms   0.4% calls    198  void cutlass__5x_cudnn::Kernel<cutlass_tensorop_f16_s16816fprop_optimized_f16_256x64_32x4_nhwc_align8>(cutlass
+    37.6 ms   0.3% calls    486  void at::native::index_elementwise_kernel<128, 4, at::native::gpu_index_kernel<at::native::index_kernel_impl<a
+    36.4 ms   0.3% calls    792  void at::native::(anonymous namespace)::multi_tensor_apply_kernel<at::native::(anonymous namespace)::TensorLis
+    35.6 ms   0.3% calls    396  triton_poi_fused__native_batch_norm_legit_functional_add_gelu_gelu_backward_native_batch_norm_backward_20
+    34.8 ms   0.3% calls    198  _ZN17cutlass__5x_cudnn6KernelINS_4conv6kernel23ImplicitGemmConvolutionINS1_11threadblock22ImplicitGemmMultista
+    34.8 ms   0.3% calls   1188  triton_red_fused__native_batch_norm_legit_functional_3
+    34.4 ms   0.3% calls    396  triton_red_fused__native_batch_norm_legit_functional_add_gelu_gelu_backward_native_batch_norm_backward_19
+    34.1 ms   0.3% calls    396  triton_poi_fused_max_pool2d_with_indices_8
+    32.9 ms   0.3% calls   5413  Memset (Device)
+    28.3 ms   0.3% calls    396  triton_poi_fused__native_batch_norm_legit_functional_add_gelu_7
+    27.8 ms   0.3% calls   1188  triton_red_fused__native_batch_norm_legit_functional_9

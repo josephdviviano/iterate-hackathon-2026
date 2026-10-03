@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-035
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'M6 (Modal, 4 hosts: two A100 80GB PCIe 300 W, two A100-SXM4 400/500 W; 2 alternating-order
+  blocks per host, 5 seeds per arm-block, max-autotune): on the PCIe hosts the control takes 6.120 s;
+  whitening-bias autograd off after freeze -2.96% (SE 0.09, all 4 PCIe blocks -2.7 to -3.1%), plus loss
+  in graph -3.14% (0.35), plus coordinate descent and cuDNN benchmark limit 0 -3.41% (0.38); on SXM -3.19%,
+  -3.78%, -4.47%. Accuracies 75.20-75.30% (control 75.26%). Cold builds: control 120-244 s, full stack
+  259-409 s (limit 600 s).'
+interpretation: H2 is a robust exact saving of about 3% on the official card. H5, H3 and H4 help on the
+  400-500 W SXM hosts but add only about 0.2-0.5% on the power-capped PCIe card, within noise (PCIe blocks
+  split 2-2 for H5), and H3+H4 raise the cold build to as much as 68% of the 600 s limit.
+decision_implication: Adopt H2 into the submission (exact, CPU bit-identity with the lab holds); keep
+  H5, H3 and H4 out (no significant PCIe gain; build-time risk). Re-qualify the updated submission on
+  A100 PCIe before submitting.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: the 300 W cap makes PCIe throughput power-bound, so launch-overhead and tiling gains shrink
+    while removing a whole dgrad GEMM still saves energy and time
+  discriminating_test: PCIe vs SXM per-block deltas
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: m6-paired-report.md
+  locator: research/evidence/T-019/m6-paired-report.md
+  sha256: 70f1cd46cb88eff8aedaa0711d669e0719dea6e27a0c66cf45715cceaf0b260f
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: H2 adopted in submissions/team_segal; H1, H3, H4, H5 not adopted.

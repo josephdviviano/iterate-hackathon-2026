@@ -1,0 +1,40 @@
+# Modal A100 same-host paired timing of the exact systems levers (agent round 1, H1-H5).
+# Each host runs every arm in two alternating-order blocks (ABC..., ...CBA); compare arms
+# against the control within each host-block:
+#   .venv-modal/bin/modal run research/modal_a100.py::interleave --sweep research/sweeps/m5-systems-paired.toml
+#   .venv-blackwell/bin/python research/paired_timing.py research/sweeps/m5-systems-paired.toml
+name = "m5-systems-paired"
+submission = "research/lab_recipe"
+seeds = [3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109,
+         3110, 3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119]
+devices = []
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+compile_mode = "max-autotune"
+fused_sgd = true
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+skip_discarded = true                         # H1
+[[configs]]
+whiten_grad_off = true                        # H2
+[[configs]]
+compile_loss = true                           # H5
+[[configs]]
+coordinate_descent = true                     # H4
+[[configs]]
+cudnn_benchmark_limit = 0                     # H3
+[[configs]]                                   # all exact levers
+skip_discarded = true
+whiten_grad_off = true
+compile_loss = true
+coordinate_descent = true
+cudnn_benchmark_limit = 0

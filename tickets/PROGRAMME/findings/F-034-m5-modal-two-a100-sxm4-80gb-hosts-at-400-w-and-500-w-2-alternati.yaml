@@ -1,0 +1,43 @@
+schema_version: '2.0'
+finding_id: F-034
+task_id: T-019
+result_kind: mixed
+importance: material
+observation: 'M5 (Modal, two A100-SXM4-80GB hosts at 400 W and 500 W, 2 alternating-order blocks each,
+  5 seeds per arm-block, max-autotune): paired time change vs control within host-block: whitening-bias
+  autograd off after freeze -3.02% (SE 0.25), loss inside the compiled graph -1.10% (0.29), cuDNN benchmark
+  limit 0 -0.85% (0.27), coordinate-descent tuning -0.81% (0.19), skipping pool-discarded conv rows +1.19%
+  (0.12), all five -3.37% (0.11); every arm consistent in sign across the 4 host-blocks; accuracies 75.12-75.24%
+  (control 75.16%).'
+interpretation: 'H2-H5 are real exact savings on A100 SXM. H1 removes 8.8% of conv FLOPs at 32 px yet
+  is slower: the explicit pad adds a copy and the unpadded odd shapes take slower cuDNN kernels, so FLOP
+  counts do not predict conv time here. The all-lever arm carries the H1 penalty, so H2-H5 together should
+  be near -4.5%; additivity and the PCIe magnitude are untested.'
+decision_implication: Reject H1. Time the H2+H5+H4+H3 stack against control on 4 hosts (M6), reporting
+  PCIe hosts separately, then adopt the stack into the submission if consistent.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: SXM hosts have higher power limits than the official 300 W PCIe card; savings may differ
+    there
+  discriminating_test: M6 PCIe hosts
+- kind: implementation
+  disposition: supported
+  rationale: H1 pads explicitly (extra copy) and runs cuDNN on odd unpadded shapes; per-host-block results
+    all slower
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: m5-paired-report.md
+  locator: research/evidence/T-019/m5-paired-report.md
+  sha256: e6a131025e89e314a10fc2ef29829a523e3687629564c83450cd5a5c39222d90
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

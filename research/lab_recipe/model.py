@@ -6,6 +6,8 @@ per-trial statistics held in buffers, and returns float32 logits.
 
 from __future__ import annotations
 
+import math
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -24,11 +26,17 @@ def activate(x: torch.Tensor, name: str) -> torch.Tensor:
     return F.celu(x, alpha=0.075)  # Page's ResNet-9 CELU
 
 
-def max_pool2(x: torch.Tensor, impl: str) -> torch.Tensor:
+def max_pool2(
+    x: torch.Tensor, impl: str, overlap: bool = False, ceil: bool = False
+) -> torch.Tensor:
     """2x2 max-pool (floor mode). ``amax`` reshapes and reduces instead of saving indices, so
-    its backward is a fusable elementwise mask rather than an atomic scatter."""
+    its backward is a fusable elementwise mask rather than an atomic scatter. ``overlap`` uses a
+    3x3 stride-2 window on odd maps (same output size, no border dropped); ``ceil`` keeps the
+    last row and column (ceil mode)."""
     if impl == "torch":
-        return F.max_pool2d(x, 2)
+        if overlap and x.size(-1) % 2:
+            return F.max_pool2d(x, 3, stride=2)
+        return F.max_pool2d(x, 2, ceil_mode=ceil)
     b, c, h, w = x.shape
     x = x[:, :, : h - h % 2, : w - w % 2]
     return x.view(b, c, h // 2, 2, w // 2, 2).amax(dim=(3, 5))
@@ -102,8 +110,16 @@ class ConvGroup(nn.Module):
         pool_impl: str = "torch",
         activation: str = "gelu",
         rep: bool = False,
+        pool_overlap: bool = False,
+        pool_ceil: bool = False,
+        skip_discarded: bool = False,
     ) -> None:
         super().__init__()
+        # Floor-mode 2x2 pooling of an odd map drops the conv's last row and column; pad the
+        # top-left only and convolve unpadded so those outputs are never computed (exact).
+        self.skip_discarded = skip_discarded and not (pool_overlap or pool_ceil or rep)
+        self.pool_overlap = pool_overlap
+        self.pool_ceil = pool_ceil
         # Progressive deepening: the residual branch is skipped until activated, then blended
         # in by ``residual_gate`` (a non-persistent 0-dim buffer, so changing it never
         # recompiles and lookahead never averages it).
@@ -128,7 +144,12 @@ class ConvGroup(nn.Module):
         if self.pool_first:
             x = activate(self.norm1(self.conv1(max_pool2(x, self.pool_impl))), self.activation)
         else:
-            x = activate(self.norm1(max_pool2(self.conv1(x), self.pool_impl)), self.activation)
+            if self.skip_discarded and x.size(-1) % 2:
+                conv = F.conv2d(F.pad(x, (1, 0, 1, 0)), self.conv1.weight)
+            else:
+                conv = self.conv1(x)
+            pooled = max_pool2(conv, self.pool_impl, self.pool_overlap, self.pool_ceil)
+            x = activate(self.norm1(pooled), self.activation)
         y = activate(self.norm2(self.conv2(x)), self.activation)
         if self.residual is None or not self.residual_active:
             return y
@@ -168,11 +189,42 @@ class AirbenchNet(nn.Module):
                     config.pool_impl,
                     config.activation,
                     config.rep_branch,
+                    config.pool_overlap,
+                    config.stage3_ceil and i == 2,
+                    config.skip_discarded,
                 )
                 for i in range(3)
             )
         )
-        self.head = nn.Linear(w3, NUM_CLASSES, bias=False)
+        head_in = w3
+        # Wide 1x1 expansion on the final map before global pooling (EfficientNet-style head).
+        self.expand = None
+        if config.head_expand:
+            head_in = config.head_expand
+            self.expand = nn.Sequential(
+                nn.Conv2d(w3, head_in, 1, bias=False), BatchNorm(head_in, config.bn_momentum)
+            )
+        # Cosine head: logits = s * max over sub-centres of cos(feature, prototype).
+        self.cosine_scale = config.cosine_head_scale
+        self.subcenters = config.cosine_subcenters
+        rows = NUM_CLASSES * (self.subcenters if self.cosine_scale else 1)
+        # Fixed simplex-ETF classifier (frozen constant weights) with a learnable class bias.
+        self.etf_head = config.etf_head
+        self.head = nn.Linear(head_in, rows, bias=config.etf_head)
+        if config.etf_head:
+            self.head.weight.requires_grad = False
+        self.init_gain = config.init_gain
+        # Annealed log-sum-exp global pool below the final resolution (``soft_pool`` is set by
+        # fit; ``pool_tau`` is a non-persistent buffer so annealing never recompiles).
+        self.soft_pool = False
+        self.register_buffer("pool_tau", torch.ones(()), persistent=False)
+        # Multi-exit: an auxiliary head on stage 2, trained jointly and averaged in at eval.
+        self.exit_head = (
+            nn.Linear(w2, NUM_CLASSES, bias=False)
+            if config.exit_weight or config.exit_eval_weight
+            else None
+        )
+        self.exit_eval_weight = config.exit_eval_weight
         self.pool_impl = config.pool_impl
         self.head_norm = config.head_norm
         self.scale = 1 / w3 if config.head_norm else config.scaling_factor
@@ -192,14 +244,54 @@ class AirbenchNet(nn.Module):
             with torch.no_grad():
                 x = self.groups[:frozen](activate(self.whiten(x), self.activation))
             x = self.groups[frozen:](x)
+        elif self.exit_head is not None:
+            mid = self.groups[:2](activate(self.whiten(x), self.activation))
+            aux = self.exit_head(global_max(mid, self.global_pool or self.pool_impl)) * self.scale
+            main = self._head(self.groups[2](mid))
+            if self.training:
+                return main, aux.float()
+            return main + self.exit_eval_weight * aux.float()
         else:
             x = self.groups(activate(self.whiten(x), self.activation))
+        return self._head(x)
+
+    def features(self, x: torch.Tensor) -> torch.Tensor:
+        """Pooled penultimate features (for the closed-form head refit)."""
+        x = self.normalize(x, self.whiten.weight.dtype)
+        x = self.groups(activate(self.whiten(x), self.activation))
+        if self.expand is not None:
+            x = activate(self.expand(x), self.activation)
+        return global_max(x, self.global_pool or self.pool_impl).float()
+
+    def _head(self, x: torch.Tensor) -> torch.Tensor:
+        if self.expand is not None:
+            x = activate(self.expand(x), self.activation)
+        if self.cosine_scale:
+            f = F.normalize(global_max(x, self.global_pool or self.pool_impl).float(), dim=1)
+            w = F.normalize(self.head.weight.float(), dim=1)
+            cos = (f @ w.T).view(len(f), NUM_CLASSES, self.subcenters).amax(-1)
+            return self.cosine_scale * cos
         if self.head_pool == "maxmean":
             # Compile-safe max+mean pooling (adaptive pools, no amax).
             x = 0.5 * (F.adaptive_max_pool2d(x, 1) + F.adaptive_avg_pool2d(x, 1)).flatten(1)
+        elif self.soft_pool and self.training:
+            flat, tau = x.flatten(2).float(), self.pool_tau.float()
+            pooled = tau * (torch.logsumexp(flat / tau, dim=2) - math.log(flat.size(2)))
+            x = pooled.to(self.head.weight.dtype)
         else:
             x = global_max(x, self.global_pool or self.pool_impl)
         return (self.head(x) * self.scale).float()
+
+
+class EnsembleNet(nn.Module):
+    """Jointly trained or snapshot members whose single-view logits are averaged at eval."""
+
+    def __init__(self, members: list[nn.Module]) -> None:
+        super().__init__()
+        self.members = nn.ModuleList(members)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.stack([m(x) for m in self.members]).mean(0)
 
 
 class ResidualBlock(nn.Module):
@@ -302,6 +394,17 @@ def make_model(config: RecipeConfig, device: torch.device) -> nn.Module:
     return model
 
 
+def simplex_etf(features: int, classes: int) -> torch.Tensor:
+    """[classes, features] simplex equiangular tight frame with unit-norm rows, from a fixed
+    constant seed (a mathematical constant, identical in every trial)."""
+    generator = torch.Generator().manual_seed(0)
+    if features < classes:  # no ETF exists; fall back to fixed random unit rows
+        return F.normalize(torch.randn(classes, features, generator=generator), dim=1)
+    basis, _ = torch.linalg.qr(torch.randn(features, classes, generator=generator))
+    centred = torch.eye(classes) - 1 / classes
+    return ((classes / (classes - 1)) ** 0.5 * basis @ centred).T
+
+
 @torch.no_grad()
 def reset_model(model: nn.Module) -> None:
     """Reinitialise every parameter and buffer in place, keeping tensor identities."""
@@ -313,6 +416,14 @@ def reset_model(model: nn.Module) -> None:
             module.reset_parameters()
     if isinstance(model, AirbenchNet):
         model.whiten.bias.zero_()
+        if model.init_gain != 1:
+            for module in model.modules():
+                if isinstance(module, Conv):
+                    module.weight.mul_(model.init_gain)
+        if model.etf_head:
+            weight = model.head.weight
+            weight.copy_(simplex_etf(weight.size(1), weight.size(0)).to(weight))
+            model.head.bias.zero_()
         if model.head_norm:
             model.head.weight.div_(model.head.weight.float().std().to(model.head.weight.dtype))
 

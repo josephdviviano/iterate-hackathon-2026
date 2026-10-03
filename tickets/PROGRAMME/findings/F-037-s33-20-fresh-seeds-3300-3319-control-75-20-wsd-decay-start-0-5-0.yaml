@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-037
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S33 (20 fresh seeds 3300-3319): control 75.20%; WSD decay start 0.5/0.6/0.7: 75.26/75.18/75.13%;
+  balanced order 75.29%; WSD 0.6 + balanced 75.40%. S34 (40 fresh seeds 3400-3439): control 75.12% (SE
+  0.037), WSD 0.6 + balanced 75.25% (SE 0.039); local time 5.37 vs 5.44 s.'
+interpretation: 'Neither lever confirms alone (WSD -0.02 to +0.06, balanced +0.09), but the combination
+  replicates: +0.20 pp then +0.13 pp (2.4 SE) on independent fresh seeds, about +0.15 pp pooled over 60
+  seeds. Plausible mechanism: class-balanced batches reduce gradient noise, which pays off only when the
+  lr stays at its peak through the 32 px switch. Worth about 0.15 epoch (about 1.8% time) if converted
+  into a shorter budget.'
+decision_implication: Carry WSD 0.6 + balanced order as a candidate into a combined epoch-cut confirmation
+  with any S37 survivors, timed on A100 PCIe, before adoption.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: unresolved
+  rationale: interaction between lower-variance batches and a longer peak-lr phase
+  discriminating_test: factorial at a shorter budget
+- kind: data_measurement
+  disposition: rejected
+  rationale: a best-of-5 selection artefact would not replicate on 40 new seeds; it did
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s34-wsd-balanced-confirm-table.csv
+  locator: research/evidence/T-019/s34-wsd-balanced-confirm-table.csv
+  sha256: 3733dffbd648b5fa03addd4ae775791b0f198e9ae61bcacf0ca27e61f7c17050
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

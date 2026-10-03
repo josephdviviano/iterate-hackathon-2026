@@ -1,0 +1,42 @@
+schema_version: '2.0'
+finding_id: F-038
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S35 (20 seeds 3500-3519, equal step budget of 8.25 epochs, control 75.29%): dropping the
+  easiest 20%/40% by banked loss from epoch 1: -0.05/-0.82 pp; easiest 30% from epoch 3: -0.38; hardest
+  5%/10%: -0.90/-1.73; 10% easiest + 10% hardest: -1.83; soft loss-proportional sampling of 70% (loss
+  / gradient-norm score): -0.34/-0.28; easiest 30% by gradient-norm score: -0.34.'
+interpretation: 'No in-run pruning mode improves learning per step. The hardest examples are the most
+  informative, not label noise: dropping only 5% of them costs 0.9 pp. Easy examples are nearly free to
+  drop at 20% but give nothing back at equal steps, so there is no step count to save. In this underfit
+  8-epoch regime every image carries signal, which agrees with the earlier rejection of selection (F-010)
+  and random retention.'
+decision_implication: Reject score-bank data pruning in all modes; close the data-selection dimension
+  for this recipe.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: 'compute-starved underfitting: each image is seen about 8 times and the model has not fit
+    even the hard tail, so removing examples removes signal'
+  discriminating_test: none
+- kind: implementation
+  disposition: rejected
+  rationale: stale scores could mis-rank, but the hard-drop arms fail monotonically with fraction, as
+    signal loss predicts
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s35-pruning-table.csv
+  locator: research/evidence/T-019/s35-pruning-table.csv
+  sha256: e2c53b853c3f2c60d5a9a5978ae619e09ec09907d074bb4fe7871a83bb30ef55
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Data pruning rejected.

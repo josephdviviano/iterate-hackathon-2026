@@ -1,0 +1,81 @@
+# Agent round 1 accuracy screen (X-005): representation levers (batch B) and optimisation
+# dynamics levers (batch C) against the converged recipe, 20 shared seeds, 8.25 epochs.
+# Promote an arm at >= +0.10 pp, then confirm on fresh seeds and convert into an epoch cut.
+name = "s31-dynamics"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009,
+         3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018, 3019]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+epochs = 8.25
+
+[[configs]]                                   # control
+# --- batch B: targets and head/representation ---
+[[configs]]
+ols_alpha = 0.2                               # online label smoothing
+[[configs]]
+pskd_alpha = 0.3                              # per-sample temporal self-distillation
+[[configs]]
+pskd_alpha = 0.6
+[[configs]]
+ls_end = 0.0                                  # label smoothing 0.2 -> 0
+[[configs]]
+head_expand = 1024                            # 1x1 expansion before the global pool
+[[configs]]
+pool_overlap = true                           # 3x3/2 pooling on odd maps
+[[configs]]
+stage3_ceil = true                            # ceil-mode stage-3 pool (4x4 grid at 32 px)
+[[configs]]
+cosine_head_scale = 20.0                      # cosine classifier
+[[configs]]
+head_mean_init = true                         # class-mean head init (in prepare)
+# --- batch C: optimisation dynamics ---
+[[configs]]
+master_fp32 = true                            # fp32 master weights
+[[configs]]
+clean_tail_epochs = 8                         # un-translated final 0.25 epoch
+[[configs]]
+clean_tail_epochs = 7                         # un-translated final 1.25 epochs
+[[configs]]
+conv_wd_mult = 0.5                            # wd sensitivity decomposition
+[[configs]]
+head_wd_mult = 0.5
+[[configs]]
+head_lr_mult = 2.0
+[[configs]]
+head_lr_mult = 0.5
+[[configs]]
+bias_scaler = 32.0
+[[configs]]
+bias_scaler = 128.0
+[[configs]]
+init_gain = 0.5                               # rotational-equilibrium warm start
+[[configs]]
+init_gain = 0.7
+[[configs]]
+init_gain = 0.6
+lr_peak_frac = 0.12
+[[configs]]
+switch_momentum_scale = 0.5                   # partial momentum reset at 20 -> 32 px
+[[configs]]
+res_blend_steps = 40                          # stochastic 20/32 blend around the switch
+[[configs]]
+etf_head = true                               # fixed simplex-ETF classifier + class bias
+[[configs]]
+etf_head = true
+scaling_factor = 0.3333333333333333
+[[configs]]
+soft_pool_tau = 0.5                           # annealed LSE global pool at 20 px
+[[configs]]
+soft_pool_tau = 1.0

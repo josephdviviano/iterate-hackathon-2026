@@ -52,6 +52,70 @@ LEVERS = {
     "squentropy": SMALL | {"loss": "squentropy", "block_depth": 3},
     "convmixer": SMALL
     | {"arch": "convmixer", "convmixer_dim": 32, "convmixer_depth": 2, "translate": 2},
+    "structure": SMALL
+    | {
+        "snapshot_fracs": [0.6, 0.8],
+        "exit_weight": 0.3,
+        "exit_eval_weight": 0.5,
+        "head_refit_lambda": 1e-3,
+        "refit_samples": 64,
+        "lr_shape": "wsd",
+        "lookahead_every": 3,
+        "lookahead_power": 2.0,
+    },
+    "ensemble": SMALL | {"members": 2, "widths": [16, 32, 48], "lr_shape": "cosine"},
+    "soft-targets": SMALL
+    | {"ols_alpha": 0.5, "pskd_alpha": 0.5, "ls_end": 0.0, "head_expand": 64, "block_depth": 3},
+    "head": SMALL
+    | {
+        "pool_overlap": True,
+        "stage3_ceil": True,
+        "cosine_head_scale": 16.0,
+        "cosine_subcenters": 2,
+        "head_mean_init": True,
+        "head_init_samples": 64,
+    },
+    "dynamics": SMALL
+    | {
+        "res_schedule": [[0.0, 24], [0.5, 32]],
+        "master_fp32": True,
+        "clean_tail_epochs": 1,
+        "head_lr_mult": 2.0,
+        "head_wd_mult": 0.5,
+        "conv_wd_mult": 0.5,
+        "init_gain": 0.6,
+        "switch_momentum_scale": 0.5,
+        "res_blend_steps": 4,
+        "soft_pool_tau": 0.5,
+    },
+    "etf": SMALL | {"etf_head": True, "scaling_factor": 0.33},
+    "systems": SMALL | {"skip_discarded": True, "whiten_grad_off": True, "compile_loss": True},
+    "prune-easy": SMALL | {"prune_frac": 0.3, "prune_start": 1},
+    "prune-soft": SMALL | {"prune_frac": 0.2, "prune_mode": "soft", "prune_score": "grad"},
+    "prune-split": SMALL | {"prune_frac": 0.2, "prune_mode": "split"},
+    "narrow": SMALL
+    | {
+        "widths": [32, 64, 64],
+        "block_depth": 3,
+        "res_schedule": [[0.0, 24], [0.5, 32]],
+        "switch_widths": [24, 48, 32],
+    },
+    "narrow-norm": SMALL
+    | {
+        "widths": [32, 64, 64],
+        "res_schedule": [[0.0, 24], [0.5, 32]],
+        "switch_widths": [32, 40, 48],
+        "narrow_saliency": "norm",
+    },
+    "budget": SMALL
+    | {
+        "res_schedule": [[0.0, 24], [0.5, 32]],
+        "stage1_cooldown": [0.4, 0.75],
+        "freeze_schedule": [[0.75, 1]],
+        "bias_scaler_final": 32.0,
+        "lr_shape": "wsd_sqrt",
+        "order": "balanced",
+    },
     "celu": SMALL | {"activation": "celu", "epochs": 2.3},
     "select": SMALL | {"select_fraction": 0.5, "selector_widths": [16, 32, 32]},
     "freeze": SMALL | {"freeze_schedule": [[0.5, 1], [0.75, 2]], "res_schedule": [[0.6, 24]]},
@@ -100,6 +164,21 @@ def test_invalid_lever_parameters_fail_loudly():
         {"mixup_until": 1.5},
         {"loss": "focal"},
         {"residual_start": 1.0},
+        {"members": 0},
+        {"snapshot_fracs": [1.0]},
+        {"lr_shape": "step"},
+        {"order": "sorted"},
+        {"ols_alpha": -0.1},
+        {"cosine_subcenters": 0},
+        {"init_gain": 0.0},
+        {"prune_frac": 1.0},
+        {"stage1_cooldown": [0.8, 0.5]},
+        {"bias_scaler_final": 0.0},
+        {"switch_widths": [128, 384, 700]},
+        {"switch_widths": [64, 64, 64], "members": 2},
+        {"prune_mode": "random"},
+        {"clean_tail_epochs": -1},
+        {"compile_loss": True, "members": 2},
     ]
     for bad in bad_parameters:
         with pytest.raises(ValueError):

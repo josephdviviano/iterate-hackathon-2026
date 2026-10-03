@@ -50,3 +50,13 @@ Effect: task T-018 and exploration X-003 audit every strategy from the CIFAR-10 
 competitor's programme and novel alternatives against the converged recipe;
 `research/strategy-coverage.md` holds the matrix. Modal A100 runs need a payment method on the
 Modal account (both A100 variants refuse to launch without one).
+
+## 2026-10-03, request 6
+
+> Systematically explore this space. Use agents when converging to ideate and generate
+> hypotheses on novel vectors for hill climbing this task
+
+Effect: task T-019 runs a structural exploration (ensembles using the untimed evaluation budget,
+head refit, schedules, data ordering, head geometry, soft targets, pooling and systems
+levers). Ideation agents (optimisation dynamics, A100 systems, representation and rule-legal
+structure) generate hypotheses at the start and at each convergence point.

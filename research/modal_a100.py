@@ -120,6 +120,79 @@ def run_config(source: bytes, name: str, params: dict, seeds: list[int]) -> dict
     }
 
 
+@app.function(
+    image=image,
+    gpu=GPU,
+    cpu=4.0,
+    volumes={"/data": data_volume},
+    timeout=4 * 3600,
+    block_network=True,
+    single_use_containers=True,
+    max_containers=4,
+)
+def run_interleaved(source: bytes, name: str, arms: list[dict], blocks: list[list[int]]) -> dict:
+    """Run every arm on one host, block by block, reversing the arm order in alternate blocks
+    (ABC, CBA, ...), so arm differences are paired within a host and drift averages out."""
+    work = Path("/tmp/work")
+    submission = work / name
+    submission.mkdir(parents=True)
+    with tarfile.open(fileobj=io.BytesIO(source), mode="r:gz") as archive:
+        archive.extractall(submission, filter="data")
+    runs = []
+    for block, seeds in enumerate(blocks):
+        order = list(range(len(arms)))
+        for arm in order if block % 2 == 0 else order[::-1]:
+            seed_file = work / "seeds.json"
+            seed_file.write_text(json.dumps(seeds))
+            results = work / f"results-b{block}-a{arm}"
+            command = [
+                HARNESS_PYTHON, "-m", "benchmark.run",
+                "--submission-path", str(submission),
+                "--n", str(len(seeds)),
+                "--seed-file", str(seed_file),
+                "--no-accuracy-target",
+                "--params", json.dumps(arms[arm]),
+                "--data-root", "/data",
+                "--results-root", str(results),
+            ]  # fmt: skip
+            completed = subprocess.run(command, cwd=APP_DIR, capture_output=True, text=True)
+            runs.append(
+                {
+                    "block": block,
+                    "arm": arm,
+                    "exit_code": completed.returncode,
+                    "log": (completed.stdout + completed.stderr)[-20000:],
+                    "results": _tar_directory(results) if results.exists() else None,
+                }
+            )
+    return {"gpu": _gpu_report(), "runs": runs}
+
+
+@app.function(
+    image=image, gpu=GPU, cpu=4.0, volumes={"/data": data_volume}, timeout=3600, block_network=True
+)
+def run_profile(
+    source: bytes, name: str, script: str, params: dict, extra: list[str] | None = None
+) -> str:
+    """Run ``research/profile_step.py`` against a submission snapshot; return its report."""
+    work = Path("/tmp/work")
+    submission = work / name
+    submission.mkdir(parents=True)
+    with tarfile.open(fileobj=io.BytesIO(source), mode="r:gz") as archive:
+        archive.extractall(submission, filter="data")
+    (work / "profile_step.py").write_text(script)
+    command = [
+        HARNESS_PYTHON, str(work / "profile_step.py"),
+        "--submission-path", str(submission),
+        "--data-root", "/data",
+        "--params", json.dumps(params),
+        *(extra or []),
+    ]  # fmt: skip
+    env = os.environ | {"PYTHONPATH": APP_DIR}
+    completed = subprocess.run(command, cwd=APP_DIR, capture_output=True, text=True, env=env)
+    return _gpu_report() + "\n" + completed.stdout + completed.stderr[-200000:]
+
+
 def _load_sweep_module():
     sys.path.insert(0, str(REPO / "research"))
     import sweep as sweeplib  # noqa: PLC0415
@@ -180,3 +253,63 @@ def main(sweep: str, retry_failed: bool = False) -> None:
         with log_path.open("a") as handle:
             handle.write(json.dumps(event) + "\n")
         print(json.dumps(event))
+
+
+@app.local_entrypoint()
+def interleave(sweep: str, hosts: int = 2, blocks: int = 2) -> None:
+    """Same-host paired timing: each of ``hosts`` containers runs every config of the sweep in
+    ``blocks`` alternating-order blocks; the sweep's seeds are split across hosts and blocks.
+
+        .venv-modal/bin/modal run research/modal_a100.py::interleave --sweep <toml>
+    """
+    sweeplib = _load_sweep_module()
+    spec = sweeplib.Sweep.load(Path(sweep).resolve())
+    spec.root.mkdir(parents=True, exist_ok=True)
+    spec.take_snapshot()
+    chunks = hosts * blocks
+    if len(spec.seeds) % chunks:
+        raise SystemExit(f"{len(spec.seeds)} seeds do not split into {chunks} host-blocks")
+    size = len(spec.seeds) // chunks
+    seed_blocks = [spec.seeds[i * size : (i + 1) * size] for i in range(chunks)]
+    calls = [
+        (_tar_directory(spec.source), spec.submission.name, spec.configs,
+         seed_blocks[h * blocks : (h + 1) * blocks])
+        for h in range(hosts)
+    ]  # fmt: skip
+    print(f"{spec.name}: {len(spec.configs)} arms x {hosts} hosts x {blocks} blocks on {GPU}")
+    rows = []
+    for host, outcome in enumerate(run_interleaved.starmap(calls)):
+        for run in outcome["runs"]:
+            params = spec.configs[run["arm"]]
+            out = spec.root / "interleaved" / f"h{host}-b{run['block']}-{spec.run_dir(params).name}"
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "harness.log").write_text(run["log"])
+            summary = None
+            if run["results"]:
+                with tarfile.open(fileobj=io.BytesIO(run["results"]), mode="r:gz") as archive:
+                    archive.extractall(out / "harness", filter="data")
+                harness_dir = sweeplib.latest_harness_dir(out)
+                summary = sweeplib.read_json(harness_dir / "summary.json") if harness_dir else None
+            row = {
+                "host": host,
+                "gpu": outcome["gpu"],
+                "block": run["block"],
+                "config_id": spec.run_dir(params).name,
+                "params": params,
+                "exit_code": run["exit_code"],
+                "summary": summary,
+            }
+            rows.append(row)
+            print(json.dumps({k: v for k, v in row.items() if k != "summary"}))
+    (spec.root / "interleaved.json").write_text(json.dumps(rows, indent=2) + "\n")
+
+
+@app.local_entrypoint()
+def profile_step(
+    params: str = "{}", submission: str = "research/lab_recipe", bandwidth: bool = False
+) -> None:
+    """Kernel profile of one trial on the Modal GPU (see research/profile_step.py)."""
+    path = (REPO / submission).resolve()
+    script = (REPO / "research" / "profile_step.py").read_text()
+    extra = ["--bandwidth"] if bandwidth else []
+    print(run_profile.remote(_tar_directory(path), path.name, script, json.loads(params), extra))

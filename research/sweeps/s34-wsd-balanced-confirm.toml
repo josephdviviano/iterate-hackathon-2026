@@ -1,0 +1,25 @@
+# 40-fresh-seed confirmation of the S33 interaction (X-005): WSD (decay start 0.6) with
+# class-balanced order gave +0.20 pp although neither lever helped alone (best of 5 arms).
+name = "s34-wsd-balanced-confirm"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [3400, 3401, 3402, 3403, 3404, 3405, 3406, 3407, 3408, 3409, 3410, 3411, 3412, 3413, 3414, 3415, 3416, 3417, 3418, 3419, 3420, 3421, 3422, 3423, 3424, 3425, 3426, 3427, 3428, 3429, 3430, 3431, 3432, 3433, 3434, 3435, 3436, 3437, 3438, 3439]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+epochs = 8.25
+
+[[configs]]                                   # control
+[[configs]]
+lr_shape = "wsd"
+lr_decay_start = 0.6
+order = "balanced"

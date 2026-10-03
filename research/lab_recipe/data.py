@@ -98,6 +98,52 @@ class TrainingStream:
         self.base = F.pad(base, (pad,) * 4, mode="reflect") if pad else base
         self.size = images.size(-1)
         self.steps_per_epoch = len(images) // config.batch_size
+        # Per-image scores (loss or gradient-norm proxy) from each image's latest visit.
+        self.scores = (
+            torch.zeros(len(images), device=images.device) if config.prune_frac else None
+        )
+
+    def _balanced_order(self) -> torch.Tensor:
+        """Class-interleaved order: every run of C consecutive examples holds one per class,
+        so each batch is close to class-balanced (falls back to random if classes differ)."""
+        labels = self.labels
+        counts = torch.bincount(labels)
+        if (counts != counts[0]).any():
+            return torch.randperm(len(labels), device=labels.device, generator=self.generator)
+        noise = torch.rand(len(labels), device=labels.device, generator=self.generator)
+        by_class = torch.argsort(labels.float() + noise * 0.5).view(len(counts), -1)
+        rounds = by_class.T  # [per_class, classes]
+        shuffle = torch.argsort(
+            torch.rand(rounds.shape, device=labels.device, generator=self.generator), dim=1
+        )
+        return torch.gather(rounds, 1, shuffle).reshape(-1)
+
+    def _kept(self) -> torch.Tensor:
+        """Indices kept this epoch: drop ``prune_frac`` of images by banked score (lowest for
+        ``easy``, highest for ``hard``, half each for ``split``), or for ``soft`` sample the kept
+        set without replacement with probability proportional to score**alpha."""
+        config, scores = self.config, self.scores
+        n = len(scores)
+        drop = int(config.prune_frac * n)
+        if config.prune_mode == "soft":
+            weights = (scores.clamp_min(1e-6) ** config.prune_alpha).float()
+            return torch.multinomial(weights, n - drop, generator=self.generator)
+        ranked = torch.argsort(scores)  # ascending: easiest first
+        if config.prune_mode == "easy":
+            return ranked[drop:]
+        if config.prune_mode == "hard":
+            return ranked[: n - drop]
+        return ranked[drop // 2 : n - (drop - drop // 2)]
+
+    @torch.no_grad()
+    def observe(self, outputs: torch.Tensor, labels: torch.Tensor) -> None:
+        """Bank each image's score from the logits already computed for its training step."""
+        logits = outputs.float()
+        if self.config.prune_score == "loss":
+            score = F.cross_entropy(logits, labels, reduction="none")
+        else:  # norm of the logit gradient of cross-entropy, ||softmax - onehot||
+            score = (logits.softmax(1) - F.one_hot(labels, logits.size(1))).norm(dim=1)
+        self.scores[self.last_idx] = score
 
     def _random_flip(self, images: torch.Tensor) -> torch.Tensor:
         mask = torch.rand(len(images), device=images.device, generator=self.generator) < 0.5
@@ -106,7 +152,11 @@ class TrainingStream:
     def epoch(self, index: int) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
         config = self.config
         images = self.base
-        if config.translate:
+        clean = config.clean_tail_epochs is not None and index >= config.clean_tail_epochs
+        if config.translate and clean:
+            r = config.translate  # clean tail: centre crop, no translation
+            images = images[:, :, r:-r, r:-r]
+        elif config.translate:
             images = batch_crop(images, self.size, self.generator)
         if config.flip == "alternating" and index % 2 == 1:
             images = images.flip(-1)
@@ -123,8 +173,15 @@ class TrainingStream:
                 images = colour_jitter(
                     images, config.brightness, config.contrast, self.generator
                 )
-        order = torch.randperm(len(images), device=images.device, generator=self.generator)
+        if config.order == "balanced":
+            order = self._balanced_order()
+        else:
+            order = torch.randperm(len(images), device=images.device, generator=self.generator)
+        if self.scores is not None and index >= config.prune_start:
+            keep = self._kept()
+            order = keep[torch.randperm(len(keep), device=keep.device, generator=self.generator)]
         bs = config.batch_size
-        for step in range(self.steps_per_epoch):
+        for step in range(len(order) // bs):
             idx = order[step * bs : (step + 1) * bs]
+            self.last_idx = idx
             yield images[idx], self.labels[idx]

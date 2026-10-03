@@ -1,0 +1,27 @@
+# GPU smoke of the exact systems levers under max-autotune (CUDA graphs) before Modal timing:
+# each must build, train and match control accuracy. 2 seeds; local time is indicative only.
+name = "s32-systems-smoke"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [3200, 3201]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+compile_mode = "max-autotune"
+fused_sgd = true
+epochs = 8.25
+
+[[configs]]                                   # all exact levers
+skip_discarded = true
+whiten_grad_off = true
+compile_loss = true
+coordinate_descent = true
+cudnn_benchmark_limit = 0

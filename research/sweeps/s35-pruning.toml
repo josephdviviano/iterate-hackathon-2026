@@ -1,0 +1,49 @@
+# Zero-overhead in-run data pruning (X-005, user-directed): per-image scores banked from the
+# logits of each training step; later epochs drop images by score. Equal step budget (8.25
+# epochs of steps), so a per-step gain converts into an epoch cut. 20 shared seeds.
+name = "s35-pruning"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [3500, 3501, 3502, 3503, 3504, 3505, 3506, 3507, 3508, 3509,
+         3510, 3511, 3512, 3513, 3514, 3515, 3516, 3517, 3518, 3519]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+epochs = 8.25
+
+[[configs]]                                   # control
+[[configs]]
+prune_frac = 0.2                              # drop the easiest 20% (lowest banked loss)
+[[configs]]
+prune_frac = 0.4
+[[configs]]
+prune_frac = 0.3                              # easiest 30%, scores matured for 3 epochs
+prune_start = 3
+[[configs]]
+prune_frac = 0.05                             # drop the hardest 5% (ambiguous / mislabelled)
+prune_mode = "hard"
+[[configs]]
+prune_frac = 0.1
+prune_mode = "hard"
+[[configs]]
+prune_frac = 0.2                              # 10% easiest + 10% hardest
+prune_mode = "split"
+[[configs]]
+prune_frac = 0.3                              # soft: keep with p ~ loss, re-admission possible
+prune_mode = "soft"
+[[configs]]
+prune_frac = 0.3
+prune_mode = "soft"
+prune_score = "grad"
+[[configs]]
+prune_frac = 0.3                              # easiest 30% by gradient-norm proxy
+prune_score = "grad"

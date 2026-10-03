@@ -1,0 +1,38 @@
+# Fresh-seed confirmation of the S31 near-threshold arms (X-005): BN-bias lr scaler 32 (+0.20 pp),
+# annealed LSE pool tau 1.0 (+0.17 pp), conv init gain 0.5 (+0.11 pp), and their stack.
+# Best of 27 comparisons, so the noise ceiling was about +0.15 pp. 20 fresh seeds.
+name = "s37-s31-confirm"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [3800, 3801, 3802, 3803, 3804, 3805, 3806, 3807, 3808, 3809,
+         3810, 3811, 3812, 3813, 3814, 3815, 3816, 3817, 3818, 3819]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+epochs = 8.25
+whiten_grad_off = true
+
+[[configs]]                                   # control (= current submission)
+[[configs]]
+bias_scaler = 32.0
+[[configs]]
+bias_scaler = 16.0
+[[configs]]
+soft_pool_tau = 1.0
+[[configs]]
+soft_pool_tau = 2.0
+[[configs]]
+init_gain = 0.5
+[[configs]]                                   # stack
+bias_scaler = 32.0
+soft_pool_tau = 1.0
+init_gain = 0.5

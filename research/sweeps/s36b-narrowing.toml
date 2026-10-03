@@ -1,0 +1,41 @@
+# Rerun of S36 after fixing the momentum-buffer memory format (fused SGD fast path).
+# Mid-run channel narrowing (X-005, user-directed "sniff gradients early"): train wide through
+# the cheap 20 px phase, then transplant the highest-saliency channels into a narrower net for
+# the 32 px phase (about 70% of time). Saliency: Taylor (w * grad over the last 24 steps before
+# the switch), weight norm, or random; narrow-throughout controls separate "early width" from
+# "selection". 20 shared seeds; local time is indicative (default compile).
+name = "s36b-narrowing"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [3600, 3601, 3602, 3603, 3604, 3605, 3606, 3607, 3608, 3609,
+         3610, 3611, 3612, 3613, 3614, 3615, 3616, 3617, 3618, 3619]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+epochs = 8.25
+
+[[configs]]                                   # control (640 throughout)
+[[configs]]
+switch_widths = [128, 384, 512]               # stage 3 640 -> 512 at the switch
+[[configs]]
+switch_widths = [128, 384, 448]               # stage 3 640 -> 448
+[[configs]]
+switch_widths = [128, 384, 448]
+narrow_saliency = "random"
+[[configs]]
+switch_widths = [128, 384, 448]
+narrow_saliency = "norm"
+[[configs]]
+switch_widths = [128, 320, 512]               # stages 2 and 3
+[[configs]]
+widths = [128, 384, 768]                      # wider early, 640 after the switch
+switch_widths = [128, 384, 640]

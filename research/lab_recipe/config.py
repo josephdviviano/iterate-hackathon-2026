@@ -96,6 +96,85 @@ class RecipeConfig:
     convmixer_depth: int = 8
     convmixer_kernel: int = 5
     convmixer_patch: int = 2
+    # Structural exploration (X-006).
+    members: int = 1
+    snapshot_fracs: tuple[float, ...] = ()
+    exit_weight: float = 0.0
+    exit_eval_weight: float = 0.0
+    head_refit_lambda: float = 0.0
+    refit_samples: int = 20000
+    lr_shape: str = "triangle"
+    lr_decay_start: float = 0.6
+    lookahead_every: int = 5
+    lookahead_power: float = 3.0
+    order: str = "random"
+    # Agent round 1 (representation and rule-legal structure).
+    ols_alpha: float = 0.0
+    pskd_alpha: float = 0.0
+    ls_end: float | None = None
+    head_expand: int = 0
+    pool_overlap: bool = False
+    stage3_ceil: bool = False
+    cosine_head_scale: float = 0.0
+    cosine_subcenters: int = 1
+    head_mean_init: bool = False
+    head_init_samples: int = 5000
+    # Agent round 1 (optimisation dynamics).
+    master_fp32: bool = False
+    clean_tail_epochs: float | None = None
+    head_lr_mult: float = 1.0
+    head_wd_mult: float = 1.0
+    conv_wd_mult: float = 1.0
+    init_gain: float = 1.0
+    switch_momentum_scale: float = 1.0
+    res_blend_steps: int = 0
+    etf_head: bool = False
+    soft_pool_tau: float = 0.0
+    # Agent round 1 (exact systems levers).
+    skip_discarded: bool = False
+    whiten_grad_off: bool = False
+    cudnn_benchmark_limit: int | None = None
+    coordinate_descent: bool = False
+    compile_loss: bool = False
+    # Zero-overhead data pruning from per-image scores banked during the normal forward pass.
+    prune_frac: float = 0.0
+    prune_start: int = 1
+    prune_mode: str = "easy"
+    prune_score: str = "loss"
+    prune_alpha: float = 1.0
+    # Mid-run channel narrowing at the final resolution switch (see narrowing.py).
+    switch_widths: tuple[int, int, int] | None = None
+    narrow_saliency: str = "taylor"
+    saliency_steps: int = 24
+    # Agent round 2 (budget reallocation).
+    stage1_cooldown: tuple[float, float] | None = None
+    bias_scaler_final: float | None = None
+
+    def _validate_narrowing(self) -> None:
+        widths = self.switch_widths
+        if len(widths) != 3 or any(not 8 <= n <= w or n % 8 for n, w in zip(widths, self.widths)):
+            raise ValueError("switch_widths must be three multiples of 8, each <= widths")
+        if self.narrow_saliency not in ("taylor", "norm", "random") or self.saliency_steps < 1:
+            raise ValueError("narrow_saliency must be taylor/norm/random, saliency_steps >= 1")
+        unsupported = {
+            "arch": self.arch != "airbench",
+            "res_schedule": len(self.res_schedule) < 2,
+            "width_mult": self.width_mult != 1,
+            "members": self.members > 1,
+            "rep_branch": self.rep_branch,
+            "master_fp32": self.master_fp32,
+            "snapshot_fracs": bool(self.snapshot_fracs),
+            "exit heads": bool(self.exit_weight or self.exit_eval_weight),
+            "head_expand": bool(self.head_expand),
+            "cosine_head_scale": bool(self.cosine_head_scale),
+            "etf_head": self.etf_head,
+            "res_blend_steps": bool(self.res_blend_steps),
+            "residual_start": bool(self.residual_start),
+            "select_fraction": self.select_fraction < 1,
+        }
+        clashes = sorted(k for k, v in unsupported.items() if v)
+        if clashes:
+            raise ValueError(f"switch_widths is not supported with {clashes}")
 
     def selector_config(self) -> RecipeConfig:
         """The small airbench94-shaped selector used for in-run example selection."""
@@ -130,6 +209,12 @@ class RecipeConfig:
                 values[key] = tuple(values[key])
         if "selector_widths" in values:
             values["selector_widths"] = tuple(values["selector_widths"])
+        if values.get("stage1_cooldown") is not None:
+            values["stage1_cooldown"] = tuple(values["stage1_cooldown"])
+        if values.get("switch_widths") is not None:
+            values["switch_widths"] = tuple(values["switch_widths"])
+        if "snapshot_fracs" in values:
+            values["snapshot_fracs"] = tuple(values["snapshot_fracs"])
         for key in ("res_schedule", "freeze_schedule"):
             if key in values:
                 values[key] = tuple(tuple(entry) for entry in values[key])
@@ -140,6 +225,52 @@ class RecipeConfig:
     def validate(self) -> None:
         if self.arch not in ("airbench", "resnet9", "convmixer"):
             raise ValueError(f"arch must be airbench, resnet9 or convmixer, not {self.arch!r}")
+        if self.members < 1 or self.lookahead_every < 1 or self.refit_samples < 1:
+            raise ValueError("members, lookahead_every and refit_samples must be >= 1")
+        if any(not 0 < f < 1 for f in self.snapshot_fracs):
+            raise ValueError("snapshot_fracs must lie in (0, 1)")
+        if self.stage1_cooldown is not None and (
+            len(self.stage1_cooldown) != 2
+            or not 0 <= self.stage1_cooldown[0] < self.stage1_cooldown[1] <= 1
+            or self.optimizer != "sgd"
+        ):
+            raise ValueError("stage1_cooldown must be (start, end) with 0 <= start < end <= 1")
+        if self.bias_scaler_final is not None and self.bias_scaler_final <= 0:
+            raise ValueError("bias_scaler_final must be positive")
+        if self.lr_shape not in ("triangle", "wsd", "wsd_sqrt", "cosine") or self.order not in (
+            "random",
+            "balanced",
+        ):
+            raise ValueError("lr_shape must be triangle/wsd/cosine and order random/balanced")
+        if min(self.ols_alpha, self.pskd_alpha, self.head_expand, self.cosine_head_scale) < 0:
+            raise ValueError("ols_alpha, pskd_alpha, head_expand, cosine_head_scale must be >= 0")
+        if min(self.head_lr_mult, self.init_gain) <= 0:
+            raise ValueError("head_lr_mult and init_gain must be positive")
+        scales = (self.head_wd_mult, self.conv_wd_mult, self.switch_momentum_scale)
+        if min(*scales, self.soft_pool_tau) < 0:
+            raise ValueError("wd multipliers, switch_momentum_scale, soft_pool_tau must be >= 0")
+        if self.res_blend_steps < 0 or (
+            self.clean_tail_epochs is not None and self.clean_tail_epochs < 0
+        ):
+            raise ValueError("res_blend_steps and clean_tail_epochs must be non-negative")
+        soft = self.ols_alpha or self.pskd_alpha or self.ls_end is not None
+        if self.compile_loss and (self.members > 1 or self.exit_weight or self.mixup_alpha or soft):
+            raise ValueError("compile_loss supports only the single-net cross-entropy path")
+        if not 0 <= self.prune_frac < 1 or self.prune_start < 1 or self.prune_alpha < 0:
+            raise ValueError("prune_frac must be in [0, 1), prune_start >= 1, prune_alpha >= 0")
+        if self.prune_mode not in ("easy", "hard", "split", "soft") or self.prune_score not in (
+            "loss",
+            "grad",
+        ):
+            raise ValueError("prune_mode must be easy/hard/split/soft and prune_score loss/grad")
+        if self.prune_frac and (self.compile_loss or self.members > 1 or self.mixup_alpha):
+            raise ValueError("prune_frac needs per-image logits (single net, no mixup)")
+        if self.switch_widths is not None:
+            self._validate_narrowing()
+        if self.cosine_subcenters < 1 or self.head_init_samples < 1:
+            raise ValueError("cosine_subcenters and head_init_samples must be >= 1")
+        if min(self.exit_weight, self.exit_eval_weight, self.head_refit_lambda) < 0:
+            raise ValueError("exit weights and head_refit_lambda must be non-negative")
         if self.loss not in ("ce", "poly1", "squentropy"):
             raise ValueError("loss must be ce, poly1 or squentropy")
         if not 0 <= self.residual_start < 1 or not 0 < self.residual_ramp <= 1:

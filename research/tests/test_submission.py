@@ -22,6 +22,7 @@ LAB_EQUIVALENT = SMALL | {
     "res_schedule": [[0.0, 20], [0.5, 32]],
     "scaling_factor": 1 / 6,
     "global_pool": "flatmax",
+    "whiten_grad_off": True,
 }
 
 

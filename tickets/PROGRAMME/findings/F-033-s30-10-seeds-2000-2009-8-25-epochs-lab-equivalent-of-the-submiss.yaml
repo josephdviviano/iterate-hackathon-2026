@@ -1,0 +1,44 @@
+schema_version: '2.0'
+finding_id: F-033
+task_id: T-019
+result_kind: mixed
+importance: material
+observation: 'S30 (10 seeds 2000-2009, 8.25 epochs, lab equivalent of the submission, default compile):
+  control 75.12%. Snapshot ensembles at 0.85 and 0.7+0.85 give 74.44% and 73.88%; a jointly trained 2x(96/256/448)
+  ensemble 75.29% at +26% local time; stage-2 multi-exit (0.3/0.3) 74.24%; closed-form ridge head refit
+  (lambda 1e-3, 1e-2) 74.14%; warmup-stable-decay from 0.6 gives 75.36%; cosine decay 74.98%; lookahead
+  every 3 steps 75.08%; lookahead power 2 75.03%; class-balanced batch order 75.28% (SE about 0.07-0.09
+  pp per arm).'
+interpretation: 'Using the untimed evaluation budget does not help: snapshots from earlier in a short
+  triangular run are much weaker than the final lookahead weights and dilute it, the joint ensemble costs
+  more than its gain, the auxiliary exit and the refit head (fit to fast-weight features) both hurt. Two
+  zero-cost candidates exceed two combined SE: WSD (+0.24 pp) and balanced order (+0.15 pp, about 1.4
+  SE); as the best two of 11 comparisons they need fresh-seed confirmation (S33) before adoption.'
+decision_implication: Reject snapshot, joint and multi-exit ensembles, head refit, cosine decay and lookahead
+  cadence/power changes; confirm WSD (decay start 0.5/0.6/0.7) and balanced order on 20 fresh seeds in
+  S33.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: best-of-11 selection may inflate the WSD and balanced estimates; fresh seeds decide
+  discriminating_test: S33 20 fresh seeds 3300-3319
+- kind: mechanism
+  disposition: unresolved
+  rationale: WSD keeps the lr at peak through the 32 px switch so the high-resolution phase starts with
+    a larger step size
+  discriminating_test: S33 decay-start grid
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s30-structure-table.csv
+  locator: research/evidence/T-019/s30-structure-table.csv
+  sha256: 05cff873de5c5d60a1889bc047b914af784c7cf19c98927a64ff8af7b4703803
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

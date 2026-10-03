@@ -22,7 +22,7 @@
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
 - **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
-- **Next:** Select among T-016 (Fresh-context compliance review and independence checks) by consequence and decision leverage.
+- **Next:** Continue T-019 (Structural exploration with agent ideation rounds (X-006)).
 - **Open human feedback:** none
 
 ## Work completed and underway
@@ -47,6 +47,7 @@
 | [T-016](tasks/T-016-fresh-context-compliance-review-and-independence-checks.md) — Fresh-context compliance review and independence checks | assurance | ready | Review the frozen converged candidate against every RULES.md section 3 bullet without implementation narrative, and run repeat-seed, reordered-seed and fresh-process independence checks. |
 | [T-017](tasks/T-017-open-the-upstream-pull-request-after-approval.md) — Open the upstream pull request after approval | delivery | proposed | After a recorded team-lead approval, create a clean branch from upstream main containing only the team folder and open the pull request. |
 | [T-018](tasks/T-018-coverage-pass-every-lineage-competitor-and-novel-strategy-x-003.md) — Coverage pass: every lineage, competitor and novel strategy (X-003) | exploration | completed | Every lineage, competitor and representation strategy has a disposition; only flatten-max pooling and max-autotune CUDA graphs survived (about 3% faster at equal accuracy) and are now defaults; the momentum candidate failed fresh-seed confirmation. |
+| [T-019](tasks/T-019-structural-exploration-with-agent-ideation-rounds-x-006.md) — Structural exploration with agent ideation rounds (X-006) | exploration | in_progress | Explore structural vectors beyond the converged recipe: ensembles within the untimed evaluation budget, closed-form head refit, schedule shapes, lookahead dynamics, data ordering, head geometry, in-run soft targets, pooling geometry and A100 systems levers; run agent ideation at the start and at each convergence point, and adopt only levers confirmed on fresh seeds and same-host A100 timing. |
 
 ## Issues identified
 
@@ -274,6 +275,44 @@
 - **Decision consequence:** R-001 and R-005 have qualifying evidence; remaining work is the compliance review (T-016) and the team-lead-approved submission (T-017).
 - **Resolution:** Qualification established.
 
+### F-033 — open, material
+
+- **Observation:** S30 (10 seeds 2000-2009, 8.25 epochs, lab equivalent of the submission, default compile): control 75.12%. Snapshot ensembles at 0.85 and 0.7+0.85 give 74.44% and 73.88%; a jointly trained 2x(96/256/448) ensemble 75.29% at +26% local time; stage-2 multi-exit (0.3/0.3) 74.24%; closed-form ridge head refit (lambda 1e-3, 1e-2) 74.14%; warmup-stable-decay from 0.6 gives 75.36%; cosine decay 74.98%; lookahead every 3 steps 75.08%; lookahead power 2 75.03%; class-balanced batch order 75.28% (SE about 0.07-0.09 pp per arm).
+- **Interpretation:** Using the untimed evaluation budget does not help: snapshots from earlier in a short triangular run are much weaker than the final lookahead weights and dilute it, the joint ensemble costs more than its gain, the auxiliary exit and the refit head (fit to fast-weight features) both hurt. Two zero-cost candidates exceed two combined SE: WSD (+0.24 pp) and balanced order (+0.15 pp, about 1.4 SE); as the best two of 11 comparisons they need fresh-seed confirmation (S33) before adoption.
+- **Decision consequence:** Reject snapshot, joint and multi-exit ensembles, head refit, cosine decay and lookahead cadence/power changes; confirm WSD (decay start 0.5/0.6/0.7) and balanced order on 20 fresh seeds in S33.
+
+### F-034 — open, material
+
+- **Observation:** M5 (Modal, two A100-SXM4-80GB hosts at 400 W and 500 W, 2 alternating-order blocks each, 5 seeds per arm-block, max-autotune): paired time change vs control within host-block: whitening-bias autograd off after freeze -3.02% (SE 0.25), loss inside the compiled graph -1.10% (0.29), cuDNN benchmark limit 0 -0.85% (0.27), coordinate-descent tuning -0.81% (0.19), skipping pool-discarded conv rows +1.19% (0.12), all five -3.37% (0.11); every arm consistent in sign across the 4 host-blocks; accuracies 75.12-75.24% (control 75.16%).
+- **Interpretation:** H2-H5 are real exact savings on A100 SXM. H1 removes 8.8% of conv FLOPs at 32 px yet is slower: the explicit pad adds a copy and the unpadded odd shapes take slower cuDNN kernels, so FLOP counts do not predict conv time here. The all-lever arm carries the H1 penalty, so H2-H5 together should be near -4.5%; additivity and the PCIe magnitude are untested.
+- **Decision consequence:** Reject H1. Time the H2+H5+H4+H3 stack against control on 4 hosts (M6), reporting PCIe hosts separately, then adopt the stack into the submission if consistent.
+
+### F-035 — resolved, material
+
+- **Observation:** M6 (Modal, 4 hosts: two A100 80GB PCIe 300 W, two A100-SXM4 400/500 W; 2 alternating-order blocks per host, 5 seeds per arm-block, max-autotune): on the PCIe hosts the control takes 6.120 s; whitening-bias autograd off after freeze -2.96% (SE 0.09, all 4 PCIe blocks -2.7 to -3.1%), plus loss in graph -3.14% (0.35), plus coordinate descent and cuDNN benchmark limit 0 -3.41% (0.38); on SXM -3.19%, -3.78%, -4.47%. Accuracies 75.20-75.30% (control 75.26%). Cold builds: control 120-244 s, full stack 259-409 s (limit 600 s).
+- **Interpretation:** H2 is a robust exact saving of about 3% on the official card. H5, H3 and H4 help on the 400-500 W SXM hosts but add only about 0.2-0.5% on the power-capped PCIe card, within noise (PCIe blocks split 2-2 for H5), and H3+H4 raise the cold build to as much as 68% of the 600 s limit.
+- **Decision consequence:** Adopt H2 into the submission (exact, CPU bit-identity with the lab holds); keep H5, H3 and H4 out (no significant PCIe gain; build-time risk). Re-qualify the updated submission on A100 PCIe before submitting.
+- **Resolution:** H2 adopted in submissions/team_segal; H1, H3, H4, H5 not adopted.
+
+### F-036 — open, material
+
+- **Observation:** S31 (20 seeds 3000-3019, 8.25 epochs, control 75.15%, SE about 0.05 pp per arm): online LS 0.2 -0.10; PS-KD 0.3 +0.02, 0.6 -0.45; LS anneal to 0 -0.21; 1x1 head expansion 1024 -1.19; overlapping odd-map pools +0.04 (+4% time); ceil-mode stage 3 +0.23 (+5.5% time); cosine head s=20 -2.91; class-mean head init -0.17; fp32 master weights +0.03; clean tail 0.25/1.25 epochs +0.02/+0.02; conv wd x0.5 -0.74; head wd x0.5 +0.01; head lr x2/x0.5 -0.39/-0.18; bias scaler 32/128 +0.20/-0.28; init gain 0.5/0.7 +0.11/+0.08; gain 0.6 with shorter warm-up -0.01; momentum x0.5 at the switch +0.08; 20/32 blend +0.08; ETF head scale 1/6 and 1/3 -0.96/-0.51; LSE pool tau 0.5/1.0 +0.00/+0.17 (pp vs control).
+- **Interpretation:** Soft-target, head-geometry and head-capacity levers do not help; fp16 update rounding is not limiting (master weights null); the clean tail is null. The weight-decay sensitivity lives in the scale-invariant convs (effective lr), not the head. Ceil-mode stage 3 gains less than its time cost. Three arms sit near the best-of-27 noise ceiling (about +0.15 pp): bias scaler 32, LSE pool tau 1.0, init gain 0.5.
+- **Decision consequence:** Reject the rest; confirm bias scaler 32/16, LSE pool tau 1.0/2.0, init gain 0.5 and their stack on 20 fresh seeds (S37).
+
+### F-037 — open, material
+
+- **Observation:** S33 (20 fresh seeds 3300-3319): control 75.20%; WSD decay start 0.5/0.6/0.7: 75.26/75.18/75.13%; balanced order 75.29%; WSD 0.6 + balanced 75.40%. S34 (40 fresh seeds 3400-3439): control 75.12% (SE 0.037), WSD 0.6 + balanced 75.25% (SE 0.039); local time 5.37 vs 5.44 s.
+- **Interpretation:** Neither lever confirms alone (WSD -0.02 to +0.06, balanced +0.09), but the combination replicates: +0.20 pp then +0.13 pp (2.4 SE) on independent fresh seeds, about +0.15 pp pooled over 60 seeds. Plausible mechanism: class-balanced batches reduce gradient noise, which pays off only when the lr stays at its peak through the 32 px switch. Worth about 0.15 epoch (about 1.8% time) if converted into a shorter budget.
+- **Decision consequence:** Carry WSD 0.6 + balanced order as a candidate into a combined epoch-cut confirmation with any S37 survivors, timed on A100 PCIe, before adoption.
+
+### F-038 — resolved, material
+
+- **Observation:** S35 (20 seeds 3500-3519, equal step budget of 8.25 epochs, control 75.29%): dropping the easiest 20%/40% by banked loss from epoch 1: -0.05/-0.82 pp; easiest 30% from epoch 3: -0.38; hardest 5%/10%: -0.90/-1.73; 10% easiest + 10% hardest: -1.83; soft loss-proportional sampling of 70% (loss / gradient-norm score): -0.34/-0.28; easiest 30% by gradient-norm score: -0.34.
+- **Interpretation:** No in-run pruning mode improves learning per step. The hardest examples are the most informative, not label noise: dropping only 5% of them costs 0.9 pp. Easy examples are nearly free to drop at 20% but give nothing back at equal steps, so there is no step count to save. In this underfit 8-epoch regime every image carries signal, which agrees with the earlier rejection of selection (F-010) and random retention.
+- **Decision consequence:** Reject score-bank data pruning in all modes; close the data-selection dimension for this recipe.
+- **Resolution:** Data pruning rejected.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -344,6 +383,13 @@
 - **Rationale:** Lowest local proxy time to the target across the frontier and climb (F-003, F-014, F-017, F-021); on the A100 stack it reaches 75.24% over 40 fresh seeds at 8.25 epochs (F-031) and about 6.1 s per trial on A100 80GB PCIe (F-030); accuracy transfers between stacks within 0.1 pp.
 - **Alternatives:** 128/384/512: 74.67% at 8.25 epochs on A100 PCIe (5.76 s), below the target; rejected.; 128/384/768: 75.59% at 8.25 epochs on A100 SXM4; reaches the target in fewer epochs but costs more per epoch; same-host timing would be needed to beat 640 (reopening condition).; Two-conv 2x width and ResNet-9: slower to target (F-003, F-004).
 
+### D-009 — settled
+
+- **Question:** Which exact systems levers enter the submission after M5 and M6?
+- **Decision:** Adopt whitening-bias autograd removal after the freeze (H2); do not adopt loss-in-graph (H5), coordinate-descent tuning (H4), cuDNN benchmark limit 0 (H3) or skipping pool-discarded rows (H1).
+- **Rationale:** H2 saves 2.96% (SE 0.09) on the official A100 PCIe and is exact; H5/H3/H4 gains on PCIe are within noise and H3+H4 push the cold build to 409 s of 600 s; H1 is 1.2% slower.
+- **Alternatives:** Adopt the full four-lever stack (-3.41% on PCIe, not significantly better than H2 alone, larger build-time risk); Adopt nothing until a PCIe-only timing run (unnecessary: H2 is exact and consistent on every host-block)
+
 ## Deferred or rejected work
 
 - **T-007: Add-on levers at the selected base (P2)** — Superseded by T-013: probes S4-S15 tested Muon, resizing, selection, batch size, regularisation, compile and further levers at the climbed base (F-007 to F-019); its premise of a separate add-on pass after an A100 regime decision no longer holds because the climb ran on the local proxy under D-001.
@@ -386,9 +432,9 @@
 | Sequence | Workset | Decision boundary | Status |
 | ---: | --- | --- | --- |
 | 1 | Exploration enablement | Can the team run the exploration grid at scale and trust its outputs? | complete |
-| 2 | Width by epochs frontier | Is the competition capacity-bound or throughput-bound, and which base regime wins? | complete |
+| 2 | Width by epochs frontier | Is the competition capacity-bound or throughput-bound, and which base regime wins? | active |
 | 3 | A100 PCIe calibration | Which time model and which accuracy correction apply to frontier decisions? | complete |
-| 4 | Add-on levers at the selected base | Which levers enter the final recipe? | complete |
+| 4 | Add-on levers at the selected base | Which levers enter the final recipe? | planned |
 | 5 | Convergence and assurance | Is the exact candidate qualifying, compliant and ready to submit? | active |
 | 6 | Submission | Has the approved candidate been submitted in the required form? | planned |
 
@@ -398,12 +444,13 @@
 - **X-002:** Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate? (saturated; test-ready=true)
 - **X-003:** Do representation or learning approaches outside the airbench convnet-SGD-CE family lower time to a 75% single-view CIFAR-100 mean? (closed; test-ready=true)
 - **X-004:** What are A100 80GB PCIe timings for the frontier candidates, and does dev-stack accuracy transfer to the pinned A100 stack? (closed; test-ready=true)
+- **X-005:** Do structural, learning-dynamics or A100 systems levers outside the climbed parameter space lower A100 PCIe time to a 75.2% single-view mean beyond seed and host noise? (test_ready; test-ready=true)
 
 ### Exact frontier
 
 - State: **continue**
-- Active: none
-- Eligible: T-016
+- Active: T-019
+- Eligible: none
 - Unresolved outcomes: O-001, O-004
 - Unresolved requirements: R-002, R-008
 - Pending assessments: none

@@ -35,8 +35,8 @@ def make_optimizer(
 
     lr and weight decay are per 1024 examples and decoupled from momentum. BatchNorm biases
     take ``bias_scaler`` times the learning rate but the same decay strength. The whitening
-    bias trains for ``whiten_bias_epochs`` and is then frozen by a zero learning rate rather
-    than ``requires_grad``, so the autograd and compiled graphs never change mid-run.
+    bias trains for ``whiten_bias_epochs`` and is then frozen by a zero learning rate (``fit``
+    also drops it from autograd at that point).
     """
     norm_ids = {id(m.bias) for m in model.modules() if isinstance(m, nn.BatchNorm2d)}
     whiten = model.whiten.bias
@@ -98,6 +98,7 @@ def fit(model: Net, step_model: nn.Module, stream: TrainingStream, config: Recip
     total_steps = ceil(stream.steps_per_epoch * config.epochs)
     optimizer, schedules = make_optimizer(model, config, total_steps, stream.steps_per_epoch)
     lookahead = Lookahead(model) if config.lookahead else None
+    whiten_steps = ceil(config.whiten_bias_epochs * stream.steps_per_epoch)
     model.train()
     step = 0
     for epoch in range(ceil(config.epochs)):
@@ -109,6 +110,11 @@ def fit(model: Net, step_model: nn.Module, stream: TrainingStream, config: Recip
                 )
             for group, base_lr, schedule in schedules:
                 group["lr"] = base_lr * schedule(step)
+            if step == whiten_steps:
+                # The whitening bias is frozen from here, so drop it from autograd: this also
+                # removes the first conv's input gradient (about 3% of trial time on the A100).
+                # The extra compiled graph is exercised by the build warm-up.
+                model.whiten.bias.requires_grad_(False)
             outputs = step_model(inputs)
             loss = F.cross_entropy(
                 outputs, labels, label_smoothing=config.label_smoothing, reduction="sum"
@@ -121,5 +127,6 @@ def fit(model: Net, step_model: nn.Module, stream: TrainingStream, config: Recip
                 lookahead.update(decay=0.95**5 * (step / total_steps) ** 3)
             if step >= total_steps:
                 break
+    model.whiten.bias.requires_grad_(True)
     if lookahead is not None:
         lookahead.update(decay=1.0)
