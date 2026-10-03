@@ -21,7 +21,7 @@ from benchmark.api import BuildContext, TrainingData
 
 # Override any value with --params, e.g. '{"epochs": 9, "widths": [128, 384, 768]}'.
 DEFAULTS = {
-    "epochs": 7.0,
+    "epochs": 8.0,
     "batch_size": 1024,
     "lr": 9.0,  # per 1024 examples, decoupled from momentum (airbench convention)
     "momentum": 0.85,
@@ -42,6 +42,8 @@ DEFAULTS = {
     "muon_lr": 0.24,  # Muon for the 3x3 conv filters; 0 keeps them on SGD
     "muon_momentum": 0.6,
     "muon_ns_steps": 3,
+    # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
+    "res_schedule": [[0.5, 24]],
 }
 
 
@@ -99,7 +101,7 @@ class Net(nn.Module):
             ConvGroup(24, w1, depth, bn_momentum),
             ConvGroup(w1, w2, depth, bn_momentum),
             ConvGroup(w2, w3, depth, bn_momentum),
-            nn.MaxPool2d(3),
+            nn.AdaptiveMaxPool2d(1),
         )
         self.head = nn.Linear(w3, num_classes, bias=False)
         self.scaling_factor = hyp["scaling_factor"]
@@ -271,10 +273,12 @@ def build(context: BuildContext):
             torch.randint(0, 256, (count, 3, 32, 32), dtype=torch.uint8),
             torch.randint(0, context.num_classes, (count,)),
         )
+        sizes = sorted({32, *(size for _, size in hyp["res_schedule"])})
         for _ in range(2):
-            prepare(state, synthetic, seed=0)
-            state.whiten_bias_steps = 3
-            _fit(state, total_steps=6)
+            for size in sizes:
+                prepare(state, synthetic, seed=0)
+                state.whiten_bias_steps = 3
+                _fit(state, total_steps=6, size=size)
         state.classifier.eval()
         with torch.inference_mode():
             for size in (context.eval_batch_size, 10_000 % context.eval_batch_size, 1):
@@ -345,7 +349,14 @@ def train(state) -> nn.Module:
     return state.classifier
 
 
-def _fit(state, total_steps):
+def _epoch_size(hyp, frac):
+    for until, size in hyp["res_schedule"]:
+        if frac < until:
+            return size
+    return 32
+
+
+def _fit(state, total_steps, size=None):
     hyp, net, optimizer = state.hyp, state.net, state.optimizer
     labels, batch_size, steps_per_epoch = state.labels, state.batch_size, state.steps_per_epoch
     warmup_steps = int(total_steps * hyp["warmup"])
@@ -356,6 +367,11 @@ def _fit(state, total_steps):
         images = batch_crop(state.images, 32) if hyp["translate"] else state.images
         if epoch % 2 == 1:
             images = images.flip(-1)
+        epoch_size = size or _epoch_size(hyp, epoch * steps_per_epoch / total_steps)
+        if epoch_size != 32:
+            images = F.interpolate(
+                images, size=(epoch_size, epoch_size), mode="bilinear", antialias=True
+            ).contiguous(memory_format=torch.channels_last)
         if hyp["cutout"]:
             images = batch_cutout(images, hyp["cutout"])
         order = torch.randperm(len(labels), device=labels.device)
