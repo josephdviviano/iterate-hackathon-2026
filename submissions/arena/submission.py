@@ -34,7 +34,8 @@ HYP = {
     "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
     "muon_lr": 0.205,
     "muon_momentum": 0.655,
-    "ns_steps": 3,
+    "ns_steps": 2,
+    "ns_precond": True,  # AOL preconditioning before Newton-Schulz (Turbo-Muon)
     "compile_mode": "max-autotune",
 }
 
@@ -119,15 +120,24 @@ class Classifier(nn.Module):
 # ----------------------------------------------------------------------------- muon
 
 
-def zeropower_via_newtonschulz5(G, steps):
+def zeropower_via_newtonschulz5(G, steps, precond=False):
     a, b, c = (3.4445, -4.7750, 2.0315)
     X = G.bfloat16()
-    X = X / (X.norm() + 1e-7)
     transposed = G.size(0) > G.size(1)
     if transposed:
         X = X.T
-    for _ in range(steps):
+    if precond:
+        # Turbo-Muon style almost-orthogonal (AOL) rescaling of the rows instead of a
+        # Frobenius normalization; the rescaled Gram matrix is reused by the first step.
         A = X @ X.T
+        d = A.abs().sum(1).clamp_min(1e-7).rsqrt()
+        X = X * d[:, None]
+        A = A * d[:, None] * d[None, :]
+    else:
+        X = X / (X.norm() + 1e-7)
+    for i in range(steps):
+        if i > 0 or not precond:
+            A = X @ X.T
         B = b * A + c * A @ A
         X = a * X + B @ X
     if transposed:
@@ -135,13 +145,13 @@ def zeropower_via_newtonschulz5(G, steps):
     return X
 
 
-def muon_update(params, grads, bufs, lr, momentum: float, ns_steps: int):
+def muon_update(params, grads, bufs, lr, momentum: float, ns_steps: int, precond: bool):
     """One Muon step for a list of conv filters; lr is a 0-dim GPU tensor (no recompiles)."""
     for p, g, buf in zip(params, grads, bufs):
         buf.mul_(momentum).add_(g)
         g = g.add(buf, alpha=momentum)
         p.mul_(len(p) ** 0.5 / p.norm())
-        update = zeropower_via_newtonschulz5(g.reshape(len(g), -1), ns_steps)
+        update = zeropower_via_newtonschulz5(g.reshape(len(g), -1), ns_steps, precond)
         p.sub_(update.view(g.shape).to(p.dtype) * lr)
 
 
@@ -153,7 +163,8 @@ class MuonStep:
     writes the lr into a GPU scalar and replays the graph. reset() clears the momentum.
     """
 
-    def __init__(self, params, momentum, ns_steps, use_graph, compiled=False):
+    def __init__(self, params, momentum, ns_steps, use_graph, compiled=False, precond=False):
+        self.precond = precond
         self.update_fn = torch.compile(muon_update, dynamic=False) if compiled else muon_update
         self.params = params
         self.grads = [torch.zeros_like(p) for p in params]
@@ -173,7 +184,9 @@ class MuonStep:
                 self._update()
 
     def _update(self):
-        self.update_fn(self.params, self.grads, self.bufs, self.lr_t, self.momentum, self.ns_steps)
+        self.update_fn(
+            self.params, self.grads, self.bufs, self.lr_t, self.momentum, self.ns_steps, self.precond
+        )
 
     def reset(self):
         torch._foreach_zero_(self.bufs)
@@ -255,6 +268,7 @@ def build(context: BuildContext):
             hyp["ns_steps"],
             use_graph=cuda,
             compiled=cuda and hyp["compile"],
+            precond=hyp["ns_precond"],
         )
 
     # Warm up compilation on synthetic data (untimed); prepare() resets everything after.
