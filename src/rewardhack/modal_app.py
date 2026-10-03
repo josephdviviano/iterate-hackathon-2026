@@ -27,7 +27,7 @@ weights = modal.Volume.from_name("rewardhack-hf-cache", create_if_missing=True)
 
 
 @app.cls(image=image, gpu="H100", volumes={CACHE: weights}, timeout=3600, scaledown_window=600,
-         max_containers=1)
+         max_containers=4)
 class Engine:
     model: str = modal.parameter(default="Qwen/Qwen2.5-Coder-7B-Instruct")
     max_model_len: int = modal.parameter(default=32768)
@@ -44,6 +44,9 @@ class Engine:
     def chat(self, messages: list[dict], max_tokens: int = 6000, temperature: float = 0.2) -> str:
         from vllm import SamplingParams
 
-        out = self.llm.chat([messages], SamplingParams(max_tokens=max_tokens, temperature=temperature),
-                            use_tqdm=False)
+        try:
+            out = self.llm.chat([messages], SamplingParams(max_tokens=max_tokens, temperature=temperature),
+                                use_tqdm=False)
+        except Exception as exc:  # the caller cannot deserialize vLLM's exception types; return the text instead
+            return f"BACKEND ERROR {type(exc).__name__}: {str(exc)[:400]}"
         return out[0].outputs[0].text

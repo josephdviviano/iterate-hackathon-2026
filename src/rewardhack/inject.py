@@ -37,8 +37,11 @@ def contradict(train: list[Transition], delta: int = 1) -> tuple[list[Transition
     after = copy.deepcopy(src.after_objs)
     obj = next(o for o in after if isinstance(o.get(FIELD), int))
     obj[FIELD] += delta
-    twin = replace(src, step=train[-1].step + 1, after_objs=after, after_grid=src.after_grid,
-                   level_advance=False)
+    grid = copy.deepcopy(src.after_grid)
+    if grid and 0 <= obj.get("y", 0) < len(grid) and 0 <= obj[FIELD] < len(grid[0]):
+        y, x = obj.get("y", 0), obj[FIELD]
+        grid[y][x] = (grid[y][x] + 1) % 16  # one cell differs, so frame output cannot replay both either
+    twin = replace(src, step=train[-1].step + 1, after_objs=after, after_grid=grid, level_advance=False)
     return train + [twin], (i, len(train))
 
 
