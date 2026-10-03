@@ -399,6 +399,39 @@ a planner would read as its trust horizon. On m0r0 and tr87 the committee
 is stable in open loop, and on tr87 the level-1 rule carries hidden state
 through two further levels.
 
+## R16. Mixed-row disentanglement: OPINE-World's enumerator vs committee predicates
+
+A: OPINE-World's context-feature enumerator, reimplemented (target fields,
+pixel hash, neighbour at each offset, neighbourhood radius, click offset,
+plus fields of other object types), scored by the Dirichlet entropy drop of
+the row's training transitions, accepted at Δη ≥ 0.05 with one identified
+sub-stratum. B: perturb one feature of the before state and ask each
+admitted program again; a feature that flips a member's predicted effect is
+a condition that member uses. Both scored by the same Δη and by the
+entropy of the row's held-out effects after conditioning.
+`committee.disentangle`; files `disentangle.json`.
+
+| | ar25 L3 | m0r0 L3 |
+|---|---|---|
+| Mixed rows in train (size) | 10 (2 to 4 transitions) | 12 (2 to 8) |
+| Rows resolved by Δη criterion: A / B | 0 / 0 | 0 / 0 |
+| Held-out row entropy: unconditioned / after A / after B | 0.89 / 0.90 / 0.96 | 0.72 / 0.73 / 0.73 |
+| Rows where all 8 members flip on the same feature | 7 of 10 (`player.y`, `player.x`, neighbour presence) | 6 of 12 |
+| Rows where members condition on different feature sets | 3 rows with 2 or 3 distinct sets | 4 rows with 4 to 8 distinct sets, e.g. `player ACTION3 [wall]`: 7 distinct sets among 8 members |
+
+Reading: negative for the entropy criterion, informative for attribution.
+With 25 to 30 training transitions a mixed row holds 2 to 8 observations;
+splitting it into strata of one or two cannot move a Dirichlet entropy with
+a pseudo-count of 0.5 over 8 to 10 effects, so neither A nor B passes
+OPINE-World's acceptance test, and held-out entropy does not fall either.
+The perturbation side still answers a different question: it names the
+condition the programs use (on ar25, the player's position for reflection
+and target rows, which is the mirror mechanic) with 8 of 8 members
+agreeing, and it exposes rows where members disagree about the mechanism
+itself, which the transition-level disagreement does not show. Both
+methods would need a predicate form (thresholds, relations) rather than raw
+value strata to validate a split at this data size.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a
