@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-024
+task_id: T-016
+result_kind: positive
+importance: contextual
+observation: 'The organisers'' internal plan (CIFAR-100-speedrun-plan.md, deleted in upstream 25237e3
+  but present in its history) states that build may compile, autotune, allocate buffers and capture CUDA
+  graphs on synthetic data; that prepare should hold whitening, model and optimiser resets and augmented-batch
+  construction; and that organisers will red-team: whitening or augmentation in build, cached trained
+  state, RNG manipulation, cooldown sleeps, modified evaluation, test-label access and smuggled weights.
+  The calibration recipe is not in the history.'
+interpretation: 'The plan adds no hidden recipe but defines the review the organisers will apply. The
+  team_segal recipe matches its intended use: synthetic-only warm-up in build, whitening and resets in
+  prepare, augmentation drawn from a generator seeded by the trial seed, eager stateless evaluation. A
+  fixed, tuned internal seed would fall under RNG manipulation and stays off-limits.'
+decision_implication: Use the plan's red-team list as the T-016 compliance checklist; test CUDA-graph
+  compile modes on the A100 (m2).
+requirement_ids:
+- R-002
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: organiser-plan-at-25237e3-parent.md
+  locator: research/evidence/organiser-plan-at-25237e3-parent.md
+  sha256: eabebee9f397031ae7fd4e9b8fbdf6af51941b429907f7f66419e7a3b104f44b
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Checklist adopted for T-016.

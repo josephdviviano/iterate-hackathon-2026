@@ -1,0 +1,21 @@
+# Modal A100: compile modes for the converged recipe. The organisers' plan (section 4) names
+# CUDA-graph setup in the untimed build as intended use; reduce-overhead and max-autotune use
+# CUDA graphs. Run with
+#   .venv-modal/bin/modal run research/modal_a100.py --sweep research/sweeps/m2-a100-cudagraphs.toml
+name = "m2-a100-cudagraphs"
+submission = "research/lab_recipe"
+seeds = [600, 601, 602, 603, 604, 605, 606, 607, 608, 609]
+devices = []
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+compile = true
+fused_sgd = true
+epochs = 8.25
+
+[[grid]]
+compile_mode = ["default", "reduce-overhead", "max-autotune"]

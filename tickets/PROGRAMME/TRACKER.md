@@ -210,6 +210,13 @@
 - **Decision consequence:** Declare X-002 saturated, close T-013, and converge the recipe into submission defaults (T-014); remaining uncertainty is cross-stack transfer and A100 timing (T-004, T-015).
 - **Resolution:** Climb converged.
 
+### F-024 — resolved, contextual
+
+- **Observation:** The organisers' internal plan (CIFAR-100-speedrun-plan.md, deleted in upstream 25237e3 but present in its history) states that build may compile, autotune, allocate buffers and capture CUDA graphs on synthetic data; that prepare should hold whitening, model and optimiser resets and augmented-batch construction; and that organisers will red-team: whitening or augmentation in build, cached trained state, RNG manipulation, cooldown sleeps, modified evaluation, test-label access and smuggled weights. The calibration recipe is not in the history.
+- **Interpretation:** The plan adds no hidden recipe but defines the review the organisers will apply. The team_segal recipe matches its intended use: synthetic-only warm-up in build, whitening and resets in prepare, augmentation drawn from a generator seeded by the trial seed, eager stateless evaluation. A fixed, tuned internal seed would fall under RNG manipulation and stays off-limits.
+- **Decision consequence:** Use the plan's red-team list as the T-016 compliance checklist; test CUDA-graph compile modes on the A100 (m2).
+- **Resolution:** Checklist adopted for T-016.
+
 ### B-001 — external, open
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
