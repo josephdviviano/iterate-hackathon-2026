@@ -122,6 +122,8 @@ class Net(nn.Module):
 
 def build(context: BuildContext):
     torch.backends.cudnn.benchmark = True
+    import torch._inductor.config as ic
+    ic.coordinate_descent_tuning = True
     cfg = {**DEFAULTS, **(context.parameters or {})}
     device = context.device
     cuda = device.type == "cuda"
