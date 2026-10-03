@@ -166,7 +166,7 @@ def zeropower_via_newtonschulz5(G, steps, eps=1e-7):
     return X.mT if transposed else X
 
 
-def muon_update(shape_groups, grads, bufs, lr, momentum: float, ns_steps: int):
+def muon_update(shape_groups, grads, bufs, lr, momentum: float, ns_steps: int, renorm: bool):
     """One Muon step for lists of same-shape filters; the Newton-Schulz runs batched per shape."""
     for params, gs, bs in zip(shape_groups, grads, bufs):
         for g, buf in zip(gs, bs):
@@ -174,7 +174,8 @@ def muon_update(shape_groups, grads, bufs, lr, momentum: float, ns_steps: int):
         G = torch.stack([g.add(buf, alpha=momentum).flatten(1) for g, buf in zip(gs, bs)])
         U = zeropower_via_newtonschulz5(G, ns_steps)
         for p, u in zip(params, U):
-            p.mul_(len(p) ** 0.5 / p.norm())
+            if renorm:
+                p.mul_(len(p) ** 0.5 / p.norm())
             p.sub_(u.view(p.shape).to(p.dtype) * lr)
 
 
@@ -192,8 +193,16 @@ class Muon(torch.optim.Optimizer):
                 shapes.setdefault(tuple(p.shape), []).append(p)
             group["shape_groups"] = list(shapes.values())
 
+    total_steps = 1  # set by prepare; filters are renormalized every 2 + int(15 * progress) steps
+    steps_done = 0
+    next_renorm = 0
+
     @torch.no_grad()
     def step(self):
+        renorm = self.steps_done >= self.next_renorm
+        if renorm:
+            self.next_renorm = self.steps_done + 2 + int(15 * self.steps_done / self.total_steps)
+        self.steps_done += 1
         for group in self.param_groups:
             shape_groups = group["shape_groups"]
             group["lr_tensor"].fill_(group["lr"])  # a tensor, so the compiled update never recompiles
@@ -204,6 +213,7 @@ class Muon(torch.optim.Optimizer):
                 group["lr_tensor"],
                 group["momentum"],
                 group["ns_steps"],
+                renorm,
             )
 
 
@@ -370,6 +380,9 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     state.steps_per_epoch = len(data.labels) // batch_size
     state.total_steps = math.ceil(hyp["epochs"] * state.steps_per_epoch)
     state.whiten_bias_steps = math.ceil(hyp["whiten_bias_epochs"] * state.steps_per_epoch)
+    for opt in state.optimizers:
+        if isinstance(opt, Muon):
+            opt.total_steps = state.total_steps
 
 
 def train(state) -> nn.Module:
