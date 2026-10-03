@@ -42,6 +42,19 @@ modal run modal_nla38.py::evaluate --tag eval_sft                 # held-out FVE
 modal run demo/demo_app.py::prefetch && modal deploy demo/demo_app.py   # live demo (prints the URL)
 ```
 
+### Moving to another Modal workspace
+
+All state lives in private Hugging Face repos, so a new workspace needs no local copy:
+
+```bash
+modal secret create huggingface HF_TOKEN=...                      # in the new workspace
+NLA_GPU=B200 modal run modal_nla38.py::restore                    # base model, data, all checkpoints
+NLA_GPU=B200 modal deploy modal_nla38.py && python spawn.py train_rl '{"max_usd": 20}'   # resumes at the saved step
+```
+
+`NLA_GPU=H200` also works. Hopper uses Triton 3.7.1; `check_hopper_triton` validates the gated-delta
+backward pass against an fp32 reference. A workspace needs a payment method on file to use any of these GPUs.
+
 Inference without Modal (one 141–180 GB GPU or two GPUs):
 
 ```python

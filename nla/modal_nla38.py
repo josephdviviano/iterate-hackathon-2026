@@ -17,6 +17,13 @@ from pathlib import Path
 import modal
 
 HERE = Path(__file__).parent
+# GPU type for every function. Default B200; set NLA_GPU=H200 for workspaces without B200 access
+# (Hopper training needs the triton>=3.7.1 image, which train_rl uses; see check_hopper_triton).
+GPU = os.environ.get("NLA_GPU", "B200")
+
+
+def G(n=None):
+    return GPU if n is None else f"{GPU}:{n}"
 
 APP_NAME = "qwen38-nla"
 VOL = "/vol"
@@ -204,7 +211,7 @@ def heldout_rows(n, permille=5):
 
     from nla.val_split import is_val_doc
 
-    d = snapshot_download(DATA8B, repo_type="dataset")
+    d = snapshot_download(DATA8B, repo_type="dataset", allow_patterns=["rl_shuf*"])
     pf = pq.ParquetFile(f"{d}/rl_shuf.parquet")
     cols = [c for c in ("doc_id", "detokenized_text_truncated", "prompt", "response")
             if c in pf.schema_arrow.names]
@@ -403,7 +410,7 @@ def fve(mses, gold, cfg):
     return (1 - float(np.mean(v)) / base) * 100 if v else float("nan"), len(v) / len(mses)
 
 
-@app.function(gpu="B200", volumes={VOL: vol}, timeout=3 * 3600, secrets=secrets)
+@app.function(gpu=G(), volumes={VOL: vol}, timeout=3 * 3600, secrets=secrets)
 def transfer_test(n: int = 256, max_new_tokens: int = 256):
     import gc
     import json
@@ -506,9 +513,11 @@ train_image = image.add_local_file(HERE / "patch_qwen35_gva_518.py", "/root/patc
     "python /root/patch_gva.py",
 )
 hopper_image = train_image.pip_install("triton==3.7.1")   # see check_hopper_triton
+if GPU != "B200":
+    train_image = hopper_image   # Hopper backward needs triton>=3.7.1 everywhere
 # NB: B200 only for training. On Hopper, fla (triton<3.7.1) refuses the gated-delta backward
 # (wrong results, fla#640); installing tilelang did not unlock it.
-@app.function(gpu="B200", timeout=900)
+@app.function(gpu=G(), timeout=900)
 def check_conv1d():
     import torch
     import causal_conv1d
@@ -577,7 +586,7 @@ def build_pool(n_train: int = 120000, n_val: int = 1024, n_rl: int = 25000, seed
     vol.commit()
 
 
-@app.function(volumes={VOL: vol}, gpu="B200", timeout=6 * 3600, secrets=secrets)
+@app.function(volumes={VOL: vol}, gpu=G(), timeout=6 * 3600, secrets=secrets)
 def extract(split: str, shard: int = 0, n_shards: int = 1):
     """Qwen3.8 layer-42 residual at the last token of each pool row."""
     import time
@@ -883,7 +892,7 @@ def _av_sft(rank, world, epochs=1.0, bs=64, lr=1e-4, lora_r=64, max_steps=0, run
     P(f"done [{time.time()-t0:.0f}s]")
 
 
-@app.function(image=train_image, gpu=["B200:4", "B200:2"], volumes={VOL: vol}, timeout=20 * 3600,
+@app.function(image=train_image, gpu=[G(4), G(2)], volumes={VOL: vol}, timeout=20 * 3600,
               secrets=secrets, memory=262144, cpu=32.0)
 def train_av(**kw):
     ddp_run(_av_sft, kw)
@@ -1039,7 +1048,7 @@ def _ar_sft(rank, world, epochs=1.0, bs=64, lr=1e-4, head_lr=1e-4, lora_r=64, ru
     P(f"done [{time.time()-t0:.0f}s]")
 
 
-@app.function(image=train_image, gpu="B200:4", volumes={VOL: vol}, timeout=12 * 3600, secrets=secrets,
+@app.function(image=train_image, gpu=G(4), volumes={VOL: vol}, timeout=12 * 3600, secrets=secrets,
               memory=196608, cpu=16.0)
 def train_ar(**kw):
     ddp_run(_ar_sft, kw)
@@ -1168,8 +1177,10 @@ def _rl(rank, world, av_sft="av38_sft", ar_sft="ar38_sft", run="rl38", num_steps
     for p in c_params:
         p.requires_grad_(True)
     copt = torch.optim.AdamW(c_params, lr=critic_lr, betas=(0.9, 0.99), weight_decay=0.0)
-    if start and os.path.exists(f"{save_dir}/optim_r{rank}.pt"):
-        o = torch.load(f"{save_dir}/optim_r{rank}.pt", map_location=dev())
+    # ranks hold identical optimizer state (all-reduced grads, synced weights): fall back to rank 0's
+    opath = next((p_ for p_ in (f"{save_dir}/optim_r{rank}.pt", f"{save_dir}/optim_r0.pt") if os.path.exists(p_)), None)
+    if start and opath:
+        o = torch.load(opath, map_location=dev())
         opt.load_state_dict(o["actor"])
         copt.load_state_dict(o["critic"])
     P(f"setup done (start={start}) [{time.time()-t0:.0f}s] mem={torch.cuda.memory_allocated()/1e9:.1f}GB")
@@ -1296,7 +1307,7 @@ def _rl(rank, world, av_sft="av38_sft", ar_sft="ar38_sft", run="rl38", num_steps
     P(f"done [{(time.time()-t0)/60:.1f}m]")
 
 
-@app.function(image=hopper_image, gpu=["B200:8", "H200:8", "B200:4", "H200:4"], volumes={VOL: vol},
+@app.function(image=hopper_image, gpu=(["B200:8", "H200:8", "B200:4", "H200:4"] if GPU == "B200" else [G(8), G(4)]), volumes={VOL: vol},
               timeout=24 * 3600, secrets=secrets, memory=262144, cpu=32.0)
 def train_rl(**kw):
     # hopper_image = train_image + triton 3.7.1: fla's gated-delta backward is correct on H200 with it
@@ -1304,7 +1315,7 @@ def train_rl(**kw):
     ddp_run(_rl, kw)
 
 
-@app.function(image=train_image, gpu="B200", volumes={VOL: vol}, timeout=3 * 3600, secrets=secrets)
+@app.function(image=train_image, gpu=G(), volumes={VOL: vol}, timeout=3 * 3600, secrets=secrets)
 def evaluate(av_sft: str = "av38_sft", rl_run: str = "", critic: str = "", n: int = 256,
              max_new_tokens: int = 256, tag: str = "eval"):
     """Held-out FVE on the 256 rl-split docs from the transfer test (doc bucket < 5,
@@ -1441,7 +1452,7 @@ def export(av_sft: str = "av38_sft", ar_sft: str = "ar38_sft", rl_run: str = "rl
             print(f"{os.path.getsize(p)/1e6:9.1f} MB  {p[len(dst)+1:]}")
 
 
-@app.function(image=pub_image, gpu="B200",
+@app.function(image=pub_image, gpu=G(),
               volumes={VOL: vol}, timeout=3600, secrets=secrets)
 def test_infer(src: str = "export", stage: str = "sft", n: int = 64):
     """Run the standalone nla_qwen38.py against an exported bundle on held-out docs."""
@@ -1539,3 +1550,38 @@ def check_hopper_triton():
         worst = max(worst, e)
         print(n, "rel_err", e, flush=True)
     print("VERDICT", "OK" if worst < 0.05 else "MISMATCH", flush=True)
+
+
+@app.function(volumes={VOL: vol}, timeout=2 * 3600, cpu=8.0, memory=16384, secrets=secrets)
+def push_ckpts(repo: str = "gereon/qwen3.8-27b-nla-L42-data", run: str = "rl38"):
+    """Back up resumable training state (SFT LoRAs/critic + RL LoRA/critic/optimizer rank 0) to HF."""
+    from huggingface_hub import HfApi
+    api = HfApi()
+    api.create_repo(repo, repo_type="dataset", private=True, exist_ok=True)
+    for d in ("av38_sft", "ar38_sft"):
+        api.upload_folder(folder_path=f"{CKPT}/{d}", path_in_repo=f"ckpts/{d}", repo_id=repo, repo_type="dataset",
+                          commit_message=f"ckpt {d}")
+    api.upload_folder(folder_path=f"{CKPT}/{run}", path_in_repo=f"ckpts/{run}", repo_id=repo, repo_type="dataset",
+                      ignore_patterns=["optim_r[1-9]*.pt"], commit_message=f"resumable {run} checkpoint")
+    print("pushed ckpts to", repo, flush=True)
+
+
+@app.function(volumes={VOL: vol}, timeout=3 * 3600, cpu=8.0, memory=32768, secrets=secrets)
+def restore(repo: str = "gereon/qwen3.8-27b-nla-L42-data"):
+    """Rebuild this pipeline's volume in a NEW Modal workspace, entirely from Hugging Face."""
+    import shutil
+
+    from huggingface_hub import snapshot_download
+    print(snapshot_download(BASE38, allow_patterns=["*.json", "*.safetensors", "*.jinja", "*.txt"]), flush=True)
+    vol.commit()
+    snapshot_download(NLA36, allow_patterns=["nla_meta.yaml", "av_sft_lora/*"])
+    snapshot_download(DATA8B, repo_type="dataset", allow_patterns=["rl_shuf*"])
+    d = snapshot_download(repo, repo_type="dataset")
+    for sub, dst in (("data", DATA), ("ckpts", CKPT), ("results", f"{VOL}/results")):
+        if os.path.isdir(f"{d}/{sub}"):
+            shutil.copytree(f"{d}/{sub}", dst, dirs_exist_ok=True)
+    vol.commit()
+    for root, _, files in os.walk(CKPT):
+        for f in files:
+            p = os.path.join(root, f)
+            print(f"{os.path.getsize(p)/1e6:9.1f} MB  {p}", flush=True)
