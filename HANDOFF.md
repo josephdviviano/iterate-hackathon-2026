@@ -59,7 +59,7 @@ minute). The user reports Devin is usable again. Be judicious.
 
 ## The plan
 
-Budget: 101 Devin sessions in the base plan, 33 more on one contingency.
+Budget: 101 Devin sessions in the base plan, 33 more on one contingency; four steps, P1 to P4.
 A session is 2 to 10 minutes; run arms at `--parallel 4` and keep about 20
 sessions concurrent at most (that worked all day). Set a time limit per
 step; at the limit record the result, positive or negative.
@@ -140,26 +140,19 @@ A second committee batch on m0r0 L3 in the OPINE environment,
 error for batch 1 and batch 2. This bounds the caveat under every claim in
 this project.
 
-### P5. A second synthesizer on Modal (0 Devin sessions)
-
-The feasibility job writes to `artifacts/tr87/L1_f60/modal_feasibility.log`
-(gpt-oss-120b woke at 21:55; Qwen was still cold). If a model admits
-programs in frame-out mode on tr87 L1 and ka59 L2, run one committee of 8
-on ka59 and on ar25 L3 through the fan-out:
-`uv run modal run -m committee.modal_app --game ka59 --level 2 --train-frac 0.4 --runs 8 --seeded --frame-out --condition committee_opine_gptoss`
-and record R38, the calibration result with a second synthesizer. If
-neither model admits, record the negative in one line under R33.
+A second synthesizer on Modal was considered and dropped by the user
+(2026-10-03 22:05): no experiment uses the open models.
 
 ### After the experiments (no sessions)
 
-1. RESULTS entries R34 to R38, each with metric, runs, split, baseline,
+1. RESULTS entries R34 to R37, each with metric, runs, split, baseline,
    command and commit. Every number in README.md and on the page comes from
    there.
 2. README.md: the results section gets the OPINE-environment table and the
    loop result in that environment. The credits already list arc-agi.
 3. CLAUDE.md track table: the "no live play" gap is closed (R25, R26);
    update that row and the known-gaps line.
-4. Report page: one section for R34 to R38. Read it before publishing;
+4. Report page: one section for R34 to R37. Read it before publishing;
    another session edits its ONC part.
 5. HANDOFF.md: replace this plan with what was run.
 6. The user merges `jdv` into `main`; run the demo from `main`; push.
@@ -178,7 +171,7 @@ neither model admits, record the negative in one line under R33.
   (+1 committed right, -1 committed wrong, 0 abstain or set) is the one
   number that prices abstention. gamma 0.05 stays the code default; 0.3 is
   the recorded leave-one-out alternative.
-- No Claude account for synthesis: Devin, or the open models on Modal.
+- No Claude account for synthesis, and no open-model synthesis on Modal (dropped 22:05): Devin only.
 - Terrain objects (R32) are superseded by the frame modes; keep the
   completeness measurement, do not develop them further.
 - Do not tune on test data: thresholds come from train-side quantities; the
