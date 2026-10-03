@@ -24,13 +24,14 @@ ar25 level 3, trained on the first 40% of the level, tested on the rest
 | Held-out effect rows never seen in train | η undefined on 51 of 90 | entropy on all 90 |
 | Probes until a counterexample falsifies every hypothesis | OPINE-World count priority: 7 | disagreement: 1 (random: 2.7) |
 
-Across five splits (R4 to R7, R17), 8 seeded programs each:
+Across six splits (R4 to R7, R17, R21), 8 seeded programs each:
 
 | Split | Unanimous transitions, error | Split transitions, error | Probes to falsify: disagreement / count priority / random |
 |---|---|---|---|
 | ar25 L3 | 27, 0.30 | 17, 0.83 to 1.00 | 1 / 7 / 2.7 |
 | m0r0 L3 | 38, 0.16 | 6, 0.67 | 1 / 10 / 4.8 |
 | sk48 L2 | 41, 0.00 | 27, 0.59 | |
+| ar25 L7 | 25, 0.00 | 40, 0.95 | |
 | tr87 L1 to L2 | 28, 0.00 | 0 | |
 | ft09 L5 | 31, 0.00 | 0 | |
 

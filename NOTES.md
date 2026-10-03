@@ -75,6 +75,7 @@
     - H8: linear climb round 3 reached 0.3976 on (1,1,1,-2) with a self-similar law, 0.003 under the Bellec-Fritz limit, plus certified values on four vectors with no published number. Every climbing child timed out at 900 s, so `confidence` stayed 0; raise the timeout or ask for confidence first in the next run.
     - H9: replay of the certification policy on identical cached laws: 82 percent of certifications skipped on the plateaued Hoeffding climb, 1 of 18 on the still-improving linear climb, bests identical, 0 audit disagreements. Policy moved into the child's check.py (certify only a law that beats the child's own best per instance); float sums exactly on the boundary count as exact ties so dyadic laws are not force-certified. Timeout raised to 1800 s, 40 turns; contract asks for confidence in the first edit. Linear climb resumed for rounds 4 and 5 with --tiers.
     - Review of the Hoeffding negative result: H6's float local search was weak evidence because ties make the objective discontinuous in atom positions. Replaced by H10, exhaustive over 2- to 4-atom supports on the grid {0, 1, (t - l)/k} with weight optimization, 32,906 supports on 63 instances with n <= 8: equals the family on all 63, no win. Scope limits stated in RESULTS.md.
+    - H11: rounds 5 and 6 with 30-minute children all finished inside budget, defined confidence, and reached 0.398027 on (1,1,1,-2), converging to the 0.400695 limit at about +0.0002 per round. On the proven anchor the children state p = 0.01 to 0.02 and are not tight: an honest low report. Checker-side certification counts missing for these rounds (process predates the instrumentation); captured from the next run on.
   DEFERRED:
     - A harder family where search fails, so that disagreement can carry information: t close to n m with large n, or the Bellec-Fritz inequalities (AlphaEvolve's naive run reached 0.389 against the known 0.400695). Only if the pitch needs a disagreement result from this task; H3 already gives the calibration result.
     - Float-only verifier as a reward-hacking control. The exact verifier makes it moot for scoring; only a demo item.
@@ -149,3 +150,19 @@
     - No-verifier soft-weight committee: too few inconsistent programs exist to test it.
   ABANDONED:
     - Claiming the seed hypotheses are what makes the uncertainty informative. R12 shows the execution-defined entropy carries it; the seeds help admission and diversity.
+
+- [jdv] - Opt-in components tested, two more levels, equal weights by default - ee2213d
+  Each candidate improvement was built as a separate condition and tested against the base committee before any default changed.
+  DONE:
+    - R13 row-level calibration: committee entropy predicts rows with errors (0.75, 0.72, 1.00) where count-based eta is at chance or worse; on ar25 L7 both are 0.67.
+    - R14 no simplicity measure tracks held-out accuracy across 45 programs; equal weights became the default, MDL is opt-in.
+    - R15 open-loop rollouts with memory across levels; disagreement grows with the horizon where programs diverge.
+    - R16 disentanglement by entropy has no power at 2 to 8 observations per row; perturbation attributes rows to conditions and shows mechanism-level disagreement.
+    - R17, R21 sk48 L2 and ar25 L7: AUROC 1.00, unanimous error 0.00 on both.
+    - R18 judge plus disagreement fails out of sample. R19 library of 15 mechanisms with 3 contested and the disputed stances as named options. R20 library at 12 train transitions: inconclusive with 3 and 4 programs.
+    - Fixed-count split option and seed files for benchmark protocols.
+  DEFERRED:
+    - Wider benchmark (screen 17 levels, committees on the informative ones) pending the Devin budget.
+    - Decisive library A/B at 8 per arm on two levels; version-space-spanning probes as an opt-in condition.
+  ABANDONED:
+    - MDL prior as a default. Mechanism count as a prior (no signal). The judge in the method.

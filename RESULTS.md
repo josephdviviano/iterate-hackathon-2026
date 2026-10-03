@@ -506,6 +506,60 @@ more information than length did (R14): members differ in two or three
 optional mechanisms, not in size. Whether the library helps a synthesizer
 on a new level with little data is R20.
 
+## R20. Library-conditioned synthesis at low data: inconclusive
+
+ar25 level 6, first 12 transitions train, 42 test. `lib_devin`: the level-3
+library (R19) and its mechanism list in the seed. `nolib_devin`: no seed.
+Same synthesizer, 4 programs per arm; one no-library run was lost to a
+local network error, so that arm has 3.
+
+| | no library (3) | library (4) |
+|---|---|---|
+| Admitted | 3 of 3 | 4 of 4 |
+| Member held-out accuracy | 0.79, 0.24, 0.24; mean 0.42 | 0.67, 0.60, 0.60, 0.10; mean 0.49 |
+| Vote accuracy | 0.26 | 0.60 |
+| AUROC, disagreement vs error | 0.81 | 0.58 |
+| Wall per program | 270 s | 255 s |
+
+Reading: with 3 and 4 programs the arms are not separable. The library arm
+has a higher mean and vote because three of its members share one
+behaviour, which also lowers its disagreement signal; the no-library arm
+holds the single best program. No sample-complexity benefit is shown, and
+the library stays opt-in. A decisive test needs about 8 per arm on two
+levels, roughly 32 sessions.
+
+## R21. ar25 level 7, 40% train: fourth informative level
+
+44 train, 65 test. 8 of 8 seeded programs admitted; two of three baseline
+programs returned (0.40, 0.35), the third session hung and was stopped.
+
+| | Value |
+|---|---|
+| Members, held-out accuracy | 0.40 ×4, 0.415 ×4; vote 0.415; 6 distinct behaviours |
+| Unanimous transitions, error | 25, 0.00 |
+| Split transitions, error | 40, 0.95 (low 2 at 0.00, medium 38 at 1.00) |
+| AUROC, disagreement vs error | 1.00 |
+| Rows touched by held-out transitions | 267, 186 unseen in train |
+| Row-level AUROC, η_committee | 0.68 all rows, 0.68 unseen rows; on seen rows η_counts 0.68 vs η_committee 0.66 |
+| Zero-entropy rows: n, error | 127, 0.04 |
+| Open loop | first miss at step 3 for every member; disagreement 0.35 → 0.60 beyond 10 steps |
+
+Reading: the hardest level so far and the same transition-level pattern,
+with every unanimous prediction right and 38 of 40 split predictions wrong.
+At the row level the count-based η is as informative as the committee's
+here, the one level where that holds; the committee still scores the 186
+rows that have no counts.
+
+## Summary across the informative levels
+
+| Split | n test | Unanimous: n, error | Split: n, error | AUROC | Row AUROC committee vs counts (seen rows) |
+|---|---|---|---|---|---|
+| ar25 L3 | 44 | 27, 0.30 | 17, 0.88 | 0.77 | 0.96 vs 0.46 |
+| m0r0 L3 | 44 | 38, 0.16 | 6, 0.67 | 0.68 | 0.69 vs 0.48 |
+| sk48 L2 | 68 | 41, 0.00 | 27, 0.59 | 1.00 | 1.00 vs 0.22 |
+| ar25 L7 | 65 | 25, 0.00 | 40, 0.95 | 1.00 | 0.66 vs 0.68 |
+| tr87 L1→L2, ft09 L5 | 28, 31 | all, 0.00 | 0 | | |
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a
