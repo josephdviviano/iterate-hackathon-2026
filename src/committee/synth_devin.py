@@ -34,9 +34,23 @@ def _headers() -> dict:
     return {"Authorization": f"Bearer {os.environ['DEVIN_API_KEY']}"}
 
 
+def _retry(call, tries: int = 20, wait_s: float = 30):
+    """Repeat a request over a dropped network. HTTP errors come back to the caller."""
+    import httpx
+
+    for i in range(tries):
+        try:
+            return call()
+        except httpx.TransportError:
+            if i == tries - 1:
+                raise
+            time.sleep(wait_s)
+
+
 def _upload(client, name: str, text: str) -> str | None:
     try:
-        r = client.post(f"{API}/attachments", headers=_headers(), files={"file": (name, text.encode())}, timeout=120)
+        r = _retry(lambda: client.post(f"{API}/attachments", headers=_headers(), files={"file": (name, text.encode())},
+                                       timeout=120))
         r.raise_for_status()
         body = r.json()
         if isinstance(body, str):
@@ -91,7 +105,7 @@ def synthesize_devin(train: list[Transition], seed: str | None = None, *, timeou
                   "prompt_chars": len(prompt)}
     body = {"prompt": prompt, "structured_output_schema": SCHEMA, "max_acu_limit": max_acu, "unlisted": True,
             "tags": tags or ["committee"], "title": f"committee synth {time.strftime('%H:%M:%S')}"}
-    r = client.post(f"{API}/sessions", headers=_headers(), json=body)
+    r = _retry(lambda: client.post(f"{API}/sessions", headers=_headers(), json=body))
     if r.status_code != 200:
         raise RuntimeError(f"Devin create session {r.status_code}: {r.text[:500]} (prompt {len(prompt)} chars, "
                            f"attachments uploaded {meta['attachments_uploaded']}/3)")
@@ -104,7 +118,10 @@ def synthesize_devin(train: list[Transition], seed: str | None = None, *, timeou
                   "your best program anyway.")
     while time.time() - t0 < timeout_s:
         time.sleep(poll_s)
-        g = client.get(f"{API}/session/{meta['session_id']}", headers=_headers())
+        try:
+            g = client.get(f"{API}/session/{meta['session_id']}", headers=_headers())
+        except httpx.TransportError:  # the session keeps running on Devin while our network is down
+            continue
         if g.status_code != 200:
             continue
         s = g.json()
@@ -117,10 +134,18 @@ def synthesize_devin(train: list[Transition], seed: str | None = None, *, timeou
         # a blocked session is waiting for us; a working session that already reported ALL PASS is polishing
         if not out.get("program") and (status == "blocked" or reported_pass) and nudged < 4 \
                 and time.time() - last_nudge > 150:
-            client.post(f"{API}/session/{meta['session_id']}/message", headers=_headers(), json={"message": nudge_text})
+            try:
+                client.post(f"{API}/session/{meta['session_id']}/message", headers=_headers(), json={"message": nudge_text})
+            except httpx.TransportError:
+                continue
             nudged, last_nudge = nudged + 1, time.time()
-    meta.update({"status": status, "wall_s": round(time.time() - t0, 1), "nudges": nudged,
-                 "devin_train_pass": out.get("train_pass"), "notes": (out.get("notes") or "")[:1000]})
+    meta.update({"status": status, "wall_s": round(time.time() - t0, 1), "nudges": nudged})
+    return devin_result(out, meta, train, seed, mode)
+
+
+def devin_result(out: dict, meta: dict, train: list[Transition], seed: str | None, mode: str) -> SynthResult:
+    """The synthesis record from a session's structured output; the stub stands in for a missing program."""
+    meta.update({"devin_train_pass": out.get("train_pass"), "notes": (out.get("notes") or "")[:1000]})
     source = out.get("program") or stub(mode)
     passed, report = train_report(source, train, mode=mode)
     meta["passed"] = passed

@@ -138,8 +138,12 @@ def run_split(train: list[Transition], test: list[Transition], base: Path, seeds
               engine_src: str | None = None) -> list[dict]:
     check_mode(base, cfg.get("mode", "objects"))
 
-    def job(k: int, seed: str | None) -> dict:
-        meta = run_one(train, test, base / f"run{k}", seed, cfg, engine_src)
+    def job(k: int, seed: str | None) -> dict | None:
+        try:
+            meta = run_one(train, test, base / f"run{k}", seed, cfg, engine_src)
+        except Exception as e:  # one lost run must not end the other runs of the condition
+            print(f"{label} run{k}: FAILED {e!r}", flush=True)
+            return None
         print(describe(meta, f"{label} run{k}"), flush=True)
         return meta
 
@@ -148,6 +152,11 @@ def run_split(train: list[Transition], test: list[Transition], base: Path, seeds
         return [job(k, seed) for k, seed in jobs]
     with ThreadPoolExecutor(max_workers=parallel) as pool:
         return list(pool.map(lambda ks: job(*ks), jobs))
+
+
+def seeds_for(train: list[Transition], runs: int, start: int = 0) -> list[str]:
+    """Seeds of runs start to start+runs-1 of one seeded batch, so added runs continue that batch."""
+    return list(make_seeds(train, start + runs))[start:]
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -159,7 +168,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--train-frac", type=float, default=0.6)
     parser.add_argument("--condition", default="baseline")
     parser.add_argument("--runs", type=int, default=1)
-    parser.add_argument("--start", type=int, default=0, help="first run index, to add runs later")
+    parser.add_argument("--start", type=int, default=0,
+                        help="first run index, to add runs later; seeds are those of a batch of start+runs")
     add_backend_args(parser)
     add_mode_args(parser)
     parser.add_argument("--seeded", action="store_true", help="one data-driven seed hypothesis per run")
@@ -173,7 +183,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.seeded:
         train, _ = temporal_split(build_buffer(args.game), args.level, args.train_frac, args.test_level,
                                   args.train_n, args.test_n)
-        seeds = list(make_seeds(train, args.runs))
+        seeds = seeds_for(train, args.runs, args.start)
     if args.seed_file:
         seeds = [Path(args.seed_file).read_text()] * args.runs
     run_condition(args.game, args.level, args.train_frac, args.condition, seeds, backend_cfg(args),
