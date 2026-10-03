@@ -183,12 +183,13 @@ def build_buffer(game: str, use_cache: bool = True) -> list[Transition]:
 
 def temporal_split(transitions: list[Transition], level: int, train_frac: float = 0.6,
                    test_level: int | None = None, train_n: int | None = None,
-                   test_n: int | None = None) -> tuple[list[Transition], list[Transition]]:
+                   test_n: int | None = None, terrain: bool = False) -> tuple[list[Transition], list[Transition]]:
     """Train on the first fraction of a level, or on its first train_n transitions when given.
     Test on the rest of that level (capped at test_n when given), or on all of another level
     when test_level is given. RESET and level-closing transitions are dropped from both sides:
     their outcome is a new layout, not a function of the state, so a program can only pass
-    them by storing the layout."""
+    them by storing the layout. With terrain, the static terrain of the train frames is appended
+    to every state as constant objects (committee.terrain)."""
     def modellable(ts: list[Transition]) -> list[Transition]:
         return [t for t in ts if t.action_id != RESET and not t.level_advance]
 
@@ -201,6 +202,11 @@ def temporal_split(transitions: list[Transition], level: int, train_frac: float 
         test = modellable([t for t in transitions if t.level == test_level])
     if test_n:
         test = test[:test_n]
+    if terrain:
+        from .terrain import add_terrain, static_terrain
+
+        objs = static_terrain(train)
+        train, test = add_terrain(train, objs), add_terrain(test, objs)
     return train, test
 
 

@@ -19,19 +19,43 @@ from dataclasses import replace
 from .loader import Transition
 
 
-def static_terrain(train: list[Transition]) -> list[dict]:
-    frames = [t.before_grid for t in train] + [train[-1].after_grid]
-    h, w = len(frames[0]), len(frames[0][0])
-    bg = Counter(v for row in frames[0] for v in row).most_common(1)[0][0]
-    boxes = [(int(o.get("x", 0)), int(o.get("y", 0)), int(o.get("w", 1)), int(o.get("h", 1)))
-             for o in train[0].before_objs if int(o.get("w", 1)) * int(o.get("h", 1)) < 0.9 * h * w]
+def _boxes(objs: list[dict], h: int, w: int) -> list[tuple[int, int, int, int]]:
+    """Object bounding boxes, without frame-sized container objects."""
+    return [(int(o.get("x", 0)), int(o.get("y", 0)), int(o.get("w", 1)), int(o.get("h", 1)))
+            for o in objs if int(o.get("w", 1)) * int(o.get("h", 1)) < 0.9 * h * w]
 
-    def inside_object(x: int, y: int) -> bool:
-        return any(bx <= x < bx + bw and by <= y < by + bh for bx, by, bw, bh in boxes)
 
-    static = {(x, y): frames[0][y][x] for y in range(h) for x in range(w)
-              if frames[0][y][x] != bg and not inside_object(x, y)
-              and all(f[y][x] == frames[0][y][x] for f in frames)}
+def _covered(boxes, h: int, w: int) -> list[list[bool]]:
+    cov = [[False] * w for _ in range(h)]
+    for bx, by, bw, bh in boxes:
+        for y in range(max(0, by), min(h, by + bh)):
+            for x in range(max(0, bx), min(w, bx + bw)):
+                cov[y][x] = True
+    return cov
+
+
+def static_terrain(train: list[Transition], min_cells: int = 4) -> list[dict]:
+    """Terrain cells: non-background cells whose colour is the same in every training frame where no
+    object covers them. A cell under an object in some frames still counts when it is consistent
+    whenever visible; a cell never visible is left out."""
+    frames = [(t.before_grid, t.before_objs) for t in train] + [(train[-1].after_grid, train[-1].after_objs)]
+    h, w = len(frames[0][0]), len(frames[0][0][0])
+    bg = Counter(v for row in frames[0][0] for v in row).most_common(1)[0][0]
+    seen_colour: dict[tuple[int, int], int] = {}
+    unstable: set[tuple[int, int]] = set()
+    for grid, objs in frames:
+        cov = _covered(_boxes(objs, h, w), h, w)
+        for y in range(h):
+            for x in range(w):
+                if cov[y][x] or (x, y) in unstable:
+                    continue
+                c = grid[y][x]
+                if (x, y) in seen_colour and seen_colour[(x, y)] != c:
+                    unstable.add((x, y))
+                    del seen_colour[(x, y)]
+                elif (x, y) not in seen_colour:
+                    seen_colour[(x, y)] = c
+    static = {p: c for p, c in seen_colour.items() if c != bg}
     seen: set[tuple[int, int]] = set()
     objects = []
     for start in sorted(static, key=lambda p: (p[1], p[0])):
@@ -46,7 +70,7 @@ def static_terrain(train: list[Transition]) -> list[dict]:
                 if (nx, ny) in static and (nx, ny) not in seen and static[(nx, ny)] == colour:
                     seen.add((nx, ny))
                     stack.append((nx, ny))
-        if len(comp) < 4:
+        if len(comp) < min_cells:
             continue
         xs, ys = [p[0] for p in comp], [p[1] for p in comp]
         x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
@@ -55,6 +79,30 @@ def static_terrain(train: list[Transition]) -> list[dict]:
         objects.append({"name": f"terrain_{len(objects)}", "type": "terrain", "x": x0, "y": y0,
                         "w": x1 - x0 + 1, "h": y1 - y0 + 1, "layer": 0, "colour": colour, "pixels": pixels})
     return objects
+
+
+def completeness(transitions: list[Transition], terrain: list[dict]) -> dict:
+    """Share of non-background cells, over every frame given, that lie inside an extracted object or a
+    terrain object, and the residual by colour. The residual is what a program over objects cannot see."""
+    tcells = {(o["x"] + i, o["y"] + j) for o in terrain for j, row in enumerate(o["pixels"]) for i, v in enumerate(row) if v >= 0}
+    total = explained = 0
+    residual: Counter = Counter()
+    for t in transitions:
+        for grid, objs in ((t.before_grid, t.before_objs), (t.after_grid, t.after_objs)):
+            h, w = len(grid), len(grid[0])
+            bg = Counter(v for row in grid for v in row).most_common(1)[0][0]
+            cov = _covered(_boxes(objs, h, w), h, w)
+            for y in range(h):
+                for x in range(w):
+                    if grid[y][x] == bg:
+                        continue
+                    total += 1
+                    if cov[y][x] or (x, y) in tcells:
+                        explained += 1
+                    else:
+                        residual[grid[y][x]] += 1
+    return {"non_background_cells": total, "explained_share": round(explained / max(1, total), 4),
+            "residual_by_colour": dict(residual.most_common(6))}
 
 
 def add_terrain(transitions: list[Transition], terrain: list[dict]) -> list[Transition]:
@@ -83,6 +131,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--runs", type=int, default=8)
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--coverage", action="store_true", help="completeness of objects plus terrain over train and test frames")
     parser.add_argument("--report", action="store_true")
     add_backend_args(parser)
     args = parser.parse_args(argv)
@@ -93,6 +142,12 @@ def main(argv: list[str] | None = None) -> None:
     print(f"{args.game} L{args.level}: {len(terrain)} terrain objects, "
           f"{sum(sum(v >= 0 for row in o['pixels'] for v in row) for o in terrain)} cells, "
           f"colours {sorted({o['colour'] for o in terrain})}; train {len(train_t)}, test {len(test_t)}")
+    if args.coverage:
+        before = completeness(train + test, [])
+        after = completeness(train + test, terrain)
+        print(f"  objects only: explained {before['explained_share']:.3f}, residual {before['residual_by_colour']}")
+        print(f"  objects + terrain: explained {after['explained_share']:.3f}, residual {after['residual_by_colour']}")
+        return
     if args.dry_run:
         for o in terrain[:12]:
             print("  ", {k: o[k] for k in ("name", "x", "y", "w", "h", "colour")})
