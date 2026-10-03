@@ -28,7 +28,9 @@ def build(context: BuildContext) -> SimpleNamespace:
     if device.type == "cuda":
         torch.backends.cudnn.benchmark = True
     model = make_model(config, device)
-    step_model = torch.compile(model, mode=config.compile_mode) if config.compile else model
+    step_model = (
+        torch.compile(model, mode=config.compile_mode, dynamic=False) if config.compile else model
+    )
     selector = make_model(config.selector_config(), device) if config.select_fraction < 1 else None
     state = SimpleNamespace(
         config=config, device=device, model=model, step_model=step_model, selector=selector

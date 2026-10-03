@@ -1,0 +1,47 @@
+schema_version: '2.0'
+finding_id: F-012
+task_id: T-013
+result_kind: mixed
+importance: material
+observation: 'S9 (5 seeds): batch 512, 768 and 1024 reach 75.3% in 6.65, 6.74 and 6.67 s; widths 128/384/640
+  reach 75.42% at 9 epochs and 75.72% at 10 (time to target <= 6.50 s); 128/448/512 needs 7.50 s, 160/384/512
+  and 96/384/512 do not reach 75.3% by 10 epochs; Muon with lookahead and the standard 1/9 head produced
+  non-finite logits in all four arms (lr 0.12 and 0.24).'
+interpretation: Batch size is flat. Capacity added to the last stage, which runs at 4x4 to 8x8 resolution,
+  buys accuracy most cheaply; earlier-stage width does not. Muon without head normalisation diverges in
+  fp16, so Muon is rejected for this programme (H4 rejected).
+decision_implication: Climb last-stage width (S12); keep batch 1024 and SGD.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: supported
+  rationale: Muon-scale filter updates with an unnormalised head overflow fp16 logits; the harness rejected
+    the non-finite outputs
+  discriminating_test: null
+- kind: mechanism
+  disposition: supported
+  rationale: late-stage channels are cheap at low spatial resolution and carry the 100-way discrimination
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s9-batch-width-muon-table.csv
+  locator: research/evidence/T-013/s9-batch-width-muon-table.csv
+  sha256: 3a0743f7826870b63990e95abb9872832d0e1ed9e1fa66474c280078d00362e1
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: s9-batch-width-muon-frontier.csv
+  locator: research/evidence/T-013/s9-batch-width-muon-frontier.csv
+  sha256: 5609fd7d83322faedc4266ab0e88cdf37c0a80cb7c7ad7f3a92293baf7841ac4
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Last-stage width explored in S12; Muon rejected.

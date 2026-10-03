@@ -18,10 +18,10 @@
 <!-- writing-tools:generated:start -->
 ## Current position
 
-- **State:** needs_design
+- **State:** continue
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
-- **Why:** Programme evidence or cross-artifact integrity is invalid; repair it before selecting more work.
+- **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
 - **Next:** Continue T-013 (Local-proxy hill climb to convergence (X-002)).
 - **Open human feedback:** none
 
@@ -44,11 +44,6 @@
 | [T-013](tasks/T-013-local-proxy-hill-climb-to-convergence-x-002.md) — Local-proxy hill climb to convergence (X-002) | exploration | in_progress | From the P1 frontier, climb one lever at a time (width and stage allocation, epochs, optimiser, batch size, resolution schedule, regularisation, learning rates) on GPU 1, keeping a change only when the interpolated proxy time to a 75.3% single-view mean falls beyond seed noise; stop when no accessible lever improves it. |
 
 ## Issues identified
-
-### Programme integrity and ownership
-
-- T-003: E-006 has changed since verification: research/README.md
-- D-001: E-001 has changed since verification: research/DIRECTIVES.md
 
 ### F-001 — resolved, material
 
@@ -120,6 +115,34 @@
 - **Decision consequence:** Reject in-run selection; do not spend more GPU time on selection variants unless the climb plateaus with long budgets.
 - **Resolution:** Selection rejected (H13).
 
+### F-011 — resolved, material
+
+- **Observation:** S7 (5 seeds): max-autotune compilation with fused SGD is 13% faster per epoch (5.81 s vs 6.71 s at 10 epochs) but 0.28 pp and 0.36 pp lower at 10 and 12 epochs (75.05%, 75.49% vs 75.33%, 75.85%); lr 9.2 lowers accuracy (74.92%, 75.44%) and lr 14.4 ties the default (75.36%, 75.56%). The compile arm still used dynamic-shape recompilation (fixed afterwards with dynamic=False).
+- **Interpretation:** The compiled-plus-fused arms are lower in both S6 and S7 at matched epochs, so the deficit looks systematic rather than noise; its source (fused SGD versus compiled numerics) is unresolved. H15 is rejected: the default learning rate is already near-optimal for the base.
+- **Decision consequence:** Keep lr 11.5; resolve the compile deficit in S8 (10 seeds, compile and fused separated, dynamic=False) before adopting compilation for timing.
+- **Resolution:** lr fixed at default; compile decision deferred to S8.
+
+### F-012 — resolved, material
+
+- **Observation:** S9 (5 seeds): batch 512, 768 and 1024 reach 75.3% in 6.65, 6.74 and 6.67 s; widths 128/384/640 reach 75.42% at 9 epochs and 75.72% at 10 (time to target <= 6.50 s); 128/448/512 needs 7.50 s, 160/384/512 and 96/384/512 do not reach 75.3% by 10 epochs; Muon with lookahead and the standard 1/9 head produced non-finite logits in all four arms (lr 0.12 and 0.24).
+- **Interpretation:** Batch size is flat. Capacity added to the last stage, which runs at 4x4 to 8x8 resolution, buys accuracy most cheaply; earlier-stage width does not. Muon without head normalisation diverges in fp16, so Muon is rejected for this programme (H4 rejected).
+- **Decision consequence:** Climb last-stage width (S12); keep batch 1024 and SGD.
+- **Resolution:** Last-stage width explored in S12; Muon rejected.
+
+### F-013 — resolved, material
+
+- **Observation:** S8 (10 fresh seeds 100-109, dynamic=False): at 9 and 10 epochs, eager 74.64% and 75.27%, fused SGD 74.79% and 75.27%, compile 74.77% and 75.21%, compile plus fused 74.79% and 75.43% (SE 0.05-0.12 pp); compilation lowers per-trial time by about 12% (6.06 to 5.32 s at 9 epochs, 6.73 to 5.90 s at 10); fused SGD does not change speed; compile adds 3.5-10 s of untimed build.
+- **Interpretation:** H14 is supported: compilation is a pure ~12% speed-up with accuracy unchanged within noise. The S6/S7 accuracy deficits were 5-seed noise, possibly compounded by dynamic-shape recompilation. On fresh seeds the base sits at 75.27% after 10 epochs, just under the climbing target.
+- **Decision consequence:** Use compile (dynamic=False, default mode) with fused SGD for all timing; rank accuracy-changing levers with the eager proxy, which compile scales uniformly; the base needs a little more capacity or epochs for margin.
+- **Resolution:** Compile adopted (D-004).
+
+### F-014 — resolved, material
+
+- **Observation:** S12 (5 seeds, eager proxy): time to 75.3% is 6.29 s for 128/384/640 (8.70 epochs), 6.45 s for 128/320/768 (8.96), 6.52 s for 128/384/768 (8.36) and above 7.26 s for 128/384/1024; the 128/384/512 control does not reach 75.3% by 9 epochs (74.68%).
+- **Interpretation:** Last-stage width is the efficient lever up to about 640 channels: it cuts epochs enough to more than pay for its cost, beyond which per-epoch cost dominates. This also restores margin that the S8 fresh-seed control lacked.
+- **Decision consequence:** Adopt 128/384/640 as the base (D-005) and fine-tune epochs near 8.5-9 with compiled timing and 10 seeds.
+- **Resolution:** Base widths updated to 128/384/640.
+
 ### B-001 — external, open
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -152,6 +175,20 @@
 - **Decision:** Adopt progressive resizing (24 px then 32 px); keep SGD with lookahead, batch 1024, label smoothing 0.2 and translate 2.
 - **Rationale:** Only resizing lowers proxy time beyond noise (-15%); other levers tie or lose accuracy at fixed epochs.
 - **Alternatives:** Muon (as ported): rejected, -0.8 to -1.4 pp and slower steps.; Batch 1536/2048: rejected, slower to target.; Translate 1 / label smoothing 0.1: equivalent; keep defaults to limit changes.
+
+### D-004 — provisional
+
+- **Question:** Should the recipe compile its training step, and how?
+- **Decision:** Compile the training model in build with torch.compile(mode='default', dynamic=False) and use fused SGD; evaluation keeps the eager module.
+- **Rationale:** About 12% lower time at unchanged accuracy over 10 fresh seeds; build cost stays far below the 600 s limit; dynamic=False keeps one specialised graph per resolution.
+- **Alternatives:** Eager: rejected, 12% slower.; max-autotune (CUDA graphs): not yet re-measured with dynamic=False; S7 showed 13% with the dynamic-shape bug, so it stays a candidate for the A100.
+
+### D-005 — provisional
+
+- **Question:** Which widths form the base after S12?
+- **Decision:** 128/384/640, three convs per block, translate 2, 20 px then 32 px at half-way, about 8.7 epochs.
+- **Rationale:** Lowest proxy time to 75.3% in S12 (6.29 s, about 6% under the 128/384/512 base) and more accuracy margin per epoch.
+- **Alternatives:** 128/384/768: 6.52 s, rejected.; 128/320/768: 6.45 s, within noise but more total width; kept as runner-up.; 128/384/512: does not reach 75.3% by 9 epochs on fresh seeds; superseded.
 
 ## Deferred or rejected work
 
@@ -203,11 +240,11 @@
 
 ### Exact frontier
 
-- State: **needs_design**
+- State: **continue**
 - Active: T-013
 - Eligible: none
 - Unresolved outcomes: O-001, O-002, O-003, O-004
-- Unresolved requirements: R-001, R-002, R-003, R-004, R-005, R-006, R-007, R-008
+- Unresolved requirements: R-001, R-002, R-003, R-004, R-005, R-007, R-008
 - Pending assessments: none
 - Human engagement: none
 <!-- writing-tools:generated:end -->

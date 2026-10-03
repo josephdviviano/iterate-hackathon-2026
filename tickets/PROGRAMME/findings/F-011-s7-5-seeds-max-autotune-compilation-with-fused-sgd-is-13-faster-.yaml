@@ -1,0 +1,47 @@
+schema_version: '2.0'
+finding_id: F-011
+task_id: T-013
+result_kind: mixed
+importance: material
+observation: 'S7 (5 seeds): max-autotune compilation with fused SGD is 13% faster per epoch (5.81 s vs
+  6.71 s at 10 epochs) but 0.28 pp and 0.36 pp lower at 10 and 12 epochs (75.05%, 75.49% vs 75.33%, 75.85%);
+  lr 9.2 lowers accuracy (74.92%, 75.44%) and lr 14.4 ties the default (75.36%, 75.56%). The compile arm
+  still used dynamic-shape recompilation (fixed afterwards with dynamic=False).'
+interpretation: 'The compiled-plus-fused arms are lower in both S6 and S7 at matched epochs, so the deficit
+  looks systematic rather than noise; its source (fused SGD versus compiled numerics) is unresolved. H15
+  is rejected: the default learning rate is already near-optimal for the base.'
+decision_implication: Keep lr 11.5; resolve the compile deficit in S8 (10 seeds, compile and fused separated,
+  dynamic=False) before adopting compilation for timing.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: unresolved
+  rationale: fused SGD, compiled kernels or dynamic-shape recompilation may change numerics
+  discriminating_test: S8 decomposition with dynamic=False
+- kind: mechanism
+  disposition: supported
+  rationale: learning-rate changes in either direction do not improve accuracy at fixed epochs
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s7-select-lr-table.csv
+  locator: research/evidence/T-013/s7-select-lr-table.csv
+  sha256: d515605f3d5e63205ebfe5679277b5e7c675284231883d119edbb8fb1b544b34
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: s7-select-lr-frontier.csv
+  locator: research/evidence/T-013/s7-select-lr-frontier.csv
+  sha256: 206ff761577924d5d638789407f9e5126552189174b6afaf9f2c12aa34744ec2
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: lr fixed at default; compile decision deferred to S8.

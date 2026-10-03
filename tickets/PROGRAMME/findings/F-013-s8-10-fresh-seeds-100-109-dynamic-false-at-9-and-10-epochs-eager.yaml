@@ -1,0 +1,31 @@
+schema_version: '2.0'
+finding_id: F-013
+task_id: T-013
+result_kind: positive
+importance: material
+observation: 'S8 (10 fresh seeds 100-109, dynamic=False): at 9 and 10 epochs, eager 74.64% and 75.27%,
+  fused SGD 74.79% and 75.27%, compile 74.77% and 75.21%, compile plus fused 74.79% and 75.43% (SE 0.05-0.12
+  pp); compilation lowers per-trial time by about 12% (6.06 to 5.32 s at 9 epochs, 6.73 to 5.90 s at 10);
+  fused SGD does not change speed; compile adds 3.5-10 s of untimed build.'
+interpretation: 'H14 is supported: compilation is a pure ~12% speed-up with accuracy unchanged within
+  noise. The S6/S7 accuracy deficits were 5-seed noise, possibly compounded by dynamic-shape recompilation.
+  On fresh seeds the base sits at 75.27% after 10 epochs, just under the climbing target.'
+decision_implication: Use compile (dynamic=False, default mode) with fused SGD for all timing; rank accuracy-changing
+  levers with the eager proxy, which compile scales uniformly; the base needs a little more capacity or
+  epochs for margin.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s8-compile-table.csv
+  locator: research/evidence/T-013/s8-compile-table.csv
+  sha256: 0482ecf005ed31f476f5123ff9c909ba60aa0ea6264b189f1e1cad2921a2e4ab
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Compile adopted (D-004).

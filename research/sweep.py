@@ -42,6 +42,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 ALLOWED_DEVICES_FILE = REPO / "research" / "allowed-devices"
+SLOT_COURTESY_SECONDS = 3
 INTERRUPTED = {130, 143, -signal.SIGINT, -signal.SIGTERM}
 SPEC_KEYS = {
     "name",
@@ -288,6 +289,8 @@ class Runner:
                 with self.acquire_slot() as slot:
                     if slot is not None:
                         self.execute(params, run_dir, slot)
+            # Yield the slot briefly so other sweeps polling for it are not starved.
+            time.sleep(SLOT_COURTESY_SECONDS)
 
     @contextmanager
     def acquire_slot(self):

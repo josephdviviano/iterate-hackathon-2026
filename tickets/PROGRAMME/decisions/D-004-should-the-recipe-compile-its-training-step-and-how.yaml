@@ -1,0 +1,24 @@
+schema_version: '1.0'
+decision_id: D-004
+task_id: T-013
+question: Should the recipe compile its training step, and how?
+decision: Compile the training model in build with torch.compile(mode='default', dynamic=False) and use
+  fused SGD; evaluation keeps the eager module.
+rationale: About 12% lower time at unchanged accuracy over 10 fresh seeds; build cost stays far below
+  the 600 s limit; dynamic=False keeps one specialised graph per resolution.
+alternatives:
+- 'Eager: rejected, 12% slower.'
+- 'max-autotune (CUDA graphs): not yet re-measured with dynamic=False; S7 showed 13% with the dynamic-shape
+  bug, so it stays a candidate for the A100.'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s8-compile-table.csv
+  locator: research/evidence/T-013/s8-compile-table.csv
+  sha256: 0482ecf005ed31f476f5123ff9c909ba60aa0ea6264b189f1e1cad2921a2e4ab
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: provisional

@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-014
+task_id: T-013
+result_kind: positive
+importance: material
+observation: 'S12 (5 seeds, eager proxy): time to 75.3% is 6.29 s for 128/384/640 (8.70 epochs), 6.45
+  s for 128/320/768 (8.96), 6.52 s for 128/384/768 (8.36) and above 7.26 s for 128/384/1024; the 128/384/512
+  control does not reach 75.3% by 9 epochs (74.68%).'
+interpretation: 'Last-stage width is the efficient lever up to about 640 channels: it cuts epochs enough
+  to more than pay for its cost, beyond which per-epoch cost dominates. This also restores margin that
+  the S8 fresh-seed control lacked.'
+decision_implication: Adopt 128/384/640 as the base (D-005) and fine-tune epochs near 8.5-9 with compiled
+  timing and 10 seeds.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s12-last-stage-table.csv
+  locator: research/evidence/T-013/s12-last-stage-table.csv
+  sha256: f9bd7d21e04fc552607a19b3ec403fe6df759337019a08ada0247773ab348afa
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: s12-last-stage-frontier.csv
+  locator: research/evidence/T-013/s12-last-stage-frontier.csv
+  sha256: 17009037cdad5c755e8e8948b9c4dc4ed2f87f5d4baa233f1a59be126924cd74
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Base widths updated to 128/384/640.

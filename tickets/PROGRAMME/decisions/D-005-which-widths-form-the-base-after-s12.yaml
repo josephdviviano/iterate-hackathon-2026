@@ -1,0 +1,23 @@
+schema_version: '1.0'
+decision_id: D-005
+task_id: T-013
+question: Which widths form the base after S12?
+decision: 128/384/640, three convs per block, translate 2, 20 px then 32 px at half-way, about 8.7 epochs.
+rationale: Lowest proxy time to 75.3% in S12 (6.29 s, about 6% under the 128/384/512 base) and more accuracy
+  margin per epoch.
+alternatives:
+- '128/384/768: 6.52 s, rejected.'
+- '128/320/768: 6.45 s, within noise but more total width; kept as runner-up.'
+- '128/384/512: does not reach 75.3% by 9 epochs on fresh seeds; superseded.'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s12-last-stage-frontier.csv
+  locator: research/evidence/T-013/s12-last-stage-frontier.csv
+  sha256: 17009037cdad5c755e8e8948b9c4dc4ed2f87f5d4baa233f1a59be126924cd74
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: provisional
