@@ -482,6 +482,30 @@ dilute it. Across the three levels the judge scores 0.82, 0.46 and 0.52;
 the committee 0.77, 0.68 and 1.00. The judge is dropped from the method and
 kept as a reported baseline.
 
+## R19. Shared-mechanism library extracted from the ar25 L3 committee (opt-in)
+
+One Devin session read the 8 admitted programs, named their mechanisms,
+wrote `library.py`, mapped each program to the mechanisms it implements and
+refactored three programs onto the library with exact replay preserved.
+`committee.library`; files under `artifacts/ar25/L3_f40/committee_devin/library/`.
+
+| Item | Value |
+|---|---|
+| Mechanisms named | 15 |
+| Implemented by all 8 members | 12 (action decode, selection cycle, piece move, axis move, mirror reflection, selection marker, layered composite, component re-extraction, wall index offset, static passthrough, stateless recovery, continuity memo) |
+| Contested | axis orientation (2 of 8), click select (1 of 8), undo history (1 of 8) |
+| Disputed stances the library exposes as options | piece blocked by the axis: 6 members yes, 2 no. Axis blocked by pieces: 5 yes, 3 bounds-only. Hole compositing order: top-first (4) vs low-to-high (3). The train buffer contains no transition that decides any of them |
+| Refactored members, lines before → after | 208 → 17, 234 → 18, 216 → 17, each still 29/29 on train; library 373 lines |
+| Mechanism count per member vs held-out accuracy | counts 12 to 14; Spearman −0.17, no signal |
+| Session | 1, about 10 min |
+
+Reading: the library turns the committee's transition-level disagreement
+into named, inspectable mechanism options, which is the mechanism-level
+uncertainty the design asked for. As a prior, mechanism count carries no
+more information than length did (R14): members differ in two or three
+optional mechanisms, not in size. Whether the library helps a synthesizer
+on a new level with little data is R20.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a

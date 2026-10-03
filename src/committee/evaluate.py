@@ -48,9 +48,10 @@ def summarize_single(runs) -> dict:
 
 
 def evaluate_condition(game: str, level: int, train_frac: float, condition: str, lam: float = 0.0,
-                       include_inconsistent: bool = False, test_level: int | None = None) -> dict:
-    cond = condition_dir(game, level, train_frac, condition, test_level)
-    train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
+                       include_inconsistent: bool = False, test_level: int | None = None,
+                       train_n: int | None = None, test_n: int | None = None) -> dict:
+    cond = condition_dir(game, level, train_frac, condition, test_level, train_n, test_n)
+    train, test = temporal_split(build_buffer(game), level, train_frac, test_level, train_n, test_n)
     runs = load_runs(cond, train, test)
     out = {"game": game, "level": level, "train_frac": train_frac, "test_level": test_level, "condition": condition,
            "n_test": len(test), "single": summarize_single(runs)}
@@ -132,13 +133,15 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--include-inconsistent", action="store_true")
     parser.add_argument("--test-level", type=int, default=None)
     parser.add_argument("--curve", action="store_true", help="metrics as members are added in run order")
+    parser.add_argument("--train-n", type=int, default=None)
+    parser.add_argument("--test-n", type=int, default=None)
     args = parser.parse_args(argv)
     if args.curve:
         print_curve(member_curve(args.game, args.level, args.train_frac, args.condition, args.lam, args.test_level),
                     f"{args.game} L{args.level} {args.condition}")
         return
     print_report(evaluate_condition(args.game, args.level, args.train_frac, args.condition, args.lam,
-                                    args.include_inconsistent, args.test_level))
+                                    args.include_inconsistent, args.test_level, args.train_n, args.test_n))
 
 
 if __name__ == "__main__":

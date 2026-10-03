@@ -38,8 +38,9 @@ ARTIFACTS = ROOT / "artifacts"
 
 
 def condition_dir(game: str, level: int, train_frac: float, condition: str,
-                  test_level: int | None = None) -> Path:
-    split = f"L{level}_f{int(round(train_frac * 100))}" + (f"_T{test_level}" if test_level else "")
+                  test_level: int | None = None, train_n: int | None = None, test_n: int | None = None) -> Path:
+    split = f"L{level}_n{train_n}" if train_n else f"L{level}_f{int(round(train_frac * 100))}"
+    split += (f"_T{test_level}" if test_level else "") + (f"_t{test_n}" if test_n else "")
     return ARTIFACTS / game / split / condition
 
 
@@ -89,10 +90,10 @@ def run_one(train: list[Transition], test: list[Transition], out: Path, seed: st
 
 def run_condition(game: str, level: int, train_frac: float, condition: str, seeds: list[str | None],
                   cfg: dict, start_index: int = 0, parallel: int = 1,
-                  test_level: int | None = None) -> list[dict]:
+                  test_level: int | None = None, train_n: int | None = None, test_n: int | None = None) -> list[dict]:
     transitions = build_buffer(game)
-    train, test = temporal_split(transitions, level, train_frac, test_level)
-    base = condition_dir(game, level, train_frac, condition, test_level)
+    train, test = temporal_split(transitions, level, train_frac, test_level, train_n, test_n)
+    base = condition_dir(game, level, train_frac, condition, test_level, train_n, test_n)
 
     def job(k: int, seed: str | None) -> dict:
         meta = run_one(train, test, base / f"run{k}", seed, cfg)
@@ -120,13 +121,20 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--seeded", action="store_true", help="one data-driven seed hypothesis per run")
     parser.add_argument("--parallel", type=int, default=1)
     parser.add_argument("--test-level", type=int, default=None, help="test on all of another level")
+    parser.add_argument("--train-n", type=int, default=None, help="fixed-count split: first N transitions train")
+    parser.add_argument("--test-n", type=int, default=None, help="fixed-count split: at most N test transitions")
+    parser.add_argument("--seed-file", default=None, help="one seed text for every run (e.g. a mechanism library)")
     args = parser.parse_args(argv)
     seeds: list[str | None] = [None] * args.runs
     if args.seeded:
-        train, _ = temporal_split(build_buffer(args.game), args.level, args.train_frac, args.test_level)
+        train, _ = temporal_split(build_buffer(args.game), args.level, args.train_frac, args.test_level,
+                                  args.train_n, args.test_n)
         seeds = list(make_seeds(train, args.runs))
+    if args.seed_file:
+        seeds = [Path(args.seed_file).read_text()] * args.runs
     run_condition(args.game, args.level, args.train_frac, args.condition, seeds, backend_cfg(args),
-                  start_index=args.start, parallel=args.parallel, test_level=args.test_level)
+                  start_index=args.start, parallel=args.parallel, test_level=args.test_level,
+                  train_n=args.train_n, test_n=args.test_n)
 
 
 if __name__ == "__main__":

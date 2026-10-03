@@ -182,21 +182,25 @@ def build_buffer(game: str, use_cache: bool = True) -> list[Transition]:
 
 
 def temporal_split(transitions: list[Transition], level: int, train_frac: float = 0.6,
-                   test_level: int | None = None) -> tuple[list[Transition], list[Transition]]:
-    """Train on the first fraction of a level. Test on the rest of that level, or on all of
-    another level when test_level is given. RESET and level-closing transitions are dropped
-    from both sides: their outcome is a new layout, not a function of the state, so a program
-    can only pass them by storing the layout."""
+                   test_level: int | None = None, train_n: int | None = None,
+                   test_n: int | None = None) -> tuple[list[Transition], list[Transition]]:
+    """Train on the first fraction of a level, or on its first train_n transitions when given.
+    Test on the rest of that level (capped at test_n when given), or on all of another level
+    when test_level is given. RESET and level-closing transitions are dropped from both sides:
+    their outcome is a new layout, not a function of the state, so a program can only pass
+    them by storing the layout."""
     def modellable(ts: list[Transition]) -> list[Transition]:
         return [t for t in ts if t.action_id != RESET and not t.level_advance]
 
     in_level = modellable([t for t in transitions if t.level == level])
-    n_train = max(1, round(len(in_level) * train_frac))
+    n_train = min(len(in_level), train_n) if train_n else max(1, round(len(in_level) * train_frac))
     train = in_level[:n_train]
     if test_level is None:
         test = in_level[n_train:]
     else:
         test = modellable([t for t in transitions if t.level == test_level])
+    if test_n:
+        test = test[:test_n]
     return train, test
 
 

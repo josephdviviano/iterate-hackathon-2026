@@ -1,0 +1,296 @@
+{
+ "session_id": "devin-21ccb738c5654123b0a3316346c252bd",
+ "status": "blocked",
+ "wall_s": 227.2,
+ "nudges": 0,
+ "members": [
+  "run0",
+  "run1",
+  "run2",
+  "run3",
+  "run4",
+  "run5",
+  "run6",
+  "run7"
+ ],
+ "mechanisms": [
+  {
+   "name": "action_decode",
+   "description": "ACTION1/2/3/4 map to a one-block (3px) move up/down/left/right (x = row); ACTION5 is selection; ACTION6/7 are no-ops in the data.",
+   "actions": [
+    "ACTION1",
+    "ACTION2",
+    "ACTION3",
+    "ACTION4"
+   ],
+   "object_types": [
+    "player",
+    "wall"
+   ]
+  },
+  {
+   "name": "selection_cycle",
+   "description": "ACTION5 moves the selection axis -> piece 0 -> ... -> last piece -> axis, with pieces ordered by their minimum block.",
+   "actions": [
+    "ACTION5"
+   ],
+   "object_types": [
+    "wall",
+    "player"
+   ]
+  },
+  {
+   "name": "piece_move",
+   "description": "The selected piece shifts one block in the action direction unless the board edge, another piece or the axis wall blocks it.",
+   "actions": [
+    "ACTION1",
+    "ACTION2",
+    "ACTION3",
+    "ACTION4"
+   ],
+   "object_types": [
+    "player"
+   ]
+  },
+  {
+   "name": "axis_move",
+   "description": "The selected axis moves one block along its normal only (parallel moves are ignored); a board edge or a piece in the new row blocks it.",
+   "actions": [
+    "ACTION1",
+    "ACTION2",
+    "ACTION3",
+    "ACTION4"
+   ],
+   "object_types": [
+    "wall"
+   ]
+  },
+  {
+   "name": "mirror_reflection",
+   "description": "Every piece block is mirrored across the axis block (row r -> 2*axis - r) as a gray reflection sprite, clipped to the board.",
+   "actions": [],
+   "object_types": [
+    "reflection",
+    "player",
+    "wall"
+   ]
+  },
+  {
+   "name": "selection_marker",
+   "description": "Centre holes show 0 on the selected piece/axis, 4 on reflections, and are transparent (unowned) on unselected pieces/axis; targets have solid centres.",
+   "actions": [
+    "ACTION5"
+   ],
+   "object_types": [
+    "player",
+    "wall",
+    "reflection",
+    "target"
+   ]
+  },
+  {
+   "name": "layered_composite",
+   "description": "Sprites are painted wall1 < target2 < reflection3 < piece4; ring pixels of the topmost sprite win and holes show the lower solid pixel, else the topmost fill.",
+   "actions": [],
+   "object_types": [
+    "wall",
+    "target",
+    "reflection",
+    "player"
+   ]
+  },
+  {
+   "name": "component_reextraction",
+   "description": "Objects are re-derived from the frame: 4-connected components per type for walls/pieces/reflections (merging touching pieces and splitting occluded walls), one object per target sprite, named prefix_i in (x,y) bbox order.",
+   "actions": [],
+   "object_types": [
+    "wall",
+    "target",
+    "reflection",
+    "player"
+   ]
+  },
+  {
+   "name": "wall_index_offset",
+   "description": "Wall names wall_h_k are offset by the number of black (0) pixels owned by non-wall objects.",
+   "actions": [],
+   "object_types": [
+    "wall"
+   ]
+  },
+  {
+   "name": "static_passthrough",
+   "description": "The counter HUD and other non-game objects are copied unchanged; the counter never ticks.",
+   "actions": [],
+   "object_types": [
+    "counter"
+   ]
+  },
+  {
+   "name": "stateless_recovery",
+   "description": "The block model is rebuilt from a frame: axis from min wall x, selection from 0 dots, targets from visible pixels, and merged piece components split by hole centres (0 = selected, shows lower object = joins selected, empty = unselected).",
+   "actions": [],
+   "object_types": [
+    "wall",
+    "target",
+    "player",
+    "reflection"
+   ]
+  },
+  {
+   "name": "continuity_memo",
+   "description": "If the input state equals the previous output, the hidden model from that step is reused instead of re-parsing.",
+   "actions": [],
+   "object_types": [
+    "player"
+   ]
+  },
+  {
+   "name": "axis_orientation",
+   "description": "The axis can be vertical as well as horizontal (wall_v_, mirror columns); only horizontal axes appear in the data.",
+   "actions": [],
+   "object_types": [
+    "wall"
+   ]
+  },
+  {
+   "name": "click_select",
+   "description": "ACTION6 at a piece pixel selects that piece and at the axis selects the axis (program 2 only; not observed).",
+   "actions": [
+    "ACTION6"
+   ],
+   "object_types": [
+    "player",
+    "wall"
+   ]
+  },
+  {
+   "name": "undo_history",
+   "description": "ACTION7 restores the previous model (program 2 only; not observed).",
+   "actions": [
+    "ACTION7"
+   ],
+   "object_types": []
+  }
+ ],
+ "program_mechanisms": {
+  "0": [
+   "action_decode",
+   "selection_cycle",
+   "piece_move",
+   "axis_move",
+   "mirror_reflection",
+   "selection_marker",
+   "layered_composite",
+   "component_reextraction",
+   "wall_index_offset",
+   "static_passthrough",
+   "stateless_recovery",
+   "continuity_memo"
+  ],
+  "1": [
+   "action_decode",
+   "selection_cycle",
+   "piece_move",
+   "axis_move",
+   "mirror_reflection",
+   "selection_marker",
+   "layered_composite",
+   "component_reextraction",
+   "wall_index_offset",
+   "static_passthrough",
+   "stateless_recovery",
+   "continuity_memo"
+  ],
+  "2": [
+   "action_decode",
+   "selection_cycle",
+   "piece_move",
+   "axis_move",
+   "mirror_reflection",
+   "selection_marker",
+   "layered_composite",
+   "component_reextraction",
+   "wall_index_offset",
+   "static_passthrough",
+   "stateless_recovery",
+   "continuity_memo",
+   "click_select",
+   "undo_history"
+  ],
+  "3": [
+   "action_decode",
+   "selection_cycle",
+   "piece_move",
+   "axis_move",
+   "mirror_reflection",
+   "selection_marker",
+   "layered_composite",
+   "component_reextraction",
+   "wall_index_offset",
+   "static_passthrough",
+   "stateless_recovery",
+   "continuity_memo",
+   "axis_orientation"
+  ],
+  "4": [
+   "action_decode",
+   "selection_cycle",
+   "piece_move",
+   "axis_move",
+   "mirror_reflection",
+   "selection_marker",
+   "layered_composite",
+   "component_reextraction",
+   "wall_index_offset",
+   "static_passthrough",
+   "stateless_recovery",
+   "continuity_memo",
+   "axis_orientation"
+  ],
+  "5": [
+   "action_decode",
+   "selection_cycle",
+   "piece_move",
+   "axis_move",
+   "mirror_reflection",
+   "selection_marker",
+   "layered_composite",
+   "component_reextraction",
+   "wall_index_offset",
+   "static_passthrough",
+   "stateless_recovery",
+   "continuity_memo"
+  ],
+  "6": [
+   "action_decode",
+   "selection_cycle",
+   "piece_move",
+   "axis_move",
+   "mirror_reflection",
+   "selection_marker",
+   "layered_composite",
+   "component_reextraction",
+   "wall_index_offset",
+   "static_passthrough",
+   "stateless_recovery",
+   "continuity_memo"
+  ],
+  "7": [
+   "action_decode",
+   "selection_cycle",
+   "piece_move",
+   "axis_move",
+   "mirror_reflection",
+   "selection_marker",
+   "layered_composite",
+   "component_reextraction",
+   "wall_index_offset",
+   "static_passthrough",
+   "stateless_recovery",
+   "continuity_memo"
+  ]
+ },
+ "refactor_check": "program_1: refactored with block_on_axis=False, block_on_pieces=False to keep its stance; checker first line '29/29 transitions replay exactly', then ALL PASS; 208 -> 17 lines. program_5: checker first line '29/29 transitions replay exactly', then ALL PASS; 234 -> 18 lines. program_7: checker first line '29/29 transitions replay exactly', then ALL PASS; 216 -> 17 lines. Each refactor keeps the original header comment and imports parse_model, step, render_state, recall and remember from library.py (373 lines).",
+ "notes": "All 8 originals pass 29/29. Game: a mirror-axis puzzle on a 21x21 grid of 3x3 blocks. Where the programs disagree, the data does not decide; the library takes the majority stance and keeps the alternatives as options or notes in the docstrings: (a) a piece is blocked by the axis (programs 0,2,3,5,6,7) vs not (1,4): option block_on_axis; (b) the axis is blocked by pieces (0,2,3,5,7) vs bounds only (1,4,6): option block_on_pieces. No blocked move occurs in the buffer except the parallel axis move at step 34; (c) hole compositing top-first (0,1,3,5) vs low-to-high with a lower fill winning (2,6,7). These differ only when holes stack, which never happens in the data; (d) the wall offset counts 0 pixels (0,1,2,3,5,6,7) vs ranks walls among 0 pixels (4); (e) ACTION6 click-select and ACTION7 undo exist only in program 2 and are not in the buffer, so the default step() treats them as no-ops. The glue (parse_model -> step -> render_state, plus recall/remember) passes 29/29 with memo and 29/29 stateless."
+}
