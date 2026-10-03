@@ -20,7 +20,7 @@ HYP = {
     "lr": 9.0,
     "momentum": 0.85,
     "weight_decay": 0.012,
-    "bias_scaler": 16.0,
+    "bias_scaler": 8.0,
     "label_smoothing": 0.4,
     "whiten_bias_epochs": 2,  # afterwards the whitening output is detached
     "translate": 2,
@@ -328,14 +328,24 @@ def build(context: BuildContext):
             variants.add((res or 32, *train_flags(hyp, e, res)))
         for res, detach, freeze in sorted(variants):
             xs = x if res == 32 else downscale(x, res)
-            for _ in range(3):
-                out = train_net(xs, detach, freeze)
-                loss = F.cross_entropy(
-                    out, y, label_smoothing=hyp["label_smoothing"], reduction="none"
-                ).sum()
-                loss.backward()
-                for p in net.parameters():
-                    p.grad = None
+            for attempt in range(3):
+                try:
+                    for _ in range(3):
+                        out = train_net(xs, detach, freeze)
+                        loss = F.cross_entropy(
+                            out, y, label_smoothing=hyp["label_smoothing"], reduction="none"
+                        ).sum()
+                        loss.backward()
+                        for p in net.parameters():
+                            p.grad = None
+                    break
+                except OSError:
+                    # Transient Triton "could not get source code" failures while autotuning
+                    # (seen twice in development): recompile this variant.
+                    for p in net.parameters():
+                        p.grad = None
+                    if attempt == 2:
+                        raise
         # Also warm up the prepare/augment path (eigh, pad, gather) on synthetic uint8 data.
         fake = TrainingData(
             torch.randint(0, 256, (6000, 3, 32, 32), dtype=torch.uint8),
