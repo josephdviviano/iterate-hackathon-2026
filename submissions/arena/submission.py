@@ -13,7 +13,7 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    epochs=30,
+    epochs=24,
     batch_size=512,
     lr=0.4,
     momentum=0.9,
