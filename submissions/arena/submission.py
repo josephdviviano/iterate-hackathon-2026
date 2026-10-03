@@ -20,7 +20,7 @@ DEFAULTS = dict(
     weight_decay=1e-3,
     label_smoothing=0.2,
     warmup=0.25,
-    width=64,
+    widths=[32, 128, 256, 512],
     act="relu",
     alt_flip=True,
 )
@@ -52,20 +52,21 @@ class Residual(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self, num_classes, w, act="relu"):
+    def __init__(self, num_classes, widths, act="relu"):
         super().__init__()
+        w = widths
         self.register_buffer("mean", torch.tensor(MEAN).view(1, 3, 1, 1), persistent=False)
         self.register_buffer("std", torch.tensor(STD).view(1, 3, 1, 1), persistent=False)
         self.body = nn.Sequential(
-            conv_bn(3, w, act),
-            conv_bn(w, 2 * w, act, pool=True),
-            Residual(2 * w, act),
-            conv_bn(2 * w, 4 * w, act, pool=True),
-            conv_bn(4 * w, 8 * w, act, pool=True),
-            Residual(8 * w, act),
+            conv_bn(3, w[0], act),
+            conv_bn(w[0], w[1], act, pool=True),
+            Residual(w[1], act),
+            conv_bn(w[1], w[2], act, pool=True),
+            conv_bn(w[2], w[3], act, pool=True),
+            Residual(w[3], act),
             GlobalMaxPool(),
         )
-        self.fc = nn.Linear(8 * w, num_classes, bias=False)
+        self.fc = nn.Linear(w[3], num_classes, bias=False)
         self.scale = 0.125
 
     def features(self, x):
@@ -83,7 +84,7 @@ def build(context: BuildContext):
     cfg = {**DEFAULTS, **(context.parameters or {})}
     device = context.device
     cuda = device.type == "cuda"
-    model = Net(context.num_classes, cfg["width"], cfg["act"]).to(device).to(memory_format=torch.channels_last)
+    model = Net(context.num_classes, cfg["widths"], cfg["act"]).to(device).to(memory_format=torch.channels_last)
     state = SimpleNamespace(model=model, context=context, cfg=cfg, device=device)
     features = torch.compile(model.features, dynamic=False) if cuda else model.features
     bs = cfg["batch_size"]
