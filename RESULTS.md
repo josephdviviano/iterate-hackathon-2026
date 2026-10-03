@@ -1655,3 +1655,74 @@ Reading:
 | Command | `uv run python -m committee.cegis GAME --level L --runs 8 --backend devin --parallel 4 --condition mech_devin --mechanism`; `... --geometry-rule`; `uv run python -m committee.cegis GAME --level L --report --conditions cegis_devin,mech_devin` |
 | Commit | 9591b66, 3d67a77 (code); this session (artifacts) |
 
+## R32. The object state is incomplete: completeness of the frame, and static terrain as objects on ka59
+
+Question raised by R31: is ka59 L2 unreachable because the environment
+representation is wrong rather than the method? Three checks. The recording
+is deterministic: no (before state, action) pair in level 2 has two outcomes
+(69 pairs). The probes are ordinary block slides (x 42 to 15, x 33 to 18).
+But the frame holds a wall mass (colour 15, about 1500 cells) and border
+lines (colour 2) that the released extractor never emits; the programs see a
+player, three blocks, four targets and an empty frame-sized "portal". The
+kicked-block stop depends on that wall mass, so under the object contract the
+rule can only be memorised, which is what every repair in R31 did.
+
+Completeness, measured as the share of non-background cells over train and
+test frames that lie inside an extracted object or a terrain object
+(`committee.terrain --coverage`; terrain = cells whose colour is the same in
+every training frame where no object covers them, grouped by colour into
+4-connected components of at least 4 cells):
+
+| Level | Objects only | Objects + terrain | Residual left |
+|---|---|---|---|
+| m0r0 L3 | 0.959 | 1.000 | none |
+| ls20 L3 | 0.070 | 0.998 | three small colours |
+| ka59 L2 | 0.085 | 0.997 | 0.3 percent |
+| g50t L1 | 0.584 | 0.996 | 0.4 percent |
+| sk48 L2 | 0.071 | 0.982 | border lines |
+| wa30 L3 | 0.855 | 0.955 | colour 4 |
+| ar25 L7 | 0.613 | 0.712 | a changing lattice, not static |
+| ar25 L3 | 0.300 | 0.551 | the same lattice |
+
+OPINE-World's harness lists `floor`, `background`, `wall`, `border`, `tile`
+and `hud` as inert object types its extractors are expected to emit
+(`sigma.py`, `label_audit.py`); the released ka59 extractor emitted a
+frame-sized container instead. The terrain objects are that inert layer,
+derived from frames.
+
+A/B on ka59 L2, round 1 with the terrain objects appended to every state
+(`committee.terrain ka59 --level 2 --runs 8`, condition `terrain_devin`,
+same seeds and contract):
+
+| Condition | Admitted | Vote | Members | AUROC | Unanimous n (error) | Distinct |
+|---|---|---|---|---|---|---|
+| committee_devin (objects) | 7/8 | 0.818 | 0.66 to 0.84 | 0.69 | 33 (0.12) | 6 |
+| terrain_devin (objects + terrain) | 8/8 | 0.659 | 0.66 to 0.82 | 0.87 | 33 (0.12) | 4 |
+
+Reading:
+
+1. ka59 L2 is unreachable under the object contract for a representation
+   reason: the state the probed mechanic depends on is not in the input.
+   That reframes R31's ka59 loss. The gap is not ka59's alone; on sk48 L2 and
+   ls20 L3 more than 90 percent of the frame's non-background cells are
+   outside every object, and 75 percent on ar25 L3. It is harmless where no
+   mechanic depends on the terrain and fatal where one does.
+2. Appending the terrain as constant pixel objects does not help the
+   synthesizer on ka59: the members land at 0.66 to 0.82 as before, and the
+   vote is lower. A 63 by 63 pixel blob in the object list is not a form the
+   programs use; they still memorise stops. The complete fix is to give the
+   program the frame itself, which is OPINE-World's rule and is being added
+   as the `frame` mode of `committee.env` by another session. The baseline
+   against committee comparison is to be rerun in that mode (HANDOFF.md).
+3. ar25's residual is a lattice that changes with the selection and is
+   neither object nor terrain; round 3 reached 1.00 there without it.
+
+| Item | Value |
+|---|---|
+| Metric | Explained share of non-background cells; vote and member accuracy on the 44 held-out transitions |
+| Runs | 8 Devin sessions (terrain round); completeness is deterministic |
+| Split | Temporal 40 percent; terrain from the training frames only |
+| Baseline | Round 1 in objects mode (R27) |
+| Command | `uv run python -m committee.terrain GAME --level L --coverage`; `uv run python -m committee.terrain ka59 --level 2 --runs 8 --backend devin --parallel 4`; `... --report` |
+| Commit | b192b10, 3f9c0ca (code); this session (artifacts) |
+

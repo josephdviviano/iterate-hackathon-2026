@@ -255,3 +255,15 @@
     - Second batch per arm, still the largest gap.
   ABANDONED:
     - Prompt-level prohibitions as a way to steer the synthesizer off a flexible wrong hypothesis class. Ignored on ka59 under two statements (R31).
+
+- [jdv] - Environment completeness and the frame mode - 3f9c0ca
+  The user asked whether ka59 L2 fails because the environment is wrong, then to fix the environment layer and rerun committee vs baseline on it.
+  DONE:
+    - R32: ka59's recording is deterministic and its probes are plain slides, but the released extractor emits no wall or floor objects; the programs cannot see the state the stop rule depends on. Completeness of objects alone is 0.07 to 0.96 across eight levels; with static terrain objects 0.96 to 1.00 on six. OPINE-World's harness expects inert floor/wall/background types that the ka59 extractor did not emit.
+    - committee.terrain: static terrain as constant objects (cells consistent whenever uncovered), a completeness report, temporal_split(terrain=True). A/B on ka59: no help (vote 0.66 vs 0.82); a pixel blob is not a form the programs use.
+    - Found session iterate-10 porting the frame-aware environment (committee.env: objects, frame, frame_out) across all of src/committee, uncommitted. Smoke-tested its frame mode read-only: tr87 L1 replays 19/19, held-out 1.0. Launched the ka59 L2 rerun in frame mode (3 baseline, 8 committee). Protocol for the full rerun is in HANDOFF.md.
+  DEFERRED:
+    - Full frame-mode rerun on the other six levels and the counterexample round in that mode, pending iterate-10's commit (R33).
+    - Terrain objects on sk48 and ls20: superseded by the frame mode unless that fails.
+  ABANDONED:
+    - Static terrain objects as the fix for missing geometry. Measured on ka59 (R32): the synthesizer does not use them.

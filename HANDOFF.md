@@ -183,3 +183,32 @@ video, README.md and the submission.
   mechanic that no recorded transition shows. The next step is a live
   counterexample round (resynthesize on the live transitions, replay live).
 - `jdv` is pushed to origin. `main` is untouched by the user's decision.
+
+## Update 2026-10-03 21:00 BST: re-evaluation in the frame mode
+
+Another session is adding `committee/env.py` with three environment modes
+(`objects`, `frame`, `frame_out`) across all of `src/committee` (uncommitted
+at 21:00; `--frame` already shows in `committee.experiment --help`). Once that
+lands, the core comparison is to be run again in the mode OPINE-World's rule
+uses, because the object state omits static terrain on most levels
+(completeness 0.07 to 0.61 for objects alone; 0.96 to 1.00 with terrain
+objects on six of eight levels, R32), and on ka59 L2 that terrain gates the
+probed mechanic.
+
+Protocol, same levels and splits as R4, R6, R17, R21, R27:
+
+```
+# OPINE-style baseline: single unseeded programs, frame mode
+uv run python -m committee.experiment GAME --level L --train-frac 0.4 --runs 3 --backend devin --frame --condition baseline_frame_devin --parallel 3
+# committee: 8 seeded programs, frame mode
+uv run python -m committee.experiment GAME --level L --train-frac 0.4 --runs 8 --seeded --backend devin --frame --condition committee_frame_devin --parallel 4
+uv run python -m committee.evaluate GAME --level L --train-frac 0.4 --condition committee_frame_devin [--frame as the mode flag requires]
+# counterexample round in the same mode, where round 1 is not saturated
+uv run python -m committee.cegis GAME --level L --runs 8 --backend devin --parallel 4 --source-condition committee_frame_devin --condition cegis_frame_devin [--frame]
+```
+
+Levels: ar25 L3, m0r0 L3, sk48 L2, ar25 L7, ka59 L2, ls20 L3, g50t L1. Budget
+about 77 sessions for round 1 and 8 per level for round 2. Record as R33 with
+the same columns as R27 and R31, and the objects-mode numbers beside them.
+Static terrain objects (`temporal_split(terrain=True)`, R32) are the fallback
+if the frame mode is not ready: on ka59 they did not change the programs.
