@@ -1,0 +1,75 @@
+## Check 1: coverage-only reward (sequential, held-out p(y | x))
+
+| Width | Coverage | Committed |
+|---|---|---|
+| 0.0 | 0.00 | 0.00 |
+| 0.1 | 0.02 | 0.03 |
+| 0.2 | 0.08 | 0.11 |
+| 0.3 | 0.12 | 0.16 |
+| 0.4 | 0.38 | 0.61 |
+| 0.5 | 0.62 | 1.00 |
+| 0.6 | 0.77 | 0.61 |
+| 0.8 | 0.97 | 0.11 |
+| 1.0 | 1.00 | 0.00 |
+
+Dial trained on coverage alone: width 1.00, coverage 1.00, committed 0.00.
+ACI at the 0.90 target: coverage 0.91, committed 0.18 (n = 120).
+
+## Check 2: confidence-free reward (full access)
+
+| Sharpness | R_task | ECE P(signal) | ECE P(driver) | Brier P(signal) | R_cal | R_task + 0.5 R_cal |
+|---|---|---|---|---|---|---|
+| 0.5 | +1.800 | 0.039 | 0.199 | 0.009 | -0.084 | +1.758 |
+| 1 | +1.800 | 0.014 | 0.225 | 0.001 | -0.095 | +1.753 |
+| 2 | +1.800 | 0.002 | 0.250 | 0.000 | -0.113 | +1.744 |
+| 4 | +1.800 | 0.000 | 0.263 | 0.000 | -0.122 | +1.739 |
+| 8 | +1.800 | 0.000 | 0.266 | 0.000 | -0.125 | +1.738 |
+| 32 | +1.800 | 0.000 | 0.267 | 0.000 | -0.125 | +1.738 |
+
+Task-only reward ties every sharpness in [0.5, 1.0, 2.0, 4.0, 8.0, 32.0]; with R_cal the best sharpness is 0.5.
+
+## Check 3: cheaters under R (full)
+
+| Agent | Kind | DS | Unfloored | R_task | R_cal | R_dis | R |
+|---|---|---|---|---|---|---|---|
+| committee_disagreement | ours | 1.000 | +1.000 | +1.80 | -0.09 | +0.00 | +1.75 |
+| stability | baseline | 0.698 | +0.698 | +1.51 | -0.10 | +0.00 | +1.46 |
+| univariate_bh | baseline | 0.766 | +0.766 | +1.57 | -0.41 | +0.00 | +1.37 |
+| lasso | baseline | 0.766 | +0.766 | +1.57 | -0.63 | +0.00 | +1.26 |
+| random_forest | baseline | 0.328 | +0.328 | +1.07 | -0.55 | +0.00 | +0.80 |
+| elastic_net | baseline | 0.328 | +0.328 | +1.07 | -0.90 | +0.00 | +0.62 |
+| always_empty | cheater | 0.000 | +0.000 | +0.00 | -0.80 | +0.00 | -0.40 |
+| hub_ranker | cheater | 0.000 | +0.000 | +0.06 | -1.18 | +0.00 | -0.53 |
+| cluster_size_ranker | cheater | 0.000 | +0.000 | +0.06 | -1.20 | +0.00 | -0.54 |
+| metadata_only | cheater | 0.000 | +0.000 | +0.02 | -1.19 | +0.00 | -0.58 |
+| leak_exploiter | cheater | 0.000 | +0.000 | +0.00 | -1.20 | +0.00 | -0.60 |
+| variance_ranker | cheater | 0.000 | -0.000 | -0.04 | -1.19 | +0.00 | -0.63 |
+| synthetic_ranker | cheater | 0.000 | -0.000 | -0.03 | -1.20 | +0.00 | -0.63 |
+| giant_list | cheater | 0.000 | -0.000 | -0.06 | -1.19 | +0.00 | -0.65 |
+| random | cheater | 0.000 | -0.000 | -0.06 | -1.20 | +0.00 | -0.66 |
+| famous_genes | cheater | 0.000 | -0.000 | -0.06 | -1.20 | +0.00 | -0.66 |
+| auc_maximiser | cheater | 0.000 | -0.000 | -0.08 | -1.16 | +0.00 | -0.67 |
+| random_abstain | cheater | 0.000 | -0.086 | -0.66 | -1.19 | +0.00 | -1.26 |
+
+## Check 3: cheaters under R (seq)
+
+| Agent | Kind | DS | Unfloored | R_task | R_cal | R_dis | R |
+|---|---|---|---|---|---|---|---|
+| committee_disagreement | ours | 0.935 | +0.935 | +1.75 | -0.14 | +0.02 | +1.68 |
+| univariate_bh | baseline | 0.307 | +0.307 | +1.00 | -0.46 | +0.00 | +0.77 |
+| stability | baseline | 0.193 | +0.193 | +0.79 | -0.20 | +0.00 | +0.69 |
+| lasso | baseline | 0.307 | +0.307 | +1.00 | -0.63 | +0.00 | +0.68 |
+| elastic_net | baseline | 0.307 | +0.307 | +1.00 | -0.66 | +0.00 | +0.66 |
+| random_forest | baseline | 0.117 | +0.117 | +0.66 | -0.57 | +0.00 | +0.38 |
+| random_abstain | cheater | 0.000 | -0.001 | -0.05 | -0.99 | +0.00 | -0.55 |
+| hub_ranker | cheater | 0.000 | +0.000 | +0.04 | -1.19 | +0.00 | -0.55 |
+| cluster_size_ranker | cheater | 0.000 | +0.000 | +0.03 | -1.20 | +0.00 | -0.57 |
+| metadata_only | cheater | 0.000 | +0.000 | +0.01 | -1.19 | +0.00 | -0.59 |
+| leak_exploiter | cheater | 0.000 | +0.000 | +0.00 | -1.20 | +0.00 | -0.60 |
+| variance_ranker | cheater | 0.000 | -0.000 | -0.02 | -1.19 | +0.00 | -0.62 |
+| synthetic_ranker | cheater | 0.000 | -0.000 | -0.03 | -1.20 | +0.00 | -0.63 |
+| auc_maximiser | cheater | 0.000 | -0.000 | -0.07 | -1.16 | +0.00 | -0.65 |
+| giant_list | cheater | 0.000 | -0.000 | -0.06 | -1.19 | +0.00 | -0.65 |
+| random | cheater | 0.000 | -0.000 | -0.06 | -1.20 | +0.00 | -0.66 |
+| famous_genes | cheater | 0.000 | -0.000 | -0.06 | -1.20 | +0.00 | -0.66 |
+| always_empty | cheater | 0.000 | -0.000 | -0.33 | -0.80 | +0.00 | -0.73 |

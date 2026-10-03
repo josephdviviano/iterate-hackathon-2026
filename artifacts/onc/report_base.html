@@ -1,0 +1,756 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Program Committees</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column of ~68ch, figures break out to 900px, two-column diagram on wide screens. */
+:root{
+  --bg:#f7f6f2; --fg:#1e2126; --muted:#5f6670; --rule:#d9d6cd; --panel:#ffffff;
+  --accent:#9a3b1c; --accent-soft:#f1dcd3; --keep:#2f6f4e; --keep-soft:#dcebe2; --frozen:#6b6f78; --frozen-soft:#e6e7ea;
+  --display:"Source Serif 4",Georgia,"Times New Roman",serif; --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15171b;--fg:#e8e6e0;--muted:#a3a7ae;--rule:#33373e;--panel:#1e2126;--accent:#e0795a;--accent-soft:#3a251e;--keep:#6cc29a;--keep-soft:#1f332a;--frozen:#9a9ea6;--frozen-soft:#2a2d33;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15171b;--fg:#e8e6e0;--muted:#a3a7ae;--rule:#33373e;--panel:#1e2126;--accent:#e0795a;--accent-soft:#3a251e;--keep:#6cc29a;--keep-soft:#1f332a;--frozen:#9a9ea6;--frozen-soft:#2a2d33;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;padding-inline:16px;padding-block:32px 64px}
+main{max-width:900px;margin:0 auto}
+.col{max-width:68ch}
+h1,h2,h3{font-family:var(--display);font-weight:600;text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:2.3rem;margin-bottom:.4rem}
+h2{font-size:1.5rem;margin-top:3rem;margin-bottom:.8rem;padding-top:1rem;border-top:1px solid var(--rule)}
+h3{font-size:1.1rem;margin-top:1.6rem;margin-bottom:.4rem}
+p{margin:.6rem 0}
+.lede{font-size:1.1rem;color:var(--muted)}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.steps{counter-reset:s;display:grid;gap:1rem;margin:1rem 0}
+.step{display:grid;grid-template-columns:2.2rem 1fr;gap:.6rem;align-items:start}
+.step .n{font-family:var(--mono);color:var(--accent);font-size:.9rem;padding-top:.2rem}
+.step .eq{margin:.4rem 0 .2rem;overflow-x:auto}
+.step .code{font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+.fig{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:16px;margin:1.2rem 0}
+.fig figcaption{font-size:.9rem;color:var(--muted);margin-top:.6rem}
+.fig canvas{max-width:100%}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
+.grid2 > *{min-width:0}
+table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:.45rem .6rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+td.num,th.num{text-align:right}
+.tablewrap{overflow-x:auto}
+.legend{display:flex;flex-wrap:wrap;gap:1rem;font-size:.85rem;margin:.4rem 0 .8rem}
+.legend span::before{content:"";display:inline-block;width:.9rem;height:.9rem;border-radius:2px;margin-right:.4rem;vertical-align:-2px}
+.legend .a::before{background:var(--accent-soft);border:1.5px solid var(--accent)}
+.legend .k::before{background:var(--keep-soft);border:1.5px solid var(--keep)}
+.legend .f::before{background:var(--frozen-soft);border:1.5px dashed var(--frozen)}
+.legend .hit::before{background:var(--keep)}
+.legend .miss::before{background:var(--accent)}
+.legend .set::before{background:var(--keep-soft);border:1.5px solid var(--keep)}
+.legend .abst::before{background:var(--frozen-soft);border:1.5px solid var(--frozen-soft)}
+.legend .empty::before{background:transparent;border:1.5px solid var(--accent)}
+.aci-group{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:.4rem 0 .2rem}
+.aci-group + .aci-row{margin-top:.2rem}
+.aci-row{margin:0 0 1rem}
+.aci-head{font-size:.9rem;color:var(--muted);margin-bottom:.2rem}
+.aci-head strong{color:var(--fg);font-weight:600;margin-right:.4rem}
+.aci-row .svgwrap{overflow-x:auto}
+.aci-row svg{display:block;width:100%;min-width:640px;height:auto}
+.aci-row svg rect.cell:hover{stroke:var(--fg);stroke-width:1.5}
+.diag{overflow-x:auto}
+.diag svg{display:block;max-width:100%;height:auto}
+.note{border-left:3px solid var(--accent);padding:.2rem 0 .2rem .9rem;color:var(--muted);margin:1rem 0}
+.map td:first-child{font-weight:600}
+.map tr.k td:nth-child(3){border-left:3px solid var(--keep)}
+.map tr.a td:nth-child(3){border-left:3px solid var(--accent)}
+.map tr.f td:nth-child(3){border-left:3px dashed var(--frozen)}
+.map td:nth-child(3){padding-left:.8rem}
+code{font-family:var(--mono);font-size:.9em}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.3rem 1rem;font-size:.95rem}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-variant-numeric:tabular-nums}
+mjx-container{overflow-x:auto;overflow-y:hidden}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<main>
+<p class="eyebrow">Track 2.3 · epistemological agents · ARC-AGI-3 and ONC-AGI</p>
+<h1>A committee of programs that knows when it is guessing</h1>
+<p class="lede col">OPINE-World learns an unknown game by writing one program that replays everything it has seen. We keep several such programs, each steered toward a different explanation, and read the agent's uncertainty off their disagreement. This page gives every direction that was built and its status, the algorithm as implemented, what it measured on eight levels of six games, how the loop closes when the committee is refuted, what happened when the committee played the game live, and the same method on a science benchmark. Every number points to an entry in RESULTS.md.</p>
+<p class="note col">Updated 2026-10-03, evening. New since version 6: the map of directions, the closed loop (R23, R24), live play (R25, R26), the replication on four new games (R27), the probe-policy check (R28), the selective score for abstention and its sensitivities (R29, R30), and the revised reading at the end.</p>
+
+<h2>The idea in plain words</h2>
+<div class="col">
+<p>The agent watches a game for a while. Every move is recorded as a before picture, an action, and an after picture. A program synthesizer writes Python code that takes the before picture and the action and must return the after picture, exactly, for every recorded move. A program that does this is <em>admitted</em>. A program that misses one move is rejected.</p>
+<p>Many different programs can pass that test. They agree on everything that was seen, because they must. They differ on what they expect in situations that have not been seen yet. OPINE-World keeps one program and uses it. We keep eight, give each a different hint about what the hidden rule might be, and keep every one that passes. Then:</p>
+<p>When the eight programs agree on what happens next, the agent treats the prediction as solid. When they split, the agent treats that situation as unknown, and that is where it spends its next move. If a move proves all eight wrong, the agent knows it needs a new idea and asks for new programs.</p>
+<p>Every surviving program counts equally, in the vote and in the disagreement. We tried weighting by program length, the usual simplicity prior, and found that on this data shorter programs were not the ones that generalised, so the weight is off by default and kept only as an ablation.</p>
+</div>
+
+
+<h2 id="map">Map of the directions</h2>
+<p class="col">Everything built in this project, with its current standing. "Default" is what the method does unless told otherwise. "Opt-in" stays in the code behind a flag because an A/B did not show a gain. "Dropped" means measured and removed. The three parallel builds share the committee idea and the verifier and have their own result series.</p>
+<div class="legend"><span class="k">default or kept measurement</span><span class="a">opt-in, inconclusive or level dependent</span><span class="f">dropped or baseline only</span></div>
+<div class="tablewrap"><table class="map">
+<tr><th>Direction</th><th>What it is</th><th>Standing</th><th>Evidence</th></tr>
+<tr class="k"><td>Seeded committee, K = 8, equal weights</td><td>Eight synthesis runs, one seed hypothesis each; every program that replays train exactly is a member with weight 1/K.</td><td>Default</td><td>R4, R6, R17, R21, R27</td></tr>
+<tr class="k"><td>Exact-replay admission with a static filter</td><td>Every field of every object must match on every train transition; programs that read files or import network modules are rejected before running.</td><td>Default. The filter matched the word "socket" in a game whose objects are sockets; it now matches imports only (R27).</td><td>verify, R27, RH4</td></tr>
+<tr class="k"><td>Disagreement as the uncertainty</td><td>Normalised entropy over groups of identical predictions, per transition and per effect row, defined on rows never seen in train.</td><td>Default. AUROC 0.68 to 1.00 per level on eight levels.</td><td>R4, R10, R13, R27</td></tr>
+<tr class="k"><td>Probing by disagreement</td><td>Observe the most disputed transition; drop members it refutes.</td><td>Default. Refutes every member in 1 probe on all four original levels; 1, 2 and 9 on the new ones.</td><td>R4, R23, R27</td></tr>
+<tr class="k"><td>Adaptive conformal sets</td><td>Online prediction sets from the vote shares with a 0.90 coverage target; abstention when no candidate qualifies.</td><td>Default calibration route. Coverage 0.88 to 0.99 on eight levels.</td><td>R22, R27</td></tr>
+<tr class="a"><td>Counterexample round (refute, then resynthesize)</td><td>The refuting probes join train; each seed states what the refuted programs predicted; a new committee is synthesized.</td><td>Level dependent: two clear lifts, three nulls, one marginal, one loss over seven levels. The new committee converges, so its disagreement signal weakens.</td><td>R24, R27</td></tr>
+<tr class="k"><td>Live play with the committee as explorer</td><td>The local ARC-AGI-3 engine; the agent takes the most disputed action; members keep hidden state along the trajectory.</td><td>New. Unanimous and right inside the trained mechanics; refuted by an unrecorded mechanic with disagreement 0.00; a live counterexample round repairs it.</td><td>R25, R26</td></tr>
+<tr class="f"><td>Probe policy: disagreement on seen rows first</td><td>Prefer disputed transitions whose rows have train counts, to select rather than refute.</td><td>Measured and not adopted. Delays the refutation, selects no better: at most one selecting probe per level (R28).</td><td>R28</td></tr>
+<tr class="k"><td>Selective score</td><td>+1 committed right, -1 committed wrong, 0 for a set or an abstention, over the conformal wrapper.</td><td>Measurement. Abstention is a floor at 0; the live loop lifts the score from 0.35 to 0.65.</td><td>R29</td></tr>
+<tr class="k"><td>Oracle headroom</td><td>Accuracy if any member were right, against the best member.</td><td>Measurement. Equal on every level: no weighting or selection can beat the best single program.</td><td>R23</td></tr>
+<tr class="k"><td>Open-loop rollouts</td><td>Members run on their own predictions between observations.</td><td>Measurement. Disagreement grows with the horizon where programs diverge.</td><td>R15</td></tr>
+<tr class="a"><td>MDL prior on the vote</td><td>Weights by compressed program length.</td><td>Opt-in ablation. No complexity measure tracks held-out accuracy over 45 programs.</td><td>R14</td></tr>
+<tr class="a"><td>Mechanism library and library-conditioned synthesis</td><td>One extraction call names the mechanisms the members implement; later syntheses may read it.</td><td>Opt-in. The library is a clean uncertainty over rules; conditioning on it is inconclusive at 3 and 4 per arm.</td><td>R19, R20</td></tr>
+<tr class="a"><td>Mixed-row disentanglement</td><td>Split effect rows by predicates read off the programs by perturbation.</td><td>Opt-in. No power at 2 to 8 observations per row; perturbation attributes rows to conditions.</td><td>R16</td></tr>
+<tr class="f"><td>Targeted growth</td><td>Synthesize new members where the committee disagrees.</td><td>Dropped. New members adopt the majority stance.</td><td>R8</td></tr>
+<tr class="f"><td>Judge confidence, alone and combined</td><td>A model's verbalized confidence over the plurality program.</td><td>Baseline. Strong on one level, chance elsewhere; the combination failed out of sample.</td><td>R11, R18</td></tr>
+<tr class="f"><td>Learned dynamics ensembles</td><td>Bagged trees and an MLP ensemble on per-object features.</td><td>Baseline. 0.00 to 0.32 accuracy at 25 to 30 transitions.</td><td>R9</td></tr>
+<tr class="f"><td>Unseeded resampling</td><td>Same verifier, no seed hypotheses.</td><td>Baseline. Same calibration; seeds raise admission and diversity.</td><td>R12</td></tr>
+<tr class="k"><td>Reward-hacking evals (parallel build)</td><td>An injected contradiction makes a full pass a hack by construction; detectors over every program.</td><td>Hack rate tracks capability across Claude and open-weight synthesizers; one hack found in our own artifacts.</td><td>RH1 to RH5</td></tr>
+<tr class="k"><td>Hoeffding's problem (parallel build)</td><td>A second science task: synthesized strategies certified in exact arithmetic, self-reported confidence scored by Brier.</td><td>Calibration result holds; cheaper certification does not speed rounds.</td><td>H1 to H12</td></tr>
+<tr class="k"><td>ONC-AGI committee (parallel build)</td><td>Eight hypothesis templates on cohort worlds, disagreement-driven acquisition, calibration and shaping rewards.</td><td>Toy and generated worlds only; the refute-then-resynthesize measurement has no counterpart yet.</td><td>O1 to O7, below</td></tr>
+</table></div>
+
+<h2>The algorithm as implemented</h2>
+<div class="steps col">
+<div class="step"><div class="n">1</div><div>
+<strong>Transitions and objects.</strong> A level's recording gives transitions \((s, a, s')\). A fixed extractor turns each 64×64 frame into a list of objects, each with a type \(\tau\), a position, size, tags and sometimes pixels. We use the extractor that OPINE-World's released run produced for each game, unchanged.
+<div class="code">committee.loader</div></div></div>
+
+<div class="step"><div class="n">2</div><div>
+<strong>Effect rows and the count-based ontology error.</strong> Each object's change under an action is reduced to an <em>effect</em>: the sorted list of fields that changed, or <code>no_change</code>, <code>born</code>, <code>gone</code>. Object transitions are filed into rows keyed by type, action and local context \(j=(\tau,a,\mu)\), where \(\mu\) is the sorted types of touching neighbours, plus <code>hit</code> when a click lands on the object. Row counts \(c_j\) with a symmetric Dirichlet prior give OPINE-World's uncertainty:
+<div class="eq">\[ q_j \sim \mathrm{Dir}(\alpha_0 \mathbf 1 + c_j), \qquad \eta_{\text{counts}}(j) = \frac{H(\mathbb E[q_j])}{\log m}, \]</div>
+with \(m\) the number of effects seen anywhere. A row with no observations has no \(c_j\), so \(\eta_{\text{counts}}\) is undefined there. We compute this exactly as a baseline signal.
+<div class="code">committee.matrix</div></div></div>
+
+<div class="step"><div class="n">3</div><div>
+<strong>Split.</strong> Train is the first 40% of a level's transitions in time order, test is the rest. RESET and level-closing transitions are removed from both, because their outcome is a new layout and not a function of the state. Nothing from test is ever shown to a synthesizer.
+<div class="code">committee.loader.temporal_split</div></div></div>
+
+<div class="step"><div class="n">4</div><div>
+<strong>Seeded synthesis.</strong> \(K=8\) synthesis runs. Each run gets the train transitions, the program contract, and one seed sentence: a different place to look for the hidden rule (object fields, neighbours, a HUD counter, click position, hidden state carried across steps, lattice geometry, blocked moves, symmetry). The synthesizer is an agent with a checker in its loop. A run returns a program \(f_k\). It is admitted only if
+<div class="eq">\[ f_k(s,a) = s' \quad \text{for every } (s,a,s') \in D_{\text{train}}, \]</div>
+compared as a multiset of objects with every field equal. Programs that read files, the buffer, or use <code>exec</code>, <code>eval</code> or <code>pickle</code> are rejected before running.
+<div class="code">committee.seeds · committee.synth_devin · committee.verify</div></div></div>
+
+<div class="step"><div class="n">5</div><div>
+<strong>Weights.</strong> Every admitted program has likelihood one, so only a prior could rank them. The default is no prior: \(w_k = 1/K\). An MDL prior \(w_k \propto e^{-\lambda L_k}\), with \(L_k\) the gzip length of the stripped source, is kept as an ablation. Across 45 admitted programs no complexity measure (gzip length, AST size, branch count, literal mass) correlated with held-out accuracy, and on ar25 the best program was among the longest (RESULTS R14).
+<div class="code">committee.committee.Committee(lam=0)</div></div></div>
+
+<div class="step"><div class="n">6</div><div>
+<strong>Prediction and disagreement.</strong> For a new \((s,a)\) each member predicts \(f_k(s,a)\). Group identical predictions. The committee's prediction is the largest group. Its disagreement is the normalised entropy of the groups:
+<div class="eq">\[ u(s,a) = -\frac{1}{\log K}\sum_{g} \frac{n_g}{K}\log\frac{n_g}{K}, \]</div>
+where \(n_g\) is the number of members in group \(g\). \(u=0\) when all agree, \(u=1\) when all differ. The same grouping gives each effect row an entropy \(\eta_{\text{committee}}(j)\) over the effects the members predict for the objects in that row, including rows that have no train counts.
+<div class="code">committee.committee.Committee</div></div></div>
+
+<div class="step"><div class="n">7</div><div>
+<strong>Exploration by disagreement.</strong> Among the transitions not yet observed, probe the one with the largest \(u\). Observe its outcome. Drop every member that predicted it wrongly. Repeat. If no member survives a probe, the committee is <em>falsified</em>: the agent has evidence that none of its hypotheses is right and must synthesize again. In the offline experiment the probes are drawn from the held-out transitions, and the comparison orders are OPINE-World's count priority (probe the row with the fewest train counts) and random.
+<div class="code">committee.explore</div></div></div>
+</div>
+
+<h2>Where this differs from OPINE-World</h2>
+<p class="col">Same object-centric representation, same exact-replay admission rule, same effect rows. The changes are in how many programs are kept, how they are combined, and what drives exploration. Two parts of OPINE-World are frozen rather than reimplemented.</p>
+<div class="legend"><span class="k">same as OPINE-World</span><span class="a">changed</span><span class="f">frozen or simplified</span></div>
+<figure class="fig diag" id="diagram"></figure>
+
+<h2>What it measured</h2>
+<p class="col">The reference level is ar25 level 3. Train: the first 29 transitions. Test: the following 44. Synthesizer: Devin, one session per program. Eight of eight seeded programs replayed train exactly. Three unseeded single programs, the OPINE-World setting, were synthesized the same way as the baseline. Full records are in RESULTS.md, entries R3 and R4; the other levels follow in the tables below and in the <a href="#replication">replication</a> section.</p>
+
+<div class="grid2">
+<figure class="fig"><canvas id="accChart" height="230"></canvas><figcaption>Held-out accuracy on ar25 level 3. Each admitted program gets about half of the new transitions right. The vote does not do better than one program.</figcaption></figure>
+<figure class="fig"><canvas id="relChart" height="230"></canvas><figcaption>Error rate by disagreement. When the members agree, the prediction is right 70% of the time. When they split, it is wrong 83% to 100% of the time. Bars are labelled with the number of transitions.</figcaption></figure>
+</div>
+<div class="grid2">
+<figure class="fig"><canvas id="expChart" height="230"></canvas><figcaption>Members still consistent after each probe. Probing the most disputed transition falsifies every member at once. Count priority takes 7 probes; random takes 2.7 on average over 20 orders.</figcaption></figure>
+<figure class="fig"><canvas id="rowChart" height="230"></canvas><figcaption>Effect rows touched by the held-out transitions, by committee entropy. Grey rows have no train counts, so the count-based η says nothing about them. The committee scores all 90.</figcaption></figure>
+</div>
+
+<h3>Numbers</h3>
+<div class="tablewrap"><table>
+<tr><th>Quantity</th><th class="num">Value</th><th>Note</th></tr>
+<tr><td>Single program, held-out accuracy</td><td class="num">0.64, 0.43, 0.48</td><td>three independent syntheses, mean 0.52</td></tr>
+<tr><td>Committee members, held-out accuracy</td><td class="num">mean 0.48</td><td>8 members, 7 distinct behaviours on the test set</td></tr>
+<tr><td>Vote, equal weights</td><td class="num">0.48</td><td>same with the MDL prior; its heaviest member is a 0.48 program</td></tr>
+<tr><td>AUROC, disagreement vs error</td><td class="num">0.78</td><td>0.77 with MDL-weighted disagreement; 0.60 for the unseeded committee of 3</td></tr>
+<tr><td>Unanimous transitions</td><td class="num">27 of 44</td><td>error rate 0.30</td></tr>
+<tr><td>Split transitions</td><td class="num">17 of 44</td><td>error rate 0.83 (low), 1.00 (medium), 1.00 (high)</td></tr>
+<tr><td>Rows unseen in train</td><td class="num">51 of 90</td><td>η<sub>counts</sub> undefined; η<sub>committee</sub> defined</td></tr>
+<tr><td>Probes until the committee is falsified</td><td class="num">1 / 7 / 2.7</td><td>disagreement / count priority / random mean</td></tr>
+<tr><td>Simplicity prior (R14)</td><td class="num">ρ = −0.22 to +0.05</td><td>no complexity measure tracks held-out accuracy over 45 programs</td></tr>
+</table></div>
+
+<h3>Four informative levels and two controls</h3>
+<p class="col">The same protocol ran on five more splits. Two are levels whose rule the programs recover completely (every member 1.00); four are levels where programs disagree. The row-level column asks whether a row's committee entropy predicts which effect rows contain errors, against OPINE-World's count-based η on the rows that have counts (RESULTS R13, R17, R21).</p>
+<div class="tablewrap"><table>
+<tr><th>Split</th><th class="num">Unanimous: n, error</th><th class="num">Split: n, error</th><th class="num">AUROC</th><th class="num">Row AUROC, committee vs counts</th><th>Note</th></tr>
+<tr><td>ar25 L3, 40% train</td><td class="num">27, 0.30</td><td class="num">17, 0.88</td><td class="num">0.77</td><td class="num">0.96 vs 0.46</td><td>vote 0.48, single programs 0.52 mean</td></tr>
+<tr><td>m0r0 L3, 40% train</td><td class="num">38, 0.16</td><td class="num">6, 0.67</td><td class="num">0.68</td><td class="num">0.69 vs 0.48</td><td>vote 0.77, single 0.69 mean</td></tr>
+<tr><td>sk48 L2, 40% train</td><td class="num">41, 0.00</td><td class="num">27, 0.59</td><td class="num">1.00</td><td class="num">1.00 vs 0.22</td><td>vote 0.69, single 0.87 mean</td></tr>
+<tr><td>ar25 L7, 40% train</td><td class="num">25, 0.00</td><td class="num">40, 0.95</td><td class="num">1.00</td><td class="num">0.66 vs 0.68</td><td>vote 0.42, single 0.38 mean</td></tr>
+<tr><td>tr87 L1 trained, L2 tested</td><td class="num">28, 0.00</td><td class="num">0</td><td class="num"></td><td class="num"></td><td>every program 1.00</td></tr>
+<tr><td>ft09 L5, 40% train</td><td class="num">31, 0.00</td><td class="num">0</td><td class="num"></td><td class="num"></td><td>every program 1.00</td></tr>
+</table></div>
+<p class="col">Agreement meant 0.00 to 0.30 error on every split; a split meant 0.59 to 0.95 error. Pooled over the first two informative levels the AUROC is 0.75 with a 95% bootstrap interval of 0.66 to 0.84, and it rises with committee size (ar25: 0.61 at K=2, 0.68 at K=4, 0.77 at K=8). The committee's accuracy is sometimes above and sometimes below a single program's; the uncertainty is the consistent benefit.</p>
+
+<h2>Uncertainty over mechanisms</h2>
+<p class="col">A transition-level flag says "this move is uncertain". An agent also needs "this rule is uncertain". Two views give that. First, each effect row (object type, action, neighbourhood) gets the committee's entropy over the effects its members predict for the objects in that row, including rows never seen in training. The question is whether that entropy predicts which rows contain errors on held-out data, against OPINE-World's count-based η on the rows that have counts (RESULTS R13, R17, R21).</p>
+<div class="tablewrap"><table>
+<tr><th>Level</th><th class="num">Rows touched (unseen in train)</th><th class="num">AUROC, committee entropy → row has errors</th><th class="num">Seen rows: counts η vs committee η</th><th class="num">Zero-entropy rows: n, error rate</th><th class="num">High-entropy rows (η > 0.5): n, error rate</th></tr>
+<tbody id="rowCalBody"></tbody>
+</table></div>
+<p class="col">Rows where the members agree are almost error-free on every level. On three of four levels the count-based η is at chance or worse on the same rows, because its counts come from training and the errors are on test; on ar25 L7 the two are equal. The committee also scores the rows that have no counts at all, 51 of 90 on ar25 L3 and 186 of 267 on ar25 L7.</p>
+<p class="col">Second, one synthesis call extracted a library of the mechanisms the ar25 level 3 programs implement: 15 named functions and a map from each member to the mechanisms it uses (RESULTS R19). The share of members implementing each mechanism is a direct uncertainty over the rule itself.</p>
+<figure class="fig"><canvas id="mechChart" height="260"></canvas><figcaption>Share of the 8 ar25 level 3 members that implement each mechanism named by the library extraction. Twelve mechanisms are unanimous; the three contested ones correspond to the disputed stances the extraction wrote out as options: whether a piece is blocked by the axis (6 of 8 say yes), whether the axis is blocked by pieces (5 of 8), and the hole-compositing order. The training buffer contains no transition that decides any of them.</figcaption></figure>
+
+<h2>Uncertainty over trajectories</h2>
+<p class="col">In play the agent has only its own predictions between observations. Each member was run on its own previous prediction with the real actions, resynchronised to the observed state only at a level entry (RESULTS R15). Two things are measured by horizon, the number of steps since the last observation: how many members are still exactly right, and how far the members have drifted from each other.</p>
+<div class="grid2">
+<figure class="fig"><canvas id="rollDisChart" height="240"></canvas><figcaption>Open-loop disagreement by horizon. Where programs leave the true trajectory (ar25 L3, ar25 L7, sk48 after step 8) they also leave each other, so disagreement grows with the horizon; on m0r0 the members stay exact for 32 steps and disagreement stays flat. Teacher-forced disagreement, dashed, does not grow, which is why this quantity needs rollouts to be seen.</figcaption></figure>
+<figure class="fig"><canvas id="rollMemChart" height="240"></canvas><figcaption>Members still exactly right by horizon, open loop. The first miss comes at step 2 to 8 on ar25 L3, step 3 on ar25 L7, step 9 on sk48 and step 33 on m0r0. The horizon at which disagreement crosses a threshold is what a planner would read as its trust horizon.</figcaption></figure>
+</div>
+<div class="tablewrap"><table>
+<tr><th>Level</th><th class="num">Horizon 2 to 5: vote accuracy, teacher forced → open loop</th><th class="num">6 to 10</th><th class="num">11+</th><th class="num">Disagreement 11+, teacher forced → open loop</th></tr>
+<tbody id="rollBody"></tbody>
+</table></div>
+
+<h2>Is the uncertainty a probability?</h2>
+<p class="col">Disagreement ranks steps well, but a rank is not a probability. Pooled over the four informative levels the plurality's vote share is overconfident: a share of 0.66 is right 16% of the time, a unanimous vote 86% to 100%. ECE 0.22, Brier 0.18. A calibration map fit on other levels helps on two levels and hurts on two, because the agreed-but-wrong rate moves from 0.00 to 0.30 between levels (RESULTS R22).</p>
+<p class="col">What does hold is an online guarantee. Adaptive conformal inference (ACI; Gibbs and Candès 2021) leaves the shares as they are and turns them into a prediction set with a guaranteed long-run miss rate. At each held-out step the committee offers candidate next states, each with the share of members that predict it.</p>
+
+<h3>How the wrapper decides</h3>
+<div class="steps col">
+<div class="step"><div class="n">1</div><div>
+<strong>Score.</strong> Once the outcome \(s'_t\) is seen, its nonconformity is
+<div class="eq">\[ r_t = 1 - \text{share}_t(s'_t), \]</div>
+0 when every member predicted it, 1 when none did.</div></div>
+<div class="step"><div class="n">2</div><div>
+<strong>Set.</strong> Before the outcome, the set holds every candidate whose score would be at most \(\hat q_t\), the \((1-\alpha_t)\) quantile of the scores seen so far. A set of one state is a <em>committed prediction</em>. When \(\hat q_t\) reaches 1, an outcome no member predicted also falls inside the set, and the wrapper <em>abstains</em>: "one of these, or something none of my hypotheses predicts." An abstention is covered by construction.</div></div>
+<div class="step"><div class="n">3</div><div>
+<strong>Adapt.</strong> After every step,
+<div class="eq">\[ \alpha_{t+1} = \alpha_t + \gamma\,(\alpha - \mathrm{err}_t), \qquad \alpha = 0.10, \]</div>
+with \(\mathrm{err}_t = 1\) on a miss. A miss lowers \(\alpha_t\) and widens the next sets; a run of hits raises it and narrows them. If \(\alpha_t\) passes 1 the set is empty, a forced miss. That happened on 6 of 221 steps.</div></div>
+</div>
+<p class="col">The guarantee is that the miss rate on the sequence actually seen tends to \(\alpha\), with no assumption that steps are exchangeable. The only inputs are candidates with shares and the observed outcome, so the wrapper carries to any environment.</p>
+
+<h3>Two regimes, step by step</h3>
+<p class="col">Each strip is one level's held-out trajectory, one cell per step, on a common step axis. Under each strip is the running coverage against the 0.90 target. The top two levels are ones where the committee is mostly right; the bottom two are ones where it is mostly wrong. Hover a cell for its step.</p>
+<div class="legend aci-legend"><span class="hit">committed, right</span><span class="miss">committed, wrong (×)</span><span class="set">set of 2+ states</span><span class="abst">abstained</span><span class="empty">empty set, forced miss (×)</span></div>
+<figure class="fig" id="aciStrips"><div id="aciStripsBody"></div><figcaption>Conformal sets along each held-out trajectory, target coverage 0.90. Where the committee is mostly right the wrapper commits, and it switches to abstaining after its own misses show the members have left the true trajectory. Where the committee is mostly wrong it abstains almost from the start; its coverage then comes from abstentions, not from correct predictions.</figcaption></figure>
+<div class="col">
+<p><strong>Committee mostly right.</strong> On m0r0 L3 the wrapper commits to one state on steps 2 to 35. The members then leave the true trajectory (the rollout figure above puts their first miss at step 33): four committed answers in a row miss, \(\alpha_t\) falls, and from step 36 the wrapper abstains rather than keep committing. Nobody tells it the hypotheses broke; it reads that from its own misses. sk48 L2 shows the edge case of step 3: after 22 straight hits \(\alpha_t\) passes 1, and steps 24 to 26 get empty sets, three forced misses, before the wrapper recovers. An agent should read an empty set as "recalibrating", not as a prediction.</p>
+<p><strong>Committee mostly wrong.</strong> ar25 L3 commits on steps 3 to 7, all right, misses at step 8, and abstains on every step after. ar25 L7 abstains from step 4. Coverage is above target on both, but almost all of it comes from abstention: on the steps where it did commit, it was right 5 of 7 times and 1 of 2 times.</p>
+</div>
+
+<h3>Where the coverage comes from</h3>
+<div class="tablewrap"><table>
+<tr><th>Level</th><th>Committee</th><th class="num">Coverage (target 0.90)</th><th class="num">Committed steps: n, coverage</th><th class="num">Abstained steps (always covered)</th><th class="num">Mean set size</th><th class="num">Single-state answers: share, accuracy</th></tr>
+<tr><td>m0r0 L3</td><td>mostly right</td><td class="num">0.91</td><td class="num">34 of 44, 0.88</td><td class="num">10</td><td class="num">1.5</td><td class="num">77%, 0.88</td></tr>
+<tr><td>sk48 L2</td><td>mostly right</td><td class="num">0.88</td><td class="num">62 of 68, 0.87</td><td class="num">6</td><td class="num">1.5</td><td class="num">66%, 0.93</td></tr>
+<tr><td>ar25 L3</td><td>mostly wrong</td><td class="num">0.96</td><td class="num">7 of 44, 0.71</td><td class="num">37</td><td class="num">2.4</td><td class="num">14%, 0.83</td></tr>
+<tr><td>ar25 L7</td><td>mostly wrong</td><td class="num">0.99</td><td class="num">2 of 65, 0.50</td><td class="num">63</td><td class="num">3.6</td><td class="num">2%, 1.00</td></tr>
+</table></div>
+<p class="col">Coverage is within two points of target on every level, pooled 0.93 over 221 steps. It is bought in two different ways. Where the committee is mostly right, it comes from committed predictions, which are right 87% to 88% of the time. Where the committee is mostly wrong, it comes from abstaining on 84% and 97% of steps. That abstention rate is the honest number there: it is how often the agent should distrust every hypothesis it holds and go observe instead.</p>
+<figure class="fig"><canvas id="aciFrontier" height="270"></canvas><figcaption>Coverage against the share of steps on which the agent commits to a prediction, for three policies on each level. Always committing to the plurality is informative but misses the target on every level. Always abstaining reaches coverage 1 and says nothing; on ar25 L7 the wrapper is almost the same policy. The wrapper sits at the target, and how far right it gets depends on how often the committee is right.</figcaption></figure>
+<p class="col">This is why coverage alone cannot be a reward. An agent paid for coverage learns to abstain on every step and scores 1. What matters is coverage together with the share of steps on which the agent commits. A proper scoring rule over the same predictions, with a price on abstaining, combines the two into one number; the next subsection does that.</p>
+<h3 id="abstention">Abstention is a floor, not a score</h3>
+<p class="col">Coverage alone rewards abstaining. To price it, score each step of the wrapper: a committed single-state answer earns +1 if right and -1 if wrong; a set of several states or an abstention earns 0 (RESULTS R29). Abstaining throughout scores 0, always committing to the plurality scores 2 x vote accuracy - 1, and confident failure is negative.</p>
+<div class="grid2">
+<figure class="fig"><canvas id="selChart" height="250"></canvas><figcaption>Selective score on the recorded held-out trajectories, wrapper against always committing. The wrapper beats the floor and the always-commit policy on five of seven levels. On ls20 L3 and ka59 L2 it abstains too much on a committee that is mostly right, a cost coverage alone hides.</figcaption></figure>
+<figure class="fig"><canvas id="quarterChart" height="250"></canvas><figcaption>Live, ar25 level 3: share of moves with a committed prediction, by quarter of the trajectory, mean of two trajectories. The recorded-data committees commit in the first half and abstain entirely after the counter tick. The live counterexample round converts quarters 2 and 3 into commitments and abstains again only where the next unseen mechanic sits.</figcaption></figure>
+</div>
+<div class="tablewrap"><table>
+<tr><th>Committee, live</th><th class="num">Coverage</th><th class="num">Commit share</th><th class="num">Committed accuracy</th><th class="num">Selective score, wrapper</th><th class="num">Always commit</th></tr>
+<tr><td>Round 1, seeds 0 and 1</td><td class="num">0.956, 0.950</td><td class="num">0.44, 0.38</td><td class="num">0.90, 0.95</td><td class="num">0.35, 0.34</td><td class="num">-0.20, -0.20</td></tr>
+<tr><td>Round 3, seeds 0 and 1</td><td class="num">0.955, 0.957</td><td class="num">0.45, 0.43</td><td class="num">0.90, 0.90</td><td class="num">0.36, 0.34</td><td class="num">-0.18, -0.22</td></tr>
+<tr><td>Live round, seeds 0 and 1</td><td class="num">0.917, 0.906</td><td class="num">0.75, 0.81</td><td class="num">0.94, 0.90</td><td class="num">0.65, 0.65</td><td class="num">0.42, 0.73</td></tr>
+</table></div>
+<p class="col">What turns abstention into score is the loop, not the wrapper: the live counterexample round lifts the commit share from 0.44 to 0.78 and the selective score from 0.35 to 0.65 on the same game. The abstention region is the map of where to collect counterexamples; resynthesis cashes them. That is also the shape of a training signal: it rewards turning an abstention into a correct commitment, penalises a wrong commitment, and is indifferent to abstaining, so an agent paid by it has one way up, to observe where it abstains and repair its hypotheses. In this project the repair step is the counterexample round; the ONC build trains a decision policy on the same shape. Training the synthesizer itself on it is the open item.</p>
+<h3>Two sensitivities of that score</h3>
+<p class="col">The wrapper's step size and the price of a wrong commitment were both fixed by convention, so both were varied (RESULTS R30). A larger step, gamma 0.3 instead of 0.05, chosen leave-one-level-out and the same choice for every held-out level, raises the commit share where the committee is mostly wrong (ar25 L7 from 1 to 23 percent, g50t L1 from 12 to 27 percent) with coverage still at or above 0.90, and changes nothing where it is mostly right. ka59 L2 does not move: its seven members show six behaviours, so no single state ever carries the quantile, and committing needs a calibration map from vote share to probability rather than a wider step. The price decides the policy: at half the reward for a wrong commitment, always committing beats the wrapper on five of seven levels; at an equal price the wrapper wins five of seven; at double it wins the same five by more. The wrapper is the right policy when a wrong answer costs at least what a right one earns, which is the setting of an agent that acts on its prediction.</p>
+<div class="tablewrap"><table>
+<tr><th>Level</th><th class="num">gamma 0.05: coverage, commit, score</th><th class="num">gamma 0.3: coverage, commit, score</th><th class="num">Always commit, c = 0.5 / 1 / 2</th><th class="num">Wrapper, c = 0.5 / 1 / 2</th></tr>
+<tr><td>ar25 L3</td><td class="num">0.95, 0.14, +0.09</td><td class="num">0.91, 0.18, +0.09</td><td class="num">+0.22 / -0.04 / -0.57</td><td class="num">+0.10 / +0.09 / +0.07</td></tr>
+<tr><td>m0r0 L3</td><td class="num">0.91, 0.77, +0.59</td><td class="num">0.91, 0.77, +0.59</td><td class="num">+0.66 / +0.55 / +0.32</td><td class="num">+0.64 / +0.59 / +0.50</td></tr>
+<tr><td>sk48 L2</td><td class="num">0.88, 0.66, +0.57</td><td class="num">0.90, 0.60, +0.57</td><td class="num">+0.54 / +0.38 / +0.07</td><td class="num">+0.60 / +0.57 / +0.53</td></tr>
+<tr><td>ar25 L7</td><td class="num">0.98, 0.01, +0.02</td><td class="num">0.92, 0.23, +0.23</td><td class="num">+0.12 / -0.17 / -0.75</td><td class="num">+0.01 / +0.01 / +0.01</td></tr>
+<tr><td>ls20 L3</td><td class="num">0.90, 0.59, +0.46</td><td class="num">0.90, 0.64, +0.58</td><td class="num">+0.80 / +0.73 / +0.59</td><td class="num">+0.49 / +0.46 / +0.39</td></tr>
+<tr><td>ka59 L2</td><td class="num">0.95, 0.14, +0.09</td><td class="num">0.91, 0.16, +0.07</td><td class="num">+0.73 / +0.64 / +0.46</td><td class="num">+0.10 / +0.09 / +0.07</td></tr>
+<tr><td>g50t L1</td><td class="num">0.96, 0.12, +0.12</td><td class="num">0.90, 0.27, +0.19</td><td class="num">+0.28 / +0.04 / -0.44</td><td class="num">+0.12 / +0.12 / +0.12</td></tr>
+</table></div>
+
+
+
+<h2 id="loop">Closing the loop: refute, then resynthesize</h2>
+<p class="col">Two facts set this up (RESULTS R23). First, on every level the accuracy an oracle would get by picking the right member per transition equals the best single member's accuracy, so no weighting or selection scheme over the eight programs can beat the best one; the problem is hypotheses that are absent, not hypotheses that are badly combined. Second, on every level the first disagreement probe refutes every member at once, so probing never selects among programs; it only signals that a hypothesis is missing. The repair has to be synthesis.</p>
+<p class="col">A counterexample round does that (R24). The refuting probes join the train set, each seed states the refuting transition and what the refuted programs predicted for it, grouped by prediction, and eight new programs are synthesized under the unchanged contract. The control is a passive committee of eight on the next transition in time instead, as an agent that keeps playing rather than probing. Every arm is scored on the transitions no arm observed. On ar25 level 3 a third round starts from the second: it is refuted after three more probes and trains on 33 transitions.</p>
+<div class="grid2">
+<figure class="fig"><canvas id="loopChart" height="260"></canvas><figcaption>Vote accuracy on the transitions no arm observed, by level and round. Hollow bars are the passive control at the same train size. The round helps where the probe names one missing mechanic (ar25 L3, sk48 L2) and does nothing or harm where the members already agree and are wrong together.</figcaption></figure>
+<figure class="fig"><canvas id="distinctChart" height="260"></canvas><figcaption>Distinct behaviours on the held-out set before and after the round. Every resynthesized committee converges to one or two behaviours except g50t L1, the one level where the round helped a little and kept seven. Convergence is the warning sign: ka59's round 2 is unanimous and wrong on 31 percent.</figcaption></figure>
+</div>
+<div class="tablewrap"><table>
+<tr><th>Level, common n</th><th>Arm</th><th class="num">Observed</th><th class="num">Admitted</th><th class="num">Vote</th><th class="num">Members</th><th class="num">AUROC</th><th class="num">Unanimous n (error)</th><th class="num">Distinct</th><th class="num">Next refutation</th></tr>
+<tr><td rowspan="4">ar25 L3, 40</td><td>Round 1</td><td class="num">0</td><td class="num">8/8</td><td class="num">0.475</td><td class="num">0.45 to 0.65</td><td class="num">0.78</td><td class="num">26 (0.31)</td><td class="num">7</td><td class="num">probe 1</td></tr>
+<tr><td>Round 2</td><td class="num">1</td><td class="num">8/8</td><td class="num">0.925</td><td class="num">0.93</td><td class="num">0.50</td><td class="num">40 (0.08)</td><td class="num">1</td><td class="num">probe 5</td></tr>
+<tr><td>Round 3</td><td class="num">4</td><td class="num">8/8</td><td class="num">1.000</td><td class="num">0.90 to 1.00</td><td class="num"></td><td class="num">36 (0.00)</td><td class="num">2</td><td class="num">never</td></tr>
+<tr><td>Passive</td><td class="num">1</td><td class="num">7/8</td><td class="num">0.650</td><td class="num">0.12 to 0.88</td><td class="num">0.97</td><td class="num">4 (0.00)</td><td class="num">6</td><td class="num">probe 1</td></tr>
+<tr><td rowspan="3">sk48 L2, 66</td><td>Round 1</td><td class="num">0</td><td class="num">8/8</td><td class="num">0.697</td><td class="num">0.61 to 0.98</td><td class="num">0.91</td><td class="num">40 (0.00)</td><td class="num">6</td><td class="num">probe 53</td></tr>
+<tr><td>Round 2</td><td class="num">1</td><td class="num">8/8</td><td class="num">0.864</td><td class="num">0.80 to 0.86</td><td class="num">0.47</td><td class="num">62 (0.15)</td><td class="num">2</td><td class="num">probe 23</td></tr>
+<tr><td>Passive</td><td class="num">1</td><td class="num">7/8</td><td class="num">0.636</td><td class="num">0.45 to 0.64</td><td class="num">0.60</td><td class="num">43 (0.30)</td><td class="num">3</td><td class="num">probe 1</td></tr>
+<tr><td rowspan="3">m0r0 L3, 42</td><td>Round 1</td><td class="num">0</td><td class="num">8/8</td><td class="num">0.786</td><td class="num">0.76 to 0.79</td><td class="num">0.64</td><td class="num">37 (0.16)</td><td class="num">4</td><td class="num">probe 1</td></tr>
+<tr><td>Round 2</td><td class="num">1</td><td class="num">8/8</td><td class="num">0.786</td><td class="num">0.79 to 0.81</td><td class="num">0.65</td><td class="num">38 (0.16)</td><td class="num">2</td><td class="num">probe 1</td></tr>
+<tr><td>Passive</td><td class="num">1</td><td class="num">8/8</td><td class="num">0.762</td><td class="num">0.76 to 0.79</td><td class="num">0.89</td><td class="num">33 (0.06)</td><td class="num">5</td><td class="num">probe 32</td></tr>
+<tr><td rowspan="3">ar25 L7, 63</td><td>Round 1</td><td class="num">0</td><td class="num">8/8</td><td class="num">0.413</td><td class="num">0.40 to 0.41</td><td class="num">1.00</td><td class="num">24 (0.00)</td><td class="num">6</td><td class="num">probe 1</td></tr>
+<tr><td>Round 2</td><td class="num">1</td><td class="num">7/8</td><td class="num">0.429</td><td class="num">0.43</td><td class="num">0.50</td><td class="num">63 (0.57)</td><td class="num">1</td><td class="num">probe 2</td></tr>
+<tr><td>Passive</td><td class="num">1</td><td class="num">8/8</td><td class="num">0.413</td><td class="num">0.40 to 0.43</td><td class="num">1.00</td><td class="num">25 (0.00)</td><td class="num">4</td><td class="num">probe 1</td></tr>
+<tr><td rowspan="2">ls20 L3, 58</td><td>Round 1</td><td class="num">0</td><td class="num">7/8</td><td class="num">0.879</td><td class="num">0.59 to 0.88</td><td class="num">0.74</td><td class="num">36 (0.06)</td><td class="num">3</td><td class="num">probe 1</td></tr>
+<tr><td>Round 2</td><td class="num">1</td><td class="num">8/8</td><td class="num">0.879</td><td class="num">0.88</td><td class="num">0.64</td><td class="num">56 (0.09)</td><td class="num">2</td><td class="num">probe 1</td></tr>
+<tr><td rowspan="2">ka59 L2, 42</td><td>Round 1</td><td class="num">0</td><td class="num">7/8</td><td class="num">0.857</td><td class="num">0.69 to 0.86</td><td class="num">0.59</td><td class="num">33 (0.12)</td><td class="num">3</td><td class="num">probe 1</td></tr>
+<tr><td>Round 2</td><td class="num">2</td><td class="num">7/8</td><td class="num">0.690</td><td class="num">0.69</td><td class="num">0.50</td><td class="num">42 (0.31)</td><td class="num">1</td><td class="num">probe 13</td></tr>
+<tr><td rowspan="2">g50t L1, 43</td><td>Round 1</td><td class="num">0</td><td class="num">4/8</td><td class="num">0.465</td><td class="num">0.35 to 0.49</td><td class="num">0.78</td><td class="num">14 (0.14)</td><td class="num">4</td><td class="num">probe 1</td></tr>
+<tr><td>Round 2</td><td class="num">9</td><td class="num">7/8</td><td class="num">0.488</td><td class="num">0.37 to 0.58</td><td class="num">0.71</td><td class="num">17 (0.12)</td><td class="num">7</td><td class="num">probe 6</td></tr>
+</table></div>
+<div class="col">
+<p><strong>Where it works.</strong> On ar25 L3 the members' own notes name the mechanic the counterexample exposed: pieces do not block the axis, which moves onto and under piece rows. The vote goes 0.48 to 0.93, and a third round with four observations in total reaches 1.00 on the 40 remaining transitions and is never refuted again. sk48 L2 goes 0.70 to 0.86. The passive control at the same train size moves 0.00 to -0.06 and stays as spread as before.</p>
+<p><strong>Where it does not.</strong> Where the members already agree and are wrong together (m0r0 L3, ar25 L7, ls20 L3) one counterexample changes nothing. On ka59 L2 it loses: all seven new programs converge on the same wrong repair, 0.86 to 0.69, unanimous and wrong on 31 percent. On g50t L1 it raises admission from 4 to 7 and the next refutation from probe 1 to probe 6, with the vote at 0.47 to 0.49. Over the seven levels: two clear lifts, three nulls, one marginal, one loss.</p>
+<p><strong>The cost.</strong> Every resynthesized committee has one or two distinct behaviours, so the disagreement AUROC falls to 0.47 to 0.65 and cannot be read as before. After a round the uncertainty signal has to be rebuilt, with new seeds or a probe chosen by another criterion. One batch of eight per arm; the batch spread is visible in the passive arms.</p>
+</div>
+
+<h2 id="live">Live play: the committee as the explorer</h2>
+<p class="col">With an ARC-AGI-3 key the game runs locally through the official engine (RESULTS R25, R26). The engine is set to level 3 of ar25, whose start state equals the recorded one. Each move, every member predicts the outcome of every available action from the observed object state. The agent takes the action with the highest vote entropy; when every action is unanimous it prefers an action whose predicted state is new, then one that changes the state, and it never repeats a state-action pair. For the scored trajectory each member runs in one persistent process, so a program keeps its hidden state between moves as it does in the offline verifier. The game ends itself after about 160 moves.</p>
+<div class="grid2">
+<figure class="fig"><canvas id="liveChart" height="250"></canvas><figcaption>Live vote accuracy over the whole trajectory, two trajectories per committee. Round 1 and round 3 are the recorded-data committees; the live round was resynthesized on the first 71 live moves of the seed 0 trajectory, so its seed 1 trajectory is one it never saw.</figcaption></figure>
+<div class="col">
+<p>All three committees are unanimous and right for the first 64 moves on both trajectories. Then the counter bar starts to shrink by one per action, a mechanic absent from all 75 recorded transitions of the level, and every later state carries it. Round 1 and round 3 are refuted at move 64 with disagreement 0.00: an unknown unknown that no flag catches and the cue for resynthesis with the observed transition as the counterexample.</p>
+<p>The live round's members all replay the 104 transitions (33 recorded plus 71 live), and their notes state the rule: a hidden move budget of 128 whose bar displays the smaller of the budget and 64. Live, they predict the tick and every move through 69 on seed 0, and the vote rises from 0.40 to 0.71 and 0.86. The next refutation is an action 3 mechanic at moves 70 and 81; from about move 110 every prediction fails again. That is the next counterexample.</p>
+</div>
+</div>
+<div class="tablewrap"><table>
+<tr><th>Committee</th><th class="num">Seed</th><th class="num">Moves</th><th class="num">Vote</th><th class="num">AUROC</th><th class="num">Unanimous n (error)</th><th class="num">Split n (error)</th><th class="num">First move with every member wrong</th></tr>
+<tr><td>Round 1</td><td class="num">0</td><td class="num">160</td><td class="num">0.40</td><td class="num">0.60</td><td class="num">140 (0.54)</td><td class="num">20 (1.00)</td><td class="num">64</td></tr>
+<tr><td>Round 1</td><td class="num">1</td><td class="num">161</td><td class="num">0.40</td><td class="num">0.85</td><td class="num">84 (0.36)</td><td class="num">77 (0.87)</td><td class="num">64</td></tr>
+<tr><td>Round 3</td><td class="num">0</td><td class="num">157</td><td class="num">0.41</td><td class="num">0.52</td><td class="num">154 (0.58)</td><td class="num">3 (1.00)</td><td class="num">64</td></tr>
+<tr><td>Round 3</td><td class="num">1</td><td class="num">164</td><td class="num">0.39</td><td class="num">0.52</td><td class="num">161 (0.60)</td><td class="num">3 (1.00)</td><td class="num">64</td></tr>
+<tr><td>Live round</td><td class="num">0</td><td class="num">144</td><td class="num">0.71</td><td class="num">0.79</td><td class="num">120 (0.15)</td><td class="num">24 (1.00)</td><td class="num">70</td></tr>
+<tr><td>Live round</td><td class="num">1</td><td class="num">139</td><td class="num">0.86</td><td class="num">0.66</td><td class="num">133 (0.10)</td><td class="num">6 (1.00)</td><td class="num">66</td></tr>
+</table></div>
+<p class="col">Where the members disagree live, the vote is wrong almost every time (split error 0.87 to 1.00), as on the recorded data. The low AUROC of the recorded-data committees is the shared blind spot after move 64 filling the unanimous bin with errors. Live synthesis takes 2 to 9 minutes per member, so the loop closes between sessions, not within one; the 90-second demo plays 75 moves live in about 15 seconds.</p>
+
+<h2 id="replication">Replication on four games never used before</h2>
+<p class="col">Levels were chosen from a census of all 25 recordings: modellable transitions per level, no click actions, games not used so far. Same code and protocol (RESULTS R27). wa30 L3 is saturated; the other three are informative, and g50t L1 is the hardest level in the study with half the programs admitted.</p>
+<div class="tablewrap"><table>
+<tr><th>Level</th><th class="num">n test</th><th class="num">Admitted</th><th class="num">Vote</th><th class="num">Mean member</th><th class="num">AUROC</th><th class="num">Unanimous n (error)</th><th class="num">Split n (error)</th><th class="num">Conformal coverage, target 0.90</th><th class="num">Abstain rate</th><th class="num">Single-state answers: share, accuracy</th></tr>
+<tr><td>ls20 L3</td><td class="num">59</td><td class="num">7/8</td><td class="num">0.864</td><td class="num">0.823</td><td class="num">0.77</td><td class="num">36 (0.06)</td><td class="num">23 (0.26)</td><td class="num">0.898</td><td class="num">0.37</td><td class="num">59%, 0.89</td></tr>
+<tr><td>ka59 L2</td><td class="num">44</td><td class="num">7/8</td><td class="num">0.818</td><td class="num">0.756</td><td class="num">0.69</td><td class="num">33 (0.12)</td><td class="num">11 (0.36)</td><td class="num">0.955</td><td class="num">0.84</td><td class="num">14%, 0.83</td></tr>
+<tr><td>g50t L1</td><td class="num">52</td><td class="num">4/8</td><td class="num">0.519</td><td class="num">0.481</td><td class="num">0.83</td><td class="num">21 (0.10)</td><td class="num">31 (0.74)</td><td class="num">0.962</td><td class="num">0.83</td><td class="num">12%, 1.00</td></tr>
+<tr><td>wa30 L3</td><td class="num">47</td><td class="num">8/8</td><td class="num">0.957</td><td class="num">0.963</td><td class="num">1.00</td><td class="num">45 (0.00)</td><td class="num">2 (1.00)</td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+</table></div>
+<p class="col">The calibration result replicates on all four: unanimous error 0.00 to 0.12 against split error 0.26 to 1.00, AUROC 0.69 to 1.00, conformal coverage 0.90 to 0.96 with the same abstention pattern, 0.37 where the committee is mostly right and 0.83 to 0.84 where it is not. Pooled over all seven informative levels the vote-share ECE is 0.17 and the conformal coverage 0.934 against the 0.90 target. The counterexample round, shown in the loop figure above, did not replicate as a lift.</p>
+
+<h2>Against baselines</h2>
+<p class="col">Three strands of related work name the baselines a reviewer expects. All ran on the same two informative splits, ar25 level 3 and m0r0 level 3. Full records are RESULTS.md R9 to R12.</p>
+<div class="tablewrap"><table>
+<tr><th>Baseline</th><th>From</th><th>Outcome</th></tr>
+<tr><td>Single program with count-priority exploration</td><td>OPINE-World</td><td>Same accuracy as the committee. No uncertainty on unseen rows. Falsifying probe after 7 and 10 moves vs 1.</td></tr>
+<tr><td>Nearest-neighbour copy; bagged trees (classic query by committee); MLP deep ensemble on per-object features</td><td>Learned dynamics models</td><td>Cannot learn the mechanics from 25 to 30 transitions: 0.00 to 0.32 accuracy vs 0.48 and 0.77. Disagreement uninformative, AUROC 0.47 to 0.48.</td></tr>
+<tr><td>Verbalized confidence of a judge model over the plurality program's prediction</td><td>LLM uncertainty estimation</td><td>Strong on ar25 (0.82 vs 0.77), uninformative on m0r0 (0.46 vs 0.68) and sk48 (0.52 vs 1.00). A rank-sum combination looked good pooled (0.85) and failed out of sample on sk48 (0.99 vs 1.00 for disagreement alone). Costs 44 to 68 calls per level; the committee costs none.</td></tr>
+<tr><td>Unseeded resampling with the same verifier</td><td>Self-consistency, AlphaCode clustering</td><td>Same calibration as the seeded committee. Seeds raise admission (8 of 8 vs 6 of 8) and distinct behaviours (4 vs 2) on m0r0.</td></tr>
+<tr><td>Committee size K = 2, 4, 8 with bootstrap intervals</td><td>Small-sample critique</td><td>AUROC rises with K on both levels (ar25 0.61, 0.68, 0.77). Pooled over 88 transitions: 0.75, 95% CI 0.66 to 0.84.</td></tr>
+<tr><td>Targeted growth: synthesize where the members disagree</td><td>Our own variant</td><td>Negative. New members adopted the majority stance; held-out errors unchanged; no gain over independent synthesis. Dropped.</td></tr>
+<tr><td>Simplicity prior on the vote (gzip, AST size, branch count, literal mass)</td><td>MDL, DreamCoder</td><td>No measure correlates with held-out accuracy over 45 programs; the best ar25 program is among the longest. Equal weights are the default; MDL is an ablation.</td></tr>
+<tr><td>Splitting mixed effect rows by an entropy criterion: OPINE-World's feature enumerator vs predicates read off the programs by perturbation</td><td>OPINE-World ξ refinement</td><td>Neither passes the criterion at 2 to 8 observations per row. Perturbation does attribute each row to the condition the programs use, with 8 of 8 members agreeing on most rows, and exposes rows where members condition on different features.</td></tr>
+<tr><td>Library-conditioned synthesis on a new level with 12 training transitions</td><td>Shared abstractions, PoE-World decomposition</td><td>Inconclusive at 3 and 4 programs per arm (mean 0.42 vs 0.49; library members converged on one behaviour and lost uncertainty signal). Stays opt-in.</td></tr>
+</table></div>
+<p class="col">Closest prior work: query by committee (Seung, Opper and Sompolinsky 1992), distinguishing inputs in program synthesis (Jha et al. 2010; Ji et al. 2020), semantic entropy (Kuhn, Gal and Farquhar 2023) with execution-defined classes, AlphaCode's behavioural clustering (Li et al. 2022), and OPINE-World (Courtis, Li and Sanner 2026). The right description is query by committee applied to programmatic world models; the new part is the measurement that it is calibrated on this data.</p>
+
+<h2>What to take from it, and what not</h2>
+<div class="col">
+<p><strong>Take.</strong> Disagreement between exact-fit programs is an honest flag on eight levels of six games and on a live trajectory. It is defined for situations that have never been seen, where the count-based measure has nothing to say; it finds the refuting observation in one probe; and the conformal wrapper turns it into sets that hold a 0.90 coverage target everywhere, by committing where the committee is right and abstaining where it is not.</p>
+<p><strong>Take with its condition.</strong> Resynthesis on the refuting observation is the repair, and it works when that observation names one missing mechanic: 0.48 to 1.00 on ar25 L3 in two rounds, 0.70 to 0.86 on sk48 L2, and 0.40 to 0.71 and 0.86 live. On the other five levels it did nothing or lost. The resynthesized committee converges, and a committee that agrees after a counterexample round is the one to distrust.</p>
+<p><strong>Do not take.</strong> The committee does not predict better than one program; the oracle over its members equals the best member on every level. The shortest program is not the best one. Disagreement does not flag an unknown unknown: when every member shares a blind spot, as with the live move budget, the flag is silent until the observation arrives.</p>
+<p><strong>Simplifications.</strong> The offline experiments use OPINE-World's released recordings with the object extractor frozen to the one each released run produced; the live runs use the same extractor on the engine's frames. Synthesis is Devin; two open-weight models served on Modal did not reach exact replay on the easiest level in a plain repair loop. One batch of eight programs per arm throughout.</p>
+</div>
+
+
+<h2 id="onc">The same method on a science benchmark: ONC-AGI</h2>
+<p class="col">ONC-AGI poses one question per world: here is a cohort with an outcome; which measurements drive it? The agent returns an ordered list of features, or an empty list, and in sequential mode buys its own data with <code>recruit</code> and <code>assay</code>. The score is Find × Restraint: chance-normalised recovery of the planted drivers, times the difference between abstaining on null worlds and abstaining on signal worlds. Listing a post-outcome feature zeroes the world; overspending the reference cost scales the credit down. Only toy fixture worlds ship today, so every number here is a toy-world or generated-world number, not a benchmark result.</p>
+
+<h3>The committee, ported</h3>
+<div class="steps col">
+<div class="step"><div class="n">1</div><div><strong>Hypotheses.</strong> Eight hypothesis programs, one per causal role family: null, direct, conservative, sparse, confounder-adjusted, upstream cause, interaction and correlated block. Each reads the revealed baseline data and returns an ordered driver set and a logistic model p(y | x). Post-outcome columns are removed before any hypothesis sees the data: the leak filter is a filter, not a learned behaviour.<div class="code">onc.hypotheses</div></div></div>
+<div class="step"><div class="n">2</div><div><strong>Admission and weights.</strong> A hypothesis is admitted when its 5-fold cross-validated log loss, selection step included, is within 0.02 of the best member. The null hypothesis is always a member. Weights are \(w_k \propto e^{-n\,\ell_k}\) with \(\ell_k\) the CV log loss; equal weights are the ablation and give the null member 1/K whatever the data, which costs all of Restraint in full access.<div class="code">onc.committee.build_committee</div></div></div>
+<div class="step"><div class="n">3</div><div><strong>What it reports.</strong> P(signal) is the weight of the non-null members; P(driver = f) is the weight of the members that list f, one vote per correlation cluster; p(y | x) is the weighted mixture. Submission: abstain if P(signal) &lt; 0.5, else list the features with P(driver) ≥ τ in decreasing order. Disagreement U is the normalised entropy over the members' driver sets.</div></div>
+<div class="step"><div class="n">4</div><div><strong>Acquisition by disagreement.</strong> Recruit 60 patients across strata, assay every baseline feature on them, then recruit 40 more while the expected drop in U per 1000 USD exceeds a threshold and spend stays under the cap. The committee from before each batch is scored on that batch after it is revealed, which gives a true held-out stream of p(y | x) for calibration and conformal coverage. When no non-null member survives, the only repair is more data; that step earns no shaping reward.<div class="code">onc.agent.CommitteeAgent</div></div></div>
+<div class="step"><div class="n">5</div><div><strong>Reward.</strong> \(R = R_{\text{task}} + \lambda_{\text{cal}} R_{\text{cal}} + \lambda_{\text{dis}} R_{\text{dis}}\). The task term is the benchmark's own score written per episode. The calibration term is minus the Brier score of P(signal), of P(driver) over the listed features, and of p(y | x) on the held-out patients. The shaping term is the drop in disagreement, \(U_{t-1} - U_t\), potential-based so it telescopes to \(U_0 - U_T\) and cannot be farmed; the policy cannot touch the committee, so it cannot lower U by fiat.<div class="code">onc.rewards</div></div></div>
+</div>
+
+<h3>Results</h3>
+<div class="tablewrap"><table>
+<tr><th>Condition</th><th>Worlds</th><th class=num>Discovery</th><th class=num>95%</th><th class=num>Find</th><th class=num>Restraint</th><th class=num>Cost (USD)</th><th class=num>Efficiency</th><th class=num>ECE P(signal)</th><th class=num>ECE P(driver)</th><th class=num>ACI coverage / commit</th></tr>
+<tr><td>Full access, committee</td><td>toy, 10</td><td class=num>1.00</td><td class=num>[1.00, 1.00]</td><td class=num>1.00</td><td class=num>1.00</td><td class=num>0</td><td class=num>1.00</td><td class=num>0.01</td><td class=num>0.23</td><td class=num></td></tr><tr><td>Sequential, disagreement stop</td><td>toy, 10</td><td class=num>0.94</td><td class=num>[0.81, 1.00]</td><td class=num>0.94</td><td class=num>1.00</td><td class=num>6696</td><td class=num>1.00</td><td class=num>0.01</td><td class=num>0.13</td><td class=num>0.91 / 0.18</td></tr><tr><td>Sequential, random stop</td><td>toy, 10</td><td class=num>0.94</td><td class=num>[0.81, 1.00]</td><td class=num>0.94</td><td class=num>1.00</td><td class=num>8556</td><td class=num>1.00</td><td class=num>0.01</td><td class=num>0.26</td><td class=num>0.90 / 0.34</td></tr><tr><td>Sequential, staged template</td><td>toy, 10</td><td class=num>0.55</td><td class=num>[0.47, 0.62]</td><td class=num>0.82</td><td class=num>0.67</td><td class=num>22356</td><td class=num>0.79</td><td class=num>0.00</td><td class=num>0.43</td><td class=num></td></tr><tr><td>Sequential, buy everything</td><td>toy, 10</td><td class=num>0.46</td><td class=num>[0.39, 0.54]</td><td class=num>0.69</td><td class=num>0.67</td><td class=num>25855</td><td class=num>0.69</td><td class=num>0.00</td><td class=num>0.46</td><td class=num></td></tr><tr><td>Full access, committee</td><td>dev, 100</td><td class=num>0.94</td><td class=num>[0.85, 1.00]</td><td class=num>0.99</td><td class=num>0.95</td><td class=num>0</td><td class=num>1.00</td><td class=num>0.01</td><td class=num>0.38</td><td class=num></td></tr><tr><td>Sequential, disagreement stop</td><td>dev, 100</td><td class=num>0.73</td><td class=num>[0.56, 0.88]</td><td class=num>0.93</td><td class=num>0.79</td><td class=num>7440</td><td class=num>1.00</td><td class=num>0.04</td><td class=num>0.22</td><td class=num>0.90 / 0.40</td></tr><tr><td>Sequential, random stop</td><td>dev, 100</td><td class=num>0.73</td><td class=num>[0.53, 0.88]</td><td class=num>0.94</td><td class=num>0.78</td><td class=num>8705</td><td class=num>1.00</td><td class=num>0.05</td><td class=num>0.23</td><td class=num>0.90 / 0.45</td></tr><tr><td>Sequential, staged template</td><td>dev, 100</td><td class=num>0.59</td><td class=num>[0.56, 0.61]</td><td class=num>0.88</td><td class=num>0.67</td><td class=num>19861</td><td class=num>0.84</td><td class=num>0.01</td><td class=num>0.30</td><td class=num></td></tr><tr><td>Sequential, buy everything</td><td>dev, 100</td><td class=num>0.45</td><td class=num>[0.38, 0.49]</td><td class=num>0.68</td><td class=num>0.66</td><td class=num>25578</td><td class=num>0.69</td><td class=num>0.02</td><td class=num>0.37</td><td class=num></td></tr>
+</table></div>
+<p class="col">The benchmark's baselines score 0.77 (univariate BH, lasso) to 0.33 (random forest) on the toy worlds in full access and 0.31 or less in sequential mode, where they buy the whole pool; every cheater scores 0. The committee stops after a quarter of the buy-everything spend at efficiency 1 on every world, which is where its sequential margin comes from. P(signal) is calibrated (ECE 0.01 to 0.05); P(driver) is not: the committee lists extra features at high probability and they earn no credit. That is the term the calibration reward targets.</p>
+
+<h3>Conformal coverage on the held-out patients</h3>
+<p class="col">Each strip is the held-out stream of one run: one cell per patient whose outcome the committee predicted before that patient's batch was revealed, target coverage 0.90. A single-label set is a commitment; a two-label set is an abstention.</p>
+<div class="legend aci-legend"><span class="hit">committed, right</span><span class="miss">committed, wrong (×)</span><span class="abst">abstained</span><span class="empty">empty set, forced miss (×)</span></div>
+<figure class="fig" id="oncStrips"><div id="oncStripsBody"></div><figcaption>Coverage holds at the target with commitments on 18% of toy patients and 40% of dev patients. The committee's p(y | x) is honest but not sharp: most patients' outcomes are not predictable from the planted mechanism alone.</figcaption></figure>
+<figure class="fig"><canvas id="oncFrontier" height="260"></canvas><figcaption>Coverage against the share of patients with a committed prediction, for a set-width dial from 0 to 1 on the toy held-out stream. A dial paid for coverage alone moves to width 1: coverage 1, nothing committed. ACI sits at the target.</figcaption></figure>
+
+<h3>Reward hacking checks</h3>
+<div class="tablewrap"><table>
+<tr><th>Check</th><th>Naive reward and exploit</th><th>What happens</th><th>Does our reward catch it</th></tr>
+
+<tr><td>1. Coverage only</td><td>A set-width dial paid for coverage alone</td><td>width 1.00: coverage 1.00, commits on 0% of patients</td><td>Coverage is reported with the commit share; ACI gives 0.91 at 18%</td></tr>
+<tr><td>2. Task reward only</td><td>Sharpen every reported probability (odds to the power s)</td><td>R_task unchanged for s = 0.5 to 32; ECE of P(driver) 0.20 to 0.27</td><td>R_cal falls -0.084 to -0.125; R_task + 0.5 R_cal picks s = 0.5</td></tr>
+<tr><td>3. The benchmark's cheaters</td><td>11 cheaters and random under R, with the certainty their lists imply</td><td>Every cheater at or below the benchmark floor</td><td>R at most -0.55; honest baselines +0.38 to +0.77; committee +1.68 (sequential)</td></tr>
+<tr><td>4. Committee collapse</td><td>Members and distinct driver sets per world across training</td><td>see the training table</td><td>The policy cannot edit the committee; members are refit from data only</td></tr>
+<tr><td>5. Exact-replay hack (ARC)</td><td>A lookup table of the training transitions, identity elsewhere</td><td>Passes admission on every split; held-out accuracy 0.00 on ar25 L3 and disagreement 0.95 with the real members</td><td>Perturbation rule rejects it on every split and wrongly rejects 0 of 19 real members</td></tr>
+</table></div>
+<div class="tablewrap"><table><tr><th class=num>Sharpness s</th><th class=num>R_task</th><th class=num>ECE P(signal)</th><th class=num>ECE P(driver)</th><th class=num>R_cal</th></tr><tr><td class=num>0.5</td><td class=num>+1.800</td><td class=num>0.039</td><td class=num>0.199</td><td class=num>-0.084</td></tr><tr><td class=num>1</td><td class=num>+1.800</td><td class=num>0.014</td><td class=num>0.225</td><td class=num>-0.095</td></tr><tr><td class=num>2</td><td class=num>+1.800</td><td class=num>0.002</td><td class=num>0.250</td><td class=num>-0.113</td></tr><tr><td class=num>4</td><td class=num>+1.800</td><td class=num>0.000</td><td class=num>0.263</td><td class=num>-0.122</td></tr><tr><td class=num>8</td><td class=num>+1.800</td><td class=num>0.000</td><td class=num>0.266</td><td class=num>-0.125</td></tr><tr><td class=num>32</td><td class=num>+1.800</td><td class=num>0.000</td><td class=num>0.267</td><td class=num>-0.125</td></tr></table></div>
+
+<h3>Training the policy with the three signals</h3>
+<p class="col">What is trained is the policy: a Gaussian over four decision parameters (the listing threshold τ, the stop threshold, the spend cap and the sharpness of the reported probabilities), updated by a group-relative policy gradient on batches of generated sequential worlds. The committee is frozen. Arms A to D differ only in the reward weights; all arms see the same worlds. Held-out: 30 generated sequential worlds never used in training.</p>
+<div class="tablewrap"><table><tr><th>Arm</th><th class=num>λ_cal / λ_dis</th><th class=num>τ / stop / cap / sharpness</th><th class=num>DS [95%]</th><th class=num>Find</th><th class=num>Restraint</th><th class=num>Leak</th><th class=num>Cost</th><th class=num>ECE P(signal)</th><th class=num>ECE P(driver)</th><th class=num>Brier p(y|x)</th><th class=num>ACI cov / commit</th><th class=num>Members / driver sets</th></tr><tr><td>untrained</td><td class=num>0.00 / 0.00</td><td class=num>0.50 / 0.020 / 0.50 / 1.00</td><td class=num>0.39 [0.08, 0.77]</td><td class=num>0.87</td><td class=num>0.45</td><td class=num>0.00</td><td class=num>7583</td><td class=num>0.123</td><td class=num>0.233</td><td class=num>0.208</td><td class=num>0.90 / 0.39</td><td class=num>2.1 / 2.1</td></tr><tr><td>A</td><td class=num>0.00 / 0.00</td><td class=num>0.63 / 0.037 / 0.48 / 1.09</td><td class=num>0.54 [0.19, 0.81]</td><td class=num>0.87</td><td class=num>0.62</td><td class=num>0.00</td><td class=num>7583</td><td class=num>0.123</td><td class=num>0.227</td><td class=num>0.208</td><td class=num>0.90 / 0.39</td><td class=num>2.1 / 2.1</td></tr><tr><td>B</td><td class=num>0.50 / 0.00</td><td class=num>0.67 / 0.044 / 0.49 / 1.19</td><td class=num>0.54 [0.19, 0.81]</td><td class=num>0.87</td><td class=num>0.62</td><td class=num>0.00</td><td class=num>7583</td><td class=num>0.124</td><td class=num>0.231</td><td class=num>0.208</td><td class=num>0.90 / 0.39</td><td class=num>2.1 / 2.1</td></tr><tr><td>C</td><td class=num>0.00 / 0.25</td><td class=num>0.59 / 0.039 / 0.48 / 1.44</td><td class=num>0.54 [0.19, 0.81]</td><td class=num>0.87</td><td class=num>0.62</td><td class=num>0.00</td><td class=num>7583</td><td class=num>0.124</td><td class=num>0.239</td><td class=num>0.211</td><td class=num>0.90 / 0.39</td><td class=num>2.1 / 2.1</td></tr><tr><td>D</td><td class=num>0.50 / 0.25</td><td class=num>0.69 / 0.044 / 0.48 / 1.16</td><td class=num>0.54 [0.19, 0.81]</td><td class=num>0.87</td><td class=num>0.62</td><td class=num>0.00</td><td class=num>7583</td><td class=num>0.123</td><td class=num>0.230</td><td class=num>0.208</td><td class=num>0.90 / 0.39</td><td class=num>2.1 / 2.1</td></tr></table></div>
+<p class="col">Every number in this section comes from RESULTS.md entries O1 to O7 and the files under <code>artifacts/onc/</code>.</p>
+<script>
+window.addEventListener('load', () => {
+const ONC_STRIPS = [{"title": "Toy worlds, sequential", "note": "10 worlds, held-out patients in recruit order", "n": 120, "cells": [[0, "abstain"], [1, "miss"], [2, "miss"], [3, "abstain"], [4, "abstain"], [5, "abstain"], [6, "abstain"], [7, "abstain"], [8, "abstain"], [9, "abstain"], [10, "abstain"], [11, "miss"], [12, "abstain"], [13, "abstain"], [14, "abstain"], [15, "abstain"], [16, "hit"], [17, "abstain"], [18, "abstain"], [19, "abstain"], [20, "abstain"], [21, "hit"], [22, "abstain"], [23, "abstain"], [24, "abstain"], [25, "abstain"], [26, "abstain"], [27, "abstain"], [28, "hit"], [29, "abstain"], [30, "abstain"], [31, "hit"], [32, "abstain"], [33, "abstain"], [34, "hit"], [35, "hit"], [36, "hit"], [37, "hit"], [38, "miss"], [39, "abstain"], [40, "abstain"], [41, "abstain"], [42, "abstain"], [43, "abstain"], [44, "abstain"], [45, "abstain"], [46, "abstain"], [47, "abstain"], [48, "abstain"], [49, "abstain"], [50, "abstain"], [51, "abstain"], [52, "abstain"], [53, "abstain"], [54, "abstain"], [55, "abstain"], [56, "abstain"], [57, "abstain"], [58, "abstain"], [59, "abstain"], [60, "abstain"], [61, "abstain"], [62, "abstain"], [63, "abstain"], [64, "abstain"], [65, "abstain"], [66, "abstain"], [67, "abstain"], [68, "abstain"], [69, "abstain"], [70, "abstain"], [71, "abstain"], [72, "abstain"], [73, "abstain"], [74, "abstain"], [75, "abstain"], [76, "abstain"], [77, "abstain"], [78, "abstain"], [79, "abstain"], [80, "hit"], [81, "hit"], [82, "miss"], [83, "miss"], [84, "miss"], [85, "miss"], [86, "miss"], [87, "abstain"], [88, "abstain"], [89, "miss"], [90, "abstain"], [91, "abstain"], [92, "abstain"], [93, "abstain"], [94, "abstain"], [95, "abstain"], [96, "abstain"], [97, "abstain"], [98, "abstain"], [99, "abstain"], [100, "abstain"], [101, "abstain"], [102, "abstain"], [103, "abstain"], [104, "abstain"], [105, "abstain"], [106, "abstain"], [107, "hit"], [108, "miss"], [109, "abstain"], [110, "abstain"], [111, "abstain"], [112, "abstain"], [113, "abstain"], [114, "abstain"], [115, "abstain"], [116, "abstain"], [117, "abstain"], [118, "abstain"], [119, "abstain"]], "coverage": 0.9083333333333333, "committed": 0.18333333333333332},{"title": "Dev worlds, sequential (first 40 worlds)", "note": "generated worlds, not benchmark results", "n": 560, "cells": [[0, "abstain"], [1, "abstain"], [2, "abstain"], [3, "miss"], [4, "abstain"], [5, "abstain"], [6, "abstain"], [7, "abstain"], [8, "abstain"], [9, "abstain"], [10, "hit"], [11, "hit"], [12, "abstain"], [13, "abstain"], [14, "miss"], [15, "hit"], [16, "hit"], [17, "hit"], [18, "abstain"], [19, "hit"], [20, "hit"], [21, "hit"], [22, "abstain"], [23, "abstain"], [24, "hit"], [25, "hit"], [26, "miss"], [27, "hit"], [28, "hit"], [29, "hit"], [30, "hit"], [31, "hit"], [32, "hit"], [33, "hit"], [34, "miss"], [35, "abstain"], [36, "abstain"], [37, "abstain"], [38, "abstain"], [39, "abstain"], [40, "miss"], [41, "miss"], [42, "hit"], [43, "hit"], [44, "abstain"], [45, "hit"], [46, "abstain"], [47, "miss"], [48, "abstain"], [49, "abstain"], [50, "hit"], [51, "hit"], [52, "abstain"], [53, "hit"], [54, "hit"], [55, "hit"], [56, "hit"], [57, "hit"], [58, "hit"], [59, "abstain"], [60, "abstain"], [61, "miss"], [62, "abstain"], [63, "miss"], [64, "abstain"], [65, "abstain"], [66, "abstain"], [67, "miss"], [68, "hit"], [69, "hit"], [70, "hit"], [71, "abstain"], [72, "abstain"], [73, "abstain"], [74, "abstain"], [75, "hit"], [76, "hit"], [77, "hit"], [78, "abstain"], [79, "hit"], [80, "hit"], [81, "abstain"], [82, "abstain"], [83, "abstain"], [84, "hit"], [85, "abstain"], [86, "hit"], [87, "abstain"], [88, "abstain"], [89, "abstain"], [90, "abstain"], [91, "abstain"], [92, "miss"], [93, "hit"], [94, "hit"], [95, "abstain"], [96, "abstain"], [97, "abstain"], [98, "hit"], [99, "hit"], [100, "abstain"], [101, "abstain"], [102, "hit"], [103, "hit"], [104, "abstain"], [105, "miss"], [106, "hit"], [107, "abstain"], [108, "abstain"], [109, "abstain"], [110, "abstain"], [111, "abstain"], [112, "abstain"], [113, "hit"], [114, "hit"], [115, "abstain"], [116, "abstain"], [117, "hit"], [118, "abstain"], [119, "hit"], [120, "hit"], [121, "miss"], [122, "hit"], [123, "hit"], [124, "abstain"], [125, "hit"], [126, "hit"], [127, "hit"], [128, "miss"], [129, "hit"], [130, "abstain"], [131, "hit"], [132, "hit"], [133, "hit"], [134, "hit"], [135, "abstain"], [136, "miss"], [137, "hit"], [138, "miss"], [139, "abstain"], [140, "abstain"], [141, "abstain"], [142, "abstain"], [143, "hit"], [144, "hit"], [145, "miss"], [146, "abstain"], [147, "abstain"], [148, "abstain"], [149, "abstain"], [150, "abstain"], [151, "abstain"], [152, "abstain"], [153, "abstain"], [154, "abstain"], [155, "abstain"], [156, "abstain"], [157, "abstain"], [158, "miss"], [159, "abstain"], [160, "abstain"], [161, "abstain"], [162, "abstain"], [163, "abstain"], [164, "abstain"], [165, "abstain"], [166, "abstain"], [167, "abstain"], [168, "abstain"], [169, "abstain"], [170, "abstain"], [171, "abstain"], [172, "abstain"], [173, "abstain"], [174, "abstain"], [175, "abstain"], [176, "abstain"], [177, "abstain"], [178, "abstain"], [179, "abstain"], [180, "abstain"], [181, "abstain"], [182, "abstain"], [183, "abstain"], [184, "abstain"], [185, "abstain"], [186, "abstain"], [187, "abstain"], [188, "abstain"], [189, "abstain"], [190, "abstain"], [191, "abstain"], [192, "abstain"], [193, "abstain"], [194, "abstain"], [195, "abstain"], [196, "abstain"], [197, "abstain"], [198, "abstain"], [199, "abstain"], [200, "miss"], [201, "abstain"], [202, "abstain"], [203, "abstain"], [204, "abstain"], [205, "hit"], [206, "miss"], [207, "abstain"], [208, "abstain"], [209, "abstain"], [210, "abstain"], [211, "abstain"], [212, "abstain"], [213, "abstain"], [214, "abstain"], [215, "abstain"], [216, "abstain"], [217, "hit"], [218, "miss"], [219, "abstain"], [220, "abstain"], [221, "abstain"], [222, "abstain"], [223, "abstain"], [224, "abstain"], [225, "abstain"], [226, "abstain"], [227, "abstain"], [228, "hit"], [229, "miss"], [230, "abstain"], [231, "abstain"], [232, "abstain"], [233, "abstain"], [234, "abstain"], [235, "abstain"], [236, "abstain"], [237, "abstain"], [238, "abstain"], [239, "hit"], [240, "abstain"], [241, "abstain"], [242, "abstain"], [243, "abstain"], [244, "abstain"], [245, "abstain"], [246, "abstain"], [247, "abstain"], [248, "abstain"], [249, "abstain"], [250, "abstain"], [251, "abstain"], [252, "abstain"], [253, "abstain"], [254, "abstain"], [255, "abstain"], [256, "miss"], [257, "abstain"], [258, "abstain"], [259, "abstain"], [260, "abstain"], [261, "abstain"], [262, "abstain"], [263, "abstain"], [264, "abstain"], [265, "abstain"], [266, "abstain"], [267, "abstain"], [268, "hit"], [269, "hit"], [270, "hit"], [271, "miss"], [272, "abstain"], [273, "abstain"], [274, "abstain"], [275, "abstain"], [276, "abstain"], [277, "abstain"], [278, "miss"], [279, "abstain"], [280, "abstain"], [281, "abstain"], [282, "abstain"], [283, "abstain"], [284, "abstain"], [285, "abstain"], [286, "abstain"], [287, "abstain"], [288, "abstain"], [289, "abstain"], [290, "hit"], [291, "miss"], [292, "abstain"], [293, "abstain"], [294, "abstain"], [295, "abstain"], [296, "abstain"], [297, "abstain"], [298, "abstain"], [299, "abstain"], [300, "miss"], [301, "abstain"], [302, "abstain"], [303, "abstain"], [304, "abstain"], [305, "abstain"], [306, "abstain"], [307, "abstain"], [308, "abstain"], [309, "abstain"], [310, "miss"], [311, "abstain"], [312, "abstain"], [313, "abstain"], [314, "abstain"], [315, "abstain"], [316, "abstain"], [317, "abstain"], [318, "abstain"], [319, "abstain"], [320, "hit"], [321, "hit"], [322, "hit"], [323, "hit"], [324, "hit"], [325, "miss"], [326, "abstain"], [327, "abstain"], [328, "abstain"], [329, "miss"], [330, "abstain"], [331, "abstain"], [332, "abstain"], [333, "abstain"], [334, "abstain"], [335, "abstain"], [336, "abstain"], [337, "abstain"], [338, "abstain"], [339, "hit"], [340, "miss"], [341, "abstain"], [342, "abstain"], [343, "abstain"], [344, "abstain"], [345, "abstain"], [346, "abstain"], [347, "abstain"], [348, "hit"], [349, "miss"], [350, "abstain"], [351, "abstain"], [352, "abstain"], [353, "abstain"], [354, "abstain"], [355, "abstain"], [356, "abstain"], [357, "abstain"], [358, "abstain"], [359, "abstain"], [360, "abstain"], [361, "miss"], [362, "abstain"], [363, "abstain"], [364, "abstain"], [365, "abstain"], [366, "abstain"], [367, "abstain"], [368, "abstain"], [369, "abstain"], [370, "abstain"], [371, "abstain"], [372, "hit"], [373, "hit"], [374, "miss"], [375, "abstain"], [376, "abstain"], [377, "abstain"], [378, "abstain"], [379, "abstain"], [380, "abstain"], [381, "abstain"], [382, "hit"], [383, "miss"], [384, "abstain"], [385, "abstain"], [386, "abstain"], [387, "abstain"], [388, "abstain"], [389, "abstain"], [390, "abstain"], [391, "abstain"], [392, "hit"], [393, "hit"], [394, "miss"], [395, "abstain"], [396, "abstain"], [397, "abstain"], [398, "abstain"], [399, "abstain"], [400, "hit"], [401, "miss"], [402, "hit"], [403, "abstain"], [404, "miss"], [405, "hit"], [406, "hit"], [407, "hit"], [408, "hit"], [409, "hit"], [410, "hit"], [411, "hit"], [412, "miss"], [413, "abstain"], [414, "hit"], [415, "abstain"], [416, "abstain"], [417, "hit"], [418, "miss"], [419, "hit"], [420, "hit"], [421, "abstain"], [422, "miss"], [423, "hit"], [424, "abstain"], [425, "miss"], [426, "abstain"], [427, "miss"], [428, "abstain"], [429, "hit"], [430, "hit"], [431, "abstain"], [432, "hit"], [433, "abstain"], [434, "abstain"], [435, "hit"], [436, "abstain"], [437, "hit"], [438, "abstain"], [439, "hit"], [440, "hit"], [441, "hit"], [442, "miss"], [443, "abstain"], [444, "abstain"], [445, "abstain"], [446, "hit"], [447, "hit"], [448, "hit"], [449, "hit"], [450, "miss"], [451, "abstain"], [452, "abstain"], [453, "abstain"], [454, "abstain"], [455, "abstain"], [456, "hit"], [457, "miss"], [458, "abstain"], [459, "abstain"], [460, "abstain"], [461, "abstain"], [462, "abstain"], [463, "abstain"], [464, "abstain"], [465, "abstain"], [466, "abstain"], [467, "hit"], [468, "hit"], [469, "hit"], [470, "miss"], [471, "abstain"], [472, "abstain"], [473, "abstain"], [474, "abstain"], [475, "abstain"], [476, "abstain"], [477, "abstain"], [478, "hit"], [479, "hit"], [480, "abstain"], [481, "hit"], [482, "hit"], [483, "hit"], [484, "hit"], [485, "hit"], [486, "hit"], [487, "hit"], [488, "miss"], [489, "miss"], [490, "miss"], [491, "hit"], [492, "hit"], [493, "hit"], [494, "abstain"], [495, "abstain"], [496, "hit"], [497, "abstain"], [498, "hit"], [499, "hit"], [500, "hit"], [501, "hit"], [502, "hit"], [503, "abstain"], [504, "hit"], [505, "hit"], [506, "abstain"], [507, "hit"], [508, "hit"], [509, "abstain"], [510, "hit"], [511, "miss"], [512, "hit"], [513, "abstain"], [514, "hit"], [515, "miss"], [516, "hit"], [517, "hit"], [518, "miss"], [519, "hit"], [520, "hit"], [521, "hit"], [522, "hit"], [523, "hit"], [524, "hit"], [525, "hit"], [526, "abstain"], [527, "abstain"], [528, "miss"], [529, "abstain"], [530, "hit"], [531, "abstain"], [532, "hit"], [533, "abstain"], [534, "hit"], [535, "hit"], [536, "miss"], [537, "abstain"], [538, "hit"], [539, "hit"], [540, "miss"], [541, "abstain"], [542, "abstain"], [543, "abstain"], [544, "hit"], [545, "hit"], [546, "abstain"], [547, "abstain"], [548, "hit"], [549, "hit"], [550, "hit"], [551, "abstain"], [552, "abstain"], [553, "abstain"], [554, "abstain"], [555, "hit"], [556, "hit"], [557, "abstain"], [558, "hit"], [559, "abstain"]], "coverage": 0.9, "committed": 0.3875}];
+const ONC_FRONTIER = [{"width": 0.0, "coverage": 0.0, "committed": 0.0}, {"width": 0.1, "coverage": 0.016666666666666666, "committed": 0.025}, {"width": 0.2, "coverage": 0.08333333333333333, "committed": 0.10833333333333334}, {"width": 0.3, "coverage": 0.125, "committed": 0.15833333333333333}, {"width": 0.4, "coverage": 0.375, "committed": 0.6083333333333333}, {"width": 0.5, "coverage": 0.6166666666666667, "committed": 1.0}, {"width": 0.6, "coverage": 0.7666666666666667, "committed": 0.6083333333333333}, {"width": 0.8, "coverage": 0.975, "committed": 0.10833333333333334}, {"width": 1.0, "coverage": 1.0, "committed": 0.0}];
+(function drawOncStrips(){
+  const W = 860, padL = 34, padR = 34, yS = 2, hS = 18, yTop = 30, yBot = 96, H = 116;
+  const yc = v => yBot - (Math.max(0.5, v) - 0.5) / 0.5 * (yBot - yTop);
+  let html = '';
+  for (const r of ONC_STRIPS) {
+    const n = r.n, NMAX = Math.max(n, 1), cw = (W-padL-padR)/NMAX;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${r.title}">`;
+    let h = 0, pts = [];
+    for (const [i, kind] of r.cells) {
+      const x = padL + i*cw, w = Math.max(1, cw-0.5);
+      let fill = 'var(--keep)', stroke = 'none';
+      if (kind === 'miss') fill = 'var(--accent)';
+      if (kind === 'abstain') fill = 'var(--frozen-soft)';
+      if (kind === 'empty') { fill = 'transparent'; stroke = 'var(--accent)'; }
+      s += `<rect class="cell" x="${x.toFixed(1)}" y="${yS}" width="${w.toFixed(1)}" height="${hS}" fill="${fill}" stroke="${stroke}" stroke-width="1"><title>patient ${i+1}: ${kind}</title></rect>`;
+      h += (kind === 'miss' || kind === 'empty') ? 0 : 1; pts.push(`${(x+cw/2).toFixed(1)},${yc(h/(i+1)).toFixed(1)}`);
+    }
+    [1.0, 0.9, 0.5].forEach(v => { s += `<text x="${padL-6}" y="${yc(v)+4}" text-anchor="end" font-size="10.5" font-family="var(--mono)" fill="var(--muted)">${v.toFixed(1)}</text>`; });
+    s += `<line x1="${padL}" x2="${padL+NMAX*cw}" y1="${yc(0.9)}" y2="${yc(0.9)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4"/>`;
+    s += `<polyline points="${pts.join(' ')}" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round"/>`;
+    s += `</svg>`;
+    html += `<div class="aci-row"><div class="aci-head"><strong>${r.title}</strong>${r.note}. Coverage ${r.coverage.toFixed(2)}; committed on ${(r.committed*100).toFixed(0)}% of ${n} patients.</div><div class="svgwrap">${s}</div></div>`;
+  }
+  html = html.replace(/(fill|stroke|font-family)="var\(--([a-z-]+)\)"/g, (m, a, n) => `${a}="${getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim().replace(/"/g,"'")}"`);
+  document.getElementById('oncStripsBody').innerHTML = html;
+})();
+(function drawOncFrontier(){
+  if (!ONC_FRONTIER.length || typeof Chart === 'undefined') return;
+  const T = theme();
+  const aciPt = ONC_STRIPS.length ? [{x: ONC_STRIPS[0].committed, y: ONC_STRIPS[0].coverage}] : [];
+  new Chart(document.getElementById('oncFrontier'), {type:'scatter', data:{datasets:[
+    {label:'set-width dial (width 0 to 1)', data: ONC_FRONTIER.map(r=>({x:r.committed, y:r.coverage})), showLine:true, borderColor:T.frozen, backgroundColor:T.frozen, pointRadius:4, tension:0},
+    {label:'ACI, target 0.90', data: aciPt, backgroundColor:T.keep, borderColor:T.panel, borderWidth:2, pointStyle:'rectRot', pointRadius:9},
+    {label:'dial trained on coverage alone', data:[{x:0, y:1}], backgroundColor:'transparent', borderColor:T.accent, borderWidth:2, pointStyle:'rect', pointRadius:9},
+    {type:'line', label:'target 0.90', data:[{x:-0.05,y:0.9},{x:1.05,y:0.9}], borderColor:T.muted, borderWidth:1, borderDash:[4,4], pointRadius:0}
+  ]}, options:{plugins:{title:{display:true, text:'Coverage vs share of patients with a committed prediction (toy, sequential)', color:T.fg}, legend:{labels:{usePointStyle:true, boxWidth:10, font:{size:11}}}},
+    scales:{x:{min:-0.05, max:1.05, title:{display:true, text:'share committed'}}, y:{min:0, max:1.05, title:{display:true, text:'coverage'}}}}});
+})();
+});
+</script>
+
+<h2>Glossary</h2>
+<dl class="kv col">
+<dt>Transition</dt><dd>One recorded move: before state, action, after state.</dd>
+<dt>Exact replay</dt><dd>A program reproduces every recorded after state, every field of every object.</dd>
+<dt>Effect row</dt><dd>All object transitions with the same object type, action and neighbourhood.</dd>
+<dt>Ontology error η</dt><dd>OPINE-World's uncertainty: how mixed a row's effects are, from counts.</dd>
+<dt>Committee</dt><dd>The admitted programs, with a weight each.</dd>
+<dt>Disagreement</dt><dd>How spread the members' predictions are for one new transition, 0 to 1.</dd>
+<dt>Falsified</dt><dd>An observed outcome that no member predicted. Time to synthesize again.</dd>
+<dt>Counterexample round</dt><dd>Resynthesis after a refutation: the refuting observations join train and each seed states them.</dd>
+<dt>Agreed but wrong</dt><dd>A unanimous prediction that is wrong. The failure the flag cannot see.</dd>
+<dt>Live round</dt><dd>A counterexample round whose refuting observations come from the agent's own play.</dd>
+</dl>
+</main>
+
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const DATA = {"baseline_acc": [0.6363636363636364, 0.4318181818181818, 0.4772727272727273], "member_acc": [0.4318, 0.4773, 0.4318, 0.4773, 0.4773, 0.6364, 0.4318, 0.4773], "vote_acc": 0.4772727272727273, "reliability_uniform": [{"bin": "unanimous", "n": 27, "error_rate": 0.2963}, {"bin": "low", "n": 12, "error_rate": 0.8333}, {"bin": "medium", "n": 3, "error_rate": 1.0}, {"bin": "high", "n": 2, "error_rate": 1.0}], "explore": {"disagreement": {"members_left": [8, 0, 0, 0, 0, 0, 0, 0, 0], "falsified_at": 1}, "counts": {"members_left": [8, 5, 5, 5, 5, 5, 5, 0, 0], "falsified_at": 7}}, "explore_random_mean": [8.0, 2.85, 0.9, 0.6, 0.55, 0.15, 0.1, 0.05, 0.05], "rows_eta_hist": [[0, null, 1.0], [0, null, 1.0], [0, null, 1.0], [0, null, 1.0], [0, null, 0.9967], [0, null, 0.9967], [0, null, 0.9779], [0, null, 0.9622], [0, null, 0.9524], [3, 0.9419487568013919, 0.9513], [0, null, 0.9394], [0, null, 0.9394], [0, null, 0.9394], [0, null, 0.9394], [0, null, 0.9183], [0, null, 0.8734], [1, 0.9818072571726917, 0.87], [0, null, 0.8631], [0, null, 0.8461], [0, null, 0.8241], [0, null, 0.8113], [0, null, 0.8017], [2, 0.9489346863045952, 0.7851], [0, null, 0.7695], [1, 0.9818072571726917, 0.7633], [0, null, 0.7372], [0, null, 0.736], [5, 0.9357892451662865, 0.7127], [4, 0.9106349514253597, 0.6522], [0, null, 0.6358], [3, 0.9419487568013919, 0.6315], [3, 0.9419487568013919, 0.6307], [0, null, 0.5737], [0, null, 0.5555], [0, null, 0.5221], [0, null, 0.5221], [0, null, 0.5067], [0, null, 0.469], [4, 0.9204444870045754, 0.3569], [0, null, 0.244], [0, null, 0.2131], [0, null, 0.1668], [0, null, 0.0675], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [0, null, 0.0], [1, 0.9818072571726917, 0.0], [1, 0.9818072571726917, 0.0], [1, 0.9818072571726917, 0.0], [1, 0.9818072571726917, 0.0], [1, 0.9818072571726917, 0.0], [2, 0.9489346863045952, 0.0], [2, 0.9489346863045952, 0.0], [2, 0.9489346863045952, 0.0], [2, 0.9691789829858409, 0.0], [2, 0.9489346863045952, 0.0], [2, 0.9489346863045952, 0.0], [2, 0.9691789829858409, 0.0], [2, 0.9691789829858409, 0.0], [2, 0.9489346863045952, 0.0], [2, 0.9489346863045952, 0.0], [3, 0.9419487568013919, 0.0], [3, 0.9126975984718557, 0.0], [3, 0.9126975984718557, 0.0], [3, 0.9126975984718557, 0.0], [4, 0.8765648974562644, 0.0], [4, 0.8765648974562644, 0.0], [4, 0.8765648974562644, 0.0], [5, 0.9195938078212897, 0.0], [6, 0.8090593567814348, 0.0], [8, 0.7496039138477967, 0.0], [10, 0.8891784229431355, 0.0], [11, 0.6744972772697267, 0.0], [13, 0.6322756109151556, 0.0], [22, 0.6277279456789304, 0.0], [31, 0.4084407553369224, 0.0]], "weights": [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125], "lengths": [2592, 2245, 2655, 2549, 2373, 2602, 2510, 2373]};
+const EXTRA = {"row_cal": {"ar25 L3": {"n_rows": 90, "n_unseen_rows": 51, "auroc_eta_committee_vs_row_error": 0.7453703703703703, "auroc_eta_counts_seen_rows": 0.46296296296296297, "auroc_eta_committee_seen_rows": 0.9629629629629629, "bins": [{"bin": "zero", "n_rows": 47, "mean_error_rate": 0.0468, "rows_with_error": 3}, {"bin": "low", "n_rows": 6, "mean_error_rate": 0.1389, "rows_with_error": 2}, {"bin": "high", "n_rows": 37, "mean_error_rate": 0.1554, "rows_with_error": 13}]}, "m0r0 L3": {"n_rows": 49, "n_unseen_rows": 7, "auroc_eta_committee_vs_row_error": 0.7194444444444444, "auroc_eta_counts_seen_rows": 0.4797979797979798, "auroc_eta_committee_seen_rows": 0.6902356902356902, "bins": [{"bin": "zero", "n_rows": 20, "mean_error_rate": 0.0, "rows_with_error": 0}, {"bin": "low", "n_rows": 2, "mean_error_rate": 0.0, "rows_with_error": 0}, {"bin": "high", "n_rows": 27, "mean_error_rate": 0.0482, "rows_with_error": 9}]}, "sk48 L2": {"n_rows": 28, "n_unseen_rows": 3, "auroc_eta_committee_vs_row_error": 1.0, "auroc_eta_counts_seen_rows": 0.22426470588235295, "auroc_eta_committee_seen_rows": 1.0, "bins": [{"bin": "zero", "n_rows": 18, "mean_error_rate": 0.0, "rows_with_error": 0}, {"bin": "low", "n_rows": 3, "mean_error_rate": 0.0333, "rows_with_error": 1}, {"bin": "high", "n_rows": 7, "mean_error_rate": 0.153, "rows_with_error": 7}]}, "ar25 L7": {"n_rows": 267, "n_unseen_rows": 186, "auroc_eta_committee_vs_row_error": 0.6805273833671399, "auroc_eta_counts_seen_rows": 0.6821266968325792, "auroc_eta_committee_seen_rows": 0.6628959276018099, "bins": [{"bin": "zero", "n_rows": 127, "mean_error_rate": 0.0433, "rows_with_error": 6}, {"bin": "low", "n_rows": 8, "mean_error_rate": 0.0, "rows_with_error": 0}, {"bin": "high", "n_rows": 132, "mean_error_rate": 0.0907, "rows_with_error": 23}]}}, "rollout": {"ar25 L3": {"horizon": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], "open_dis": [0.0, 0.318, 0.318, 0.318, 0.318, 0.318, 0.318, 0.52, 0.52, 0.52, 0.52, 0.52, 0.52, 0.52, 0.52, 0.604, 0.52, 0.52, 0.52, 0.547], "closed_dis": [0.0, 0.318, 0.0, 0.0, 0.0, 0.0, 0.318, 0.27, 0.719, 0.433, 0.719, 0.354, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.092], "members_right": [8.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, 1.24], "n_members": 8, "bins": [{"horizon": "1", "n": 1, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 8.0, "open_disagreement_mean": 0.0, "closed_disagreement_mean": 0.0}, {"horizon": "2-5", "n": 4, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 5.0, "open_disagreement_mean": 0.318, "closed_disagreement_mean": 0.08}, {"horizon": "6-10", "n": 5, "closed_vote_acc": 0.4, "open_vote_acc": 0.4, "open_members_correct_mean": 2.0, "open_disagreement_mean": 0.439, "closed_disagreement_mean": 0.348}, {"horizon": "11+", "n": 34, "closed_vote_acc": 0.412, "open_vote_acc": 0.0, "open_members_correct_mean": 1.12, "open_disagreement_mean": 0.542, "closed_disagreement_mean": 0.099}]}, "m0r0 L3": {"horizon": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], "open_dis": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.098], "closed_dis": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.105], "members_right": [8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 3.84], "n_members": 8, "bins": [{"horizon": "1", "n": 1, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 8.0, "open_disagreement_mean": 0.0, "closed_disagreement_mean": 0.0}, {"horizon": "2-5", "n": 4, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 8.0, "open_disagreement_mean": 0.0, "closed_disagreement_mean": 0.0}, {"horizon": "6-10", "n": 5, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 8.0, "open_disagreement_mean": 0.0, "closed_disagreement_mean": 0.0}, {"horizon": "11+", "n": 34, "closed_vote_acc": 0.706, "open_vote_acc": 0.618, "open_members_correct_mean": 4.94, "open_disagreement_mean": 0.072, "closed_disagreement_mean": 0.078}]}, "sk48 L2": {"horizon": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], "open_dis": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.333, 0.333, 0.333], "closed_dis": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.256], "members_right": [8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "n_members": 8, "bins": [{"horizon": "1", "n": 1, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 8.0, "open_disagreement_mean": 0.0, "closed_disagreement_mean": 0.0}, {"horizon": "2-5", "n": 4, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 8.0, "open_disagreement_mean": 0.0, "closed_disagreement_mean": 0.0}, {"horizon": "6-10", "n": 5, "closed_vote_acc": 1.0, "open_vote_acc": 0.6, "open_members_correct_mean": 4.8, "open_disagreement_mean": 0.0, "closed_disagreement_mean": 0.0}, {"horizon": "11+", "n": 58, "closed_vote_acc": 0.638, "open_vote_acc": 0.0, "open_members_correct_mean": 0.0, "open_disagreement_mean": 0.293, "closed_disagreement_mean": 0.216}]}, "ar25 L7": {"horizon": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], "open_dis": [0.0, 0.0, 0.604, 0.604, 0.604, 0.181, 0.181, 0.181, 0.181, 0.181, 0.181, 0.181, 0.604, 0.604, 0.604, 0.604, 0.604, 0.604, 0.604, 0.62], "closed_dis": [0.0, 0.0, 0.604, 0.604, 0.604, 0.181, 0.0, 0.0, 0.0, 0.318, 0.0, 0.0, 0.604, 0.604, 0.604, 0.604, 0.604, 0.604, 0.604, 0.33], "members_right": [8.0, 8.0, 0.0, 0.0, 0.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "n_members": 8, "bins": [{"horizon": "1", "n": 1, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 8.0, "open_disagreement_mean": 0.0, "closed_disagreement_mean": 0.0}, {"horizon": "2-5", "n": 4, "closed_vote_acc": 0.25, "open_vote_acc": 0.25, "open_members_correct_mean": 2.0, "open_disagreement_mean": 0.453, "closed_disagreement_mean": 0.453}, {"horizon": "6-10", "n": 5, "closed_vote_acc": 1.0, "open_vote_acc": 1.0, "open_members_correct_mean": 7.0, "open_disagreement_mean": 0.181, "closed_disagreement_mean": 0.1}, {"horizon": "11+", "n": 55, "closed_vote_acc": 0.364, "open_vote_acc": 0.036, "open_members_correct_mean": 0.25, "open_disagreement_mean": 0.602, "closed_disagreement_mean": 0.353}]}}, "aci": {"ar25 L3": {"size": [2, 0, 1, 1, 1, 1, 1, 1, 6, 4, 6, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 5, 3, 3, 3, 3, 3, 2, 3, 2, 2, 2, 3, 3], "abstain": [true, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true], "hit": [true, false, true, true, true, true, true, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}, "m0r0 L3": {"size": [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 5, 4, 4, 4, 4], "abstain": [true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true], "hit": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, true, true, true, true, true, true, true, true, true]}, "sk48 L2": {"size": [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 4, 3, 3, 4, 4, 3, 4, 3, 4, 4, 4, 5], "abstain": [true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, true, true, true, true], "hit": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, true, true, true, true, true, true, true, false, true, true, true, true]}, "ar25 L7": {"size": [2, 1, 0, 5, 5, 3, 2, 2, 2, 3, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4], "abstain": [true, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true], "hit": [true, true, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]}}, "mechanisms": {"action_decode": 1.0, "selection_cycle": 1.0, "piece_move": 1.0, "axis_move": 1.0, "mirror_reflection": 1.0, "selection_marker": 1.0, "layered_composite": 1.0, "component_reextraction": 1.0, "wall_index_offset": 1.0, "static_passthrough": 1.0, "stateless_recovery": 1.0, "continuity_memo": 1.0, "axis_orientation": 0.25, "click_select": 0.125, "undo_history": 0.125}};
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function theme(){ return {fg:css('--fg'),muted:css('--muted'),rule:css('--rule'),accent:css('--accent'),keep:css('--keep'),frozen:css('--frozen'),panel:css('--panel')}; }
+
+/* ---------- diagram ---------- */
+(function drawDiagram(){
+  const T = theme();
+  const W = 900, colW = 400, gap = 40, boxH = 54, step = 76, top = 56, left = 30;
+  const opine = [
+    ['Observe (ω, a, ω\') from the live game', 'k'],
+    ['Synthesize the object extractor f⁻¹ and the rules together', 'f'],
+    ['Replay buffer D', 'k'],
+    ['Synthesize one program T̂ (CEGIS)', 'a'],
+    ['Admit iff T̂(s,a) = s\' on all of D', 'k'],
+    ['Rows (τ,a,μ): Dirichlet counts → η, undefined on rows with no counts', 'a'],
+    ['Explore the highest-η row, or plan with T̂', 'a'],
+    ['Mismatch → counterexample → repair T̂', 'a'],
+  ];
+  const ours = [
+    ['Read (s, a, s\') from a released recording, offline', 'f'],
+    ['Use the released extractor, frozen', 'f'],
+    ['Temporal split: D_train | D_test', 'k'],
+    ['Synthesize K = 8 programs, one seed hypothesis each', 'a'],
+    ['Admit each f_k iff f_k(s,a) = s\' on all of D_train', 'k'],
+    ['Equal-weight vote; disagreement from predictions, so it exists on rows with no train counts', 'a'],
+    ['Probe the transition with the most disagreement', 'a'],
+    ['Drop members that mispredict; none left → resynthesize', 'a'],
+  ];
+  const fill = {k:css('--keep-soft'), a:css('--accent-soft'), f:css('--frozen-soft')};
+  const stroke = {k:T.keep, a:T.accent, f:T.frozen};
+  const H = top + ours.length*step + 10;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="OPINE-World loop beside the committee loop">`;
+  s += `<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${T.muted}"/></marker></defs>`;
+  function col(items, x, title){
+    s += `<text x="${x}" y="28" font-family="${css('--display')}" font-size="20" font-weight="600" fill="${T.fg}">${title}</text>`;
+    items.forEach((it,i)=>{
+      const y = top + i*step;
+      const dash = it[1]==='f' ? ' stroke-dasharray="5 4"' : '';
+      s += `<rect x="${x}" y="${y}" width="${colW}" height="${boxH}" rx="5" fill="${fill[it[1]]}" stroke="${stroke[it[1]]}" stroke-width="1.5"${dash}/>`;
+      const words = it[0].split(' '); let lines=[''], li=0;
+      words.forEach(w=>{ if((lines[li]+' '+w).trim().length>46){lines.push(w);li++;} else lines[li]=(lines[li]+' '+w).trim(); });
+      lines.slice(0,2).forEach((ln,k)=> s += `<text x="${x+12}" y="${y + (lines.length>1? 23+k*18 : 32)}" font-family="${css('--body')}" font-size="13.5" fill="${T.fg}">${ln.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text>`);
+      if(i<items.length-1) s += `<line x1="${x+colW/2}" y1="${y+boxH}" x2="${x+colW/2}" y2="${y+step-2}" stroke="${T.muted}" stroke-width="1.5" marker-end="url(#arr)"/>`;
+    });
+    const yl = top + (items.length-1)*step + boxH/2;
+    s += `<path d="M ${x+colW} ${yl} L ${x+colW+14} ${yl} L ${x+colW+14} ${top+boxH/2+ (title.startsWith('OPINE')? 2*step : 3*step)} L ${x+colW} ${top+boxH/2+(title.startsWith('OPINE')? 2*step : 3*step)}" fill="none" stroke="${T.muted}" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arr)"/>`;
+  }
+  col(opine, left, 'OPINE-World');
+  col(ours, left+colW+gap+14, 'Program committee (this work)');
+  s += '</svg>';
+  document.getElementById('diagram').innerHTML = s;
+})();
+
+/* ---------- mechanism and trajectory figures ---------- */
+(function fillTables(){
+  const T0 = theme();
+  const rb = document.getElementById('rowCalBody');
+  for (const [lv, r] of Object.entries(EXTRA.row_cal)) {
+    const bins = Object.fromEntries(r.bins.map(b => [b.bin, b]));
+    const f = x => x === null || x === undefined ? '' : (typeof x === 'number' ? x.toFixed(2) : x);
+    rb.innerHTML += `<tr><td>${lv}</td><td class="num">${r.n_rows} (${r.n_unseen_rows})</td><td class="num">${f(r.auroc_eta_committee_vs_row_error)}</td><td class="num">${f(r.auroc_eta_counts_seen_rows)} vs ${f(r.auroc_eta_committee_seen_rows)}</td><td class="num">${bins.zero.n_rows}, ${f(bins.zero.mean_error_rate)}</td><td class="num">${bins.high.n_rows}, ${f(bins.high.mean_error_rate)}</td></tr>`;
+  }
+  const rl = document.getElementById('rollBody');
+  for (const [lv, r] of Object.entries(EXTRA.rollout)) {
+    const b = Object.fromEntries(r.bins.map(x => [x.horizon, x]));
+    const cell = k => b[k] ? `${b[k].closed_vote_acc.toFixed(2)} → ${b[k].open_vote_acc.toFixed(2)}` : '';
+    const dis = b['11+'] ? `${b['11+'].closed_disagreement_mean.toFixed(2)} → ${b['11+'].open_disagreement_mean.toFixed(2)}` : '';
+    rl.innerHTML += `<tr><td>${lv}</td><td class="num">${cell('2-5')}</td><td class="num">${cell('6-10')}</td><td class="num">${cell('11+')}</td><td class="num">${dis}</td></tr>`;
+  }
+})();
+
+/* ---------- charts ---------- */
+Chart.defaults.font.family = css('--body');
+Chart.defaults.color = css('--muted');
+Chart.defaults.borderColor = css('--rule');
+const T = theme();
+
+new Chart(document.getElementById('accChart'), {type:'bar', data:{
+  labels:[...DATA.baseline_acc.map((_,i)=>`single ${i+1}`), ...DATA.member_acc.map((_,i)=>`m${i+1}`), 'vote'],
+  datasets:[{label:'held-out accuracy', data:[...DATA.baseline_acc, ...DATA.member_acc, DATA.vote_acc],
+    backgroundColor:[...DATA.baseline_acc.map(()=>T.frozen), ...DATA.member_acc.map(()=>T.keep), T.accent]}]},
+  options:{plugins:{legend:{display:false}, title:{display:true,text:'Held-out accuracy, ar25 level 3 (44 transitions)',color:T.fg}},
+    scales:{y:{min:0,max:1,ticks:{stepSize:0.25}}, x:{grid:{display:false}}}}});
+
+const rel = DATA.reliability_uniform;
+new Chart(document.getElementById('relChart'), {type:'bar', data:{
+  labels: rel.map(r=>`${r.bin} (n=${r.n})`),
+  datasets:[{label:'error rate', data: rel.map(r=>r.error_rate ?? 0), backgroundColor: rel.map((r,i)=> i===0? T.keep : T.accent)}]},
+  options:{plugins:{legend:{display:false}, title:{display:true,text:'Error rate of the committee prediction by disagreement',color:T.fg}},
+    scales:{y:{min:0,max:1,ticks:{stepSize:0.25}}, x:{grid:{display:false}}}}});
+
+const probes = [0,1,2,3,4,5,6,7,8];
+new Chart(document.getElementById('expChart'), {type:'line', data:{labels:probes, datasets:[
+  {label:'disagreement order', data:DATA.explore.disagreement.members_left, borderColor:T.accent, backgroundColor:T.accent, tension:0, pointRadius:3},
+  {label:'count priority (OPINE-World η)', data:DATA.explore.counts.members_left, borderColor:T.frozen, backgroundColor:T.frozen, tension:0, pointRadius:3, borderDash:[6,4]},
+  {label:'random, mean of 20', data:DATA.explore_random_mean, borderColor:T.keep, backgroundColor:T.keep, tension:0, pointRadius:3}]},
+  options:{plugins:{title:{display:true,text:'Members still consistent after each probe',color:T.fg}},
+    scales:{y:{min:0,max:8,title:{display:true,text:'members'}}, x:{title:{display:true,text:'probes'}}}}});
+
+const LV_COLORS = {'ar25 L3': T.accent, 'm0r0 L3': T.keep, 'sk48 L2': T.frozen, 'ar25 L7': '#8a6d3b'};
+const mechNames = Object.keys(EXTRA.mechanisms).sort((a,b)=> EXTRA.mechanisms[b]-EXTRA.mechanisms[a]);
+new Chart(document.getElementById('mechChart'), {type:'bar', data:{labels: mechNames.map(n=>n.replace(/_/g,' ')),
+  datasets:[{label:'share of members', data: mechNames.map(n=>EXTRA.mechanisms[n]), backgroundColor: mechNames.map(n=> EXTRA.mechanisms[n] < 1 ? T.accent : T.keep)}]},
+  options:{indexAxis:'y', plugins:{legend:{display:false}, title:{display:true,text:'Mechanism consensus, ar25 level 3 (8 members)',color:T.fg}},
+    scales:{x:{min:0,max:1,ticks:{stepSize:0.25}}, y:{grid:{display:false}, ticks:{font:{size:11}}}}}});
+const rollSets = [];
+for (const [lv, r] of Object.entries(EXTRA.rollout)) {
+  rollSets.push({label: lv + ' open loop', data: r.horizon.map((h,i)=>({x:h, y:r.open_dis[i]})), borderColor: LV_COLORS[lv], backgroundColor: LV_COLORS[lv], tension:0, pointRadius:2});
+  rollSets.push({label: lv + ' teacher forced', data: r.horizon.map((h,i)=>({x:h, y:r.closed_dis[i]})), borderColor: LV_COLORS[lv], backgroundColor: LV_COLORS[lv], tension:0, pointRadius:0, borderDash:[4,4], borderWidth:1});
+}
+new Chart(document.getElementById('rollDisChart'), {type:'line', data:{datasets: rollSets},
+  options:{plugins:{title:{display:true,text:'Disagreement by horizon (steps since last observation)',color:T.fg}, legend:{labels:{boxWidth:12, font:{size:10}}}},
+    scales:{x:{type:'linear', min:1, max:20, title:{display:true,text:'horizon (20 = 20 or more)'}}, y:{min:0, max:1, title:{display:true,text:'normalised entropy'}}}}});
+const memSets = Object.entries(EXTRA.rollout).map(([lv, r]) => ({label: lv, data: r.horizon.map((h,i)=>({x:h, y:r.members_right[i]})), borderColor: LV_COLORS[lv], backgroundColor: LV_COLORS[lv], tension:0, pointRadius:2}));
+new Chart(document.getElementById('rollMemChart'), {type:'line', data:{datasets: memSets},
+  options:{plugins:{title:{display:true,text:'Members still exactly right, open loop',color:T.fg}, legend:{labels:{boxWidth:12, font:{size:10}}}},
+    scales:{x:{type:'linear', min:1, max:20, title:{display:true,text:'horizon'}}, y:{min:0, max:8, title:{display:true,text:'members of 8'}}}}});
+/* ---------- conformal wrapper: step strips and policy frontier ---------- */
+const ACI_GROUPS = [
+  ['Committee mostly right', [['m0r0 L3','commits on steps 2–35; four misses at 32–35, then abstains'],['sk48 L2','commits on most steps; empty sets at 24–26 after a long run of hits']]],
+  ['Committee mostly wrong', [['ar25 L3','commits on steps 3–7, misses at 8, abstains from 9'],['ar25 L7','abstains from step 4']]],
+];
+function aciKind(r,i){
+  if (r.abstain[i]) return 'abstain';
+  if (r.size[i]===0) return 'empty';
+  if (r.size[i]===1) return r.hit[i] ? 'hit' : 'miss';
+  return r.hit[i] ? 'sethit' : 'setmiss';
+}
+const KIND_TEXT = {hit:'committed to one state, right', miss:'committed to one state, wrong', sethit:'set of several states, outcome inside', setmiss:'set of several states, outcome outside', abstain:'abstained (covered)', empty:'empty set, forced miss'};
+(function drawAciStrips(){
+  const W = 860, padL = 34, padR = 34, NMAX = 68, cw = (W-padL-padR)/NMAX;
+  const yS = 2, hS = 18, yTop = 30, yBot = 96, H = 116;
+  const yc = v => yBot - (Math.max(0.5, v) - 0.5) / 0.5 * (yBot - yTop);
+  let html = '';
+  for (const [title, levels] of ACI_GROUPS) {
+    html += `<div class="aci-group">${title}</div>`;
+    for (const [lv, note] of levels) {
+      const r = EXTRA.aci[lv], n = r.size.length;
+      const committed = r.abstain.map((a,i)=>!a ? i : -1).filter(i=>i>=0);
+      const cHits = committed.filter(i=>r.hit[i]).length;
+      const cov = Math.round(r.hit.filter(Boolean).length / n * 100 + 1e-9) / 100;
+      let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${lv}: conformal set per held-out step and running coverage">`;
+      for (let i=0;i<n;i++){
+        const k = aciKind(r,i), x = padL + i*cw, w = Math.max(1, cw-2);
+        let fill='var(--keep)', stroke='none';
+        if (k==='miss') fill='var(--accent)';
+        if (k==='sethit'){ fill='var(--keep-soft)'; stroke='var(--keep)'; }
+        if (k==='setmiss'){ fill='var(--accent-soft)'; stroke='var(--accent)'; }
+        if (k==='abstain') fill='var(--frozen-soft)';
+        if (k==='empty'){ fill='transparent'; stroke='var(--accent)'; }
+        s += `<rect class="cell" x="${x.toFixed(1)}" y="${yS}" width="${w.toFixed(1)}" height="${hS}" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.2"><title>${lv}, step ${i+1}: ${KIND_TEXT[k]}${r.abstain[i]||r.size[i]===0?'':`, ${r.size[i]} state${r.size[i]>1?'s':''} in set`}</title></rect>`;
+        if (k==='miss' || k==='empty' || k==='setmiss') {
+          const cx = x + w/2, cy = yS + hS/2, d = Math.min(3.5, w/2-1), col = k==='miss' ? 'var(--panel)' : 'var(--accent)';
+          s += `<path d="M${cx-d},${cy-d} L${cx+d},${cy+d} M${cx+d},${cy-d} L${cx-d},${cy+d}" stroke="${col}" stroke-width="1.6" pointer-events="none"/>`;
+        }
+      }
+      // running coverage
+      [1.0, 0.9, 0.5].forEach(v => {
+        s += `<text x="${padL-6}" y="${yc(v)+4}" text-anchor="end" font-size="10.5" font-family="var(--mono)" fill="var(--muted)">${v.toFixed(1)}</text>`;
+      });
+      s += `<line x1="${padL}" x2="${padL+NMAX*cw}" y1="${yc(0.5)}" y2="${yc(0.5)}" stroke="var(--rule)" stroke-width="1"/>`;
+      s += `<line x1="${padL}" x2="${padL+NMAX*cw}" y1="${yc(0.9)}" y2="${yc(0.9)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4"/>`;
+      let h = 0, pts = [];
+      for (let i=0;i<n;i++){ h += r.hit[i]?1:0; pts.push(`${(padL+i*cw+cw/2).toFixed(1)},${yc(h/(i+1)).toFixed(1)}`); }
+      s += `<polyline points="${pts.join(' ')}" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round"/>`;
+      const lastX = padL + (n-1)*cw + cw/2;
+      s += `<text x="${lastX+6}" y="${yc(cov)+4}" font-size="11" font-family="var(--mono)" fill="var(--fg)">${cov.toFixed(2)}</text>`;
+      [1,10,20,30,40,50,60].forEach(t => {
+        s += `<text x="${padL+(t-1)*cw+cw/2}" y="${H-4}" text-anchor="middle" font-size="10" font-family="var(--mono)" fill="var(--muted)">${t}</text>`;
+      });
+      s += `</svg>`;
+      html += `<div class="aci-row"><div class="aci-head"><strong>${lv}</strong>${note}. Coverage ${cov.toFixed(2)}; committed ${committed.length} of ${n} steps, ${cHits} right.</div><div class="svgwrap">${s}</div></div>`;
+    }
+  }
+  html += `<div class="aci-head" style="margin-top:-.4rem">Strip: one cell per held-out step. Line: running coverage, dashed at the 0.90 target. Axis: held-out step.</div>`;
+  // resolve tokens: SVG presentation attributes do not take var()
+  html = html.replace(/(fill|stroke|font-family)="var\(--([a-z-]+)\)"/g, (m, a, n) => `${a}="${css('--'+n).replace(/"/g,"'")}"`);
+  document.getElementById('aciStripsBody').innerHTML = html;
+})();
+
+const VOTE_ACC = {'m0r0 L3':0.77, 'sk48 L2':0.69, 'ar25 L3':DATA.vote_acc, 'ar25 L7':0.42};
+const lvOrder = ['m0r0 L3','sk48 L2','ar25 L3','ar25 L7'];
+const aciPts = lvOrder.map(lv => { const r = EXTRA.aci[lv], n = r.hit.length;
+  return {x: 1 - r.abstain.filter(Boolean).length/n, y: r.hit.filter(Boolean).length/n, lv}; });
+const plurPts = lvOrder.map(lv => ({x:1, y:VOTE_ACC[lv], lv}));
+const directLabels = {id:'directLabels', afterDatasetsDraw(chart){
+  const ctx = chart.ctx; ctx.save(); ctx.font = `11px ${css('--body')}`; ctx.fillStyle = css('--muted');
+  chart.data.datasets.forEach((ds, di) => { if (!ds.labelPts) return;
+    const meta = chart.getDatasetMeta(di); if (meta.hidden) return;
+    meta.data.forEach((pt, i) => { const d = ds.data[i]; const o = ds.labelPts(d);
+      ctx.textAlign = o.align; ctx.fillText(o.text, pt.x + o.dx, pt.y + o.dy); }); });
+  ctx.restore(); }};
+new Chart(document.getElementById('aciFrontier'), {type:'scatter', plugins:[directLabels], data:{datasets:[
+  {label:'conformal wrapper', data: aciPts, backgroundColor:T.keep, borderColor:T.panel, borderWidth:2, pointStyle:'rectRot', pointRadius:8, pointHoverRadius:10,
+    labelPts: d => d.lv==='ar25 L7' ? {text:d.lv, align:'left', dx:12, dy:16} : d.lv==='m0r0 L3' ? {text:d.lv, align:'right', dx:-12, dy:-8} : {text:d.lv, align:'left', dx:12, dy:4}},
+  {label:'always commit to the plurality', data: plurPts, backgroundColor:T.accent, borderColor:T.panel, borderWidth:2, pointStyle:'circle', pointRadius:7, pointHoverRadius:9,
+    labelPts: d => ({text:d.lv, align:'right', dx:-12, dy:4})},
+  {label:'always abstain', data:[{x:0, y:1, lv:'every level'}], backgroundColor:'transparent', borderColor:T.frozen, borderWidth:2, pointStyle:'rect', pointRadius:9, pointHoverRadius:11,
+    labelPts: d => ({text:'always abstain (every level)', align:'left', dx:14, dy:-10})},
+  {type:'line', label:'target 0.90', data:[{x:-0.05,y:0.9},{x:1.08,y:0.9}], borderColor:T.muted, borderWidth:1, borderDash:[4,4], pointRadius:0, pointHoverRadius:0, pointStyle:'line'}
+]}, options:{
+  interaction:{mode:'nearest', intersect:true},
+  plugins:{title:{display:true, text:'Coverage vs share of steps with a committed prediction', color:T.fg},
+    legend:{labels:{usePointStyle:true, boxWidth:10, font:{size:11}}},
+    tooltip:{filter: it => it.dataset.type !== 'line', callbacks:{label: it => `${it.dataset.label}, ${it.raw.lv}: coverage ${it.raw.y.toFixed(2)}, commits on ${(it.raw.x*100).toFixed(0)}% of steps`}}},
+  scales:{x:{min:-0.05, max:1.08, title:{display:true, text:'share of steps with a committed prediction'}, ticks:{callback:v => v>=0 && v<=1 ? Math.round(v*100)+'%' : ''}},
+    y:{min:0.3, max:1.05, title:{display:true, text:'coverage'}, ticks:{callback:v => v<=1 ? v.toFixed(1) : ''}}}}});
+
+
+/* ---------- closed loop, live play ---------- */
+(function drawLoop(){
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+  const ramp = dark ? ['#f0b39c', '#e0795a', '#b35236'] : ['#d8a48f', '#b85c3a', '#7a2d14'];
+  const levels = ['ar25 L3', 'sk48 L2', 'm0r0 L3', 'ar25 L7', 'ls20 L3', 'ka59 L2', 'g50t L1'];
+  const vote = {
+    r1: [0.475, 0.697, 0.786, 0.413, 0.879, 0.857, 0.465],
+    r2: [0.925, 0.864, 0.786, 0.429, 0.879, 0.690, 0.488],
+    r3: [1.000, null, null, null, null, null, null],
+    passive: [0.650, 0.636, 0.762, 0.413, null, null, null]};
+  const valueLabels = {id:'valueLabels', afterDatasetsDraw(chart){
+    const ctx = chart.ctx; ctx.save(); ctx.font = `10px ${css('--mono')}`; ctx.fillStyle = css('--muted'); ctx.textAlign = 'center';
+    chart.data.datasets.forEach((ds, di) => { const meta = chart.getDatasetMeta(di); if (meta.hidden) return;
+      meta.data.forEach((bar, i) => { const v = ds.data[i]; if (v === null || v === undefined) return; ctx.fillText(v.toFixed(2), bar.x, bar.y - 4); }); });
+    ctx.restore(); }};
+  new Chart(document.getElementById('loopChart'), {type:'bar', plugins:[valueLabels], data:{labels: levels, datasets:[
+    {label:'round 1', data: vote.r1, backgroundColor: ramp[0], borderRadius:3},
+    {label:'round 2', data: vote.r2, backgroundColor: ramp[1], borderRadius:3},
+    {label:'round 3', data: vote.r3, backgroundColor: ramp[2], borderRadius:3},
+    {label:'passive, next in time', data: vote.passive, backgroundColor:'transparent', borderColor: T.frozen, borderWidth:1.5, borderRadius:3}]},
+    options:{plugins:{title:{display:true, text:'Vote accuracy on the transitions no arm observed', color:T.fg}, legend:{labels:{boxWidth:12, font:{size:11}}},
+      tooltip:{callbacks:{label: it => `${it.dataset.label}: ${it.raw === null ? 'not run' : it.raw.toFixed(3)}`}}},
+      scales:{y:{min:0, max:1.08, ticks:{stepSize:0.25, callback:v => v<=1 ? v.toFixed(2) : ''}, title:{display:true, text:'vote accuracy'}}, x:{grid:{display:false}}}}});
+  const distinct = {r1:[7, 6, 4, 6, 3, 3, 4], r2:[1, 2, 2, 1, 2, 1, 7]};
+  new Chart(document.getElementById('distinctChart'), {type:'bar', plugins:[valueLabels], data:{labels: levels, datasets:[
+    {label:'round 1', data: distinct.r1, backgroundColor: ramp[0], borderRadius:3},
+    {label:'round 2', data: distinct.r2, backgroundColor: ramp[1], borderRadius:3}]},
+    options:{plugins:{title:{display:true, text:'Distinct behaviours on the held-out set', color:T.fg}, legend:{labels:{boxWidth:12, font:{size:11}}}},
+      scales:{y:{min:0, max:8.6, ticks:{stepSize:2, callback:v => v<=8 ? v : ''}, title:{display:true, text:'behaviours among 8 members'}}, x:{grid:{display:false}}}}});
+  new Chart(document.getElementById('liveChart'), {type:'bar', plugins:[valueLabels], data:{labels:['trajectory, seed 0', 'trajectory, seed 1'], datasets:[
+    {label:'round 1 (recorded data)', data:[0.40, 0.40], backgroundColor: ramp[0], borderRadius:3},
+    {label:'round 3 (recorded data, 4 probes)', data:[0.41, 0.39], backgroundColor: ramp[1], borderRadius:3},
+    {label:'live round (71 live moves added)', data:[0.71, 0.86], backgroundColor: ramp[2], borderRadius:3}]},
+    options:{plugins:{title:{display:true, text:'Live vote accuracy, ar25 level 3, about 150 moves each', color:T.fg}, legend:{labels:{boxWidth:12, font:{size:11}}}},
+      scales:{y:{min:0, max:1.08, ticks:{stepSize:0.25, callback:v => v<=1 ? v.toFixed(2) : ''}, title:{display:true, text:'vote accuracy'}}, x:{grid:{display:false}}}}});
+})();
+
+
+(function drawSelective(){
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+  const ramp = dark ? ['#f0b39c', '#e0795a', '#b35236'] : ['#d8a48f', '#b85c3a', '#7a2d14'];
+  const lv = ['ar25 L3','m0r0 L3','sk48 L2','ar25 L7','ls20 L3','ka59 L2','g50t L1'];
+  const labels = {id:'selLabels', afterDatasetsDraw(chart){ const ctx = chart.ctx; ctx.save(); ctx.font = `10px ${css('--mono')}`; ctx.fillStyle = css('--muted'); ctx.textAlign='center';
+    chart.data.datasets.forEach((ds, di) => { const meta = chart.getDatasetMeta(di); if (meta.hidden) return; meta.data.forEach((bar, i) => { const v = ds.data[i]; if (v === null) return; ctx.fillText(v.toFixed(2), bar.x, v >= 0 ? bar.y - 4 : bar.y + 11); }); }); ctx.restore(); }};
+  new Chart(document.getElementById('selChart'), {type:'bar', plugins:[labels], data:{labels: lv, datasets:[
+    {label:'conformal wrapper', data:[0.091, 0.591, 0.574, 0.015, 0.458, 0.091, 0.115], backgroundColor: ramp[1], borderRadius:3},
+    {label:'always commit to the plurality', data:[-0.045, 0.545, 0.382, -0.169, 0.729, 0.636, 0.038], backgroundColor:'transparent', borderColor:T.frozen, borderWidth:1.5, borderRadius:3}]},
+    options:{plugins:{title:{display:true, text:'Selective score, recorded held-out trajectories (abstain throughout = 0)', color:T.fg}, legend:{labels:{boxWidth:12, font:{size:11}}}},
+      scales:{y:{min:-0.3, max:0.9, ticks:{stepSize:0.3}, title:{display:true, text:'mean score per step'}}, x:{grid:{display:false}}}}});
+  new Chart(document.getElementById('quarterChart'), {type:'bar', plugins:[labels], data:{labels:['quarter 1','quarter 2','quarter 3','quarter 4'], datasets:[
+    {label:'round 1', data:[0.93, 0.72, 0.00, 0.00], backgroundColor: ramp[0], borderRadius:3},
+    {label:'round 3', data:[0.98, 0.78, 0.00, 0.00], backgroundColor: ramp[1], borderRadius:3},
+    {label:'live round', data:[0.97, 1.00, 1.00, 0.14], backgroundColor: ramp[2], borderRadius:3}]},
+    options:{plugins:{title:{display:true, text:'Live: share of moves with a committed prediction, by quarter', color:T.fg}, legend:{labels:{boxWidth:12, font:{size:11}}}},
+      scales:{y:{min:0, max:1.12, ticks:{stepSize:0.25, callback:v => v<=1 ? v.toFixed(2) : ''}, title:{display:true, text:'commit share'}}, x:{grid:{display:false}}}}});
+})();
+
+const rows = DATA.rows_eta_hist.slice().sort((a,b)=> b[2]-a[2]);
+new Chart(document.getElementById('rowChart'), {type:'bar', data:{labels: rows.map((_,i)=>i+1), datasets:[
+  {label:'η committee', data: rows.map(r=>r[2]), backgroundColor: rows.map(r=> r[0]===0 ? T.frozen : T.accent)}]},
+  options:{plugins:{legend:{display:false}, title:{display:true,text:'90 effect rows by committee entropy (grey: no train counts)',color:T.fg}},
+    scales:{y:{min:0,max:1}, x:{display:false}}}});
+</script>
+
+</body></html>
