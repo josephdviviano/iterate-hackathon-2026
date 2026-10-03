@@ -136,45 +136,66 @@ def augment(padded, flip_bits, epoch, r):
 
 
 
-@torch.compile(dynamic=False)
-def zeropower_via_newtonschulz5(G, steps: int, eps: float = 1e-7):
+def _newtonschulz(G, steps: int, eps: float = 1e-7):
+    """Quintic Newton-Schulz on a stack of matrices G [k, m, n], in bf16."""
     a, b, c = (3.4445, -4.7750, 2.0315)
     X = G.bfloat16()
-    X = X / (X.norm() + eps)
-    transposed = G.size(0) > G.size(1)
+    X = X / (X.norm(dim=(1, 2), keepdim=True) + eps)
+    transposed = G.size(1) > G.size(2)
     if transposed:
-        X = X.T
+        X = X.mT
     for _ in range(steps):
-        A = X @ X.T
+        A = X @ X.mT
         B = b * A + c * A @ A
         X = a * X + B @ X
     if transposed:
-        X = X.T
+        X = X.mT
     return X
 
 
-class Muon(torch.optim.Optimizer):
-    """Orthogonalized Nesterov momentum for conv filters, with per-step weight-norm projection (airbench94_muon)."""
+@torch.compile(dynamic=False)
+def _muon_update(params, grads, bufs, lr, momentum: float, ns_steps: int, shape_groups: tuple):
+    with torch.no_grad():
+        torch._foreach_mul_(bufs, momentum)
+        torch._foreach_add_(bufs, grads)
+        updates = torch._foreach_add(grads, bufs, alpha=momentum)
+        for idx in shape_groups:
+            G = torch.stack([updates[i].reshape(len(updates[i]), -1) for i in idx])
+            scale = max(1.0, G.size(1) / G.size(2)) ** 0.5
+            U = _newtonschulz(G, ns_steps)
+            for j, i in enumerate(idx):
+                p = params[i]
+                p.mul_(len(p) ** 0.5 / p.norm())
+                p.sub_(U[j].view(p.shape).float() * (lr * scale))
+
+
+class Muon:
+    """Orthogonalized Nesterov momentum for conv filters, with per-step weight-norm projection (airbench94_muon).
+
+    One compiled graph updates all filters; same-shape filters are orthogonalized together as one batched matmul,
+    and the lr is a 0-d GPU tensor so schedule changes never recompile.
+    """
 
     def __init__(self, params, lr, momentum, ns_steps):
-        super().__init__(params, dict(lr=lr, momentum=momentum, ns_steps=ns_steps))
+        self.params = list(params)
+        self.bufs = [torch.zeros_like(p) for p in self.params]
+        self.lr_t = torch.tensor(float(lr), device=self.params[0].device)
+        self.param_groups = [dict(lr=lr)]
+        self.momentum = momentum
+        self.ns_steps = ns_steps
+        groups = {}
+        for i, p in enumerate(self.params):
+            groups.setdefault(tuple(p.shape), []).append(i)
+        self.shape_groups = tuple(tuple(v) for v in groups.values())
 
-    @torch.no_grad()
+    def zero_grad(self, set_to_none=True):
+        for p in self.params:
+            p.grad = None
+
     def step(self):
-        for group in self.param_groups:
-            for p in group["params"]:
-                g = p.grad
-                state = self.state[p]
-                if "momentum_buffer" not in state:
-                    state["momentum_buffer"] = torch.zeros_like(g)
-                buf = state["momentum_buffer"]
-                buf.mul_(group["momentum"]).add_(g)
-                g = g.add(buf, alpha=group["momentum"])
-                p.mul_(len(p) ** 0.5 / p.norm())
-                g2 = g.reshape(len(g), -1)
-                scale = max(1.0, g2.size(0) / g2.size(1)) ** 0.5
-                update = zeropower_via_newtonschulz5(g2, group["ns_steps"]).view(g.shape)
-                p.add_(update, alpha=-group["lr"] * scale)
+        self.lr_t.fill_(self.param_groups[0]["lr"])
+        grads = [p.grad for p in self.params]
+        _muon_update(self.params, grads, self.bufs, self.lr_t, self.momentum, self.ns_steps, self.shape_groups)
 
 
 class Lookahead:
