@@ -18,11 +18,11 @@
 <!-- writing-tools:generated:start -->
 ## Current position
 
-- **State:** continue
+- **State:** needs_design
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
-- **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
-- **Next:** Continue T-013 (Local-proxy hill climb to convergence (X-002)).
+- **Why:** The current evidence frontier requires repair, a new discriminating task, requirement redesign, or an explicit programme decision.
+- **Next:** Repair the design or issue only the work needed to resolve the stated frontier.
 - **Open human feedback:** none
 
 ## Work completed and underway
@@ -35,13 +35,17 @@
 | [T-004](tasks/T-004-a100-pcie-timing-calibration-and-cross-stack-accuracy-agreement.md) — A100 PCIe timing calibration and cross-stack accuracy agreement | exploration | blocked | On a rented A100 80GB PCIe in the pinned container, measure per-epoch and fixed preparation time for each frontier width with telemetry, re-time a ResNet-9 reimplementation against the 59.3 s baseline, and compare a reference configuration's 10-seed accuracy with the dev stack. |
 | [T-005](tasks/T-005-single-view-width-by-epochs-frontier-p1.md) — Single-view width by epochs frontier (P1) | exploration | completed | Frontier measured over 4 shapes x 4 epoch counts x 5 seeds plus a ResNet-9 arm; airbench96 shape reaches 75.37% at 10 epochs, 2x crosses at 13.7 epochs; capacity-bound (F-003). |
 | [T-006](tasks/T-006-select-the-base-regime.md) — Select the base regime | decision | proposed | Choose architecture, width, depth, batch size and epoch count by minimum interpolated A100 PCIe time at a 75.3% single-view mean, steelmanning the runner-up regime. |
-| [T-007](tasks/T-007-add-on-levers-at-the-selected-base-p2.md) — Add-on levers at the selected base (P2) | exploration | proposed | Compare Muon versus SGD with lookahead, progressive resizing, in-run proxy-loss example selection and label-smoothing level at matched accuracy with at least 10 seeds per arm at the selected base. |
-| [T-008](tasks/T-008-adopt-or-reject-add-on-levers.md) — Adopt or reject add-on levers | decision | proposed | Record which levers enter the final recipe and why each rejected lever was rejected. |
-| [T-009](tasks/T-009-converge-and-simplify-the-final-submission.md) — Converge and simplify the final submission | delivery | proposed | Remove exploration-only parameters and code paths, make the defaults run the selected recipe, write the submission README, then run one simplify-codebase pass over the integrated team folder. |
-| [T-010](tasks/T-010-official-equivalent-40-seed-qualification-on-the-a100-pcie.md) — Official-equivalent 40-seed qualification on the A100 PCIe | assurance | proposed | Run the frozen candidate in the pinned container on an A100 80GB PCIe with a private 40-seed file, cpus 4 and network none; record results, telemetry and the R-001 risk calculation. |
-| [T-011](tasks/T-011-fresh-context-compliance-review-and-independence-checks.md) — Fresh-context compliance review and independence checks | assurance | proposed | Review the frozen candidate source against every RULES.md section 3 bullet without implementation narrative, and run repeat-seed, reordered-seed and fresh-process independence checks. |
-| [T-012](tasks/T-012-open-the-upstream-pull-request-after-approval.md) — Open the upstream pull request after approval | delivery | proposed | After a recorded team-lead approval, create a clean branch from upstream main containing only the team folder and open the pull request. |
-| [T-013](tasks/T-013-local-proxy-hill-climb-to-convergence-x-002.md) — Local-proxy hill climb to convergence (X-002) | exploration | in_progress | From the P1 frontier, climb one lever at a time (width and stage allocation, epochs, optimiser, batch size, resolution schedule, regularisation, learning rates) on GPU 1, keeping a change only when the interpolated proxy time to a 75.3% single-view mean falls beyond seed noise; stop when no accessible lever improves it. |
+| [T-007](tasks/T-007-add-on-levers-at-the-selected-base-p2.md) — Add-on levers at the selected base (P2) | exploration | cancelled | Superseded by T-013: probes S4-S15 tested Muon, resizing, selection, batch size, regularisation, compile and further levers at the climbed base (F-007 to F-019); its premise of a separate add-on pass after an A100 regime decision no longer holds because the climb ran on the local proxy under D-001. |
+| [T-008](tasks/T-008-adopt-or-reject-add-on-levers.md) — Adopt or reject add-on levers | decision | cancelled | Superseded by T-013 decisions D-003 to D-007, which record adopted and rejected levers with evidence and reopening conditions. |
+| [T-009](tasks/T-009-converge-and-simplify-the-final-submission.md) — Converge and simplify the final submission | delivery | cancelled | Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance. |
+| [T-010](tasks/T-010-official-equivalent-40-seed-qualification-on-the-a100-pcie.md) — Official-equivalent 40-seed qualification on the A100 PCIe | assurance | cancelled | Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance. |
+| [T-011](tasks/T-011-fresh-context-compliance-review-and-independence-checks.md) — Fresh-context compliance review and independence checks | assurance | cancelled | Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance. |
+| [T-012](tasks/T-012-open-the-upstream-pull-request-after-approval.md) — Open the upstream pull request after approval | delivery | cancelled | Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance. |
+| [T-013](tasks/T-013-local-proxy-hill-climb-to-convergence-x-002.md) — Local-proxy hill climb to convergence (X-002) | exploration | completed | Converged after S3-S19: 128/384/640 depth-3, translate 2, logit scale 1/6, 20/32 px resizing, compiled; 40-seed fresh means 75.33% at 8.5 and 75.43% at 8.75 epochs (AC-03), budget 8.25 epochs (75.26%) selected under F-005 (D-007); local compiled proxy 5.38 s vs 9.3 s for the P1 best cell. |
+| [T-014](tasks/T-014-converge-the-climbed-recipe-into-submission-defaults.md) — Converge the climbed recipe into submission defaults | delivery | completed | Team folder converged and simplified: defaults are the T-013 recipe (75.21% over 10 fresh seeds at 5.18 s local), exploration paths moved to research/lab_recipe, training bit-identical to the lab substrate, compile and fused SGD CUDA-only, README written; 23 contract tests pass on the pinned stack. |
+| [T-015](tasks/T-015-official-equivalent-40-seed-qualification-on-the-a100-pcie.md) — Official-equivalent 40-seed qualification on the A100 PCIe | assurance | proposed | Run the frozen converged candidate in the pinned container on an A100 80GB PCIe with a private 40-seed file, cpus 4 and network none; record results, telemetry, the R-001 risk calculation and the dev-stack versus A100 accuracy comparison; fall back to 8.5 or 8.75 epochs (D-007) if the mean is below 75.2%. |
+| [T-016](tasks/T-016-fresh-context-compliance-review-and-independence-checks.md) — Fresh-context compliance review and independence checks | assurance | ready | Review the frozen converged candidate against every RULES.md section 3 bullet without implementation narrative, and run repeat-seed, reordered-seed and fresh-process independence checks. |
+| [T-017](tasks/T-017-open-the-upstream-pull-request-after-approval.md) — Open the upstream pull request after approval | delivery | proposed | After a recorded team-lead approval, create a clean branch from upstream main containing only the team folder and open the pull request. |
 
 ## Issues identified
 
@@ -178,6 +182,34 @@
 - **Decision consequence:** Adopt scaling_factor 1/6 (D-006) and confirm with 40 fresh seeds at 8.75 and 9.0 epochs (S16).
 - **Resolution:** Logit scale adopted.
 
+### F-020 — resolved, material
+
+- **Observation:** S16 (40 fresh seeds 400-439, compiled, 128/384/640, logit scale 1/6): 8.75 epochs gives 75.43% mean (sd 0.235 pp, worst seed 74.96%) in 5.69 s local proxy; 9.0 epochs gives 75.48% (sd 0.243 pp) in 5.85 s; all 80 trials completed.
+- **Interpretation:** The climbed recipe meets the 75.2% development criterion with 0.23 pp to spare at 8.75 epochs; the estimated official qualification risk is far below 1% (margin about 8 combined SE). The spare margin means a shorter budget may also qualify.
+- **Decision consequence:** Search 8.0-8.5 epochs with 40 fresh seeds (S18) and select the shortest budget meeting 75.2%.
+- **Resolution:** Confirmation passed; shortening probed in S18.
+
+### F-021 — resolved, material
+
+- **Observation:** S18 (40 fresh seeds 600-639, climbed recipe): 8.0 epochs 75.02% (sd 0.29 pp, 5.21 s), 8.25 epochs 75.26% (sd 0.24 pp, 5.38 s), 8.5 epochs 75.33% (sd 0.22 pp, 5.52 s); with S16, 8.75 epochs 75.43% (5.69 s).
+- **Interpretation:** 8.25 epochs is the shortest budget meeting the 75.2% development criterion; its 0.26 pp margin over 75% is about 5 combined standard errors, so dev-stack qualification risk is negligible. Accuracy rises about 0.25 pp per quarter-epoch below 8.5 and flattens above it.
+- **Decision consequence:** Select 8.25 epochs (D-007) with 8.5 and 8.75 epochs as fallbacks if A100 confirmation (T-004, T-010) falls below 75.2%.
+- **Resolution:** Final local budget selected.
+
+### F-022 — resolved, material
+
+- **Observation:** S17 (10 fresh seeds 500-509, climbed recipe, 8.75 epochs): label smoothing 0.1 / 0.2 / 0.3 give 75.35% / 75.41% / 75.52% at equal time; switching to 32 px at 40% gives 75.84% in 6.19 s, at 60% gives 75.01% in 5.18 s, versus 75.41% in 5.69 s at 50%.
+- **Interpretation:** Label smoothing is flat around 0.2. The switch point trades accuracy for time: 60% lies on the same curve as trimming epochs (S18: 8.0 epochs 75.02% in 5.21 s), while 40% sits about 0.3 pp above that curve at equal time and may reach the D-007 level sooner.
+- **Decision consequence:** Keep label smoothing 0.2; test the 40-45% switch at 7.5-8 epochs before declaring convergence (S19).
+- **Resolution:** Switch-point follow-up in S19.
+
+### F-023 — resolved, material
+
+- **Observation:** S19 (20 fresh seeds 700-719): the 50% switch at 8.25 epochs gives 75.22% in 5.38 s; a 45% switch at 8.0 epochs gives 75.22% in 5.43 s; a 40% switch gives 75.09% at 7.5 epochs (5.27 s) and 75.36% at 8.0 epochs (5.67 s), interpolating to about 5.46 s at 75.22%.
+- **Interpretation:** At matched accuracy the 50% switch is fastest; earlier switches buy accuracy at a time cost that is no better than adding epochs. With S10, S15 and S17 this exhausts the accessible levers: the climb has converged at the D-005 to D-007 recipe. Pooled over S18 and S19, 60 fresh seeds at 8.25 epochs average about 75.25%.
+- **Decision consequence:** Declare X-002 saturated, close T-013, and converge the recipe into submission defaults (T-014); remaining uncertainty is cross-stack transfer and A100 timing (T-004, T-015).
+- **Resolution:** Climb converged.
+
 ### B-001 — external, open
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -232,9 +264,21 @@
 - **Rationale:** +0.29-0.34 pp at fixed epochs at zero cost over 10 fresh seeds, replicated by the competitor's independent run.
 - **Alternatives:** 1/9 (airbench default): superseded.; 2/9: worse than 1/6.
 
+### D-007 — provisional
+
+- **Question:** What training budget does the converged recipe use?
+- **Decision:** 8.25 epochs (40-seed mean 75.26%, 5.38 s local compiled proxy).
+- **Rationale:** Shortest budget whose 40-seed fresh mean meets the 75.2% criterion (F-005); official-mean risk is negligible on the dev stack.
+- **Alternatives:** 8.5 epochs (75.33%, +2.6% time): fallback if A100 accuracy is lower.; 8.75 epochs (75.43%, +5.8% time): conservative fallback.; 8.0 epochs (75.02%): rejected, below the criterion.
+
 ## Deferred or rejected work
 
-- None recorded.
+- **T-007: Add-on levers at the selected base (P2)** — Superseded by T-013: probes S4-S15 tested Muon, resizing, selection, batch size, regularisation, compile and further levers at the climbed base (F-007 to F-019); its premise of a separate add-on pass after an A100 regime decision no longer holds because the climb ran on the local proxy under D-001.
+- **T-008: Adopt or reject add-on levers** — Superseded by T-013 decisions D-003 to D-007, which record adopted and rejected levers with evidence and reopening conditions.
+- **T-009: Converge and simplify the final submission** — Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance.
+- **T-010: Official-equivalent 40-seed qualification on the A100 PCIe** — Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance.
+- **T-011: Fresh-context compliance review and independence checks** — Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance.
+- **T-012: Open the upstream pull request after approval** — Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance.
 
 ## Review and assurance
 
@@ -258,7 +302,7 @@
 | R-001 | core | In the pinned container on an A100 80GB PCIe with the official launch flags, the entry completes 40 fresh trials, every trial succeeds within the 600 s training and 5 s evaluation limits, and the mean top-1 exceeds 75% by a margin that keeps the estimated official qualification risk at or below 1% given the measured per-trial standard deviation (75.2% when that deviation is at most 0.30 pp). | pending_evidence |
 | R-002 | core | The entry satisfies RULES.md sections 1 to 3: no real data, seeds or data-derived constants in import or build; no learned state carried across trials; single-view evaluation without state change; no test-set use; no measurement interference; only pinned dependencies. | pending_evidence |
 | R-003 | core | The base regime (architecture, width, depth, batch size, epochs) is selected as the minimum interpolated A100 PCIe time at which the single-view 5-seed mean reaches 75.3%, over a measured frontier of at least four widths and four epoch counts. | pending_evidence |
-| R-004 | core | Each add-on lever (optimiser, resolution schedule, example selection, regularisation) is adopted only if it lowers time at matched accuracy beyond seed noise over at least 10 seeds at the selected base; every rejected lever has a recorded reason. | pending_evidence |
+| R-004 | core | Each add-on lever (optimiser, resolution schedule, example selection, regularisation) is adopted only if it lowers time at matched accuracy beyond seed noise over at least 10 seeds at the selected base; every rejected lever has a recorded reason. | supported |
 | R-005 | core | A100 80GB PCIe per-epoch and fixed preparation times are measured in the pinned container for every frontier candidate, and the final recipe's 40-trial mean time is recorded with its standard deviation and GPU telemetry. | blocked |
 | R-006 | supporting | Any configuration in the exploration space runs from a declarative sweep file on any free local GPU through the official harness, resumes after interruption without repeating completed runs, and its collated tables are reproducible from raw results. | supported |
 | R-007 | supporting | Single-view accuracy measured on the local development stack agrees with the pinned A100 stack within two standard errors for a reference configuration, or the discrepancy is quantified and applied as a correction. | blocked |
@@ -272,21 +316,21 @@
 | 2 | Width by epochs frontier | Is the competition capacity-bound or throughput-bound, and which base regime wins? | active |
 | 3 | A100 PCIe calibration | Which time model and which accuracy correction apply to frontier decisions? | active |
 | 4 | Add-on levers at the selected base | Which levers enter the final recipe? | planned |
-| 5 | Convergence and assurance | Is the exact candidate qualifying, compliant and ready to submit? | planned |
+| 5 | Convergence and assurance | Is the exact candidate qualifying, compliant and ready to submit? | active |
 | 6 | Submission | Has the approved candidate been submitted in the required form? | planned |
 
 ### Explorations
 
 - **X-001:** Where does the single-view width by epochs frontier cross 75% on CIFAR-100, and is the minimum-time regime capacity-bound or throughput-bound? (closed; test-ready=true)
-- **X-002:** Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate? (test_ready; test-ready=true)
+- **X-002:** Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate? (saturated; test-ready=true)
 
 ### Exact frontier
 
-- State: **continue**
-- Active: T-013
+- State: **needs_design**
+- Active: none
 - Eligible: none
 - Unresolved outcomes: O-001, O-002, O-003, O-004
-- Unresolved requirements: R-001, R-002, R-003, R-004, R-005, R-007, R-008
+- Unresolved requirements: R-001, R-002, R-003, R-005, R-007, R-008
 - Pending assessments: none
 - Human engagement: none
 <!-- writing-tools:generated:end -->

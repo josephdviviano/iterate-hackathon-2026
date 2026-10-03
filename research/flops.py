@@ -18,7 +18,7 @@ from torch import nn
 
 from benchmark.worker import load_submission
 
-load_submission(Path(__file__).resolve().parents[1] / "submissions" / "team_segal")
+load_submission(Path(__file__).resolve().parents[1] / "research" / "lab_recipe")
 from benchmark._submission.config import RecipeConfig  # noqa: E402
 from benchmark._submission.model import make_model  # noqa: E402
 

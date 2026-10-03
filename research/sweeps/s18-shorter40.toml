@@ -1,0 +1,19 @@
+# Shorten the confirmed recipe (S16: 75.43% at 8.75 epochs over 40 seeds): 40 fresh seeds at
+# 8.0-8.5 epochs. Rule: the shortest budget whose 40-seed mean is >= 75.2% (F-005).
+name = "s18-shorter40"
+python = ".venv-blackwell/bin/python"
+seeds = [600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633, 634, 635, 636, 637, 638, 639]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+compile = true
+fused_sgd = true
+
+[[grid]]
+epochs = [8.0, 8.25, 8.5]

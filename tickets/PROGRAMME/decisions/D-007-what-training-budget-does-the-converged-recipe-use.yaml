@@ -1,0 +1,23 @@
+schema_version: '1.0'
+decision_id: D-007
+task_id: T-013
+question: What training budget does the converged recipe use?
+decision: 8.25 epochs (40-seed mean 75.26%, 5.38 s local compiled proxy).
+rationale: Shortest budget whose 40-seed fresh mean meets the 75.2% criterion (F-005); official-mean risk
+  is negligible on the dev stack.
+alternatives:
+- '8.5 epochs (75.33%, +2.6% time): fallback if A100 accuracy is lower.'
+- '8.75 epochs (75.43%, +5.8% time): conservative fallback.'
+- '8.0 epochs (75.02%): rejected, below the criterion.'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s18-shorter40-table.csv
+  locator: research/evidence/T-013/s18-shorter40-table.csv
+  sha256: 6ccf8ad97026fcfcc842a2ef3017173536b24d9cbe640cf6fe89fcbdd777088d
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: provisional

@@ -1,0 +1,27 @@
+# Last climb probe (X-002): S17 shows a 40% resolution switch is ~0.3 pp above the epoch-trimmed
+# 50% curve at equal time. Does it reach the 75.26% (D-007) level in less time? 20 fresh seeds.
+name = "s19-switch-point"
+python = ".venv-blackwell/bin/python"
+seeds = [700, 701, 702, 703, 704, 705, 706, 707, 708, 709, 710, 711, 712, 713, 714, 715, 716, 717, 718, 719]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+scaling_factor = 0.16666666666666666
+compile = true
+fused_sgd = true
+
+[[grid]]
+res_schedule = [[[0.0, 20], [0.4, 32]]]
+epochs = [7.5, 8.0]
+
+[[grid]]
+res_schedule = [[[0.0, 20], [0.45, 32]]]
+epochs = [8.0]
+
+[[grid]]
+res_schedule = [[[0.0, 20], [0.5, 32]]]
+epochs = [8.25]

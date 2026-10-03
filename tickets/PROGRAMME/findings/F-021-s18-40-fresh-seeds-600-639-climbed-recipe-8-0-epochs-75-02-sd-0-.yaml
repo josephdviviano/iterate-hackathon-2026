@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-021
+task_id: T-013
+result_kind: positive
+importance: material
+observation: 'S18 (40 fresh seeds 600-639, climbed recipe): 8.0 epochs 75.02% (sd 0.29 pp, 5.21 s), 8.25
+  epochs 75.26% (sd 0.24 pp, 5.38 s), 8.5 epochs 75.33% (sd 0.22 pp, 5.52 s); with S16, 8.75 epochs 75.43%
+  (5.69 s).'
+interpretation: 8.25 epochs is the shortest budget meeting the 75.2% development criterion; its 0.26 pp
+  margin over 75% is about 5 combined standard errors, so dev-stack qualification risk is negligible.
+  Accuracy rises about 0.25 pp per quarter-epoch below 8.5 and flattens above it.
+decision_implication: Select 8.25 epochs (D-007) with 8.5 and 8.75 epochs as fallbacks if A100 confirmation
+  (T-004, T-010) falls below 75.2%.
+requirement_ids:
+- R-001
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s18-shorter40-table.csv
+  locator: research/evidence/T-013/s18-shorter40-table.csv
+  sha256: 6ccf8ad97026fcfcc842a2ef3017173536b24d9cbe640cf6fe89fcbdd777088d
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: s16-confirm40-table.csv
+  locator: research/evidence/T-013/s16-confirm40-table.csv
+  sha256: 6c3842a524774f597aec66b1ed7a9420ff86fb80fdd8d58057605c6a26ea9bc7
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Final local budget selected.

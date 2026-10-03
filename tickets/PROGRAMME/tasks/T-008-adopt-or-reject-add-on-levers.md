@@ -19,7 +19,7 @@ decision_effect: Freezes the recipe content for convergence.
 uncertainty: null
 dependencies:
 - T-007
-status: proposed
+status: cancelled
 acceptance:
 - criterion_id: AC-01
   statement: A decision record lists adopted and rejected levers with evidence and reopening conditions
@@ -31,7 +31,8 @@ evidence_requirements: []
 out_of_scope: []
 risks: []
 evidence: []
-completion_summary: null
+completion_summary: Superseded by T-013 decisions D-003 to D-007, which record adopted and rejected levers
+  with evidence and reopening conditions.
 blocker_ids: []
 ---
 
@@ -55,3 +56,7 @@ Freezes the recipe content for convergence.
 
 - [ ] AC-01: A decision record lists adopted and rejected levers with evidence and reopening conditions
   Evidence: decision record
+
+## Resolution
+
+Superseded by T-013 decisions D-003 to D-007, which record adopted and rejected levers with evidence and reopening conditions.

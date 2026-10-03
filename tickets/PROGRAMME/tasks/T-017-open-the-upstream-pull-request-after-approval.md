@@ -1,6 +1,6 @@
 ---
 schema_version: '2.0'
-task_id: T-012
+task_id: T-017
 title: Open the upstream pull request after approval
 work_type: delivery
 commitment: required
@@ -20,9 +20,9 @@ consequence: The entry is not judged unless the pull request exists in the requi
 decision_effect: Releases the entry to the organisers.
 uncertainty: null
 dependencies:
-- T-010
-- T-011
-status: cancelled
+- T-015
+- T-016
+status: proposed
 acceptance:
 - criterion_id: AC-01
   statement: A human decision approving submission is recorded
@@ -40,12 +40,11 @@ evidence_requirements: []
 out_of_scope: []
 risks: []
 evidence: []
-completion_summary: Dependency chain through cancelled T-008 no longer reflects the programme; reissued
-  against T-013 as a successor task with the same objective and acceptance.
+completion_summary: null
 blocker_ids: []
 ---
 
-# T-012: Open the upstream pull request after approval
+# T-017: Open the upstream pull request after approval
 
 > Canonical state is the YAML frontmatter. Use `programme` commands to update it.
 
@@ -67,7 +66,3 @@ Releases the entry to the organisers.
   Evidence: human-decision record
 - [ ] AC-02: The pull request diff contains only submissions/<team>/
   Evidence: pull request file list
-
-## Resolution
-
-Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance.

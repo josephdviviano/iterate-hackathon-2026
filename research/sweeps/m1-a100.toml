@@ -1,0 +1,16 @@
+# Modal A100 calibration (T-004): run with
+#   .venv-modal/bin/modal run research/modal_a100.py --sweep research/sweeps/m1-a100.toml
+# - per-epoch A100 time for last-stage widths 512 / 640 / 768 at the converged recipe (compiled);
+# - compile benefit on the A100 (eager arm);
+# - cross-stack accuracy check (R-007): seeds 600-609 are also in the local S18 run at 8.25
+#   epochs, so the 640 arm compares per seed with the dev stack.
+name = "m1-a100"
+seeds = [600, 601, 602, 603, 604, 605, 606, 607, 608, 609]
+devices = []
+
+# Uses the converged submission defaults (submissions/team_segal, 8.25 epochs, compiled).
+[[grid]]
+widths = [[128, 384, 512], [128, 384, 640], [128, 384, 768]]
+
+[[configs]]
+compile = false

@@ -21,7 +21,7 @@ uncertainty: Whether levers measured on TTA-scored CIFAR-10 records reduce time 
   CIFAR-100 accuracy.
 dependencies:
 - T-006
-status: proposed
+status: cancelled
 acceptance:
 - criterion_id: AC-01
   statement: Each lever has a matched-accuracy time comparison with confidence intervals
@@ -39,7 +39,10 @@ evidence_requirements: []
 out_of_scope: []
 risks: []
 evidence: []
-completion_summary: null
+completion_summary: 'Superseded by T-013: probes S4-S15 tested Muon, resizing, selection, batch size,
+  regularisation, compile and further levers at the climbed base (F-007 to F-019); its premise of a separate
+  add-on pass after an A100 regime decision no longer holds because the climb ran on the local proxy under
+  D-001.'
 blocker_ids: []
 ---
 
@@ -65,3 +68,7 @@ Determines which levers enter the final recipe.
   Evidence: collated comparison table
 - [ ] AC-02: A finding interprets each lever, including null results
   Evidence: finding records
+
+## Resolution
+
+Superseded by T-013: probes S4-S15 tested Muon, resizing, selection, batch size, regularisation, compile and further levers at the climbed base (F-007 to F-019); its premise of a separate add-on pass after an A100 regime decision no longer holds because the climb ran on the local proxy under D-001.

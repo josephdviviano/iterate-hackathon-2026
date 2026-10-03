@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-023
+task_id: T-013
+result_kind: 'null'
+importance: material
+observation: 'S19 (20 fresh seeds 700-719): the 50% switch at 8.25 epochs gives 75.22% in 5.38 s; a 45%
+  switch at 8.0 epochs gives 75.22% in 5.43 s; a 40% switch gives 75.09% at 7.5 epochs (5.27 s) and 75.36%
+  at 8.0 epochs (5.67 s), interpolating to about 5.46 s at 75.22%.'
+interpretation: 'At matched accuracy the 50% switch is fastest; earlier switches buy accuracy at a time
+  cost that is no better than adding epochs. With S10, S15 and S17 this exhausts the accessible levers:
+  the climb has converged at the D-005 to D-007 recipe. Pooled over S18 and S19, 60 fresh seeds at 8.25
+  epochs average about 75.25%.'
+decision_implication: Declare X-002 saturated, close T-013, and converge the recipe into submission defaults
+  (T-014); remaining uncertainty is cross-stack transfer and A100 timing (T-004, T-015).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: the switch point trades accuracy for time along the same curve as the epoch budget
+  discriminating_test: null
+- kind: data_measurement
+  disposition: supported
+  rationale: the 45% arm equals the 50% arm in accuracy within 0.01 pp at 1% more time
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s19-switch-point-table.csv
+  locator: research/evidence/T-013/s19-switch-point-table.csv
+  sha256: 8b6cc8599f7345c821f599814ee0e2c1d29ce1c86f78b466c505e18f53ac8eff
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Climb converged.

@@ -11,7 +11,7 @@ from benchmark.data import synthetic_split
 from benchmark.harness import run_submission
 from benchmark.worker import load_submission, seed_everything
 
-SUBMISSION = Path(__file__).resolve().parents[1] / "lab_recipe"
+SUBMISSION = Path(__file__).resolve().parents[2] / "submissions" / "team_segal"
 SMALL = {"batch_size": 16, "epochs": 2}
 VARIANTS = {
     "airbench": SMALL,

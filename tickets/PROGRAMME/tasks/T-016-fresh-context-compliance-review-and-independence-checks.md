@@ -1,6 +1,6 @@
 ---
 schema_version: '2.0'
-task_id: T-011
+task_id: T-016
 title: Fresh-context compliance review and independence checks
 work_type: assurance
 commitment: required
@@ -14,14 +14,14 @@ affected_boundaries:
 - submission-folder
 review_path_ids:
 - compliance-review
-objective: Review the frozen candidate source against every RULES.md section 3 bullet without implementation
+objective: Review the frozen converged candidate against every RULES.md section 3 bullet without implementation
   narrative, and run repeat-seed, reordered-seed and fresh-process independence checks.
 consequence: A rule violation disqualifies the entry regardless of its time.
 decision_effect: Decides whether the candidate is compliant for submission.
 uncertainty: null
 dependencies:
-- T-009
-status: cancelled
+- T-014
+status: ready
 acceptance:
 - criterion_id: AC-01
   statement: Every RULES.md section 3 bullet has a verdict with source locations
@@ -39,18 +39,17 @@ evidence_requirements: []
 out_of_scope: []
 risks: []
 evidence: []
-completion_summary: Dependency chain through cancelled T-008 no longer reflects the programme; reissued
-  against T-013 as a successor task with the same objective and acceptance.
+completion_summary: null
 blocker_ids: []
 ---
 
-# T-011: Fresh-context compliance review and independence checks
+# T-016: Fresh-context compliance review and independence checks
 
 > Canonical state is the YAML frontmatter. Use `programme` commands to update it.
 
 ## Objective
 
-Review the frozen candidate source against every RULES.md section 3 bullet without implementation narrative, and run repeat-seed, reordered-seed and fresh-process independence checks.
+Review the frozen converged candidate against every RULES.md section 3 bullet without implementation narrative, and run repeat-seed, reordered-seed and fresh-process independence checks.
 
 ## Consequence
 
@@ -66,7 +65,3 @@ Decides whether the candidate is compliant for submission.
   Evidence: review record
 - [ ] AC-02: Independence checks reproduce per-seed accuracy within nondeterminism
   Evidence: harness results
-
-## Resolution
-
-Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance.

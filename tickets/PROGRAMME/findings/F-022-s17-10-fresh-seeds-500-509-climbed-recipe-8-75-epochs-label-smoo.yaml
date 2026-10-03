@@ -1,0 +1,37 @@
+schema_version: '2.0'
+finding_id: F-022
+task_id: T-013
+result_kind: mixed
+importance: material
+observation: 'S17 (10 fresh seeds 500-509, climbed recipe, 8.75 epochs): label smoothing 0.1 / 0.2 / 0.3
+  give 75.35% / 75.41% / 75.52% at equal time; switching to 32 px at 40% gives 75.84% in 6.19 s, at 60%
+  gives 75.01% in 5.18 s, versus 75.41% in 5.69 s at 50%.'
+interpretation: 'Label smoothing is flat around 0.2. The switch point trades accuracy for time: 60% lies
+  on the same curve as trimming epochs (S18: 8.0 epochs 75.02% in 5.21 s), while 40% sits about 0.3 pp
+  above that curve at equal time and may reach the D-007 level sooner.'
+decision_implication: Keep label smoothing 0.2; test the 40-45% switch at 7.5-8 epochs before declaring
+  convergence (S19).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: supported
+  rationale: label-smoothing arms differ by under 0.2 pp, within noise
+  discriminating_test: null
+- kind: mechanism
+  disposition: unresolved
+  rationale: more full-resolution steps may lift the accuracy-time curve
+  discriminating_test: S19 at 7.5-8 epochs with 20 seeds
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s17-saturation-table.csv
+  locator: research/evidence/T-013/s17-saturation-table.csv
+  sha256: 81fabaf5e97d7a20fdcfa26aae5e860b670435c59885a92c262748bd4ec096a8
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Switch-point follow-up in S19.

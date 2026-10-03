@@ -78,7 +78,7 @@
       "why_material": "Backward passes through early high-resolution stages and easy examples consume much of the step cost while contributing little late in training."
     }
   ],
-  "disposition": "test_ready",
+  "disposition": "saturated",
   "exploration_id": "X-002",
   "hypotheses": [
     {
@@ -539,6 +539,25 @@
       "result_finding_ids": [
         "F-019"
       ]
+    },
+    {
+      "probe_id": "S16-S19",
+      "hypothesis_ids": [
+        "H5",
+        "H9",
+        "H19"
+      ],
+      "method": "40-seed confirmations at 8.0-9.0 epochs (S16, S18), a 10-seed saturation pass over label smoothing and switch point (S17), and a 20-seed switch-point follow-up (S19).",
+      "decision_rule": "Select the shortest budget meeting 75.2% over 40 fresh seeds; declare saturation if no lever beats control beyond noise.",
+      "information_gain": "Sets the final budget and tests the last plausible levers.",
+      "resource_bound": "12 configurations, 380 trials.",
+      "status": "run",
+      "result_finding_ids": [
+        "F-020",
+        "F-021",
+        "F-022",
+        "F-023"
+      ]
     }
   ],
   "question": "Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate?",
@@ -546,7 +565,7 @@
   "selected_hypothesis_ids": [
     "H19"
   ],
-  "synthesis": "Climb coordinate-wise from the P1 best cell: settle shape and budget first (S3), then levers at that shape (S4), then systems (S5), repeating S4 at the new optimum until no lever beats noise.",
+  "synthesis": "Converged recipe: 128/384/640 airbench96-style net (three convs per block with a residual), translate 2, alternating flip, label smoothing 0.2, logit scale 1/6, SGD with lookahead, batch 1024, 20 px then 32 px at half-way, compiled (dynamic=False) with fused SGD, 8.25 epochs: 75.26% over 40 fresh seeds (75.25% over 60) at 5.38 s local compiled proxy, down from 9.3 s for the P1 best cell. Rejected: Muon, in-run selection, freezing, FixRes endings, pool-first, amax pooling, batch-size, learning-rate and schedule changes. Further accessible probes cannot change the recipe beyond noise; the open questions are A100 timing and cross-stack accuracy transfer (T-004, T-015).",
   "task_id": "T-013",
   "trigger": "plateau"
 }

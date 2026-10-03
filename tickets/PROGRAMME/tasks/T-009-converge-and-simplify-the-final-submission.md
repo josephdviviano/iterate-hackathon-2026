@@ -21,7 +21,7 @@ decision_effect: Produces the exact candidate for qualification and compliance a
 uncertainty: null
 dependencies:
 - T-008
-status: proposed
+status: cancelled
 acceptance:
 - criterion_id: AC-01
   statement: Default settings reproduce the selected recipe's dev-stack accuracy within noise over 10
@@ -40,7 +40,8 @@ evidence_requirements: []
 out_of_scope: []
 risks: []
 evidence: []
-completion_summary: null
+completion_summary: Dependency chain through cancelled T-008 no longer reflects the programme; reissued
+  against T-013 as a successor task with the same objective and acceptance.
 blocker_ids: []
 ---
 
@@ -66,3 +67,7 @@ Produces the exact candidate for qualification and compliance assurance.
   Evidence: harness summary
 - [ ] AC-02: The team folder contains only source and README, with no exploration-only parameters
   Evidence: diff inspection
+
+## Resolution
+
+Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance.

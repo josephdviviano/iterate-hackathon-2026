@@ -1,0 +1,29 @@
+schema_version: '2.0'
+finding_id: F-020
+task_id: T-013
+result_kind: positive
+importance: material
+observation: 'S16 (40 fresh seeds 400-439, compiled, 128/384/640, logit scale 1/6): 8.75 epochs gives
+  75.43% mean (sd 0.235 pp, worst seed 74.96%) in 5.69 s local proxy; 9.0 epochs gives 75.48% (sd 0.243
+  pp) in 5.85 s; all 80 trials completed.'
+interpretation: The climbed recipe meets the 75.2% development criterion with 0.23 pp to spare at 8.75
+  epochs; the estimated official qualification risk is far below 1% (margin about 8 combined SE). The
+  spare margin means a shorter budget may also qualify.
+decision_implication: Search 8.0-8.5 epochs with 40 fresh seeds (S18) and select the shortest budget meeting
+  75.2%.
+requirement_ids:
+- R-001
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s16-confirm40-table.csv
+  locator: research/evidence/T-013/s16-confirm40-table.csv
+  sha256: 6c3842a524774f597aec66b1ed7a9420ff86fb80fdd8d58057605c6a26ea9bc7
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Confirmation passed; shortening probed in S18.

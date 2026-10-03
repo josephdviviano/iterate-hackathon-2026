@@ -69,7 +69,7 @@ evidence:
 - evidence_id: E-002
   kind: file
   label: test_recipe.py
-  locator: research/tests/test_recipe.py
+  locator: research/evidence/snapshots/test_recipe-at-T-002.py
   sha256: 327449a2bdbc5e977c513e5ad581170f51a6c95da3746025892b9e4b15b762bc
   state: verified
   candidate_identity: null
