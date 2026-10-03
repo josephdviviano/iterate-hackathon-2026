@@ -1,0 +1,25 @@
+probes [8, 38, 0, 1] (steps [71, 101, 63, 64]); train 33, held out 40
+artifacts: /Users/jdv/code/iterate/artifacts/ar25/L3_f40_probe4/cegis_devin
+
+Objects of type `wall` under action ACTION1 with touching neighbours [] show mixed outcomes: born x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample. The last transition in transitions.md (step 64, action 5) refuted every program of an earlier committee of 3 programs. Each replayed all the other transitions exactly and predicted this one wrong:
+
+3 program(s) predicted:
+  observed but not predicted: {"name": "piece_0", "type": "player", "x": 27, "y": 45, "w": 6, "h": 12, "layer": 4}
+  observed but not predicted: {"name": "wall_h_7", "type": "wall", "x": 48, "y": 36, "w": 3, "h": 27, "layer": 1}
+  observed but not predicted: {"name": "wall_h_6", "type": "wall", "x": 48, "y": 0, "w": 3, "h": 33, "layer": 1}
+  predicted but not observed: {"name": "piece_0", "type": "player", "x": 27, "y": 45, "w": 6, "h": 12, "layer": 4}
+  predicted but not observed: {"name": "wall_h_1", "type": "wall", "x": 48, "y": 36, "w": 3, "h": 27, "layer": 1}
+  predicted but not observed: {"name": "wall_h_0", "type": "wall", "x": 48, "y": 0, "w": 3, "h": 33, "layer": 1}
+
+Find the mechanic those programs missed. It must explain this transition and every earlier one, and it must not be a special case keyed to this step.
+
+ar25 L3 cegis_devin run1: consistent=True train=33/33 test_acc=1.0 turns=None wall=249.5s err=None
+ar25 L3 cegis_devin run2: consistent=True train=33/33 test_acc=1.0 turns=None wall=249.8s err=None
+ar25 L3 cegis_devin run0: consistent=True train=33/33 test_acc=1.0 turns=None wall=311.6s err=None
+ar25 L3 cegis_devin run3: consistent=True train=33/33 test_acc=1.0 turns=None wall=332.4s err=None
+ar25 L3 cegis_devin run5: consistent=True train=33/33 test_acc=1.0 turns=None wall=270.9s err=None
+ar25 L3 cegis_devin run7: consistent=True train=33/33 test_acc=1.0 turns=None wall=209.5s err=None
+ar25 L3 cegis_devin run4: consistent=True train=33/33 test_acc=1.0 turns=None wall=311.6s err=None
+ar25 L3 cegis_devin run6: consistent=True train=33/33 test_acc=0.9 turns=None wall=290.1s err=None
