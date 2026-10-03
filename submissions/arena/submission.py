@@ -128,8 +128,9 @@ def init_whitening_conv(layer, images, eps=5e-4):
 # ----------------------------------------------------------------------------- data
 
 
-def augment_epoch(padded, flip_bits, epoch, translate):
-    """Random 32x32 crops from reflect-padded images plus alternating flip. No host sync."""
+def augment_epoch(padded, flip_bits, epoch, translate, scale, shift):
+    """Random 32x32 crops from reflect-padded uint8 images plus alternating flip, then
+    normalization to fp16 (x * scale + shift). No host sync."""
     n = padded.shape[0]
     dev = padded.device
     size = padded.shape[-1] - 2 * translate
@@ -141,7 +142,7 @@ def augment_epoch(padded, flip_bits, epoch, translate):
     cols = torch.where(flip, padded.shape[-1] - 1 - cols, cols)
     idx_n = torch.arange(n, device=dev).view(n, 1, 1, 1)
     idx_c = torch.arange(3, device=dev).view(1, 3, 1, 1)
-    out = padded[idx_n, idx_c, rows, cols]
+    out = padded[idx_n, idx_c, rows, cols].half().mul_(scale).add_(shift)
     return out.contiguous(memory_format=torch.channels_last)
 
 
@@ -175,6 +176,14 @@ def build(context: BuildContext):
             loss.backward()
             for p in net.parameters():
                 p.grad = None
+        # Also warm up the prepare/augment path (eigh, pad, gather) on synthetic uint8 data.
+        fake = TrainingData(
+            torch.randint(0, 256, (6000, 3, 32, 32), dtype=torch.uint8),
+            torch.randint(0, context.num_classes, (6000,)),
+        )
+        prepare(state, fake, 0)
+        augment_epoch(state.padded, state.flip_bits, 0, hyp["translate"], state.scale, state.shift)
+        state.padded = state.labels = None
         torch.cuda.synchronize()
     return state
 
@@ -199,8 +208,10 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     labels = data.labels.to(device, non_blocking=True)
     mean = torch.tensor(CIFAR_MEAN, device=device).view(1, 3, 1, 1)
     std = torch.tensor(CIFAR_STD, device=device).view(1, 3, 1, 1)
-    images = ((images.float() / 255 - mean) / std).half()
-    init_whitening_conv(net.whiten, images[:5000])
+    state.scale = (1 / (255 * std)).half()
+    state.shift = (-mean / std).half()
+    subset = images[torch.randperm(len(images), device=device)[:5000]]
+    init_whitening_conv(net.whiten, subset.half() * state.scale + state.shift)
     t = hyp["translate"]
     state.padded = F.pad(images, (t, t, t, t), mode="reflect") if t else images
     state.labels = labels
@@ -253,7 +264,9 @@ def train(state) -> nn.Module:
     step = 0
     epoch = 0
     while step < total:
-        inputs_all = augment_epoch(state.padded, state.flip_bits, epoch, hyp["translate"])
+        inputs_all = augment_epoch(
+            state.padded, state.flip_bits, epoch, hyp["translate"], state.scale, state.shift
+        )
         perm = torch.randperm(n, device=inputs_all.device)
         if epoch >= hyp["whiten_bias_epochs"]:
             opt.param_groups[0]["base_lr"] = 0.0
