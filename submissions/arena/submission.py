@@ -317,7 +317,7 @@ def train(state) -> nn.Module:
     bs = hyp["batch_size"]
     n = len(state.labels)
     r = hyp["translate"]
-    alpha = ((0.95**5) * (torch.arange(total + 1) / total) ** 3).tolist()
+    alpha = ((0.97**5) * (torch.arange(total + 1) / total) ** 3).tolist()
     step = 0
     epoch = 0
     while step < total:
