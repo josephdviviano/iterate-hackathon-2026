@@ -30,6 +30,7 @@ HYP = {
     "scale": 1 / 9,
     "lookahead": True,
     "compile": True,
+    "head_lr_mult": 2.0,
     "contrast": 0.13,  # per-image contrast/brightness jitter amplitudes (uniform +-)
     "brightness": 0.14,
     "lowres_epochs": 1.5,  # first epochs train on whole images downsampled to lowres_size
@@ -239,7 +240,7 @@ def make_optimizer(model, hyp, total_steps):
     groups = [
         dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
-        dict(params=other, lr=lr, weight_decay=wd / lr),
+        dict(params=other, lr=lr * hyp["head_lr_mult"], weight_decay=wd / (lr * hyp["head_lr_mult"])),
     ]
     sgd = torch.optim.SGD(groups, momentum=momentum, nesterov=True)
     muon = Muon(filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], ns_steps=hyp["ns_steps"])
