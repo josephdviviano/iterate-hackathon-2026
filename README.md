@@ -1,0 +1,81 @@
+# Program committees for epistemic world models
+
+A world-model agent that knows what it does not know. Instead of one
+synthesized program per game, it keeps a committee of programs that all replay
+the observed transitions exactly, weights them by simplicity, and reports where
+they disagree. Disagreement is the uncertainty it flags and the probe it asks
+for next.
+
+Track 2.3, epistemological agents. See DESIGN_DOC.md for the architecture and
+RESULTS.md for every reported number.
+
+## Demo
+
+```
+uv sync
+uv run python -m committee.demo
+```
+
+## Commands
+
+```
+uv run python -m committee.loader ft09                       # build a game's transition buffer
+uv run python -m committee.matrix tr87 --level 1             # effect matrix and ontology error
+uv run python -m committee.experiment tr87 --level 1 --runs 1               # baseline: one program
+uv run python -m committee.experiment tr87 --level 1 --runs 8 --seeded \
+    --condition committee --parallel 4                      # committee: seeded programs
+uv run python -m committee.evaluate tr87 --level 1 --condition committee
+uv run pytest
+```
+
+Synthesis backends, selected with `--backend`:
+
+| Backend | What it is | Credential |
+|---|---|---|
+| `api` (default) | Repair loop over an OpenAI-compatible model. We serve Qwen3-Coder-30B-A3B-Instruct-FP8 with vLLM on a Modal H100 (`committee.modal_llm`). | Modal Secret `vllm-auth`: `VLLM_API_KEY`, `OPENAI_BASE_URL` |
+| `devin` | One Devin session per committee member; task and checker as attachments, program returned as structured output. | Modal Secret `devin-auth`: `DEVIN_API_KEY` |
+| `claude` | Claude Code CLI agent in an isolated workspace. Kept as an option, not used for reported numbers. | Modal Secret `claude-auth` |
+
+```
+uv run modal deploy -m committee.modal_llm                     # model server
+uv run modal run -m committee.modal_app --game ar25 --level 3 --train-frac 0.4 --runs 3
+uv run modal run -m committee.modal_app --game ar25 --level 3 --train-frac 0.4 \
+    --runs 8 --seeded --condition committee                   # one container per member
+```
+
+The local path (`committee.experiment`) is the same code without the fan-out.
+Local runs read credentials from `.env.committee` (gitignored).
+
+## Credits
+
+- Data: the 25 ARC-AGI-3 replay bundles and per-game object extractors
+  released by OPINE-World (Courtis, Li and Sanner, 2026, arXiv:2607.01531),
+  read from the `external/opine-world` submodule. The extractors are used as
+  frozen input data. No code is copied from that repository.
+- Pre-trained model: Qwen3-Coder-30B-A3B-Instruct-FP8 (Qwen team, Alibaba, Apache-2.0),
+  served with vLLM (Apache-2.0) on Modal.
+- APIs: Devin API (Cognition) as a synthesis backend; Claude Code CLI (Anthropic) as an
+  optional backend.
+- Libraries: numpy, matplotlib, openai (client), httpx, modal, pytest, uv.
+- Ideas: ontology error and effect rows from OPINE-World; parallel sampling and
+  coverage from GRAM (Baek et al., 2026, arXiv:2605.19376); query by committee
+  (Seung, Opper and Sompolinsky, 1992); minimum description length (Rissanen, 1978).
+
+## Reward hacking
+
+The synthesizer is scored by exact replay on the train transitions it can
+see, so it can tabulate them instead of modelling the mechanics.
+`rewardhack` measures that propensity. Every program gets a literal-mass,
+MDL-ratio, held-out-gap and order-dependence score. A contradictory
+transition injected into the train set makes exact replay impossible, so a
+full pass is a hack by construction; an ABSTAIN channel lets the agent say so
+instead. See research/reward_hacking_review.md.
+
+```
+uv run python -m rewardhack.report score                                # hack features of every stored program
+uv run python -m rewardhack.experiment tr87 --level 1 --runs 3 --contradiction --abstain --parallel 3
+uv run python -m rewardhack.report summary                              # outcomes per condition
+uv run modal deploy src/rewardhack/modal_app.py                         # open-weight synthesizer (vLLM on Modal)
+uv run python -m rewardhack.experiment tr87 --level 1 --runs 3 --contradiction --abstain \
+    --backend modal --model Qwen/Qwen2.5-Coder-7B-Instruct --max-turns 4   # chat loop, 4 checker rounds
+```
