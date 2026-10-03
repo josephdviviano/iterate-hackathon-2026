@@ -30,6 +30,7 @@ DEFAULTS = {
     "label_smoothing": 0.3,
     "warmup": 0.23,  # fraction of steps spent ramping the learning rate up
     "final_lr": 0.07,  # learning-rate multiplier reached at the last step
+    "muon_final_lr": 0.05,  # same, for the Muon groups
     "whiten_bias_epochs": 3,
     "translate": 2,
     "cutout": 0,
@@ -90,6 +91,13 @@ class ConvGroup(nn.Module):
         return self.activ(self.norm3(self.conv3(x)) + x0)
 
 
+class GlobalMaxPool(nn.Module):
+    """Global max over H, W; compiles to a fused reduction (AdaptiveMaxPool2d's backward uses slow atomics)."""
+
+    def forward(self, x):
+        return x.flatten(2).max(dim=2).values
+
+
 class Net(nn.Module):
     def __init__(self, hyp, num_classes):
         super().__init__()
@@ -102,7 +110,7 @@ class Net(nn.Module):
             ConvGroup(24, w1, depth, bn_momentum),
             ConvGroup(w1, w2, depth, bn_momentum),
             ConvGroup(w2, w3, depth, bn_momentum),
-            nn.AdaptiveMaxPool2d(1),
+            GlobalMaxPool(),
         )
         self.head = nn.Linear(w3, num_classes, bias=False)
         self.scaling_factor = hyp["scaling_factor"]
@@ -278,6 +286,9 @@ def build(context: BuildContext):
     cuda = device.type == "cuda"
     dtype = torch.float16 if cuda else torch.float32
     torch.backends.cudnn.benchmark = True
+    # One static graph per training resolution: dynamic-shape kernels are slower.
+    torch._dynamo.config.automatic_dynamic_shapes = False
+    torch._dynamo.config.cache_size_limit = 64
 
     net = Net(hyp, context.num_classes).to(device, dtype, memory_format=torch.channels_last)
     for m in net.modules():
@@ -435,13 +446,14 @@ def _fit(state, total_steps, size=None):
             for opt in state.optimizers:
                 opt.zero_grad(set_to_none=True)
             loss.backward()
-            if step < warmup_steps:
-                frac = step / warmup_steps
-                scale = 0.2 * (1 - frac) + frac
-            else:
-                frac = (step - warmup_steps) / max(1, total_steps - warmup_steps)
-                scale = (1 - frac) + hyp["final_lr"] * frac
             for opt in state.optimizers:
+                final_lr = hyp["muon_final_lr"] if isinstance(opt, Muon) else hyp["final_lr"]
+                if step < warmup_steps:
+                    frac = step / warmup_steps
+                    scale = 0.2 * (1 - frac) + frac
+                else:
+                    frac = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+                    scale = (1 - frac) + final_lr * frac
                 for group in opt.param_groups:
                     group["lr"] = group["initial_lr"] * scale
                 opt.step()
