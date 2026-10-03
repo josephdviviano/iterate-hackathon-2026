@@ -9,6 +9,24 @@ for next.
 Track 2.3, epistemological agents. See DESIGN_DOC.md for the architecture and
 RESULTS.md for every reported number.
 
+## Results
+
+ar25 level 3, trained on the first 40% of the level, tested on the rest
+(RESULTS.md R3 and R4, backend Devin):
+
+| | Single program | Committee of 8 |
+|---|---|---|
+| Replays train exactly | 3 of 3 | 8 of 8 |
+| Held-out accuracy | 0.64, 0.43, 0.48 | members mean 0.48, vote 0.48 |
+| Error when the committee is unanimous | | 0.30 (27 transitions) |
+| Error when the committee splits | | 0.83 to 1.00 (17 transitions) |
+| AUROC, disagreement against error | | 0.78 |
+| Held-out effect rows never seen in train | η undefined on 51 of 90 | entropy on all 90 |
+| Probes until a counterexample falsifies every hypothesis | OPINE-World count priority: 7 | disagreement: 1 (random: 2.7) |
+
+On tr87 level 1 to level 2 (R5) every program carries over and the committee
+is unanimous and right on all 28 transitions.
+
 ## Demo
 
 ```

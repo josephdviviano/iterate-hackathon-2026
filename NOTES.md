@@ -80,3 +80,17 @@
   ABANDONED:
     - Synthesis through the user's Claude Max account (claude CLI locally or via `claude setup-token` on Modal). The user chose the Devin and Modal accounts instead. The claude backend stays in the code as an option.
     - Running the sweep locally. Long jobs go to Modal per the work rules; the fan-out is `committee.modal_app`.
+
+- [jdv] - Committee results R2 to R5, Modal and Devin backends, first commits - 100d2ea
+  Branch `jdv` holds seven commits covering the committee, reward-hacking and Hoeffding builds. Devin is the synthesizer for reported numbers.
+  DONE:
+    - Backends: vLLM servers on Modal (Qwen3-Coder-30B FP8, gpt-oss-120b) with a repair loop; Devin sessions with attachments and structured output; Modal fan-out of one container per member. R2 records that both open models fail exact replay on the easiest level while Devin and the claude CLI solve it in about a minute.
+    - R3, R4: ar25 L3 at 40% train. Single programs 0.52 mean held-out. Seeded committee of 8: 7 distinct behaviours, AUROC 0.78 for disagreement against error, unanimous error 0.30 vs split error 0.83 to 1.00, 51 of 90 held-out rows unseen in train and scored only by the committee. Disagreement finds a falsifying counterexample in 1 probe, count priority 7, random 2.7.
+    - R5: tr87 L1 to L2 is saturated; all 11 programs 1.00, committee unanimous, error 0.00.
+    - Equal-weight disagreement added beside the MDL vote after the lambda sweep showed sharper weights do not improve calibration. Row entropy normalised over its own support. Collapse metric excludes falsified runs.
+  DEFERRED:
+    - More informative splits (m0r0 L3, ft09 L5, ar25 L7) with Devin, to show the calibration result on more than one level.
+    - README headline numbers and the demo video.
+  ABANDONED:
+    - Claim that the MDL vote beats a single program on accuracy. R4 shows 0.477 vs 0.480 mean; the shortest member was not the best. The reported benefit is calibrated uncertainty and faster falsification, not point accuracy.
+    - Tuning the open-model repair loop further. Two models and a best-of-rounds fix left exact replay unreached on tr87 L1; the time goes to results with Devin.

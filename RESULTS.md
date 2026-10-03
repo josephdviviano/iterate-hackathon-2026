@@ -76,6 +76,52 @@ generalises to the rest of the level. Backend Devin.
 
 The seeded committee (8 members, guided diversity) on the same split is R4.
 
+## R4. ar25 level 3, 40% train: seeded committee of 8
+
+Same split as R3. Each member got one seed hypothesis (`committee.seeds`).
+Backend Devin. All 8 replay train 29/29.
+
+| Quantity | Value |
+|---|---|
+| Member held-out accuracy | 0.43, 0.48, 0.48, 0.43, 0.48, 0.64, 0.43, 0.48; mean 0.480 |
+| Distinct held-out behaviours | 7 of 8 |
+| Weighted vote, λ=0.01 | 0.477. The heaviest member (weight 0.57) is a 0.48 program, not the 0.64 one. On this split the committee does not beat the mean single program on accuracy |
+| Disagreement predicts error | AUROC 0.776 (MDL-weighted disagreement), 0.768 (equal weights). R3's committee of 3 gave 0.60 |
+| Reliability, equal-weight disagreement | unanimous: 27 transitions, error 0.30. low: 12, error 0.83. medium: 3, error 1.00. high: 2, error 1.00 |
+| Rows touched by held-out transitions | 90, of which 51 never seen in train. Count-based η is undefined on those 51; the committee assigns each an effect distribution and entropy |
+| Exploration, probes until a counterexample falsifies every member | disagreement order: 1. Count-priority order (OPINE-World's η): 7. Random: mean 2.7 over 20 orders |
+| Runs | 8 syntheses, 207 to 434 s wall each |
+| Split, baseline, split rules | As R3 |
+| Command | `uv run python -m committee.experiment ar25 --level 3 --train-frac 0.4 --runs 8 --seeded --backend devin --condition committee_devin --parallel 4`; `uv run python -m committee.evaluate ar25 --level 3 --train-frac 0.4 --condition committee_devin`; `uv run python -m committee.demo` |
+| Commit | 389e742 (artifacts), evaluation in the following commit |
+
+Reading: when the members agree, the prediction is right 70% of the time;
+when they split, it is wrong 83% to 100% of the time. The committee's
+uncertainty is informative where OPINE-World's count-based η has no data.
+Its point accuracy is not better than one program here, and the most
+disputed transition falsifies every member, which is the signal to
+resynthesize with a new hypothesis.
+
+## R5. tr87 level 1 trained, level 2 tested: saturated control
+
+Backend Devin. Train on all 31 modellable transitions of level 1, test on
+the 28 of level 2.
+
+| Condition | Programs | Train replay | Held-out accuracy |
+|---|---|---|---|
+| Single program | 3 | 31/31 each | 1.00, 1.00, 1.00 |
+| Seeded committee | 8 | 31/31 each | members 1.00; vote 1.00; one distinct behaviour; unanimous on all 28, error 0.00 |
+
+| Item | Value |
+|---|---|
+| Runs | 11 syntheses, 62 to 124 s wall |
+| Command | `uv run python -m committee.experiment tr87 --level 1 --train-frac 1.0 --test-level 2 --runs 8 --seeded --backend devin --condition committee_devin --parallel 4` |
+| Commit | 389e742 (artifacts) |
+
+Reading: the level-1 rule carries over to level 2 and the committee says so
+by agreeing everywhere. Together with R4 the unanimous bins have error 0.00
+and 0.30, the split bins 0.83 to 1.00.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a
@@ -247,3 +293,29 @@ finishes finds the same law, and the hand-built families find it too. The
 only committee benefit observed is availability: one member's timeout was
 covered by the others. The uncertainty this task measures honestly is the
 wall gap and the members' self-reported confidence (H3), not disagreement.
+
+## H5. Is there a slope to climb? Certifier check on Problem 6.39 (Bellec-Fritz)
+
+sup over iid nonnegative laws of P(X1 + X2 + X3 < 2 X4). Same exact
+convolution certificate as Hoeffding's problem. Values below are certified
+from explicit discrete laws, except the ratio column, which is the value the
+Bellec-Fritz eta-perturbation reaches in the limit.
+
+| Law | Certified value | Note |
+|---|---|---|
+| Two atoms {0, 1}, best p | 0.2500 | naive start |
+| Bellec-Fritz nu, N = 4 atoms at 1 - 2^-i | 0.3539 strict, 0.3788 in the limit | |
+| N = 8 | 0.3679 strict, 0.3890 in the limit | AlphaEvolve's naive run reached 0.389 |
+| N = 16 | 0.3742 strict, 0.3945 in the limit | |
+| Explicit two-level law, N = 6, eta = 1/1000, 49 atoms | 0.3843 | no limit argument, certified as is |
+| Closed-form supremum of the construction | 0.400695 | Bellec-Fritz, conjectured exact |
+| Upper bound | 0.417 | Bellec-Fritz, mixed-integer LP |
+
+Certificate time: 0.03 s for 17 atoms, 0.6 s for 49 atoms.
+Command: inline script, this section. Commit: uncommitted, base a718512.
+
+Reading: on this problem a naive law sits at 0.25, explicit certified laws
+reach 0.38 to 0.39, the known construction reaches 0.4007 only in a limit,
+and the proven ceiling is 0.417. That is a documented slope for a climb with
+the same certifier, with a published naive-agent result (0.389) to compare
+against, and 0.016 of unknown above the best construction.
