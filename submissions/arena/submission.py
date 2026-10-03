@@ -465,9 +465,10 @@ def _fit(state, total_steps, size=None, batch_size=None):
     else:  # warmup: a few steps of one shape
         total = total_steps * batch_size
     warmup, decay_end = hyp["warmup"] * total, hyp["decay_end"] * total
-    tail_start = total - hyp["tail_steps"] * unit if size is None else float("inf")
+    tail_unit = _phase_batch(state, 32)  # the final window counts steps of the 32 px phase
+    tail_start = total - hyp["tail_steps"] * tail_unit if size is None else float("inf")
     whiten_until = hyp["whiten_bias_epochs"] / hyp["epochs"] * total if size is None else 3 * batch_size
-    look_every, tail_every = hyp["ema_every"] * unit, hyp["tail_every"] * unit
+    look_every, tail_every = hyp["ema_every"] * unit, hyp["tail_every"] * tail_unit
     next_look, next_tail, in_tail = look_every, None, False
     seen, epoch = 0, 0
     net.train()
