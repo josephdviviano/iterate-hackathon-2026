@@ -29,7 +29,7 @@ HYP = {
     "bn_momentum": 0.6,
     "scaling_factor": 2 / 9,
     "compile": True,
-    "res_schedule": ((20, 2), (24, 3), (28, 2)),  # (resolution, epochs) stages before full 32 px
+    "res_schedule": ((20, 2), (24, 3), (28, 3)),  # (resolution, epochs) stages before full 32 px
     "freeze_first_full_res": True,  # freeze group 1's first conv block in the 32 px epochs
     "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
     "muon_lr": 0.205,
