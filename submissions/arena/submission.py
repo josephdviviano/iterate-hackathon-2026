@@ -31,7 +31,7 @@ HYP = {
     "lookahead": True,
     "compile": True,
     "muon_lr": 0.16,
-    "muon_momentum": 0.6,
+    "muon_momentum": 0.8,
     "ns_steps": 3,
 }
 
