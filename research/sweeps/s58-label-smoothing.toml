@@ -1,0 +1,40 @@
+# Label smoothing on the D-012 base (S54 +0.18, S55 +0.16 pp for 0.3 at no time cost): price it
+# as an epoch cut (0.3 at 8.25 epochs vs the 8.5-epoch control) and check the trend (0.35, 0.4).
+# 40 fresh seeds, both GPUs.
+name = "s58-label-smoothing"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [6100, 6101, 6102, 6103, 6104, 6105, 6106, 6107, 6108, 6109, 6110, 6111, 6112, 6113, 6114, 6115, 6116, 6117, 6118, 6119, 6120, 6121, 6122, 6123, 6124, 6125, 6126, 6127, 6128, 6129, 6130, 6131, 6132, 6133, 6134, 6135, 6136, 6137, 6138, 6139]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+label_smoothing = 0.3
+[[configs]]
+label_smoothing = 0.3
+epochs = 8.25
+[[configs]]
+label_smoothing = 0.35
+epochs = 8.25
+[[configs]]
+label_smoothing = 0.4
+epochs = 8.25

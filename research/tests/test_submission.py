@@ -28,6 +28,7 @@ LAB_EQUIVALENT = SMALL | {
     "stage_depths": [3, 2, 3],
     "stage1_cooldown": [0.6, 0.8],
     "freeze_schedule": [[0.8, 1]],
+    "trim_tail": True,
 }
 
 

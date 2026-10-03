@@ -18,10 +18,10 @@
 <!-- writing-tools:generated:start -->
 ## Current position
 
-- **State:** continue
+- **State:** needs_design
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
-- **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
+- **Why:** Programme evidence or cross-artifact integrity is invalid; repair it before selecting more work.
 - **Next:** Continue T-019 (Structural exploration with agent ideation rounds (X-006)).
 - **Open human feedback:** none
 
@@ -50,6 +50,11 @@
 | [T-019](tasks/T-019-structural-exploration-with-agent-ideation-rounds-x-006.md) — Structural exploration with agent ideation rounds (X-006) | exploration | in_progress | Explore structural vectors beyond the converged recipe: ensembles within the untimed evaluation budget, closed-form head refit, schedule shapes, lookahead dynamics, data ordering, head geometry, in-run soft targets, pooling geometry and A100 systems levers; run agent ideation at the start and at each convergence point, and adopt only levers confirmed on fresh seeds and same-host A100 timing. |
 
 ## Issues identified
+
+### Programme integrity and ownership
+
+- T-003: E-004 has changed since verification: research/tests/test_sweep.py
+- R-006: E-003 has changed since verification: research/tests/test_sweep.py
 
 ### F-001 — resolved, material
 
@@ -428,6 +433,25 @@
 - **Decision consequence:** Reject window crops; the D-012 submission is converged against all round-3 agent hypotheses.
 - **Resolution:** Rejected.
 
+### F-056 — open, material
+
+- **Observation:** S54 (20 seeds 5700-5719, D-012 base, control 75.06%): wide-early transplants (768 / 448 / all wide at 20 px, then 128/384/640) 75.16% each; LS 0.1 / 0.3 74.94 / 75.24%; momentum 0.8 / 0.9 75.15 / 74.99%; batch 768 75.43%. S55 (40 fresh seeds 5800-5839, control 75.11% at 4.306 s local): batch 768 at 8.5 / 8.0 / 7.75 epochs 75.37 / 75.15 / 74.90%; batch 896 at 8.25 epochs 75.14%; LS 0.3 75.27%; batch 768 at 8.0 epochs + LS 0.3 75.25%. Batch 768 at 8.0 epochs and batch 896 ran at -1.0% / -0.5% local time on the control's GPU.
+- **Interpretation:** Smaller batches learn more per epoch but buy nothing at matched time (batch 768 at 8.0 epochs: +0.04 pp at -1%). Label smoothing 0.3 is now consistently better than 0.2 on the new base (+0.18, +0.16, +0.14 pp), unlike the flat 0.1-0.3 response on the old base. Wide-early gains (+0.10 pp) are within noise.
+- **Decision consequence:** Reject batch-size changes and wide-early; price LS 0.3 as an epoch cut and test 0.35/0.4 (S58).
+
+### F-057 — open, material
+
+- **Observation:** S56 (20 seeds 5900-5919, D-012 base, control 75.12% at 4.33 s on GPU 1): stage-3 residual conv as 1x1 at 9.0 epochs 75.27% (4.39 s, GPU 0); stage-3 conv2 + residual as 1x1 at 9.5 / 8.5 epochs 74.47 / 74.02%; the same with a ceil-mode 4x4 terminal grid at 9.5 epochs 74.49%; with width 768 at 9.0 epochs 74.56%; stage 1 width 96 at 9.5 epochs 75.35% (4.57 s, GPU 0); centre-tap-only stage-3 square convs at 20 px, 8.75 epochs, 75.00% (4.33 s, GPU 1).
+- **Interpretation:** Stage 3's 3x3 conv2 carries real spatial capacity on the 3x3 terminal grid (1x1 costs about 1 pp at equal epochs), but its residual conv works as 1x1 (+0.15 pp at about matched time). A thinner stage 1 at more epochs may sit on a better frontier (+0.23 pp). Centre-tap pruning at 20 px loses at equal time.
+- **Decision consequence:** Confirm the 1x1 stage-3 residual and stage-1 width 96 (and their combination) with 40 fresh seeds and same-GPU paired timing (S59); reject the other topology arms.
+
+### F-058 — resolved, material
+
+- **Observation:** S57 (local paired timing, previous vs patched submission, 10 seeds per GPU, GPU 0 prev->new and GPU 1 new->prev): total 4.433 -> 4.378 s (-1.24%) and 4.271 -> 4.178 s (-2.17%); prepare 65 -> 39 ms on both GPUs; accuracy identical per GPU (75.23 / 75.14%).
+- **Interpretation:** The round-4 audit's exact fixes save about 1.7% with bit-identical results: the vectorised identity init removes 26 ms of per-element GPU copies from prepare, the gather crop removes host syncs and the full-epoch flip copy, and stopping at the last lookahead update drops three steps whose updates the final copy discards.
+- **Decision consequence:** Adopt all three fixes and the full-size warm-up in the submission (exact; no accuracy run needed).
+- **Resolution:** Adopted (exact).
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -580,15 +604,15 @@
 - **X-002:** Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate? (saturated; test-ready=true)
 - **X-003:** Do representation or learning approaches outside the airbench convnet-SGD-CE family lower time to a 75% single-view CIFAR-100 mean? (closed; test-ready=true)
 - **X-004:** What are A100 80GB PCIe timings for the frontier candidates, and does dev-stack accuracy transfer to the pinned A100 stack? (closed; test-ready=true)
-- **X-005:** Do structural, learning-dynamics or A100 systems levers outside the climbed parameter space lower A100 PCIe time to a 75.2% single-view mean beyond seed and host noise? (test_ready; test-ready=true)
+- **X-005:** Do structural, learning-dynamics or A100 systems levers outside the climbed parameter space lower A100 PCIe time to a 75.2% single-view mean beyond seed and host noise? (saturated; test-ready=true)
 
 ### Exact frontier
 
-- State: **continue**
+- State: **needs_design**
 - Active: T-019
 - Eligible: none
-- Unresolved outcomes: O-001, O-004
-- Unresolved requirements: R-002, R-008
+- Unresolved outcomes: O-001, O-002, O-003, O-004
+- Unresolved requirements: R-001, R-002, R-003, R-004, R-005, R-006, R-007, R-008
 - Pending assessments: none
 - Human engagement: none
 <!-- writing-tools:generated:end -->

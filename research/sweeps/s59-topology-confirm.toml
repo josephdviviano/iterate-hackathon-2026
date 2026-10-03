@@ -1,0 +1,38 @@
+# 40-fresh-seed confirmation of the S56 survivors (stage-3 residual 1x1 at 9.0 epochs, stage-1
+# width 96 at 9.5, both at 10.0) against the submission; timing in S60a/b.
+name = "s59-topology-confirm"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [6200, 6201, 6202, 6203, 6204, 6205, 6206, 6207, 6208, 6209, 6210, 6211, 6212, 6213, 6214, 6215, 6216, 6217, 6218, 6219, 6220, 6221, 6222, 6223, 6224, 6225, 6226, 6227, 6228, 6229, 6230, 6231, 6232, 6233, 6234, 6235, 6236, 6237, 6238, 6239]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]                                   # stage-3 residual 1x1
+residual_kernels = [3, 3, 1]
+epochs = 9.0
+[[configs]]                                   # stage-1 width 96
+widths = [96, 384, 640]
+epochs = 9.5
+[[configs]]                                   # both
+widths = [96, 384, 640]
+residual_kernels = [3, 3, 1]
+epochs = 10.0

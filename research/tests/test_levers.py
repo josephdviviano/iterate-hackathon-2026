@@ -141,6 +141,15 @@ LEVERS = {
         "weight_freeze": [[0, 0.3, 0.6, "all"], [2, 0.5, 0.8, "conv1"]],
     },
     "crop": SMALL | {"crop_schedule": [[0.3, 28], [0.7, 0]], "block_depth": 3},
+    "pointwise-stage3": SMALL
+    | {
+        "block_depth": 3,
+        "square_kernels": [3, 3, 1],
+        "residual_kernels": [3, 3, 1],
+        "stage3_ceil": True,
+    },
+    "centre-tap": SMALL
+    | {"block_depth": 3, "res_schedule": [[0.0, 20], [0.5, 32]], "centre_tap_max": 2},
     "square-kaiming": SMALL | {"square_init": "dirac+kaiming", "square_beta": 0.25},
     "celu": SMALL | {"activation": "celu", "epochs": 2.3},
     "select": SMALL | {"select_fraction": 0.5, "selector_widths": [16, 32, 32]},

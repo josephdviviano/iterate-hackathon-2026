@@ -115,8 +115,14 @@ class ConvGroup(nn.Module):
         skip_discarded: bool = False,
         post_add_activation: bool = False,
         skip_gate: bool = False,
+        square_kernel: int = 3,
+        residual_kernel: int = 3,
+        centre_tap_max: int = 0,
     ) -> None:
         super().__init__()
+        # Square convs on maps no larger than ``centre_tap_max`` use only their centre tap
+        # (exact while the dirac-initialised off-centre taps are still zero).
+        self.centre_tap_max = centre_tap_max
         # SkipInit (De & Smith 2020): a learnable scalar on the residual branch, reset in
         # ``reset_model`` to ``residual_gate_init`` so each block starts near identity.
         self.skip_gate = nn.Parameter(torch.ones(())) if skip_gate else None
@@ -139,10 +145,10 @@ class ConvGroup(nn.Module):
         self.pool_first = pool_first
         self.conv1 = Conv(cin, cout, rep=rep)
         self.norm1 = BatchNorm(cout, bn_momentum)
-        self.conv2 = Conv(cout, cout, rep=rep)
+        self.conv2 = Conv(cout, cout, square_kernel, rep=rep)
         self.norm2 = BatchNorm(cout, bn_momentum)
         self.residual = (
-            nn.Sequential(Conv(cout, cout, rep=rep), BatchNorm(cout, bn_momentum))
+            nn.Sequential(Conv(cout, cout, residual_kernel, rep=rep), BatchNorm(cout, bn_momentum))
             if depth == 3
             else None
         )
@@ -157,9 +163,12 @@ class ConvGroup(nn.Module):
                 conv = self.conv1(x)
             pooled = max_pool2(conv, self.pool_impl, self.pool_overlap, self.pool_ceil)
             x = activate(self.norm1(pooled), self.activation)
-        y = activate(self.norm2(self.conv2(x)), self.activation)
+        y = activate(self.norm2(self._square(self.conv2, x)), self.activation)
         if self.residual is None or not self.residual_active:
             return y
+        if self.centre_tap_max and y.size(-1) <= self.centre_tap_max:
+            branch = self.residual[1](self._square(self.residual[0], y))
+            return x + activate(branch, self.activation)
         if self.post_add_activation:
             deep = activate(self.residual(y) + x, self.activation)
         elif self.skip_gate is not None:
@@ -169,6 +178,11 @@ class ConvGroup(nn.Module):
         if not self.residual_ramping:
             return deep
         return torch.lerp(y, deep, self.residual_gate.to(y.dtype))
+
+    def _square(self, conv: nn.Conv2d, x: torch.Tensor) -> torch.Tensor:
+        if self.centre_tap_max and x.size(-1) <= self.centre_tap_max and conv.kernel_size[0] == 3:
+            return F.conv2d(x, conv.weight[:, :, 1:2, 1:2])
+        return conv(x)
 
 
 class AirbenchNet(nn.Module):
@@ -206,6 +220,9 @@ class AirbenchNet(nn.Module):
                     config.skip_discarded,
                     config.post_add_activation,
                     config.residual_gate_init is not None,
+                    config.square_kernels[i],
+                    config.residual_kernels[i],
+                    config.centre_tap_max if i == 2 else 0,
                 )
                 for i in range(3)
             )

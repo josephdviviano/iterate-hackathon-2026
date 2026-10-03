@@ -47,11 +47,8 @@ class Conv(nn.Conv2d):
 
     def reset_parameters(self) -> None:
         super().reset_parameters()
-        # Identity on the first cin output channels: equal to nn.init.dirac_, but one kernel
-        # instead of an element-by-element Python loop (thousands of tiny copies per prepare).
-        identity = self.weight.data[: self.weight.size(1)]
-        identity.zero_()
-        identity.diagonal(0, 0, 1)[1, 1].fill_(1)
+        w = self.weight.data
+        nn.init.dirac_(w[: w.size(1)])
 
 
 class ConvGroup(nn.Module):

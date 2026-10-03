@@ -1,0 +1,56 @@
+# Agent round 4 topology hypotheses on the D-012 base, each at its predicted matched-time budget:
+# 1x1 square/residual convs in stage 3 (3x3 terminal grid, 40% of taps on padding), the same
+# with a ceil-mode 4x4 terminal grid, with width 768, a thinner stage 1, and centre-tap-only
+# stage-3 square convs in the 20 px phase. 20 seeds, both GPUs; survivors get paired timing.
+name = "s56-topology"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [5900, 5901, 5902, 5903, 5904, 5905, 5906, 5907, 5908, 5909,
+         5910, 5911, 5912, 5913, 5914, 5915, 5916, 5917, 5918, 5919]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+residual_kernels = [3, 3, 1]                  # H1: stage-3 residual 1x1, matched time
+epochs = 9.0
+[[configs]]
+square_kernels = [3, 3, 1]                    # H1: stage-3 conv2 + residual 1x1
+residual_kernels = [3, 3, 1]
+epochs = 9.5
+[[configs]]
+square_kernels = [3, 3, 1]                    # H1 mechanism check at equal epochs
+residual_kernels = [3, 3, 1]
+[[configs]]
+square_kernels = [3, 3, 1]                    # H2a: + ceil-mode stage 3 (4x4 terminal grid)
+residual_kernels = [3, 3, 1]
+stage3_ceil = true
+epochs = 9.5
+[[configs]]
+widths = [128, 384, 768]                      # H6: 1x1 stage 3 funding width 768
+square_kernels = [3, 3, 1]
+residual_kernels = [3, 3, 1]
+epochs = 9.0
+[[configs]]
+widths = [96, 384, 640]                       # H3: thinner stage 1
+epochs = 9.5
+[[configs]]
+centre_tap_max = 2                            # H5: centre tap only at 20 px in stage 3
+epochs = 8.75

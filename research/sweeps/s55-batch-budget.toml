@@ -1,0 +1,45 @@
+# Matched-time follow-up of S54 (batch 768 +0.37 pp at +8% local time; label smoothing 0.3
+# +0.18 pp): batch 768 at 8.5 / 8.0 / 7.75 epochs, batch 896 at 8.25, LS 0.3, and LS 0.3 with
+# batch 768 at 8.0 epochs. 40 fresh seeds, both GPUs; survivors get local paired timing.
+name = "s55-batch-budget"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [5800, 5801, 5802, 5803, 5804, 5805, 5806, 5807, 5808, 5809, 5810, 5811, 5812, 5813, 5814, 5815, 5816, 5817, 5818, 5819, 5820, 5821, 5822, 5823, 5824, 5825, 5826, 5827, 5828, 5829, 5830, 5831, 5832, 5833, 5834, 5835, 5836, 5837, 5838, 5839]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+batch_size = 768
+[[configs]]
+batch_size = 768
+epochs = 8.0
+[[configs]]
+batch_size = 768
+epochs = 7.75
+[[configs]]
+batch_size = 896
+epochs = 8.25
+[[configs]]
+label_smoothing = 0.3
+[[configs]]
+batch_size = 768
+epochs = 8.0
+label_smoothing = 0.3

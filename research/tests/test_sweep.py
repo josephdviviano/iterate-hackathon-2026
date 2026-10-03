@@ -103,6 +103,6 @@ def test_dry_run_lists_pending_and_rejects_bad_specs(sweep_file, tmp_path):
     dry = sweep("run", path, "--dry-run")
     assert dry.returncode == 0 and len(dry.stdout.splitlines()) == 3
     bad = tmp_path / "bad.toml"
-    bad.write_text('seeds = [1, 1]\n[[configs]]\nepochs = 1\n')
+    bad.write_text("seeds = [1, 1]\n[[configs]]\nepochs = 1\n")
     result = sweep("status", bad)
     assert result.returncode != 0 and "distinct integers" in result.stderr

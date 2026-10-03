@@ -447,9 +447,12 @@ def fit(
         # identical to the uncropped control.
         seed = int(torch.randint(2**31 - 1, (1,)).item())
         crop_generator = torch.Generator(device=stream.labels.device).manual_seed(seed)
+    stop = total_steps
+    if config.trim_tail and config.lookahead and not config.lookahead_flush:
+        stop = total_steps - total_steps % config.lookahead_every
     epoch, epoch_start = 0, -1
     # Pruned epochs are shorter, so run epochs until the step budget is spent.
-    while step < total_steps:
+    while step < stop:
         epoch += 1
         if step == epoch_start:
             raise RuntimeError("an epoch yielded no batches (prune_frac too large for batch_size)")
@@ -545,7 +548,7 @@ def fit(
                 masters.sync()
             if step in snapshot_steps:
                 snapshots.append(copy.deepcopy(model).eval())
-            if step >= total_steps:
+            if step >= stop:
                 break
     if freezable:
         for net in nets:

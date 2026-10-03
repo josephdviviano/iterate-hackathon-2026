@@ -116,3 +116,29 @@ def test_freezing_two_cooled_stages_is_bit_identical(module):
     control = _trained(module, cooled)
     candidate = _trained(module, cooled | {"freeze_schedule": [[0.5, 1], [0.7, 2]]})
     assert all(torch.equal(control[k], candidate[k]) for k in control)
+
+
+def test_centre_tap_is_exact_at_initialisation(module):
+    model_module, config_module = _sibling(module, "model"), _sibling(module, "config")
+    torch.manual_seed(0)
+    control = model_module.make_model(
+        config_module.RecipeConfig.from_parameters(BASE), torch.device("cpu")
+    )
+    candidate = model_module.make_model(
+        config_module.RecipeConfig.from_parameters(BASE | {"centre_tap_max": 2}),
+        torch.device("cpu"),
+    )
+    model_module.reset_model(control)
+    candidate.load_state_dict(control.state_dict())
+    x = torch.rand(4, 3, 20, 20)
+    control.eval()
+    candidate.eval()
+    torch.testing.assert_close(candidate(x), control(x), rtol=1e-5, atol=1e-5)
+
+
+def test_trimming_steps_after_the_last_lookahead_update_is_exact(module):
+    parameters = BASE | {"epochs": 3.25}  # 13 steps: 3 after the last periodic update
+    control = _trained(module, parameters)
+    trimmed = _trained(module, parameters | {"trim_tail": True})
+    floating = [k for k in control if control[k].is_floating_point()]
+    assert all(torch.equal(control[k], trimmed[k]) for k in floating)

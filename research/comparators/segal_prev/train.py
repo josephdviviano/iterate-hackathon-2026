@@ -113,15 +113,9 @@ def fit(model: Net, step_model: nn.Module, stream: TrainingStream, config: Recip
     optimizer, schedules = make_optimizer(model, config, total_steps, stream.steps_per_epoch)
     lookahead = Lookahead(model) if config.lookahead else None
     whiten_steps = ceil(config.whiten_bias_epochs * stream.steps_per_epoch)
-    # The final lookahead update copies the slow weights from the last periodic update into
-    # the model, so steps after it cannot change the result: stop there (every schedule keeps
-    # its ``total_steps`` basis).
-    stop = total_steps - total_steps % 5 if lookahead is not None else total_steps
     model.train()
     step = 0
     for epoch in range(ceil(config.epochs)):
-        if step >= stop:
-            break
         for inputs, labels in stream.epoch(epoch):
             if config.stage1_freeze:
                 # Stage 1's lr is zero from here, so skipping its backward is exact; the frozen
@@ -149,7 +143,7 @@ def fit(model: Net, step_model: nn.Module, stream: TrainingStream, config: Recip
             step += 1
             if lookahead is not None and step % 5 == 0:
                 lookahead.update(decay=0.95**5 * (step / total_steps) ** 3)
-            if step >= stop:
+            if step >= total_steps:
                 break
     model.whiten.bias.requires_grad_(True)
     model.stage1_frozen = False

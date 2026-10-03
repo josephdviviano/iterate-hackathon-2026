@@ -1,0 +1,30 @@
+schema_version: '2.0'
+finding_id: F-058
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S57 (local paired timing, previous vs patched submission, 10 seeds per GPU, GPU 0 prev->new
+  and GPU 1 new->prev): total 4.433 -> 4.378 s (-1.24%) and 4.271 -> 4.178 s (-2.17%); prepare 65 -> 39
+  ms on both GPUs; accuracy identical per GPU (75.23 / 75.14%).'
+interpretation: 'The round-4 audit''s exact fixes save about 1.7% with bit-identical results: the vectorised
+  identity init removes 26 ms of per-element GPU copies from prepare, the gather crop removes host syncs
+  and the full-epoch flip copy, and stopping at the last lookahead update drops three steps whose updates
+  the final copy discards.'
+decision_implication: Adopt all three fixes and the full-size warm-up in the submission (exact; no accuracy
+  run needed).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s57-exact-fixes-timing.txt
+  locator: research/evidence/T-019/s57-exact-fixes-timing.txt
+  sha256: 1d7cc7fea5762d014d06aadac3ad3193ba96d2b8c75179f914ad7f1cdc1bb071
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Adopted (exact).

@@ -1,0 +1,43 @@
+schema_version: '2.0'
+finding_id: F-056
+task_id: T-019
+result_kind: mixed
+importance: material
+observation: 'S54 (20 seeds 5700-5719, D-012 base, control 75.06%): wide-early transplants (768 / 448
+  / all wide at 20 px, then 128/384/640) 75.16% each; LS 0.1 / 0.3 74.94 / 75.24%; momentum 0.8 / 0.9
+  75.15 / 74.99%; batch 768 75.43%. S55 (40 fresh seeds 5800-5839, control 75.11% at 4.306 s local): batch
+  768 at 8.5 / 8.0 / 7.75 epochs 75.37 / 75.15 / 74.90%; batch 896 at 8.25 epochs 75.14%; LS 0.3 75.27%;
+  batch 768 at 8.0 epochs + LS 0.3 75.25%. Batch 768 at 8.0 epochs and batch 896 ran at -1.0% / -0.5%
+  local time on the control''s GPU.'
+interpretation: 'Smaller batches learn more per epoch but buy nothing at matched time (batch 768 at 8.0
+  epochs: +0.04 pp at -1%). Label smoothing 0.3 is now consistently better than 0.2 on the new base (+0.18,
+  +0.16, +0.14 pp), unlike the flat 0.1-0.3 response on the old base. Wide-early gains (+0.10 pp) are
+  within noise.'
+decision_implication: Reject batch-size changes and wide-early; price LS 0.3 as an epoch cut and test
+  0.35/0.4 (S58).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: unresolved
+  rationale: the stage-1 freeze and smaller BN-bias steps may make the late run more overconfident, so
+    stronger smoothing helps
+  discriminating_test: S58 trend
+- kind: data_measurement
+  disposition: unresolved
+  rationale: S54's control drew low (75.06%), inflating its deltas; S55's 40-seed LS result stands on
+    its own
+  discriminating_test: S58
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s55-batch-budget-table.csv
+  locator: research/evidence/T-019/s55-batch-budget-table.csv
+  sha256: e0a12719ac5f2134f1789fdde4bdfc16a44814ff72644f2f0c04b4f6b2492cc9
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

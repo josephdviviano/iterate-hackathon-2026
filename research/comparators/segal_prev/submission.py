@@ -64,14 +64,13 @@ def train(state: SimpleNamespace) -> nn.Module:
 
 
 def _warm_up(state: SimpleNamespace, eval_batch_size: int) -> None:
-    """Run the full schedule on a full-size random dataset, then the eval shapes.
+    """Run the full schedule on two batches of random data per epoch, then the eval shapes.
 
-    Every phase of the real run (resolution, whitening-bias and stage-1 freezes) executes
-    many times outside the timer with the real tensor sizes, so compilation, CUDA-graph
-    recording, cuDNN autotuning and allocator growth never happen in a trial. ``prepare``
-    resets all state this touches.
+    Every resolution phase of the real run executes once outside the timer, so compilation,
+    cuDNN autotuning and allocator growth never happen in a trial. ``prepare`` resets all
+    state this touches.
     """
-    n = 50_000
+    n = 2 * state.config.batch_size
     synthetic = TrainingData(
         images=torch.randint(0, 256, (n, 3, 32, 32), dtype=torch.uint8),
         labels=torch.randint(0, 100, (n,)),

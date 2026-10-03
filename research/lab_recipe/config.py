@@ -156,6 +156,14 @@ class RecipeConfig:
     weight_freeze: tuple[tuple[int, float, float, str], ...] = ()
     # Window crops ((start_fraction, size), ...; size 0 = off) at native pixel scale.
     crop_schedule: tuple[tuple[float, int], ...] = ()
+    # Agent round 4 (topology): kernel sizes of each stage's square and residual convs, and
+    # centre-tap-only square convs in stage 3 on maps no larger than ``centre_tap_max``.
+    square_kernels: tuple[int, int, int] = (3, 3, 3)
+    residual_kernels: tuple[int, int, int] = (3, 3, 3)
+    centre_tap_max: int = 0
+    # Stop at the last periodic lookahead update (exact: later steps are overwritten by the
+    # final slow-weight copy); every schedule keeps its full-length basis.
+    trim_tail: bool = False
     bias_scaler_final: float | None = None
     # Teammates' hypothesis-branch block: activation after the residual add.
     post_add_activation: bool = False
@@ -232,6 +240,9 @@ class RecipeConfig:
             values["selector_widths"] = tuple(values["selector_widths"])
         if values.get("thin_window") is not None:
             values["thin_window"] = tuple(values["thin_window"])
+        for key in ("square_kernels", "residual_kernels"):
+            if key in values:
+                values[key] = tuple(values[key])
         if "crop_schedule" in values:
             values["crop_schedule"] = tuple(tuple(e) for e in values["crop_schedule"])
         if "weight_freeze" in values:
@@ -279,6 +290,9 @@ class RecipeConfig:
                 or entry[3] not in ("all", "conv1")
             ):
                 raise ValueError("weight_freeze entries are (stage 0-2, start, end, all|conv1)")
+        kernels = (*self.square_kernels, *self.residual_kernels)
+        if len(kernels) != 6 or any(k not in (1, 3) for k in kernels) or self.centre_tap_max < 0:
+            raise ValueError("square/residual kernels must be three of 1 or 3; centre_tap_max >= 0")
         starts = [e[0] for e in self.crop_schedule]
         if starts != sorted(starts) or any(
             len(e) != 2 or not 0 <= e[0] < 1 or not (e[1] == 0 or 16 <= e[1] <= 32)

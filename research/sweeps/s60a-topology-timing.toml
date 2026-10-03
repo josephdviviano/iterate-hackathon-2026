@@ -1,0 +1,39 @@
+# Local paired timing of the S56 survivors (max-autotune as submitted); GPU 0 in order (a), GPU 1
+# reversed (b), 10 seeds each.
+name = "s60a-topology-timing"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [6300, 6301, 6302, 6303, 6304, 6305, 6306, 6307, 6308, 6309]
+devices = [0]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+epochs = 8.5
+compile_mode = "max-autotune"
+
+[[configs]]                                   # control (= submission)
+[[configs]]                                   # stage-3 residual 1x1
+residual_kernels = [3, 3, 1]
+epochs = 9.0
+[[configs]]                                   # stage-1 width 96
+widths = [96, 384, 640]
+epochs = 9.5
+[[configs]]                                   # both
+widths = [96, 384, 640]
+residual_kernels = [3, 3, 1]
+epochs = 10.0
