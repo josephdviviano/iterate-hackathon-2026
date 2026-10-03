@@ -22,7 +22,7 @@ HYP = {
     "weight_decay": 0.012,
     "bias_scaler": 32.0,
     "label_smoothing": 0.4,
-    "whiten_bias_epochs": 5,  # afterwards the whitening output is detached
+    "whiten_bias_epochs": 2,  # afterwards the whitening output is detached
     "translate": 2,
     "widths": (128, 384, 576),
     "convs_per_group": (2, 3, 3),
@@ -94,8 +94,6 @@ class Net(nn.Module):
             ConvGroup(whiten_width, w1, n1, m),
             ConvGroup(w1, w2, n2, m),
             ConvGroup(w2, w3, n3, m),
-            nn.AdaptiveMaxPool2d(1),
-            nn.Flatten(),
         )
         self.head = nn.Linear(w3, num_classes, bias=False)
         self.scale = hyp["scaling_factor"]
@@ -110,7 +108,10 @@ class Net(nn.Module):
         x = self.layers[1](self.layers[0](x), detach_first=freeze_first)
         for layer in self.layers[2:]:
             x = layer(x)
-        return self.head(x) * self.scale
+        # Global max pool as a plain reduction with saved indices (cheaper backward than
+        # adaptive max pool; amax is avoided because its compiled backward re-derives ties
+        # from recomputed activations and can divide by a zero tie count).
+        return self.head(x.flatten(2).max(dim=2).values) * self.scale
 
 
 class Classifier(nn.Module):
