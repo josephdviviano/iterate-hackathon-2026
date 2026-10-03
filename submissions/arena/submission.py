@@ -21,7 +21,7 @@ from benchmark.api import BuildContext, TrainingData
 
 # Override any value with --params, e.g. '{"epochs": 9, "widths": [128, 384, 768]}'.
 DEFAULTS = {
-    "epochs": 8.5,
+    "epochs": 7.0,
     "batch_size": 1024,
     "lr": 9.0,  # per 1024 examples, decoupled from momentum (airbench convention)
     "momentum": 0.85,
@@ -39,6 +39,9 @@ DEFAULTS = {
     "bn_momentum": 0.6,
     "ema_every": 5,  # lookahead EMA period in steps; 0 disables it
     "compile": "max-autotune",  # torch.compile mode; "" runs eagerly
+    "muon_lr": 0.24,  # Muon for the 3x3 conv filters; 0 keeps them on SGD
+    "muon_momentum": 0.6,
+    "muon_ns_steps": 3,
 }
 
 
@@ -139,6 +142,46 @@ class Classifier(nn.Module):
     def forward(self, x):
         x = ((x - self.mean) / self.std).to(self.dtype, memory_format=torch.channels_last)
         return self.net(x).float()
+
+
+#############################################
+#                   Muon                    #
+#############################################
+
+
+def zeropower_via_newtonschulz5(G, steps, eps=1e-7):
+    a, b, c = (3.4445, -4.7750, 2.0315)
+    X = G.bfloat16()
+    X /= X.norm() + eps
+    transposed = G.size(0) > G.size(1)
+    if transposed:
+        X = X.T
+    for _ in range(steps):
+        A = X @ X.T
+        B = b * A + c * A @ A
+        X = a * X + B @ X
+    return X.T if transposed else X
+
+
+class Muon(torch.optim.Optimizer):
+    """Muon (Keller Jordan, airbench94_muon): orthogonalized Nesterov momentum on normalized filters."""
+
+    def __init__(self, params, lr, momentum, ns_steps):
+        super().__init__(params, dict(lr=lr, momentum=momentum, ns_steps=ns_steps))
+
+    @torch.no_grad()
+    def step(self):
+        for group in self.param_groups:
+            for p in group["params"]:
+                g = p.grad
+                buf = self.state[p].get("momentum_buffer")
+                if buf is None:
+                    buf = self.state[p]["momentum_buffer"] = torch.zeros_like(g)
+                buf.mul_(group["momentum"]).add_(g)
+                g = g.add(buf, alpha=group["momentum"])
+                p.mul_(len(p) ** 0.5 / p.norm())
+                update = zeropower_via_newtonschulz5(g.reshape(len(g), -1), group["ns_steps"])
+                p.add_(update.view(g.shape).to(p.dtype), alpha=-group["lr"])
 
 
 #############################################
@@ -272,6 +315,12 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     lr_biases = lr * hyp["bias_scaler"]
     norm_biases = [p for name, p in net.named_parameters() if "norm" in name and p.requires_grad]
     others = [p for name, p in net.named_parameters() if "norm" not in name and p.requires_grad]
+    state.optimizers = []
+    if hyp["muon_lr"]:
+        filters = [p for p in others if p.ndim == 4]
+        others = [p for p in others if p.ndim != 4]
+        muon = Muon(filters, hyp["muon_lr"], hyp["muon_momentum"], hyp["muon_ns_steps"])
+        state.optimizers.append(muon)
     state.optimizer = torch.optim.SGD(
         [
             dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
@@ -280,8 +329,10 @@ def prepare(state, data: TrainingData, seed: int) -> None:
         momentum=momentum,
         nesterov=True,
     )
-    for group in state.optimizer.param_groups:
-        group["initial_lr"] = group["lr"]
+    state.optimizers.append(state.optimizer)
+    for opt in state.optimizers:
+        for group in opt.param_groups:
+            group["initial_lr"] = group["lr"]
 
     state.batch_size = batch_size
     state.steps_per_epoch = len(data.labels) // batch_size
@@ -319,7 +370,8 @@ def _fit(state, total_steps):
                 label_smoothing=hyp["label_smoothing"],
                 reduction="sum",
             )
-            optimizer.zero_grad(set_to_none=True)
+            for opt in state.optimizers:
+                opt.zero_grad(set_to_none=True)
             loss.backward()
             if step < warmup_steps:
                 frac = step / warmup_steps
@@ -327,9 +379,10 @@ def _fit(state, total_steps):
             else:
                 frac = (step - warmup_steps) / max(1, total_steps - warmup_steps)
                 scale = (1 - frac) + hyp["final_lr"] * frac
-            for group in optimizer.param_groups:
-                group["lr"] = group["initial_lr"] * scale
-            optimizer.step()
+            for opt in state.optimizers:
+                for group in opt.param_groups:
+                    group["lr"] = group["initial_lr"] * scale
+                opt.step()
             step += 1
             if hyp["ema_every"] and step % hyp["ema_every"] == 0:
                 _lookahead(state, ema_decay[step].item())
