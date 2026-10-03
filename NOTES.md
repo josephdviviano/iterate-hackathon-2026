@@ -76,6 +76,8 @@
     - H9: replay of the certification policy on identical cached laws: 82 percent of certifications skipped on the plateaued Hoeffding climb, 1 of 18 on the still-improving linear climb, bests identical, 0 audit disagreements. Policy moved into the child's check.py (certify only a law that beats the child's own best per instance); float sums exactly on the boundary count as exact ties so dyadic laws are not force-certified. Timeout raised to 1800 s, 40 turns; contract asks for confidence in the first edit. Linear climb resumed for rounds 4 and 5 with --tiers.
     - Review of the Hoeffding negative result: H6's float local search was weak evidence because ties make the objective discontinuous in atom positions. Replaced by H10, exhaustive over 2- to 4-atom supports on the grid {0, 1, (t - l)/k} with weight optimization, 32,906 supports on 63 instances with n <= 8: equals the family on all 63, no win. Scope limits stated in RESULTS.md.
     - H11: rounds 5 and 6 with 30-minute children all finished inside budget, defined confidence, and reached 0.398027 on (1,1,1,-2), converging to the 0.400695 limit at about +0.0002 per round. On the proven anchor the children state p = 0.01 to 0.02 and are not tight: an honest low report. Checker-side certification counts missing for these rounds (process predates the instrumentation); captured from the next run on.
+    - A/B on the checker-side certification policy, launched: round 7 of the linear climb, same two parents, two children with the policy (tag p) and two with `--no-checker-policy` (tag c, every evaluation certified). Compared on certify seconds, estimate seconds, checker runs per child, wall time and fitness. Both arms append to the same climb log.json; the later writer's round summary wins, per-child meta.json is complete for both.
+    - Answer recorded for the question whether the committee can decide what to certify: the policy uses one member's float bracket against the population's best; no vote is involved. Outer certification was 4 to 18 percent of round wall time in H11, so the gain, if any, is inside the child's loop.
   DEFERRED:
     - A harder family where search fails, so that disagreement can carry information: t close to n m with large n, or the Bellec-Fritz inequalities (AlphaEvolve's naive run reached 0.389 against the known 0.400695). Only if the pitch needs a disagreement result from this task; H3 already gives the calibration result.
     - Float-only verifier as a reward-hacking control. The exact verifier makes it moot for scoring; only a demo item.
@@ -166,3 +168,14 @@
     - Decisive library A/B at 8 per arm on two levels; version-space-spanning probes as an opt-in condition.
   ABANDONED:
     - MDL prior as a default. Mechanism count as a prior (no signal). The judge in the method.
+
+- [jdv] - Calibration battery and adaptive conformal sets - 36f934b
+  Measured whether the committee's uncertainty is a probability, and built the online conformal wrapper the user chose for its generality beyond ARC.
+  DONE:
+    - R22: vote share is overconfident (ECE 0.22); leave-one-level-out isotonic map helps on two levels and hurts on two; adaptive conformal sets hold 90% coverage on all four levels (pooled 0.93) with abstention where the committee is wrong; Good-Turing missing mass has no relation to agreed-but-wrong; row entropy flags agreed-but-wrong on ar25 L3 only.
+    - Write-up refreshed (version 4) with equal weights, four informative levels, rollouts, mechanisms, and the tried-and-dropped table.
+  DEFERRED:
+    - Conformal sets inside a planner (plan over the set, abstain to explore). Needs live play or a planning simulation.
+    - Wider benchmark pending the Devin budget.
+  ABANDONED:
+    - A fixed cross-level calibration map as the calibration method. The drift between levels exceeds what it corrects.

@@ -560,6 +560,65 @@ rows that have no counts.
 | ar25 L7 | 65 | 25, 0.00 | 40, 0.95 | 1.00 | 0.66 vs 0.68 |
 | tr87 L1→L2, ft09 L5 | 28, 31 | all, 0.00 | 0 | | |
 
+## R22. Calibration battery and adaptive conformal sets
+
+Inputs: per held-out step, the members' predicted next states and the
+observed one. `committee.calibrate`; file `artifacts/calibration.json`.
+Four informative levels, 221 steps.
+
+**Vote share as a probability.** Pooled ECE 0.22, Brier 0.18. Reliability
+by equal-mass bins (mean share → accuracy): 0.38 → 0.09, 0.66 → 0.16,
+0.99 → 0.80, 1.00 → 0.86, 1.00 → 1.00. The share is overconfident wherever
+the committee splits and slightly overconfident when unanimous.
+
+**Selective prediction by disagreement, pooled.** Overall accuracy 0.58;
+accuracy on the 50% most confident steps 0.87, on the 80% most confident
+0.71; AURC 0.22.
+
+**Calibration map fit on the other levels (isotonic on vote share, leave-one-level-out).**
+
+| Held-out level | ECE raw → mapped | Brier raw → mapped | mapped P(correct) when unanimous |
+|---|---|---|---|
+| ar25 L3 | 0.42 → 0.33 | 0.39 → 0.36 | 0.94 |
+| m0r0 L3 | 0.17 → 0.19 | 0.17 → 0.15 | 0.91 |
+| sk48 L2 | 0.10 → 0.18 | 0.11 → 0.09 | 0.84 |
+| ar25 L7 | 0.26 → 0.12 | 0.13 → 0.04 | 0.87 |
+
+**Adaptive conformal inference along each trajectory** (Gibbs and Candès
+2021). Nonconformity = 1 − share of the realised outcome; threshold from the
+quantile of past scores; α_t moves by γ after each hit or miss; target
+coverage 0.90. A set that must include "anything else" is an abstention.
+
+| Level | coverage (γ 0.05 / 0.02) | mean set size | abstain rate | singleton rate, accuracy |
+|---|---|---|---|---|
+| ar25 L3 | 0.955 / 0.955 | 2.4 | 0.84 | 0.14, 0.83 |
+| m0r0 L3 | 0.909 / 0.932 | 1.5 | 0.23 / 0.25 | 0.77, 0.88 / 0.91 |
+| sk48 L2 | 0.882 / 0.882 | 1.5 | 0.09 / 0.02 | 0.66 / 0.69, 0.93 / 0.89 |
+| ar25 L7 | 0.985 / 0.985 | 3.6 | 0.97 | 0.02, 1.00 |
+| pooled | 0.932 / 0.937 | | | |
+
+**Good-Turing missing mass** (singleton members / K) against the unanimous
+error per level: 0.05 vs 0.30, 0.01 vs 0.16, 0.01 vs 0.00, 0.15 vs 0.00. No
+relation.
+
+**Agreed-but-wrong flag** from the entropy of the touched effect rows,
+among unanimous steps: ar25 L3 AUROC 0.87 (8 wrong of 27); m0r0 L3 0.41
+(6 of 38); sk48 and ar25 L7 have no agreed-but-wrong steps.
+
+Reading: the raw vote share is not a probability, and a map fit on other
+levels helps on two levels and hurts on two, because the level-to-level
+drift is larger than the map. Adaptive conformal sets hold the 90% target
+on every level (0.88 to 0.99, pooled 0.93) using only outcomes the agent has
+already seen, which is the distribution-free sense of calibrated. The price
+is informativeness where the committee is mostly wrong: on ar25 L3 and L7
+the realised outcome is outside every member's prediction on most steps, so
+a set that keeps coverage must abstain 84% and 97% of the time. On m0r0 and
+sk48 it abstains 9% to 25% of the time and answers with a single state 66%
+to 77% of the time at 0.88 to 0.93 accuracy. The abstention rate is itself
+the honest report: it says how often the agent should distrust every
+hypothesis it holds. Good-Turing does not estimate the agreed-but-wrong mass;
+row entropy flags it on one level only.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a

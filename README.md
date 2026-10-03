@@ -50,6 +50,13 @@ Against baselines on the two informative levels (RESULTS.md R9 to R12):
 
 Closest prior work and exact differences: `research/baseline_review.md`.
 
+Calibration (RESULTS.md R22): the raw vote share is not a probability (ECE
+0.22 pooled), but adaptive conformal sets built online from the committee's
+vote shares hold a 90% coverage target on all four informative levels
+(0.88 to 0.99). Where the committee is mostly wrong the sets abstain, which
+is the honest answer; where it is mostly right they return a single state
+66% to 77% of the time at 0.88 to 0.93 accuracy.
+
 ## Demo
 
 ```
