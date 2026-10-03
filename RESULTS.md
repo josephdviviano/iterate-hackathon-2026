@@ -312,9 +312,9 @@ Same synthesizer, prompt and verifier with no seed hypothesis; the first 3
 members are the single programs of R3 and R6, 5 more were synthesized.
 Compared with the seeded committee of 8 on the same splits.
 
-| | ar25 seeded | ar25 unseeded | m0r0 seeded | m0r0 unseeded (7 of 8 synthesized at the time of writing) |
+| | ar25 seeded | ar25 unseeded | m0r0 seeded | m0r0 unseeded |
 |---|---|---|---|---|
-| Admitted | 8 of 8 | 8 of 8 | 8 of 8 | 5 of 7 |
+| Admitted | 8 of 8 | 8 of 8 | 8 of 8 | 6 of 8 |
 | Distinct held-out behaviours | 7 | 7 | 4 | 2 |
 | AUROC, equal-weight disagreement | 0.77 | 0.75 | 0.68 | 0.68 |
 | Unanimous n, error | 27, 0.30 | 28, 0.32 | 38, 0.16 | 40, 0.18 |
@@ -323,7 +323,7 @@ Compared with the seeded committee of 8 on the same splits.
 Reading: the calibration comes from the execution-defined entropy over
 verified programs, not from the seeds; unseeded resampling matches the
 seeded committee on ar25 and on m0r0's AUROC. The seeds' measurable effects
-are on m0r0: admission 8 of 8 against 5 of 7 and 4 behaviours against 2.
+are on m0r0: admission 8 of 8 against 6 of 8 and 4 behaviours against 2.
 On ar25 the shortest unseeded program is also the best (0.64), but the
 weights are split between it and another short program, so the vote stays
 at 0.48.

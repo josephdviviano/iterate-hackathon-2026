@@ -37,6 +37,17 @@ When the committee agrees it is mostly right. When it splits it is mostly
 wrong. On the two levels with a split, probing where it disagrees finds a
 counterexample that falsifies every hypothesis in one move.
 
+Against baselines on the two informative levels (RESULTS.md R9 to R12):
+
+| Baseline | Outcome |
+|---|---|
+| Learned dynamics ensembles (bagged trees, MLP deep ensemble) on per-object features | 0.00 to 0.32 accuracy vs the committee's 0.48 and 0.77 from 25 to 30 transitions; disagreement uninformative (AUROC 0.47 to 0.48) |
+| Verbalized confidence of a judge model (gpt-oss-120b) over the heaviest program | Pooled AUROC 0.71 vs committee 0.75, not separable; judge strong on ar25, uninformative on m0r0; the two combine to 0.85. Judge needs 44 calls per level, the committee none |
+| Unseeded resampling, same verifier (self-consistency) | Same calibration; the seed hypotheses raise admission (8 of 8 vs 6 of 8) and distinct behaviours (4 vs 2) on m0r0 |
+| Committee size K = 2, 4, 8 | AUROC rises with K on both levels; pooled over 88 transitions 0.75, 95% CI 0.66 to 0.84 |
+
+Closest prior work and exact differences: `research/baseline_review.md`.
+
 ## Demo
 
 ```
