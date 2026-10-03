@@ -133,29 +133,57 @@ def zeropower_via_newtonschulz5(G, steps):
     return X
 
 
-class Muon(torch.optim.Optimizer):
-    """Orthogonalized Nesterov momentum on conv filters, with per-step weight normalization."""
+def muon_update(params, grads, bufs, lr, momentum: float, ns_steps: int):
+    """One Muon step for a list of conv filters; lr is a 0-dim GPU tensor (no recompiles)."""
+    for p, g, buf in zip(params, grads, bufs):
+        buf.mul_(momentum).add_(g)
+        g = g.add(buf, alpha=momentum)
+        p.mul_(len(p) ** 0.5 / p.norm())
+        update = zeropower_via_newtonschulz5(g.reshape(len(g), -1), ns_steps)
+        p.sub_(update.view(g.shape).to(p.dtype) * lr)
 
-    def __init__(self, params, lr, momentum, nesterov=True, ns_steps=3):
-        super().__init__(params, dict(lr=lr, momentum=momentum, nesterov=nesterov, ns_steps=ns_steps))
+
+class MuonStep:
+    """Muon on a fixed list of conv filters, compiled and captured once as a CUDA graph.
+
+    Parameters keep their storage across trials (they are reset in place), so the graph
+    built in build() is reused: each step copies the fresh grads into static buffers,
+    writes the lr into a GPU scalar and replays the graph. reset() clears the momentum.
+    """
+
+    def __init__(self, params, momentum, ns_steps, use_graph, compiled=False):
+        self.update_fn = torch.compile(muon_update, dynamic=False) if compiled else muon_update
+        self.params = params
+        self.grads = [torch.zeros_like(p) for p in params]
+        self.bufs = [torch.zeros_like(p) for p in params]
+        self.lr_t = torch.zeros((), device=params[0].device, dtype=torch.float32)
+        self.momentum, self.ns_steps = momentum, ns_steps
+        self.graph = None
+        if use_graph:
+            side = torch.cuda.Stream()
+            side.wait_stream(torch.cuda.current_stream())
+            with torch.cuda.stream(side), torch.no_grad():
+                for _ in range(3):
+                    self._update()
+            torch.cuda.current_stream().wait_stream(side)
+            self.graph = torch.cuda.CUDAGraph()
+            with torch.cuda.graph(self.graph), torch.no_grad():
+                self._update()
+
+    def _update(self):
+        self.update_fn(self.params, self.grads, self.bufs, self.lr_t, self.momentum, self.ns_steps)
+
+    def reset(self):
+        torch._foreach_zero_(self.bufs)
 
     @torch.no_grad()
-    def step(self):
-        for group in self.param_groups:
-            lr, momentum = group["lr"], group["momentum"]
-            for p in group["params"]:
-                g = p.grad
-                if g is None:
-                    continue
-                state = self.state[p]
-                if "momentum_buffer" not in state:
-                    state["momentum_buffer"] = torch.zeros_like(g)
-                buf = state["momentum_buffer"]
-                buf.mul_(momentum).add_(g)
-                g = g.add(buf, alpha=momentum) if group["nesterov"] else buf
-                p.mul_(len(p) ** 0.5 / p.norm())
-                update = zeropower_via_newtonschulz5(g.reshape(len(g), -1), group["ns_steps"])
-                p.add_(update.view(g.shape).to(p.dtype), alpha=-lr)
+    def step(self, lr):
+        torch._foreach_copy_(self.grads, [p.grad for p in self.params])
+        self.lr_t.fill_(lr)
+        if self.graph is not None:
+            self.graph.replay()
+        else:
+            self._update()
 
 
 # ----------------------------------------------------------------------------- whitening
@@ -210,6 +238,17 @@ def build(context: BuildContext):
     if hyp["compile"] and device.type == "cuda":
         train_net = torch.compile(net, mode=hyp["compile_mode"])
     state = SimpleNamespace(hyp=hyp, context=context, model=model, net=net, train_net=train_net)
+    state.muon = None
+    if hyp["optimizer"] == "muon":
+        filters = [p for p in net.parameters() if p.ndim == 4 and p.requires_grad]
+        cuda = device.type == "cuda"
+        state.muon = MuonStep(
+            filters,
+            hyp["muon_momentum"],
+            hyp["ns_steps"],
+            use_graph=cuda,
+            compiled=cuda and hyp["compile"],
+        )
 
     # Warm up compilation on synthetic data (untimed); prepare() resets everything after.
     if device.type == "cuda":
@@ -232,6 +271,14 @@ def build(context: BuildContext):
         )
         prepare(state, fake, 0)
         augment_epoch(state.padded, state.flip_bits, 0, hyp["translate"], state.scale, state.shift)
+        # Warm up the optimizer steps (SGD state allocation, Muon graph replay).
+        for _ in range(2):
+            out = train_net(x)
+            F.cross_entropy(out, y, reduction="none").sum().backward()
+            state.optimizer.step()
+            if state.muon is not None:
+                state.muon.step(hyp["muon_lr"])
+            net.zero_grad(set_to_none=True)
         state.padded = state.labels = None
         torch.cuda.synchronize()
     return state
@@ -278,23 +325,17 @@ def prepare(state, data: TrainingData, seed: int) -> None:
         for k, p in net.named_parameters()
         if "norms" not in k and p.requires_grad and p is not net.whiten.bias
     ]
-    filters = []
-    if hyp["optimizer"] == "muon":
-        filters = [p for p in other if p.ndim == 4]
+    if state.muon is not None:
         other = [p for p in other if p.ndim != 4]
+        state.muon.reset()
     groups = [
         dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=other, lr=lr, weight_decay=wd / lr),
     ]
-    state.optimizers = [torch.optim.SGD(groups, momentum=momentum, nesterov=True)]
-    if filters:
-        state.optimizers.append(
-            Muon(filters, hyp["muon_lr"], hyp["muon_momentum"], ns_steps=hyp["ns_steps"])
-        )
-    for opt in state.optimizers:
-        for g in opt.param_groups:
-            g["base_lr"] = g["lr"]
+    state.optimizer = torch.optim.SGD(groups, momentum=momentum, nesterov=True)
+    for g in state.optimizer.param_groups:
+        g["base_lr"] = g["lr"]
 
 
 def lr_factor(step, total):
@@ -308,15 +349,14 @@ def lr_factor(step, total):
 
 def train(state) -> nn.Module:
     hyp = state.hyp
-    net, train_net, opts = state.net, state.train_net, state.optimizers
+    net, train_net, opt = state.net, state.train_net, state.optimizer
     bs = hyp["batch_size"]
     n = len(state.labels)
     steps_per_epoch = n // bs
     total = math.ceil(steps_per_epoch * hyp["epochs"])
     alpha = [0.95**5 * (s / total) ** 3 for s in range(total + 1)]
-    ema = [t.detach().clone() for t in net.state_dict().values()]
-    live = [t for t in net.state_dict().values()]
-    ema_pairs = [(e, l) for e, l in zip(ema, live) if l.dtype in (torch.half, torch.float)]
+    live = [t for t in net.state_dict().values() if t.dtype in (torch.half, torch.float)]
+    ema = [t.detach().clone() for t in live]
     ls = hyp["label_smoothing"]
 
     step = 0
@@ -327,7 +367,7 @@ def train(state) -> nn.Module:
         )
         perm = torch.randperm(n, device=inputs_all.device)
         if epoch >= hyp["whiten_bias_epochs"]:
-            opts[0].param_groups[0]["base_lr"] = 0.0
+            opt.param_groups[0]["base_lr"] = 0.0
         for b in range(steps_per_epoch):
             if step >= total:
                 break
@@ -336,21 +376,20 @@ def train(state) -> nn.Module:
             loss = F.cross_entropy(out, state.labels[idx], label_smoothing=ls, reduction="none").sum()
             loss.backward()
             f = lr_factor(step, total)
-            for opt in opts:
-                for g in opt.param_groups:
-                    g["lr"] = g["base_lr"] * f
-                opt.step()
+            for g in opt.param_groups:
+                g["lr"] = g["base_lr"] * f
+            opt.step()
+            if state.muon is not None:
+                state.muon.step(hyp["muon_lr"] * f)
             net.zero_grad(set_to_none=True)
             step += 1
             if step % 5 == 0:
                 decay = alpha[step]
                 with torch.no_grad():
-                    for e, l in ema_pairs:
-                        e.lerp_(l, 1 - decay)
-                        l.copy_(e)
+                    torch._foreach_lerp_(ema, live, 1 - decay)
+                    torch._foreach_copy_(live, ema)
         epoch += 1
     with torch.no_grad():
-        for e, l in ema_pairs:
-            l.copy_(e)
+        torch._foreach_copy_(live, ema)
     state.padded = None
     return state.model
