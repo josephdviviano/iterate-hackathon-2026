@@ -44,7 +44,7 @@ DEFAULTS = {
     "muon_ns_steps": 3,
     "muon_head": True,  # also train the linear head with Muon (without renormalization)
     # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
-    "res_schedule": [[0.25, 16], [0.5, 24]],
+    "res_schedule": [[0.375, 16], [0.5, 24]],
 }
 
 
