@@ -1,0 +1,55 @@
+probes [63] (steps [128]); train 46, held out 67
+artifacts: /Users/jdv/code/iterate/artifacts/sk48/L2_f40_probe1/cegis_devin
+
+Objects of type `arm` under action ACTION4 with touching neighbours [block,block,block,block,player] show mixed outcomes: pixels,w x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample. The last transition in transitions.md (step 128, action 4) refuted every program of an earlier committee of 8 programs. Each replayed all the other transitions exactly and predicted this one wrong:
+
+2 program(s) predicted:
+  observed but not predicted: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_8", "type": "block", "x": 36, "y": 13, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_9", "type": "block", "x": 48, "y": 13, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_8", "type": "block", "x": 36, "y": 13, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_9", "type": "block", "x": 48, "y": 13, "w": 4, "h": 4, "layer": 3}
+
+2 program(s) predicted:
+  observed but not predicted: {"name": "block_12", "type": "block", "x": 42, "y": 13, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_8", "type": "block", "x": 36, "y": 13, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_12", "type": "block", "x": 42, "y": 13, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_8", "type": "block", "x": 36, "y": 13, "w": 4, "h": 4, "layer": 3}
+
+2 program(s) predicted:
+  observed but not predicted: {"name": "block_12", "type": "block", "x": 42, "y": 13, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_8", "type": "block", "x": 36, "y": 13, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_12", "type": "block", "x": 48, "y": 13, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_8", "type": "block", "x": 42, "y": 13, "w": 4, "h": 4, "layer": 3}
+
+1 program(s) predicted:
+  observed but not predicted: {"name": "beam", "type": "arm", "x": 10, "y": 14, "w": 43, "h": 2, "layer": 2}
+  observed but not predicted: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_9", "type": "block", "x": 48, "y": 13, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "beam", "type": "arm", "x": 10, "y": 14, "w": 37, "h": 2, "layer": 2}
+  predicted but not observed: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_9", "type": "block", "x": 48, "y": 13, "w": 4, "h": 4, "layer": 3}
+
+1 program(s) predicted:
+  observed but not predicted: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_9", "type": "block", "x": 48, "y": 13, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_14", "type": "block", "x": 42, "y": 7, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_9", "type": "block", "x": 48, "y": 13, "w": 4, "h": 4, "layer": 3}
+
+Find the mechanic those programs missed. It must explain this transition and every earlier one, and it must not be a special case keyed to this step.
+
+sk48 L2 cegis_devin run1: consistent=True train=46/46 test_acc=0.8656716417910447 turns=None wall=268.9s err=None
+sk48 L2 cegis_devin run0: consistent=True train=46/46 test_acc=0.8656716417910447 turns=None wall=310.5s err=None
+sk48 L2 cegis_devin run2: consistent=True train=46/46 test_acc=0.8656716417910447 turns=None wall=145.0s err=None
+sk48 L2 cegis_devin run3: consistent=True train=46/46 test_acc=0.8656716417910447 turns=None wall=187.5s err=None
+sk48 L2 cegis_devin run4: consistent=True train=46/46 test_acc=0.8656716417910447 turns=None wall=124.3s err=None
+sk48 L2 cegis_devin run5: consistent=True train=46/46 test_acc=0.8059701492537313 turns=None wall=126.4s err=None
+sk48 L2 cegis_devin run6: consistent=True train=46/46 test_acc=0.8059701492537313 turns=None wall=125.1s err=None
+sk48 L2 cegis_devin run7: consistent=True train=46/46 test_acc=0.8059701492537313 turns=None wall=227.8s err=None

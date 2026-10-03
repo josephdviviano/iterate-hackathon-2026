@@ -15,7 +15,7 @@ from pathlib import Path
 
 from .committee import Committee, Member, description_length
 from .evaluate import load_runs
-from .experiment import add_backend_args, backend_cfg, condition_dir, run_split
+from .experiment import ARTIFACTS, add_backend_args, backend_cfg, condition_dir, run_split
 from .explore import simulate
 from .loader import Transition, build_buffer, temporal_split
 from .seeds import make_seeds
@@ -90,20 +90,29 @@ def probe_split_dir(game: str, level: int, train_frac: float, n_probes: int, con
     return base.parent.parent / f"{base.parent.name}_probe{n_probes}" / condition
 
 
-def round1(game: str, level: int, train_frac: float, source_condition: str):
-    transitions = build_buffer(game)
-    train, test = temporal_split(transitions, level, train_frac)
-    members = members_of(condition_dir(game, level, train_frac, source_condition), train, test)
-    return transitions, train, test, members, observed_probes(members, test)
+def stored_round(game: str, level: int, train_frac: float, source_condition: str, condition: str,
+                 n_probes: int) -> tuple[list[int], Path]:
+    """Probe indices observed so far and the directory of the committee that observed them.
+    n_probes 0 is the stored round 1 committee."""
+    if n_probes == 0:
+        return [], condition_dir(game, level, train_frac, source_condition)
+    cond = probe_split_dir(game, level, train_frac, n_probes, condition)
+    return json.loads((cond.parent / "split.json").read_text())["probes"], cond
 
 
-def run_round2(game: str, level: int, train_frac: float, source_condition: str, condition: str,
-               runs: int, cfg: dict, parallel: int, start: int, dry_run: bool) -> None:
-    _, train, test, members, probes = round1(game, level, train_frac, source_condition)
-    if not probes:
-        raise SystemExit("no probe refutes every member of the stored committee")
+def run_round(game: str, level: int, train_frac: float, source_condition: str, condition: str,
+              from_probe: int, runs: int, cfg: dict, parallel: int, start: int, dry_run: bool) -> None:
+    train, test = temporal_split(build_buffer(game), level, train_frac)
+    probes, cond = stored_round(game, level, train_frac, source_condition, condition, from_probe)
+    train_r, test_r = split_after_probes(train, test, probes)
+    members = members_of(cond, train_r, test_r)
+    new = observed_probes(members, test_r)
+    if not new:
+        raise SystemExit(f"no probe refutes every member of {cond}")
+    text = counterexample_text(members, test_r, new)
+    remaining = [i for i in range(len(test)) if i not in set(probes)]
+    probes = probes + [remaining[j] for j in new]
     train2, test2 = split_after_probes(train, test, probes)
-    text = counterexample_text(members, test, probes)
     seeds = [f"{s}\n\n{text}" for s in make_seeds(train2, runs)]
     base = probe_split_dir(game, level, train_frac, len(probes), condition)
     print(f"probes {probes} (steps {[test[i].step for i in probes]}); train {len(train2)}, held out {len(test2)}")
@@ -112,7 +121,8 @@ def run_round2(game: str, level: int, train_frac: float, source_condition: str, 
         return
     base.parent.mkdir(parents=True, exist_ok=True)
     (base.parent / "split.json").write_text(json.dumps(
-        {"source_condition": source_condition, "probes": probes, "steps": [test[i].step for i in probes]}, indent=1))
+        {"source": str(cond.relative_to(ARTIFACTS)), "probes": probes,
+         "steps": [test[i].step for i in probes]}, indent=1))
     run_split(train2, test2, base, seeds, cfg, f"{game} L{level} {condition}", start, parallel)
 
 
@@ -136,33 +146,43 @@ def score(members: list[Member], test: list[Transition]) -> dict:
 
 def report(game: str, level: int, train_frac: float, source_condition: str, condition: str,
            passive_condition: str) -> dict:
-    transitions, train, test, r1, probes = round1(game, level, train_frac, source_condition)
-    train2, test2 = split_after_probes(train, test, probes)
-    base = probe_split_dir(game, level, train_frac, len(probes), condition)
-    active = members_of(base, train2, test2)
-    n_passive = len(train) + len(probes)
-    ptrain, ptest = temporal_split(transitions, level, train_frac, train_n=n_passive)
-    pcond = condition_dir(game, level, train_frac, passive_condition, train_n=n_passive)
-    passive = members_of(pcond, ptrain, ptest) if pcond.exists() else []
-    common = {t.step for t in test2} & ({t.step for t in ptest} if passive else {t.step for t in test2})
-    arms = {"round1": (r1, test, condition_dir(game, level, train_frac, source_condition)),
-            "active": (active, test2, base), "passive": (passive, ptest, pcond)}
+    """Every stored round and every passive control with a matching train size, scored on the
+    transitions that none of them observed."""
+    transitions = build_buffer(game)
+    train, test = temporal_split(transitions, level, train_frac)
+    base0 = condition_dir(game, level, train_frac, source_condition)
+    arms: dict[str, tuple[list[Member], list[Transition], Path, int]] = {
+        "round1": (members_of(base0, train, test), test, base0, 0)}
+    rounds = sorted(base0.parent.parent.glob(f"{base0.parent.name}_probe*"),
+                    key=lambda p: int(p.name.rsplit("probe", 1)[1]))
+    probes: list[int] = []
+    for k, d in enumerate(rounds, start=2):
+        probes = json.loads((d / "split.json").read_text())["probes"]
+        train_r, test_r = split_after_probes(train, test, probes)
+        arms[f"round{k}"] = (members_of(d / condition, train_r, test_r), test_r, d / condition, len(probes))
+    for n_extra in sorted({a[3] for a in arms.values() if a[3]}):
+        n = len(train) + n_extra
+        pcond = condition_dir(game, level, train_frac, passive_condition, train_n=n)
+        if pcond.exists():
+            ptrain, ptest = temporal_split(transitions, level, train_frac, train_n=n)
+            arms[f"passive{n_extra}"] = (members_of(pcond, ptrain, ptest), ptest, pcond, n_extra)
+    arms = {k: v for k, v in arms.items() if v[0]}
+    common = set.intersection(*({t.step for t in ts} for _, ts, _, _ in arms.values()))
     out = {"game": game, "level": level, "train_frac": train_frac, "probes": probes,
            "steps": [test[i].step for i in probes], "n_common": len(common), "arms": {}}
-    for name, (members, ts, cond) in arms.items():
-        if not members:
-            continue
+    for name, (members, ts, cond, n_extra) in arms.items():
         kept = [t for t in ts if t.step in common]
-        out["arms"][name] = {"admitted": admission(cond), **score(restrict(members, ts, common), kept)}
-    (base.parent / "cegis_report.json").write_text(json.dumps(out, indent=1))
+        out["arms"][name] = {"observed": n_extra, "admitted": admission(cond),
+                             **score(restrict(members, ts, common), kept)}
+    ((rounds[-1] if rounds else base0.parent) / "cegis_report.json").write_text(json.dumps(out, indent=1))
     return out
 
 
 def print_report(out: dict) -> None:
     print(f"{out['game']} L{out['level']}: probes {out['probes']} (steps {out['steps']}); "
           f"{out['n_common']} transitions held out from every arm")
-    cols = ["admitted", "members", "vote", "mean_member", "best_member", "auroc", "unanimous_n", "unanimous_error",
-            "split_n", "split_error", "distinct", "next_falsified_at"]
+    cols = ["observed", "admitted", "members", "vote", "mean_member", "best_member", "auroc", "unanimous_n",
+            "unanimous_error", "split_n", "split_error", "distinct", "next_falsified_at"]
     print("arm      | " + " | ".join(cols))
     for name, row in out["arms"].items():
         print(f"{name:8s} | " + " | ".join(f"{row[c]:.3f}" if isinstance(row[c], float) else str(row[c]) for c in cols))
@@ -182,6 +202,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--runs", type=int, default=8)
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--parallel", type=int, default=1)
+    parser.add_argument("--from-probe", type=int, default=0,
+                        help="start from the stored round that observed this many probes; 0 is round 1")
     parser.add_argument("--dry-run", action="store_true", help="print the split and the seed, synthesize nothing")
     parser.add_argument("--report", action="store_true")
     add_backend_args(parser)
@@ -190,8 +212,8 @@ def main(argv: list[str] | None = None) -> None:
         print_report(report(args.game, args.level, args.train_frac, args.source_condition, args.condition,
                             args.passive_condition))
         return
-    run_round2(args.game, args.level, args.train_frac, args.source_condition, args.condition, args.runs,
-               backend_cfg(args), args.parallel, args.start, args.dry_run)
+    run_round(args.game, args.level, args.train_frac, args.source_condition, args.condition, args.from_probe,
+              args.runs, backend_cfg(args), args.parallel, args.start, args.dry_run)
 
 
 if __name__ == "__main__":

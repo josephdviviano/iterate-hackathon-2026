@@ -1,0 +1,41 @@
+probes [39] (steps [124]); train 31, held out 43
+artifacts: /Users/jdv/code/iterate/artifacts/m0r0/L3_f40_probe1/cegis_devin
+
+Objects of type `marker` under action ACTION6 with touching neighbours [hit,wall] show mixed outcomes: gone x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample. The last transition in transitions.md (step 124, action 4) refuted every program of an earlier committee of 8 programs. Each replayed all the other transitions exactly and predicted this one wrong:
+
+3 program(s) predicted:
+  observed but not predicted: {"name": "block_left", "type": "player", "x": 18, "y": 18, "w": 4, "h": 4, "layer": 1}
+  predicted but not observed: {"name": "block_left", "type": "player", "x": 22, "y": 18, "w": 4, "h": 4, "layer": 1}
+
+2 program(s) predicted:
+  observed but not predicted: {"name": "block_left", "type": "player", "x": 18, "y": 18, "w": 4, "h": 4, "layer": 1}
+  observed but not predicted: {"name": "block_right", "type": "player", "x": 30, "y": 14, "w": 4, "h": 4, "layer": 1}
+  predicted but not observed: {"name": "block_left", "type": "player", "x": 22, "y": 18, "w": 4, "h": 4, "layer": 1}
+  predicted but not observed: {"name": "block_right", "type": "player", "x": 34, "y": 14, "w": 4, "h": 4, "layer": 1}
+
+2 program(s) predicted:
+  observed but not predicted: {"name": "wall_0_2", "type": "wall", "x": 43, "y": 0, "w": 21, "h": 1, "layer": 0}
+  observed but not predicted: {"name": "wall_0_8", "type": "wall", "x": 0, "y": 63, "w": 21, "h": 1, "layer": 0}
+  observed but not predicted: {"name": "block_left", "type": "player", "x": 18, "y": 18, "w": 4, "h": 4, "layer": 1}
+  predicted but not observed: {"name": "wall_0_2", "type": "wall", "x": 44, "y": 0, "w": 20, "h": 1, "layer": 0}
+  predicted but not observed: {"name": "wall_0_8", "type": "wall", "x": 0, "y": 63, "w": 20, "h": 1, "layer": 0}
+  predicted but not observed: {"name": "block_left", "type": "player", "x": 22, "y": 18, "w": 4, "h": 4, "layer": 1}
+
+1 program(s) predicted:
+  observed but not predicted: {"name": "block_left", "type": "player", "x": 18, "y": 18, "w": 4, "h": 4, "layer": 1}
+  observed but not predicted: {"name": "block_right", "type": "player", "x": 30, "y": 14, "w": 4, "h": 4, "layer": 1}
+  predicted but not observed: {"name": "block_left", "type": "player", "x": 22, "y": 18, "w": 4, "h": 4, "layer": 1}
+  predicted but not observed: {"name": "block_left", "type": "player", "x": 30, "y": 14, "w": 4, "h": 4, "layer": 1}
+
+Find the mechanic those programs missed. It must explain this transition and every earlier one, and it must not be a special case keyed to this step.
+
+m0r0 L3 cegis_devin run1: consistent=True train=31/31 test_acc=0.7906976744186046 turns=None wall=227.3s err=None
+m0r0 L3 cegis_devin run0: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=392.1s err=None
+m0r0 L3 cegis_devin run2: consistent=True train=31/31 test_acc=0.7906976744186046 turns=None wall=247.8s err=None
+m0r0 L3 cegis_devin run4: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=186.3s err=None
+m0r0 L3 cegis_devin run3: consistent=True train=31/31 test_acc=0.7906976744186046 turns=None wall=392.3s err=None
+m0r0 L3 cegis_devin run5: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=124.3s err=None
+m0r0 L3 cegis_devin run7: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=103.8s err=None
+m0r0 L3 cegis_devin run6: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=206.7s err=None
