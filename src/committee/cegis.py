@@ -11,6 +11,7 @@ probes) on the transitions that none of them observed.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 
 from .committee import Committee, Member, description_length
@@ -18,7 +19,8 @@ from .evaluate import load_runs
 from .experiment import ARTIFACTS, add_backend_args, backend_cfg, condition_dir, run_split
 from .explore import simulate
 from .loader import Transition, build_buffer, temporal_split
-from .seeds import make_seeds
+from .matrix import RowKey, context_signature, effect_signature, object_type, pair_objects
+from .seeds import CONDITION_KINDS, make_seeds
 from .verify import canonical
 
 
@@ -85,6 +87,64 @@ def counterexample_text(members: list[Member], test: list[Transition], probes: l
     return "\n".join(lines)
 
 
+
+REPAIR_KINDS = CONDITION_KINDS + [
+    "the exact size or fit relation between the object and what it touches or enters",
+    "the order, chain or count of several objects that move together",
+    "a bound of the playable area that the frame does not draw",
+]
+
+
+def _field_changes(bo: dict, ao: dict | None) -> str:
+    sig = effect_signature(bo, ao)
+    if sig in ("born", "gone", "no_change"):
+        return sig
+    parts = [f"{k} {bo.get(k)} -> {ao.get(k)}" if k != "pixels" else "pixels changed" for k in sig.split(",")]
+    return ", ".join(parts)
+
+
+def mechanism_text(members: list[Member], test: list[Transition], probes: list[int]) -> str:
+    """The refuting transition at the effect-row level: for each object its row, the observed effect
+    and each predicted effect with its count, split into the rows every program got wrong (the
+    mechanic to repair) and the rows every program got right (the mechanics to keep)."""
+    last = probes[-1]
+    truth = [_key(test[i].after_objs) for i in probes[:-1]]
+    alive = [m for m in members if all(_key(m.test_preds[i]) == t for i, t in zip(probes[:-1], truth))]
+    t = test[last]
+    observed = {id(bo): ao for bo, ao in pair_objects(t.before_objs, t.after_objs) if bo is not None}
+    predicted = []
+    for m in alive:
+        pred = m.test_preds[last]
+        predicted.append(None if pred is None else {id(bo): ao for bo, ao in pair_objects(t.before_objs, pred) if bo is not None})
+    wrong, right = [], []
+    for bo in t.before_objs:
+        row = RowKey(object_type(bo), t.action_key, context_signature(t.before_objs, bo, t.click))
+        obs = _field_changes(bo, observed.get(id(bo)))
+        counts = Counter("<error>" if pr is None else _field_changes(bo, pr.get(id(bo))) for pr in predicted)
+        if set(counts) == {obs}:
+            right.append(f"{row}: {obs}")
+        else:
+            wrong.append(f"row `{row}`, object {bo.get('name')}: observed {obs}; predicted "
+                         + "; ".join(f"{e} ({n} program{'s' if n > 1 else ''})" for e, n in counts.most_common()))
+    born = [ao for bo, ao in pair_objects(t.before_objs, t.after_objs) if bo is None]
+    for ao in born:
+        n = sum(1 for m in alive if m.test_preds[last] is not None and any(canonical([o]) == canonical([ao]) for o in m.test_preds[last]))
+        wrong.append(f"new object {_brief(json.dumps(ao, sort_keys=True))}: observed; predicted by {n} of {len(alive)} programs")
+    lines = [f"Counterexample at the mechanism level. Step {t.step}, action {json.dumps(t.action)}, refuted every program "
+             f"of a committee of {len(alive)}. Rows where every program was wrong; this is the mechanic to repair:"]
+    lines += [f"  - {w}" for w in wrong] or ["  - (no object row differs; the difference is in object naming or pixels)"]
+    lines.append("Rows where every program was right on this transition; keep these mechanics as the earlier programs had them:")
+    lines += [f"  - {r}" for r in right[:12]] + ([f"  - and {len(right) - 12} more"] if len(right) > 12 else [])
+    return "\n".join(lines)
+
+
+def repair_hypothesis(k: int) -> str:
+    kind = REPAIR_KINDS[k % len(REPAIR_KINDS)]
+    return (f"Repair hypothesis for this seed: the rule for the row(s) above is decided by {kind}. Write that rule "
+            f"first and verify it on the counterexample and on every earlier transition. Keep every other mechanic "
+            f"as the earlier programs had it; do not key the rule to this step.")
+
+
 def probe_split_dir(game: str, level: int, train_frac: float, n_probes: int, condition: str) -> Path:
     base = condition_dir(game, level, train_frac, condition)
     return base.parent.parent / f"{base.parent.name}_probe{n_probes}" / condition
@@ -101,7 +161,8 @@ def stored_round(game: str, level: int, train_frac: float, source_condition: str
 
 
 def run_round(game: str, level: int, train_frac: float, source_condition: str, condition: str,
-              from_probe: int, runs: int, cfg: dict, parallel: int, start: int, dry_run: bool) -> None:
+              from_probe: int, runs: int, cfg: dict, parallel: int, start: int, dry_run: bool,
+              mechanism: bool = False) -> None:
     train, test = temporal_split(build_buffer(game), level, train_frac)
     probes, cond = stored_round(game, level, train_frac, source_condition, condition, from_probe)
     train_r, test_r = split_after_probes(train, test, probes)
@@ -109,11 +170,12 @@ def run_round(game: str, level: int, train_frac: float, source_condition: str, c
     new = observed_probes(members, test_r)
     if not new:
         raise SystemExit(f"no probe refutes every member of {cond}")
-    text = counterexample_text(members, test_r, new)
+    text = mechanism_text(members, test_r, new) if mechanism else counterexample_text(members, test_r, new)
     remaining = [i for i in range(len(test)) if i not in set(probes)]
     probes = probes + [remaining[j] for j in new]
     train2, test2 = split_after_probes(train, test, probes)
-    seeds = [f"{s}\n\n{text}" for s in make_seeds(train2, runs)]
+    seeds = [f"{s}\n\n{text}" + (f"\n\n{repair_hypothesis(k)}" if mechanism else "")
+             for k, s in enumerate(make_seeds(train2, runs))]
     base = probe_split_dir(game, level, train_frac, len(probes), condition)
     print(f"probes {probes} (steps {[test[i].step for i in probes]}); train {len(train2)}, held out {len(test2)}")
     print(f"artifacts: {base}\n\n{seeds[0]}\n")
@@ -145,7 +207,7 @@ def score(members: list[Member], test: list[Transition]) -> dict:
 
 
 def report(game: str, level: int, train_frac: float, source_condition: str, condition: str,
-           passive_condition: str) -> dict:
+           passive_condition: str, conditions: list[str] | None = None) -> dict:
     """Every stored round and every passive control with a matching train size, scored on the
     transitions that none of them observed."""
     transitions = build_buffer(game)
@@ -156,10 +218,14 @@ def report(game: str, level: int, train_frac: float, source_condition: str, cond
     rounds = sorted(base0.parent.parent.glob(f"{base0.parent.name}_probe*"),
                     key=lambda p: int(p.name.rsplit("probe", 1)[1]))
     probes: list[int] = []
+    conditions = conditions or [condition]
     for k, d in enumerate(rounds, start=2):
         probes = json.loads((d / "split.json").read_text())["probes"]
         train_r, test_r = split_after_probes(train, test, probes)
-        arms[f"round{k}"] = (members_of(d / condition, train_r, test_r), test_r, d / condition, len(probes))
+        for c in conditions:
+            if (d / c).exists():
+                label = f"round{k}" if len(conditions) == 1 else f"round{k} {c}"
+                arms[label] = (members_of(d / c, train_r, test_r), test_r, d / c, len(probes))
     for n_extra in sorted({a[3] for a in arms.values() if a[3]}):
         n = len(train) + n_extra
         pcond = condition_dir(game, level, train_frac, passive_condition, train_n=n)
@@ -185,7 +251,7 @@ def print_report(out: dict) -> None:
             "unanimous_error", "split_n", "split_error", "distinct", "next_falsified_at"]
     print("arm      | " + " | ".join(cols))
     for name, row in out["arms"].items():
-        print(f"{name:8s} | " + " | ".join(f"{row[c]:.3f}" if isinstance(row[c], float) else str(row[c]) for c in cols))
+        print(f"{name:18s} | " + " | ".join(f"{row[c]:.3f}" if isinstance(row[c], float) else str(row[c]) for c in cols))
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -204,16 +270,19 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--parallel", type=int, default=1)
     parser.add_argument("--from-probe", type=int, default=0,
                         help="start from the stored round that observed this many probes; 0 is round 1")
+    parser.add_argument("--mechanism", action="store_true",
+                        help="state the counterexample at the effect-row level and give each seed a distinct repair hypothesis")
+    parser.add_argument("--conditions", default=None, help="report: comma-separated round 2 conditions to compare")
     parser.add_argument("--dry-run", action="store_true", help="print the split and the seed, synthesize nothing")
     parser.add_argument("--report", action="store_true")
     add_backend_args(parser)
     args = parser.parse_args(argv)
     if args.report:
         print_report(report(args.game, args.level, args.train_frac, args.source_condition, args.condition,
-                            args.passive_condition))
+                            args.passive_condition, args.conditions.split(",") if args.conditions else None))
         return
     run_round(args.game, args.level, args.train_frac, args.source_condition, args.condition, args.from_probe,
-              args.runs, backend_cfg(args), args.parallel, args.start, args.dry_run)
+              args.runs, backend_cfg(args), args.parallel, args.start, args.dry_run, args.mechanism)
 
 
 if __name__ == "__main__":

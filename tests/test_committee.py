@@ -77,3 +77,18 @@ def test_static_filter_rejects_socket_imports_not_the_word():
 
     assert static_violations("import socket\n") and static_violations("from socket import create_connection\n")
     assert not static_violations("def socket_inner(s):\n    return s  # a socket stops blocks\n")
+
+
+def test_mechanism_text_names_the_wrong_row_and_keeps_the_right_ones():
+    from committee.cegis import mechanism_text, repair_hypothesis
+    from committee.loader import Transition
+
+    before = [{"name": "p", "type": "player", "x": 0, "y": 0, "w": 1, "h": 1}, {"name": "w", "type": "wall", "x": 5, "y": 5, "w": 1, "h": 1}]
+    after = [{"name": "p", "type": "player", "x": 3, "y": 0, "w": 1, "h": 1}, {"name": "w", "type": "wall", "x": 5, "y": 5, "w": 1, "h": 1}]
+    moved = lambda x: [{"name": "p", "type": "player", "x": x, "y": 0, "w": 1, "h": 1}, {"name": "w", "type": "wall", "x": 5, "y": 5, "w": 1, "h": 1}]
+    test = [Transition(7, 1, 1, None, False, [], [], before, after)]
+    members = [Member(f"m{k}", "def transition_function(s,a): return s", [pred], length=10) for k, pred in enumerate([moved(1), moved(1), moved(2)])]
+    text = mechanism_text(members, test, [0])
+    assert "object p: observed x 0 -> 3; predicted x 0 -> 1 (2 programs); x 0 -> 2 (1 program)" in text
+    assert "wall | ACTION1 | []: no_change" in text and "wall" not in text.split("keep these")[0].split("repair:")[1]
+    assert repair_hypothesis(0) != repair_hypothesis(1)
