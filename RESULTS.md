@@ -273,6 +273,61 @@ reading predicts: more consistent hypotheses expose more of the transitions
 where agreement was accidental. Per level the interval is wide, as the small
 n demands; pooled, the interval excludes 0.5. Accuracy does not move with K.
 
+## R11. Verbalized confidence of a judge model
+
+Baseline from the language-model uncertainty literature (Kadavath et al.
+2022; Tian et al. 2023). For each held-out transition a judge sees the
+committee's heaviest program, the before state, the action and that
+program's predicted after state, and answers with a confidence from 0 to
+100 at temperature 0. Judge: gpt-oss-120b served by vLLM on Modal, 44 calls
+per level. Uncertainty = 100 minus confidence. Compared with the
+committee's equal-weight disagreement on the same transitions and the same
+error labels. Command: `uv run python -m committee.confidence ar25 --level 3 --train-frac 0.4`.
+
+| | ar25 L3 | m0r0 L3 | pooled, 88 |
+|---|---|---|---|
+| Judge AUROC | 0.82 | 0.46 | 0.71 |
+| Committee disagreement AUROC | 0.77 | 0.68 | 0.75 |
+| Judge mean confidence when right / wrong | 65 / 36 | 72 / 79 | |
+| Distinct confidence values used | 3 | 4 | |
+| Combined score, rank sum of both | | | 0.85, 95% CI (0.76, 0.92) |
+
+| Item | Value |
+|---|---|
+| Difference, disagreement minus judge, pooled | +0.03, 95% CI (−0.09, +0.16): not separable |
+| Extra inference | judge: 44 calls per level; committee: none, its predictions already exist |
+| Commit | see the commit that adds verbalized_confidence.json |
+
+Reading: the judge is a strong signal on ar25 and uninformative on m0r0,
+where it is more confident when wrong than when right. The committee is
+informative on both. The two carry different information: their rank-sum
+combination reaches AUROC 0.85 pooled, above either alone. The honest
+statement is that program disagreement is as good as a frontier-class judge
+at zero extra inference, more consistent across levels, and complementary
+to it.
+
+## R12. Unseeded self-consistency: are the seed hypotheses load-bearing?
+
+Same synthesizer, prompt and verifier with no seed hypothesis; the first 3
+members are the single programs of R3 and R6, 5 more were synthesized.
+Compared with the seeded committee of 8 on the same splits.
+
+| | ar25 seeded | ar25 unseeded | m0r0 seeded | m0r0 unseeded (7 of 8 synthesized at the time of writing) |
+|---|---|---|---|---|
+| Admitted | 8 of 8 | 8 of 8 | 8 of 8 | 5 of 7 |
+| Distinct held-out behaviours | 7 | 7 | 4 | 2 |
+| AUROC, equal-weight disagreement | 0.77 | 0.75 | 0.68 | 0.68 |
+| Unanimous n, error | 27, 0.30 | 28, 0.32 | 38, 0.16 | 40, 0.18 |
+| Vote accuracy / shortest member | 0.48 / 0.48 | 0.48 / 0.64 | 0.77 / 0.77 | 0.75 / 0.75 |
+
+Reading: the calibration comes from the execution-defined entropy over
+verified programs, not from the seeds; unseeded resampling matches the
+seeded committee on ar25 and on m0r0's AUROC. The seeds' measurable effects
+are on m0r0: admission 8 of 8 against 5 of 7 and 4 behaviours against 2.
+On ar25 the shortest unseeded program is also the best (0.64), but the
+weights are split between it and another short program, so the vote stays
+at 0.48.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a

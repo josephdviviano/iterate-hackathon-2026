@@ -59,6 +59,13 @@ def judge(game: str, level: int, train_frac: float, condition: str, model: str =
     truth = [json.dumps(canonical(t.after_objs)) for t in test]
     rows = []
     t0 = time.time()
+    for attempt in range(30):  # a scaled-to-zero server answers 503 until its container is up
+        try:
+            client.chat.completions.create(model=model, messages=[{"role": "user", "content": "Reply with 1."}],
+                                           max_tokens=4)
+            break
+        except Exception:
+            time.sleep(30)
     for i, t in enumerate(test[: max_calls or len(test)]):
         pred = top.test_preds[i]
         text = PROMPT.format(program=top.source[:12000], before=json.dumps(t.before_objs)[:6000], action=json.dumps(t.action),
@@ -68,7 +75,7 @@ def judge(game: str, level: int, train_frac: float, condition: str, model: str =
                                                temperature=0.0, max_tokens=12)
             m = re.search(r"\d+", r.choices[0].message.content or "")
             conf = min(100, max(0, int(m.group()))) if m else None
-        except Exception as e:
+        except Exception:
             conf = None
         correct = pred is not None and json.dumps(canonical(pred)) == truth[i]
         rows.append({"step": t.step, "confidence": conf, "correct": correct,
