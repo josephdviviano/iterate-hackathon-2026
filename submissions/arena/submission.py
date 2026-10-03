@@ -24,7 +24,7 @@ HYP = {
     "weight_decay": 0.012,
     "bias_scaler": 64.0,
     "label_smoothing": 0.2,
-    "whiten_bias_epochs": 3,
+    "whiten_bias_epochs": 1,
     "translate": 2,
     "bn_momentum": 0.6,
     "scale": 1 / 9,
@@ -97,10 +97,12 @@ class Net(nn.Module):
         )
         self.head = nn.Linear(widths[2], num_classes, bias=False)
         self.scale = scale
+        self.whiten_bias_grad = True
 
     def forward(self, x):
         x = (x - self.mean) / self.std
-        x = F.silu(self.whiten(x))
+        bias = self.whiten.bias if self.whiten_bias_grad else self.whiten.bias.detach()
+        x = F.silu(F.conv2d(x, self.whiten.weight, bias))
         x = self.groups(x)
         x = F.max_pool2d(x, x.shape[-1]).flatten(1)
         return self.head(x) * self.scale
@@ -263,8 +265,11 @@ def build(context: BuildContext):
     y = torch.randint(0, context.num_classes, (bs,), device=device)
     model.train()
     opt = make_optimizer(model, hyp, 10)
-    for _ in range(3):
-        train_step(state, opt, x, y)
+    for bias_grad in (True, False):
+        model.whiten_bias_grad = bias_grad
+        for _ in range(3):
+            train_step(state, opt, x, y)
+    model.whiten_bias_grad = True
     if device.type == "cuda":
         torch.cuda.synchronize()
     return state
@@ -322,6 +327,7 @@ def train(state) -> nn.Module:
     epoch = 0
     while step < total:
         whiten_on = epoch < hyp["whiten_bias_epochs"]
+        model.whiten_bias_grad = whiten_on
         imgs = augment(state.padded, state.flip_bits, epoch, r) if r > 0 else state.padded
         perm = torch.randperm(n, device=imgs.device)
         imgs = imgs[perm].contiguous(memory_format=torch.channels_last)
@@ -341,5 +347,6 @@ def train(state) -> nn.Module:
         epoch += 1
     if state.lookahead is not None:
         state.lookahead.update(model, decay=1.0)
+    model.whiten_bias_grad = True
     model.eval()
     return model
