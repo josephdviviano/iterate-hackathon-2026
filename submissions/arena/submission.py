@@ -20,7 +20,7 @@ HYP = {
     "lr": 9.0,
     "momentum": 0.85,
     "weight_decay": 0.012,
-    "bias_scaler": 64.0,
+    "bias_scaler": 32.0,
     "label_smoothing": 0.4,
     "whiten_bias_epochs": 5,  # afterwards the whitening output is detached
     "translate": 2,
