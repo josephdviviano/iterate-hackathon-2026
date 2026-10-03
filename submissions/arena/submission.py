@@ -15,7 +15,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 10.75,
+    "epochs": 11,
     "batch_size": 1536,
     "lr": 9.0,
     "momentum": 0.85,
@@ -29,8 +29,7 @@ HYP = {
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
     "compile": True,
-    "low_res": 24,  # resolution of the first low_res_epochs epochs (None to disable)
-    "low_res_epochs": 5,
+    "res_schedule": ((24, 5), (28, 2)),  # (resolution, epochs) stages before full 32 px
     "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
     "muon_lr": 0.205,
     "muon_momentum": 0.655,
@@ -243,6 +242,15 @@ def downscale(x, size):
     return out.half().contiguous(memory_format=torch.channels_last)
 
 
+def resolution_at(schedule, epoch):
+    """Resolution for this epoch from the (resolution, epochs) stages; None = full size."""
+    for res, n_epochs in schedule:
+        if epoch < n_epochs:
+            return res
+        epoch -= n_epochs
+    return None
+
+
 # ----------------------------------------------------------------------------- api
 
 
@@ -279,7 +287,7 @@ def build(context: BuildContext):
         )
         y = torch.randint(0, context.num_classes, (bs,), device=device)
         net.train()
-        shapes = [x] + ([downscale(x, hyp["low_res"])] if hyp["low_res"] else [])
+        shapes = [x] + [downscale(x, r) for r, _ in hyp["res_schedule"]]
         for xs in shapes:
             for _ in range(3):
                 out = train_net(xs)
@@ -390,8 +398,9 @@ def train(state) -> nn.Module:
         inputs_all = augment_epoch(
             state.padded, state.flip_bits, epoch, hyp["translate"], state.scale, state.shift
         )
-        if hyp["low_res"] and epoch < hyp["low_res_epochs"]:
-            inputs_all = downscale(inputs_all, hyp["low_res"])
+        res = resolution_at(hyp["res_schedule"], epoch)
+        if res is not None:
+            inputs_all = downscale(inputs_all, res)
         perm = torch.randperm(n, device=inputs_all.device)
         if epoch >= hyp["whiten_bias_epochs"]:
             opt.param_groups[0]["base_lr"] = 0.0
