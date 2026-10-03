@@ -464,6 +464,24 @@ rows. The accuracy picture is the opposite of ar25: here two of three
 single programs beat the committee's vote, and the MDL prior would have
 helped. Uncertainty is the robust benefit; accuracy is not.
 
+## R18. Judge plus disagreement, out of sample
+
+The rank-sum combination of R11 was fixed before sk48 L2 was run and is
+scored here on that level only. Judge: gpt-oss-120b, 68 calls.
+
+| sk48 L2, 68 transitions | AUROC |
+|---|---|
+| Judge verbalized confidence | 0.52 (values used: 30 and 75; error 0.26 vs 0.22) |
+| Committee disagreement | 1.00 |
+| Rank-sum combination | 0.99 |
+
+Reading: the combination does not hold out of sample. Its pooled 0.85 in
+R11 came from ar25, where the judge happened to be strong; on m0r0 and
+sk48 the judge is at chance, and adding it to the disagreement can only
+dilute it. Across the three levels the judge scores 0.82, 0.46 and 0.52;
+the committee 0.77, 0.68 and 1.00. The judge is dropped from the method and
+kept as a reported baseline.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a
