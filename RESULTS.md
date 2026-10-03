@@ -1726,3 +1726,73 @@ Reading:
 | Command | `uv run python -m committee.terrain GAME --level L --coverage`; `uv run python -m committee.terrain ka59 --level 2 --runs 8 --backend devin --parallel 4`; `... --report` |
 | Commit | b192b10, 3f9c0ca (code); this session (artifacts) |
 
+## R33. Pilot: single program against committee in OPINE-World's own environment (frame in, frame out)
+
+The environment port (`committee.env`, modes `objects`, `frame`, `frame_out`,
+by another session, uncommitted at the time of these runs) makes the program
+take the 64 by 64 before frame as well as the object list and, in
+`frame_out`, return the next frame; admission is frame equality on every
+training transition, and the released extractor run on the predicted frame
+gives the object view. `frame_out` is OPINE-World's rule. These runs used the
+port's first task text, which still described the object contract and added
+the frame contract as an addendum; the review's corrected text landed after
+they started, so this is a pilot. Same splits, seeds and synthesizer as R4.
+
+| Level | Arm | Mode | Admitted | Vote | Members | AUROC | Unanimous n (error) | Split n (error) |
+|---|---|---|---|---|---|---|---|---|
+| ar25 L3 | single x3 | objects (R3) | 3/3 | | 0.64, 0.43, 0.48 | | | |
+| | committee x8 | objects (R4) | 8/8 | 0.477 | 0.43 to 0.64 | 0.77 | 27 (0.30) | 17 (0.88) |
+| | single x3 | frame_out | 2/3 (1 outage) | | 1.00, 0.84 | | | |
+| | committee x8 | frame_out | 6/8 (2 outage) | 1.000 | 0.91 to 1.00 | none | 40 (0.00) | 4 (0.00) |
+| m0r0 L3 | single x3 | objects (R6) | 1/3 | | 0.75 | | | |
+| | committee x8 | objects | 8/8 | 0.773 | 0.75 to 0.77 | 0.68 | 38 (0.16) | 6 (0.67) |
+| | single x3 | frame_out | 3/3 | | 0.86, 0.86, 0.86 | | | |
+| | committee x8 | frame_out | 8/8 | 0.864 | 0.80 to 0.86 | 0.70 | 37 (0.08) | 7 (0.43) |
+| sk48 L2 | single x3 | objects (R17) | 3/3 | | 1.00, 0.63, 0.97 | | | |
+| | committee x8 | objects | 8/8 | 0.691 | 0.61 to 0.98 | 0.92 | 41 (0.00) | 27 (0.59) |
+| | single x3 | frame_out | 3/3 | | 0.87, 0.63, 0.59 | | | |
+| | committee x8 | frame_out | 4/8 (4 outage) | 0.794 | 0.79 to 0.87 | 0.68 | 63 (0.14) | 5 (1.00) |
+| ka59 L2 | committee x8 | objects (R27) | 7/8 | 0.818 | 0.66 to 0.84 | 0.69 | 33 (0.12) | 11 (0.36) |
+| | single x3 | frame | 3/3 | | 0.82, 0.82, 0.82 | | | |
+| | committee x8 | frame | 8/8 | 0.818 | 0.82 (all) | 0.56 | 43 (0.16) | 1 (1.00) |
+| | single x3 | frame_out | 3/3 | | 0.89, 0.89, 0.91 | | | |
+| | committee x8 | frame_out | 6/8 (2 outage) | 0.886 | 0.89 to 0.91 | 0.88 | 39 (0.03) | 5 (0.80) |
+
+"Outage": from about 21:19 BST the Devin account suspended every new session
+within a minute of creation (status `suspended`, no program); those members
+are the 114-byte stub and are counted as not run, not as failed synthesis.
+A probe session at 21:23 was suspended the same way.
+
+Reading:
+
+1. The environment was the bottleneck, not the synthesizer. In OPINE-World's
+   rule the single programs on ar25 L3 reach 1.00 and 0.84 where the object
+   contract gave 0.43 to 0.64, on m0r0 L3 0.86 against 0.75 with one of
+   three admitted, on ka59 L2 0.89 to 0.91 against 0.66 to 0.84. sk48 L2 is
+   the exception: the single programs are no better (0.59 to 0.87 against
+   0.63 to 1.00), and the only level where the object state already carried
+   what the programs needed.
+2. The committee's standing is unchanged. Its vote equals or sits just under
+   the best single program in both environments (ar25 L3 1.00 against 1.00,
+   m0r0 0.86 against 0.86, ka59 0.89 against 0.91, sk48 0.79 against 0.87),
+   and its calibration holds: unanimous error 0.00 to 0.14 against split
+   error 0.43 to 1.00 in frame_out, AUROC 0.68 to 0.88 where errors exist.
+   What the committee adds is still the flag and the probe, not accuracy.
+3. The half-step `frame` mode (frame as input, objects as output) on ka59
+   gave eleven identical programs at 0.82: the geometry became visible but
+   the object output kept the contract's limits. Returning the frame is the
+   change that mattered there.
+4. ka59's remaining errors in frame_out are shared (unanimous error 0.03,
+   split 5 transitions): the counterexample round in this mode is the next
+   step there, as is a definitive rerun under the corrected task text on all
+   seven levels. Both wait on the Devin account.
+
+| Item | Value |
+|---|---|
+| Metric | As R4, per arm, on the full held-out set of each level |
+| Runs | 11 sessions per level per mode: ka59 frame and frame_out, ar25 L3, m0r0 L3, sk48 L2 frame_out; 10 suspended by the account |
+| Split | Temporal 40 percent |
+| Baseline | The same arms in objects mode (R3, R4, R6, R17, R27) |
+| Command | `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --runs 3 --backend devin --frame-out --condition baseline_frameout_devin --parallel 3`; `... --runs 8 --seeded --frame-out --condition committee_frameout_devin --parallel 4`; `uv run python -m committee.evaluate GAME --level L --train-frac 0.4 --condition <condition>` |
+| Commit | this session (artifacts); environment code uncommitted by its owner at the time |
+

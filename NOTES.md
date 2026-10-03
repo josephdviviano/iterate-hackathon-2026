@@ -267,3 +267,14 @@
     - Terrain objects on sk48 and ls20: superseded by the frame mode unless that fails.
   ABANDONED:
     - Static terrain objects as the fix for missing geometry. Measured on ka59 (R32): the synthesizer does not use them.
+
+- [jdv] - Pilot of the OPINE environment, and the Devin outage - 2d7a8f9
+  Committee vs single program rerun in the frame-in, frame-out environment, as the user asked, from iterate-10's working tree.
+  DONE:
+    - R33 pilot on ka59 L2, ar25 L3, m0r0 L3, sk48 L2 (3 single, 8 seeded each, frame_out; ka59 also in the half-step frame mode). The environment was the bottleneck: single programs reach 1.00 and 0.84 on ar25 L3 (objects: 0.43 to 0.64), 0.86 on m0r0 (0.75), 0.89 to 0.91 on ka59 (0.66 to 0.84); sk48 unchanged. The committee's vote still equals or sits just under the best single program; its calibration holds (unanimous error 0.00 to 0.14, split 0.43 to 1.00).
+    - Coordinated with iterate-10 (owner of committee.env; its review fixes landed at 21:27, uncommitted pending the user) and iterate-53 (speedrun loop; no overlap).
+  DEFERRED:
+    - Definitive rerun under the corrected task text on all seven levels (77 sessions) and the counterexample round in frame_out, ka59 first. Blocked: from 21:19 BST Devin suspends every new session within a minute (10 pilot members and a probe came back as stubs). Check the Devin dashboard for the ACU balance.
+    - Frame-mode live play on the engine (live inherits the mode from the committee; untested).
+  ABANDONED:
+    - The frame half-step (frame as input, objects as output) as the environment: eleven identical programs at 0.82 on ka59; returning the frame is what mattered.
