@@ -169,5 +169,7 @@ def train(state, max_steps=None) -> nn.Module:
             step += 1
             if max_steps is not None and step >= max_steps:
                 return model
+        # Keep the CPU from running far ahead of the GPU (slows the first trial).
+        torch.cuda.synchronize()
     model.eval()
     return model
