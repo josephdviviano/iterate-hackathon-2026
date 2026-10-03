@@ -74,6 +74,7 @@
     - Linear climb from the stub: round 1 child reached 0.3734 on (1,1,1,-2); round 2 child reached 0.3915, above AlphaEvolve's naive 0.389, by rediscovering the Bellec-Fritz tie-breaking ladder (signed perturbations on shared levels). On the held-out proven anchor (2,-1,-1) it certifies 0.6596 against 2/3. Children left confidence at 0 (timeouts), so calibration is not scored for them.
     - H8: linear climb round 3 reached 0.3976 on (1,1,1,-2) with a self-similar law, 0.003 under the Bellec-Fritz limit, plus certified values on four vectors with no published number. Every climbing child timed out at 900 s, so `confidence` stayed 0; raise the timeout or ask for confidence first in the next run.
     - H9: replay of the certification policy on identical cached laws: 82 percent of certifications skipped on the plateaued Hoeffding climb, 1 of 18 on the still-improving linear climb, bests identical, 0 audit disagreements. Policy moved into the child's check.py (certify only a law that beats the child's own best per instance); float sums exactly on the boundary count as exact ties so dyadic laws are not force-certified. Timeout raised to 1800 s, 40 turns; contract asks for confidence in the first edit. Linear climb resumed for rounds 4 and 5 with --tiers.
+    - Review of the Hoeffding negative result: H6's float local search was weak evidence because ties make the objective discontinuous in atom positions. Replaced by H10, exhaustive over 2- to 4-atom supports on the grid {0, 1, (t - l)/k} with weight optimization, 32,906 supports on 63 instances with n <= 8: equals the family on all 63, no win. Scope limits stated in RESULTS.md.
   DEFERRED:
     - A harder family where search fails, so that disagreement can carry information: t close to n m with large n, or the Bellec-Fritz inequalities (AlphaEvolve's naive run reached 0.389 against the known 0.400695). Only if the pitch needs a disagreement result from this task; H3 already gives the calibration result.
     - Float-only verifier as a reward-hacking control. The exact verifier makes it moot for scoring; only a demo item.
@@ -134,3 +135,17 @@
   ABANDONED:
     - Targeted growth as the construction method. The user chose independent seeded synthesis. Reasons: probes drawn from training states do not reach the unseen states where held-out errors occur; one disputed mechanic touches few held-out transitions; vote counts in the seed anchor the synthesizer; sequential rounds cost about three times the wall clock.
     - Probes from predicted future states (committee rollouts). Not built. The anchoring problem would carry over, and time goes to baselines, the demo and the video.
+
+- [jdv] - Baselines against the committee: R9 to R12 - 52d4f56
+  Three research agents reviewed dynamics-model uncertainty, program-synthesis world models and LLM uncertainty; the baselines they named were run on the two informative splits.
+  DONE:
+    - research/baseline_review.md: closest prior work with exact differences (QBC 1992, distinguishing inputs, semantic entropy, AlphaCode clustering, OPINE-World, PoE-World, Hypothesis Search), the novelty statement, expected baselines and metrics.
+    - R9: nearest-neighbour copy, bagged trees (QBC) and an MLP deep ensemble on per-object features cannot model the mechanics from 25 to 30 transitions; their disagreement is uninformative. Effect-level granularity reverses the ar25 exploration ranking; the one-probe claim holds at the state level.
+    - R10: AUROC rises with K (ar25 0.61, 0.68, 0.77; m0r0 0.64, 0.68, 0.68); pooled AUROC 0.75, 95% CI (0.66, 0.84).
+    - R11: gpt-oss judge confidence over the heaviest program: 0.82 on ar25, 0.46 on m0r0, pooled 0.71 against the committee's 0.75, not separable; rank-sum combination 0.85.
+    - R12: unseeded resampling matches the seeded committee's calibration; seeds raise admission (8 of 8 against 5 of 7) and behaviours (4 against 2) on m0r0.
+  DEFERRED:
+    - Last unseeded m0r0 synthesis, then the final R12 column, README and write-up update.
+    - No-verifier soft-weight committee: too few inconsistent programs exist to test it.
+  ABANDONED:
+    - Claiming the seed hypotheses are what makes the uncertainty informative. R12 shows the execution-defined entropy carries it; the seeds help admission and diversity.
