@@ -15,7 +15,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 9.5,
+    "epochs": 11,
     "batch_size": 1536,
     "lr": 9.0,
     "momentum": 0.85,
@@ -29,6 +29,8 @@ HYP = {
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
     "compile": True,
+    "low_res": 24,  # resolution of the first low_res_epochs epochs (None to disable)
+    "low_res_epochs": 5,
     "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
     "muon_lr": 0.205,
     "muon_momentum": 0.655,
@@ -89,7 +91,7 @@ class Net(nn.Module):
             ConvGroup(whiten_width, w1, n1, m),
             ConvGroup(w1, w2, n2, m),
             ConvGroup(w2, w3, n3, m),
-            nn.MaxPool2d(3),
+            nn.AdaptiveMaxPool2d(1),
             nn.Flatten(),
         )
         self.head = nn.Linear(w3, num_classes, bias=False)
@@ -223,6 +225,11 @@ def augment_epoch(padded, flip_bits, epoch, translate, scale, shift):
     return out.contiguous(memory_format=torch.channels_last)
 
 
+def downscale(x, size):
+    out = F.interpolate(x.float(), size=(size, size), mode="bilinear", antialias=True)
+    return out.half().contiguous(memory_format=torch.channels_last)
+
+
 # ----------------------------------------------------------------------------- api
 
 
@@ -236,7 +243,7 @@ def build(context: BuildContext):
     model = Classifier(net).to(device)
     train_net = net
     if hyp["compile"] and device.type == "cuda":
-        train_net = torch.compile(net, mode=hyp["compile_mode"])
+        train_net = torch.compile(net, mode=hyp["compile_mode"], dynamic=False)
     state = SimpleNamespace(hyp=hyp, context=context, model=model, net=net, train_net=train_net)
     state.muon = None
     if hyp["optimizer"] == "muon":
@@ -258,12 +265,16 @@ def build(context: BuildContext):
         )
         y = torch.randint(0, context.num_classes, (bs,), device=device)
         net.train()
-        for _ in range(3):
-            out = train_net(x)
-            loss = F.cross_entropy(out, y, label_smoothing=hyp["label_smoothing"], reduction="none").sum()
-            loss.backward()
-            for p in net.parameters():
-                p.grad = None
+        shapes = [x] + ([downscale(x, hyp["low_res"])] if hyp["low_res"] else [])
+        for xs in shapes:
+            for _ in range(3):
+                out = train_net(xs)
+                loss = F.cross_entropy(
+                    out, y, label_smoothing=hyp["label_smoothing"], reduction="none"
+                ).sum()
+                loss.backward()
+                for p in net.parameters():
+                    p.grad = None
         # Also warm up the prepare/augment path (eigh, pad, gather) on synthetic uint8 data.
         fake = TrainingData(
             torch.randint(0, 256, (6000, 3, 32, 32), dtype=torch.uint8),
@@ -365,6 +376,8 @@ def train(state) -> nn.Module:
         inputs_all = augment_epoch(
             state.padded, state.flip_bits, epoch, hyp["translate"], state.scale, state.shift
         )
+        if hyp["low_res"] and epoch < hyp["low_res_epochs"]:
+            inputs_all = downscale(inputs_all, hyp["low_res"])
         perm = torch.randperm(n, device=inputs_all.device)
         if epoch >= hyp["whiten_bias_epochs"]:
             opt.param_groups[0]["base_lr"] = 0.0
