@@ -13,14 +13,14 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    stages=[[32, 10]],  # [resolution, epochs] in training order
+    stages=[[32, 8]],  # [resolution, epochs] in training order
     batch_size=768,
     lr=0.5,
     momentum=0.9,
     weight_decay=1e-3,
     label_smoothing=0.2,
     warmup=0.25,
-    widths=[32, 128, 256, 512],
+    widths=[32, 128, 320, 640],
     act="relu",
     muon=True,  # orthogonalized (Newton-Schulz) momentum updates for conv filters
     muon_lr=0.14,
