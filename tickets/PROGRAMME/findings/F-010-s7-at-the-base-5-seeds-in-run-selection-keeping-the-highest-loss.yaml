@@ -1,0 +1,37 @@
+schema_version: '2.0'
+finding_id: F-010
+task_id: T-013
+result_kind: negative
+importance: material
+observation: 'S7 at the base (5 seeds): in-run selection keeping the highest-loss 50% of each batch reaches
+  only 64.5%, 66.2% and 68.1% at 10, 12 and 14 epochs (sd up to 1.9 pp); keeping 70% reaches 73.3% and
+  74.1% at 10 and 12 epochs; the in-sweep control reaches 75.33% and 75.85%.'
+interpretation: 'H13 is disconfirmed for short CIFAR-100 runs: training only on the hardest examples starves
+  a 10-epoch, 100-class run of the easy examples it still needs, and the high variance suggests instability.
+  airbench96_faster''s gain came from a 45-epoch CIFAR-10 regime.'
+decision_implication: Reject in-run selection; do not spend more GPU time on selection variants unless
+  the climb plateaus with long budgets.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: unresolved
+  rationale: online selector schedule and lr were not tuned for CIFAR-100
+  discriminating_test: selector warm-up or a longer schedule
+- kind: mechanism
+  disposition: supported
+  rationale: accuracy rises with the kept fraction and with epochs, consistent with data starvation
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: table.csv
+  locator: research/evidence/T-013/s7-select-lr-table-partial.csv
+  sha256: 5f81ff712077de7e95b469b137ec0fa6db9e138dd769c77a9c608c41982dc58c
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Selection rejected (H13).

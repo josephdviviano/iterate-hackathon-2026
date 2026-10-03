@@ -1,0 +1,30 @@
+# Hill climb step 11 (X-002): FLOP reallocation. Stages 2-3 widening convs run before the
+# max-pool (~40% of FLOPs); pool-first cuts them 4x. Reinvest in width, and test a
+# depth-2 first stage. 10 and 12 epochs, 5 seeds, against an in-sweep control.
+name = "s11-arch"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1, 2, 3, 4]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 512]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+
+[[grid]]
+epochs = [10, 12]
+
+[[grid]]
+epochs = [10, 12]
+pool_first = [[false, true, true], [true, true, true]]
+
+[[grid]]
+epochs = [10, 12]
+widths = [[128, 512, 768]]
+pool_first = [[false, true, true]]
+
+[[grid]]
+epochs = [10, 12]
+stage_depths = [[2, 3, 3]]

@@ -1,0 +1,33 @@
+# Hill climb step 10 (X-002): schedule micro-tuning at the base (no code change):
+# lr warm-up peak, final lr, whitening-bias epochs, and resize schedules with a short
+# final 32 px phase. 9 and 10 epochs, 5 seeds, against an in-sweep control.
+name = "s10-schedule"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1, 2, 3, 4]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 512]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+
+[[grid]]
+epochs = [9, 10]
+
+[[grid]]
+epochs = [9, 10]
+lr_peak_frac = [0.1, 0.35]
+
+[[grid]]
+epochs = [9, 10]
+lr_end = [0.0, 0.15]
+
+[[grid]]
+epochs = [9, 10]
+whiten_bias_epochs = [1.0, 6.0]
+
+[[grid]]
+epochs = [9, 10]
+res_schedule = [[[0.0, 20], [0.6, 28], [0.85, 32]], [[0.0, 16], [0.5, 32]]]

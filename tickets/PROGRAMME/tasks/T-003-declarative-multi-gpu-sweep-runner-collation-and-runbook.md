@@ -129,7 +129,7 @@ evidence:
 - evidence_id: E-006
   kind: file
   label: README.md
-  locator: research/README.md
+  locator: research/evidence/snapshots/README-at-T-003.md
   sha256: 0ce0ee80d56f4d5348a664c8dde5b38a5a208b132f58ae6642e532c90cfd638e
   state: verified
   candidate_identity: null

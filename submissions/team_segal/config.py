@@ -22,6 +22,9 @@ class RecipeConfig:
     widths: tuple[int, int, int] = (64, 256, 256)
     width_mult: float = 1.0
     block_depth: Literal[2, 3] = 2
+    # Per-stage overrides: depth (2 or 3) and whether to max-pool before the widening conv.
+    stage_depths: tuple[int, int, int] | tuple[()] = ()
+    pool_first: tuple[bool, bool, bool] | tuple[()] = ()
     epochs: float = 10.0
     batch_size: int = 1024
     lr: float = 11.5
@@ -93,6 +96,9 @@ class RecipeConfig:
             if len(widths) != 3 or not all(isinstance(w, int) and w > 0 for w in widths):
                 raise ValueError("widths must be three positive integers")
             values["widths"] = tuple(widths)
+        for key in ("stage_depths", "pool_first"):
+            if key in values:
+                values[key] = tuple(values[key])
         if "selector_widths" in values:
             values["selector_widths"] = tuple(values["selector_widths"])
         for key in ("res_schedule", "freeze_schedule"):
@@ -107,6 +113,14 @@ class RecipeConfig:
             raise ValueError(f"arch must be airbench or resnet9, not {self.arch!r}")
         if self.block_depth not in (2, 3):
             raise ValueError("block_depth must be 2 or 3")
+        if self.stage_depths and (
+            len(self.stage_depths) != 3 or any(d not in (2, 3) for d in self.stage_depths)
+        ):
+            raise ValueError("stage_depths must be three values of 2 or 3")
+        if self.pool_first and (
+            len(self.pool_first) != 3 or any(type(p) is not bool for p in self.pool_first)
+        ):
+            raise ValueError("pool_first must be three booleans")
         if self.flip not in ("alternating", "random", "none"):
             raise ValueError(f"flip must be alternating, random or none, not {self.flip!r}")
         positive = {

@@ -54,8 +54,12 @@ class Conv(nn.Conv2d):
 class ConvGroup(nn.Module):
     """conv-pool-BN-GELU then one or two conv-BN-GELU; depth 3 adds a residual (airbench96)."""
 
-    def __init__(self, cin: int, cout: int, depth: int, bn_momentum: float) -> None:
+    def __init__(
+        self, cin: int, cout: int, depth: int, bn_momentum: float, pool_first: bool = False
+    ) -> None:
         super().__init__()
+        # pool_first max-pools before the widening conv, cutting its cost 4x.
+        self.pool_first = pool_first
         self.conv1 = Conv(cin, cout)
         self.norm1 = BatchNorm(cout, bn_momentum)
         self.conv2 = Conv(cout, cout)
@@ -65,7 +69,10 @@ class ConvGroup(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = F.gelu(self.norm1(F.max_pool2d(self.conv1(x), 2)))
+        if self.pool_first:
+            x = F.gelu(self.norm1(self.conv1(F.max_pool2d(x, 2))))
+        else:
+            x = F.gelu(self.norm1(F.max_pool2d(self.conv1(x), 2)))
         y = F.gelu(self.norm2(self.conv2(x)))
         if self.residual is None:
             return y
@@ -82,11 +89,15 @@ class AirbenchNet(nn.Module):
         self.normalize = Normalize()
         self.whiten = nn.Conv2d(3, whiten_width, WHITEN_KERNEL, padding=0, bias=True)
         self.whiten.weight.requires_grad = False
-        depth, momentum = config.block_depth, config.bn_momentum
+        depths = config.stage_depths or (config.block_depth,) * 3
+        pools = config.pool_first or (False, False, False)
+        momentum = config.bn_momentum
+        widths = (whiten_width, w1, w2, w3)
         self.groups = nn.Sequential(
-            ConvGroup(whiten_width, w1, depth, momentum),
-            ConvGroup(w1, w2, depth, momentum),
-            ConvGroup(w2, w3, depth, momentum),
+            *(
+                ConvGroup(widths[i], widths[i + 1], depths[i], momentum, pools[i])
+                for i in range(3)
+            )
         )
         self.head = nn.Linear(w3, NUM_CLASSES, bias=False)
         self.head_norm = config.head_norm

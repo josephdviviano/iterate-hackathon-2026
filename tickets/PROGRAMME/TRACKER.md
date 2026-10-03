@@ -18,10 +18,10 @@
 <!-- writing-tools:generated:start -->
 ## Current position
 
-- **State:** continue
+- **State:** needs_design
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
-- **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
+- **Why:** Programme evidence or cross-artifact integrity is invalid; repair it before selecting more work.
 - **Next:** Continue T-013 (Local-proxy hill climb to convergence (X-002)).
 - **Open human feedback:** none
 
@@ -44,6 +44,11 @@
 | [T-013](tasks/T-013-local-proxy-hill-climb-to-convergence-x-002.md) — Local-proxy hill climb to convergence (X-002) | exploration | in_progress | From the P1 frontier, climb one lever at a time (width and stage allocation, epochs, optimiser, batch size, resolution schedule, regularisation, learning rates) on GPU 1, keeping a change only when the interpolated proxy time to a 75.3% single-view mean falls beyond seed noise; stop when no accessible lever improves it. |
 
 ## Issues identified
+
+### Programme integrity and ownership
+
+- T-003: E-006 has changed since verification: research/README.md
+- D-001: E-001 has changed since verification: research/DIRECTIVES.md
 
 ### F-001 — resolved, material
 
@@ -107,6 +112,13 @@
 - **Interpretation:** H14 is supported for time (about 11% per epoch); its 0.41 pp dip at 10 epochs (about 2.9 combined SE) is unresolved between noise, compile numerics and fused SGD. H11 is disconfirmed at these freeze points: early stages still learn late in short runs. H12 is strongly disconfirmed: the network does not tolerate a 28 to 32 px train-test gap, plausibly through BatchNorm statistics and the global max-pool scale. The control curve is nearly flat beyond 10 epochs, so epochs to target are sensitive to small accuracy shifts.
 - **Decision consequence:** Reject freezing and FixRes endings; separate compile from fused SGD with more seeds before adopting either; fine-tune the epoch count near 9-10 with at least 10 seeds.
 - **Resolution:** Freezing and FixRes rejected; compile decomposed in S8.
+
+### F-010 — resolved, material
+
+- **Observation:** S7 at the base (5 seeds): in-run selection keeping the highest-loss 50% of each batch reaches only 64.5%, 66.2% and 68.1% at 10, 12 and 14 epochs (sd up to 1.9 pp); keeping 70% reaches 73.3% and 74.1% at 10 and 12 epochs; the in-sweep control reaches 75.33% and 75.85%.
+- **Interpretation:** H13 is disconfirmed for short CIFAR-100 runs: training only on the hardest examples starves a 10-epoch, 100-class run of the easy examples it still needs, and the high variance suggests instability. airbench96_faster's gain came from a 45-epoch CIFAR-10 regime.
+- **Decision consequence:** Reject in-run selection; do not spend more GPU time on selection variants unless the climb plateaus with long budgets.
+- **Resolution:** Selection rejected (H13).
 
 ### B-001 — external, open
 
@@ -191,11 +203,11 @@
 
 ### Exact frontier
 
-- State: **continue**
+- State: **needs_design**
 - Active: T-013
 - Eligible: none
 - Unresolved outcomes: O-001, O-002, O-003, O-004
-- Unresolved requirements: R-001, R-002, R-003, R-004, R-005, R-007, R-008
+- Unresolved requirements: R-001, R-002, R-003, R-004, R-005, R-006, R-007, R-008
 - Pending assessments: none
 - Human engagement: none
 <!-- writing-tools:generated:end -->
