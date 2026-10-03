@@ -64,10 +64,10 @@ the error.
 
 ## The research method
 
-You don't just try tweaks. You keep a **hierarchy of hypotheses** about what drives the task's
-objective, a **queue of experiment ideas** that test them, and a **world model** that every
-experiment reads and then updates. And you use the time while an experiment runs to think:
-pre-register what you expect, learn from earlier failures, and prepare the next experiment.
+You don't just try tweaks. The research keeps a **hierarchy of hypotheses** about what drives the
+task's objective, a **queue of experiment ideas** that test them, and a **world model** that every
+experiment reads and then updates. You use the time while an experiment runs to think: pre-register
+what you expect, learn from earlier results, and prepare the next experiment.
 
 ```
 hypothesis.tsv ──(Lvl1 ⊃ Lvl2 ⊃ Lvl3)──┐
@@ -84,39 +84,46 @@ M(hypotheses, results)                   → new ideas        ("ideate")
 M(hypotheses, results, search, review)   → new hypotheses   ("revise")
 ```
 
-`research.py` keeps this state (all untracked by git, so a `git reset` never touches it):
+**Who does what.** You are the experimenter: you run the experiments, one after another, in this
+session. The two meta-steps are not yours. `research.py` runs each as a **separate call** with
+exactly the inputs above, in the background, whenever it is due: it builds the first hypothesis
+tree at setup, refills the queue when it runs low (ideate), and rewrites the tree every 10 experiments,
+after 5 without an improvement, or when no hypothesis is open (revise, which also gets a literature
+search and a skeptical review, each from its own call). What those calls see as "results" is
+`results.tsv`, your verdicts and prediction checks, and the *Outcome* and *Post-mortem* sections
+of your notebook pages, so those are how you inform them. You do not add or edit hypotheses or
+ideas yourself; you may only drop a queued idea that the results have already settled
+(`python research.py idea drop I0xx --reason "..."`).
+
+`research.py` keeps the state (all untracked by git, so a `git reset` never touches it):
 
 - `hypothesis.tsv`: **Lvl1** is a broad claim about what drives the objective, **Lvl2** a mechanism
   under it, **Lvl3** a falsifiable prediction under that. Ids encode the tree (`H2`, `H2.1`,
-  `H2.1.3`). Each has a status, a confidence and evidence tokens (`E007+`, `E012-`).
-- `ideas.tsv`: the queue. Each idea is one change to the editable files that tests one hypothesis,
-  with an expected outcome and a priority.
-- `world_model.md`: your current understanding. Read it before every experiment; update it after.
-- `notebook/E007.md`: one page per experiment: its hypothesis chain, pre-registration,
-  contingencies, outcome and post-mortem.
-- `predictions.tsv`: per experiment, the verdict and whether the pre-registered predictions hit.
-- `meta.tsv`, `history/` (a world-model snapshot per experiment), `drafts/` (the next experiment).
+  `H2.1.3`); evidence tokens (`E007+`, `E012-`) come from your verdicts.
+- `ideas.tsv`: the queue. Each idea is one change to the editable files that tests one hypothesis.
+- `world_model.md`: **yours**: your current understanding. Read it before every experiment; update
+  it after.
+- `notebook/E007.md`: one page per experiment: hypothesis chain, pre-registration, contingencies,
+  outcome, post-mortem.
+- `predictions.tsv`, `meta.tsv` (the meta-steps and their cost), `history/` (a world-model
+  snapshot per experiment), `drafts/` (the next experiment).
 
-`python research.py status` shows the current best, open hypotheses, the queue, and what to do
-next, including the agenda while an experiment runs. Change the research state only through
-`research.py`, except `world_model.md` and notebook pages, which you edit directly.
+`python research.py status` shows the current best, open hypotheses, the queue, the meta-steps,
+and what to do next. `python research.py tree` shows the whole tree.
 
-### Seeding (after setup)
-
-Write **2–4 Lvl1 hypotheses** about what drives the task's objective, each with Lvl2 mechanisms
-and Lvl3 predictions, covering genuinely different directions. Use honest prior confidences and
-name your sources (`--source seed|search:<ref>`). Then `python research.py meta revise --summary
-"seed: ..."`, run the baseline (`python research.py launch --idea - --description baseline`,
-then `python ar.py wait`, then `python research.py log --status keep --verdict -`), and ideate.
+After setup, launch the baseline while the first tree is being built:
+`python research.py launch --idea - --description baseline`, then `python ar.py wait`, then
+`python research.py log --status keep --verdict -`. If the queue is still empty afterwards,
+`python research.py meta wait` waits for the first tree and ideas.
 
 ### One experiment
 
 **Before** (keep this short; nothing is running):
 
 1. `python research.py status`: do whatever it lists as due before the next launch.
-2. `python research.py idea next` pops the top idea and prints its hypothesis chain.
-3. Re-read `world_model.md`. If the idea is already settled, drop it
-   (`research.py idea set I0xx --status dropped --note "..."`) and pop again.
+2. `python research.py idea next` pops the top idea and prints its hypothesis chain. If the queue is
+   empty, `python research.py meta wait`.
+3. Re-read `world_model.md`. If the idea is already settled, drop it and pop again.
 4. Make the change (apply the draft if you prepared one), and `git commit` it.
 5. `python research.py launch --idea I0xx` (add `--prereg drafts/I0xx.prereg.md` if you drafted the
    pre-registration). This starts the experiment in the background through `ar.py`.
@@ -131,48 +138,21 @@ not touch the editable files or git):
 2. **Learn from the last result**: finish updating `world_model.md` for the previous experiment,
    and write the *Post-mortem* of every failure or missed prediction `status` lists: what you
    predicted, what happened, the root cause, what the world model got wrong, the lesson.
-3. **Meta-steps that are due** (`status` says when): revise, then ideate. See below.
-4. **Prepare the next experiment**: draft the most likely next change and its pre-registration in
+3. **Prepare the next experiment**: draft the most likely next change and its pre-registration in
    `drafts/` (`drafts/I0xx.prereg.md`, with the `## Pre-registration` and `## Contingencies`
    sections exactly as in a notebook page), so the next launch is quick.
-5. **Wait**: `python ar.py wait` (repeat while it says the run is still going).
+4. **Wait**: `python ar.py wait` (repeat while it says the run is still going).
 
 **After** (keep this short too):
 
 1. `python research.py log --status keep|discard|crash --verdict supports|refutes|inconclusive|-`.
    It records the run through `ar.py log` (which says whether it improved on the current best),
-   then links it to the idea and hypothesis and checks your predictions. Judge the verdict by the
-   rules you pre-registered.
+   then links it to the idea and hypothesis, checks your predictions, and starts a meta-step if
+   one is due. Judge the verdict by the rules you pre-registered.
 2. If not kept, run the `git reset` it prints.
-3. Fill *Outcome* in the notebook page: the numbers and which contingency fired.
-4. Act on that contingency (re-prioritize or add ideas, update the hypothesis with
-   `research.py hypo set`), add the changelog line and current best to `world_model.md`, run
+3. Fill *Outcome* in the notebook page: the numbers, which contingency fired, and why.
+4. Add the changelog line and current best to `world_model.md`, run
    `python research.py snapshot`, and go to the next experiment.
-
-### Ideate: M(hypotheses, results) → new ideas
-
-When `status` says so (fewer than 3 queued ideas), after every revise, and whenever a result changes
-which hypothesis looks most promising. For each open Lvl3 without a decisive test, write the
-cleanest change that would settle it, with an expected outcome on the task's metrics. Prioritize
-by expected information × expected improvement, and keep roughly ⅔ exploit, ⅓ explore. Combine
-near-misses. Drop ideas whose hypothesis is settled. Refill to 5–8 queued ideas, then
-`python research.py meta ideate --summary "..."`.
-
-### Revise: M(hypotheses, results, search, review) → new hypotheses
-
-When `status` says so (every 10 experiments, after 5 without an improvement, or when no hypothesis
-is open), and whenever a Lvl1 or Lvl2 is clearly settled:
-
-1. **Results**: read the results and post-mortems since the last revise; roll evidence up the tree
-   (Lvl3 decides Lvl2, Lvl2 decides Lvl1) and update statuses and confidences honestly.
-   Closing a hypothesis retires its open subtree and drops its queued ideas.
-2. **Search**: look outside your own head: papers and techniques relevant to the open questions
-   (web search if you have it). Record sources with `--source search:<ref>`.
-3. **Review**: attack your own tree as a skeptic (or have a subagent do it): which conclusions rest
-   on one run, which directions were never tried, what surprised you, what the current Lvl1s fail
-   to explain.
-4. Rewrite the tree (keep at least 2 Lvl1 open), compress `world_model.md`, then
-   `python research.py meta revise --summary "..."` and ideate.
 
 **NEVER STOP**: once the experiment loop has begun (after the initial setup), do NOT pause to ask
 the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping

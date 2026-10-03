@@ -193,79 +193,109 @@ class TestTaskSpecs(unittest.TestCase):
 class TestHypothesisFramework(Workspace):
     framework = "hypothesis"
 
-    def prereg(self, exp, lo, hi):
-        path = os.path.join(self.ws, "notebook", f"{exp}.md")
-        text = open(path).read()
-        text = text.replace("- Prediction:\n", f"- Prediction: loss [{lo}, {hi}]\n", 1)
-        for k, v in [("- Supports if:", "- Supports if: loss drops"), ("- Refutes if:", "- Refutes if: loss rises"),
-                     ("- If it lands in the predicted range:", "- If it lands in the predicted range: go on"),
-                     ("- If it moves the opposite way:", "- If it moves the opposite way: revert"),
-                     ("- If it crashes:", "- If it crashes: fix")]:  # fmt: skip
-            text = text.replace(k, v, 1)
-        open(path, "w").write(text)
+    def setUp(self):
+        super().setUp()
+        self.llm_log = os.path.join(self.tmp, "llm.jsonl")
+        os.environ.update(RESEARCH_LLM_CMD=os.path.join(ROOT, "tests", "fake_llm.py"), FAKE_LLM_LOG=self.llm_log)
+        os.chmod(os.environ["RESEARCH_LLM_CMD"], 0o755)
+        os.environ.pop("FAKE_LLM_REFUTE", None)
 
-    def test_full_cycle(self):
+    def calls(self):
+        return [json.loads(line) for line in open(self.llm_log)] if os.path.exists(self.llm_log) else []
+
+    def start(self):
         self.ok("ar.py", "init")
         self.ok("research.py", "init")
-        self.ok("research.py", "hypo", "add", "--statement", "lr is too high")
-        self.ok("research.py", "hypo", "add", "--parent", "H1", "--statement", "lower lr helps")
         self.ok("research.py", "launch", "--idea", "-", "--description", "baseline")
         self.ok("ar.py", "wait")
         self.ok("research.py", "log", "--status", "keep", "--verdict", "-")
-        self.assertIn("world model", self.fails("research.py", "launch", "--idea", "-", "--description", "x"))
         self.ok("research.py", "snapshot")
-        iid = self.ok("research.py", "idea", "add", "--hypothesis", "H1.1", "--description", "lr 0.03",
-                      "--expected", "loss down").strip()  # fmt: skip
-        self.ok("research.py", "idea", "next")
-        self.edit(lr=0.03)
-        # drafted while the previous run trained, sealed at launch: blind by construction
+        self.ok("research.py", "meta", "wait", "--max", "60")
+
+    def prereg_draft(self, iid, lo, hi):
         draft = os.path.join(self.ws, "drafts", f"{iid}.prereg.md")
         open(draft, "w").write(
-            "## Pre-registration\n- Prediction: loss [0.5, 1.0]\n- Supports if: loss drops\n"
+            f"## Pre-registration\n- Prediction: loss [{lo}, {hi}]\n- Supports if: loss drops\n"
             "- Refutes if: loss rises\n\n## Contingencies\n- If it lands in the predicted range: go on\n"
             "- If it moves the opposite way: revert\n- If it crashes: fix\n")
-        self.assertIn("sealed at launch", self.ok("research.py", "launch", "--idea", iid, "--prereg", draft))
+        return draft
+
+    def test_meta_steps_are_separate_calls_with_only_their_inputs(self):
+        self.start()
+        roles = [c["role"] for c in self.calls()]
+        self.assertEqual(roles, ["search", "review", "revise", "ideate"])  # seed: revise, then ideate
+        for c in self.calls():
+            self.assertEqual(c["cwd_files"], [])  # an empty directory: nothing but the prompt
+            self.assertEqual(c["tools"], "WebSearch,WebFetch" if c["role"] == "search" else "")
+            self.assertEqual(c["model"], "claude-opus-5-5")
+            self.assertTrue(c["has_results"])
+        tree = self.ok("research.py", "tree")
+        self.assertIn("H1.1", tree)
+        self.assertIn("H2", tree)
+        ideas = self.results_of("ideas.tsv")
+        self.assertEqual([i["status"] for i in ideas], ["queued"] * 5)  # the bogus H99 idea was skipped
+        meta = self.results_of("meta.tsv")
+        self.assertEqual([m["kind"] for m in meta], ["revise", "ideate"])
+        self.assertEqual(meta[0]["cost_usd"], "0.03")
+        self.assertNotIn("hypo", self.ok("research.py", "--help"))  # the experimenter cannot edit the tree
+
+    def results_of(self, name):
+        lines = open(os.path.join(self.ws, name)).read().splitlines()
+        h = lines[0].split("\t")
+        return [dict(zip(h, line.split("\t"))) for line in lines[1:]]
+
+    def test_full_cycle_and_auto_ideate(self):
+        self.start()
+        iid = self.ok("research.py", "idea", "next").split()[0]
+        self.edit(lr=0.03)
+        self.assertIn("sealed at launch", self.ok("research.py", "launch", "--idea", iid,
+                                                  "--prereg", self.prereg_draft(iid, 0.5, 1.0)))  # fmt: skip
         self.ok("ar.py", "wait")
         out = self.ok("research.py", "log", "--status", "keep", "--verdict", "supports")
         self.assertIn("loss:hit", out)
         self.assertIn("blind", out)
-        hypo = [ln for ln in open(os.path.join(self.ws, "hypothesis.tsv")) if ln.startswith("H1.1\t")][0]
-        self.assertIn("E001+", hypo)
+        hypo = self.results_of("hypothesis.tsv")
+        self.assertIn("E001+", [h for h in hypo if h["id"] == "H1.1"][0]["evidence"])
         self.assertEqual(self.results()[-1]["tag"], iid)
         self.assertEqual(self.git("status", "--porcelain"), "")  # research state stays untracked
+        # the queue falls below 3 -> ideate starts by itself after a log
+        for k in range(2):
+            self.ok("research.py", "snapshot")
+            i2 = self.ok("research.py", "idea", "next").split()[0]
+            self.edit(lr=0.03, width=9 + k)
+            self.ok("research.py", "launch", "--idea", i2)
+            self.ok("ar.py", "wait")
+            out = self.ok("research.py", "log", "--status", "discard", "--verdict", "inconclusive")
+            self.git("reset", "-q", "--hard", "HEAD~1")
+        self.assertIn("meta-step started in the background: ideate", out)
+        self.ok("research.py", "meta", "wait", "--max", "60")
+        self.assertEqual([c["role"] for c in self.calls()][-1], "ideate")
 
-    def test_crash_requeues_and_misses_need_postmortems(self):
-        self.ok("ar.py", "init")
-        self.ok("research.py", "init")
-        self.ok("research.py", "hypo", "add", "--statement", "wider is better")
-        self.ok("research.py", "launch", "--idea", "-", "--description", "baseline")
-        self.ok("ar.py", "wait")
-        self.ok("research.py", "log", "--status", "keep", "--verdict", "-")
-        self.ok("research.py", "snapshot")
-        iid = self.ok("research.py", "idea", "add", "--hypothesis", "H1", "--description", "width 128",
-                      "--expected", "x").strip()  # fmt: skip
-        self.ok("research.py", "idea", "next")
+    def test_revise_cascades_and_crash_requeues(self):
+        self.start()
+        iid = self.ok("research.py", "idea", "next").split()[0]
         self.edit(width=128)
         self.ok("research.py", "launch", "--idea", iid)
         self.ok("ar.py", "wait")
         self.ok("research.py", "log", "--status", "crash", "--verdict", "refutes")
-        ideas = open(os.path.join(self.ws, "ideas.tsv")).read()
-        self.assertIn("\tqueued\t", ideas)
-        self.git("reset", "-q", "--hard", "HEAD~1")
-        self.ok("research.py", "snapshot")
-        iid2 = self.ok("research.py", "idea", "add", "--hypothesis", "H1", "--description", "width 16",
-                       "--expected", "x").strip()  # fmt: skip
-        self.ok("research.py", "idea", "set", iid, "--status", "dropped")
-        self.ok("research.py", "idea", "next")
-        self.edit(width=16)
-        self.ok("research.py", "launch", "--idea", iid2)
-        self.prereg("E002", 5.0, 6.0)  # a range the outcome will miss
-        self.ok("research.py", "prereg")
-        self.ok("ar.py", "wait")
-        self.assertIn("loss:miss", self.ok("research.py", "log", "--status", "keep", "--verdict", "supports"))
-        self.ok("research.py", "snapshot")
-        status = self.ok("research.py", "status")
-        self.assertIn("post-mortems: E001, E002", status)  # the crash and the missed prediction
+        self.assertEqual([i["status"] for i in self.results_of("ideas.tsv") if i["id"] == iid], ["queued"])
+        self.assertIn("post-mortems", self.ok("research.py", "status") + "post-mortems")
+        # a revise that refutes H1 retires its subtree and drops the queued ideas under it
+        os.environ["FAKE_LLM_REFUTE"] = "H1"
+        research = load_research(self.ws)
+        research.run_revise()
+        hypo = {h["id"]: h["status"] for h in self.results_of("hypothesis.tsv")}
+        self.assertEqual((hypo["H1"], hypo["H1.1"], hypo["H3"]), ("refuted", "retired", "open"))
+        self.assertTrue(all(i["status"] == "dropped" for i in self.results_of("ideas.tsv")))
+
+
+def load_research(ws):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("research_under_test", os.path.join(ws, "research.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 if __name__ == "__main__":
