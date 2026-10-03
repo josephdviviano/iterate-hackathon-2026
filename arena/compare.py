@@ -27,7 +27,8 @@ def load_ar(ws):
 def audit(arena, arm, others):
     """Tool calls / tool outputs in this arm's session that mention another arm's workspace."""
     path = os.path.join(arena, "logs", f"{arm}.jsonl")
-    pats = [re.compile(re.escape(os.path.join(arena, o)) + r"\b|\.\./" + re.escape(o) + r"\b") for o in others]
+    # whole folder names only: "hypothesis" must not match "hypothesis-lit"
+    pats = [re.compile(re.escape(os.path.join(arena, o)) + r"(?![\w-])|\.\./" + re.escape(o) + r"(?![\w-])") for o in others]
     hits = []
     for line in open(path) if os.path.exists(path) else []:
         try:
