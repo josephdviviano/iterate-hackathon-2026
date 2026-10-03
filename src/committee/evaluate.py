@@ -8,16 +8,28 @@ from pathlib import Path
 from .committee import Committee, Member, description_length
 from .experiment import condition_dir
 from .loader import build_buffer, temporal_split
+from .verify import run_program
 
 
-def load_runs(cond: Path) -> list[tuple[str, dict, str, list]]:
+def load_runs(cond: Path, train: list | None = None, test: list | None = None
+              ) -> list[tuple[str, dict, str, list]]:
+    """Stored runs of a condition. test_preds.json is not tracked in git; when it is missing
+    and the split is given, the program is replayed to rebuild it."""
     runs = []
     for d in sorted(cond.glob("run*")):
         if not (d / "meta.json").exists():
             continue
         meta = json.loads((d / "meta.json").read_text())
-        preds = json.loads((d / "test_preds.json").read_text())
-        runs.append((d.name, meta, (d / "program.py").read_text(), preds))
+        source = (d / "program.py").read_text()
+        preds_path = d / "test_preds.json"
+        if preds_path.exists():
+            preds = json.loads(preds_path.read_text())
+        elif train is not None and test is not None:
+            preds = run_program(source, train, test).test_preds
+            preds_path.write_text(json.dumps(preds))
+        else:
+            preds = []
+        runs.append((d.name, meta, source, preds))
     return runs
 
 
@@ -38,8 +50,8 @@ def summarize_single(runs) -> dict:
 def evaluate_condition(game: str, level: int, train_frac: float, condition: str, lam: float = 0.01,
                        include_inconsistent: bool = False, test_level: int | None = None) -> dict:
     cond = condition_dir(game, level, train_frac, condition, test_level)
-    runs = load_runs(cond)
-    _, test = temporal_split(build_buffer(game), level, train_frac, test_level)
+    train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
+    runs = load_runs(cond, train, test)
     out = {"game": game, "level": level, "train_frac": train_frac, "test_level": test_level, "condition": condition,
            "n_test": len(test), "single": summarize_single(runs)}
     members = [Member(name, src, preds, length=description_length(src))

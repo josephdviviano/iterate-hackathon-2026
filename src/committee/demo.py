@@ -18,9 +18,9 @@ from .explore import compare_strategies
 from .loader import build_buffer, temporal_split
 
 
-def _members(cond: Path) -> list[Member]:
+def _members(cond: Path, train, test) -> list[Member]:
     return [Member(name, src, preds, description_length(src))
-            for name, m, src, preds in load_runs(cond) if m["consistent"] and preds]
+            for name, m, src, preds in load_runs(cond, train, test) if m["consistent"] and preds]
 
 
 def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
@@ -36,7 +36,7 @@ def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
     print(f"    exact replay on train: {s['n_consistent']}/{s['n_runs']}    held-out accuracy: "
           f"{', '.join(f'{a:.2f}' for a in s['test_accuracy_all'])}")
 
-    members = _members(condition_dir(game, level, train_frac, committee, test_level))
+    members = _members(condition_dir(game, level, train_frac, committee, test_level), train, test)
     if not members:
         print("    (no consistent committee members cached for this split)")
         return
