@@ -101,6 +101,13 @@
 - **Decision consequence:** Fix the base at 20 px then 32 px at half-way, about 10.6 epochs; treat future gains under about 5% as noise unless confirmed with 10 or more seeds.
 - **Resolution:** Base updated in S6 (20/32 schedule).
 
+### F-009 — resolved, material
+
+- **Observation:** S6 at the 20/32 px base (5 seeds per arm): control 75.47% at 10 epochs (6.68 s) and 75.62% at 12 (8.07 s); compile plus fused SGD runs 11-12% faster per epoch (5.92 s, 7.17 s) at 75.06% and 75.61%; freezing stage 1 at 60% costs 0.7-0.9 pp (74.61%, 74.95%) for 15% less time; freezing stages 1 then 2 costs 1.6-1.7 pp; ending at 28 px and evaluating at 32 px drops accuracy to 69.0-69.4%.
+- **Interpretation:** H14 is supported for time (about 11% per epoch); its 0.41 pp dip at 10 epochs (about 2.9 combined SE) is unresolved between noise, compile numerics and fused SGD. H11 is disconfirmed at these freeze points: early stages still learn late in short runs. H12 is strongly disconfirmed: the network does not tolerate a 28 to 32 px train-test gap, plausibly through BatchNorm statistics and the global max-pool scale. The control curve is nearly flat beyond 10 epochs, so epochs to target are sensitive to small accuracy shifts.
+- **Decision consequence:** Reject freezing and FixRes endings; separate compile from fused SGD with more seeds before adopting either; fine-tune the epoch count near 9-10 with at least 10 seeds.
+- **Resolution:** Freezing and FixRes rejected; compile decomposed in S8.
+
 ### B-001 — external, open
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.

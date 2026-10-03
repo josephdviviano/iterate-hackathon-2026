@@ -91,6 +91,12 @@ code. Collation reads only the configurations the sweep file currently expands t
 
 ## 4. Scaling across GPUs and agents
 
+**Device policy:** this team may use only the CUDA devices listed in `research/allowed-devices`
+(currently GPU 1; GPU 0 belongs to a competing agent). `sweep.py` rejects sweep files that name
+other devices, and each launch logs both GPUs' utilisation and the host load so perturbed
+timings can be identified. Run ad hoc GPU commands with `CUDA_VISIBLE_DEVICES=1`.
+
+
 - **Slots.** Each `devices` entry gets `slots_per_device` slots. Slot locks live in
   `/tmp/c100-speedrun-slots` (override with `C100_SLOT_DIR`), so several sweeps, from one
   agent or many, share the GPUs on this host without oversubscribing them. Keep one slot

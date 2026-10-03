@@ -41,6 +41,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+ALLOWED_DEVICES_FILE = REPO / "research" / "allowed-devices"
 INTERRUPTED = {130, 143, -signal.SIGINT, -signal.SIGTERM}
 SPEC_KEYS = {
     "name",
@@ -80,6 +81,10 @@ class Sweep:
         seeds = spec.get("seeds")
         if not seeds or len(set(seeds)) != len(seeds) or not all(type(s) is int for s in seeds):
             raise ValueError(f"{path}: seeds must be a non-empty list of distinct integers")
+        devices = list(spec.get("devices", [0]))
+        allowed = allowed_devices()
+        if allowed is not None and not set(devices) <= allowed:
+            raise ValueError(f"{path}: devices {devices} outside allowed {sorted(allowed)}")
         configs = expand(spec.get("base", {}), spec.get("grid", []), spec.get("configs", []))
         if not configs:
             raise ValueError(f"{path}: the sweep expands to no configurations")
@@ -90,7 +95,7 @@ class Sweep:
             submission=(REPO / spec.get("submission", "submissions/team_segal")).resolve(),
             python=spec.get("python", sys.executable),
             seeds=seeds,
-            devices=list(spec.get("devices", [0])),
+            devices=devices,
             slots_per_device=int(spec.get("slots_per_device", 1)),
             harness_args=list(spec.get("harness_args", [])),
             root=(REPO / spec.get("results_root", "results/sweeps") / name).resolve(),
@@ -123,6 +128,32 @@ class Sweep:
 
     def run_dir(self, params: dict) -> Path:
         return self.root / "runs" / self.config_id(params)
+
+
+def allowed_devices() -> set[int] | None:
+    """Device indices from research/allowed-devices, or None when the file is absent."""
+    if not ALLOWED_DEVICES_FILE.exists():
+        return None
+    lines = ALLOWED_DEVICES_FILE.read_text().splitlines()
+    return {int(line) for line in lines if line.strip() and not line.startswith("#")}
+
+
+def contention() -> dict:
+    """GPU utilisation and host load at launch, to flag runs perturbed by other workloads."""
+    query = [
+        "nvidia-smi",
+        "--query-gpu=index,utilization.gpu,memory.used",
+        "--format=csv,noheader,nounits",
+    ]
+    try:
+        rows = subprocess.run(query, capture_output=True, text=True, timeout=5).stdout
+        gpus = {}
+        for row in rows.strip().splitlines():
+            index, *values = row.split(",")
+            gpus[index.strip()] = [int(v) for v in values]
+    except (OSError, subprocess.SubprocessError, ValueError):
+        gpus = {}
+    return {"gpu_util_mem": gpus, "load1": round(os.getloadavg()[0], 2)}
 
 
 def expand(base: dict, grids: list[dict], explicit: list[dict]) -> list[dict]:
@@ -304,7 +335,7 @@ class Runner:
         ]
         env = os.environ | {"CUDA_VISIBLE_DEVICES": "" if device == "cpu" else device}
         started = datetime.now(UTC).isoformat()
-        self.log("launch", config_id=cid, slot=slot, params=params)
+        self.log("launch", config_id=cid, slot=slot, params=params, contention=contention())
         with (run_dir / "harness.log").open("w") as output:
             child = subprocess.Popen(command, cwd=REPO, env=env, stdout=output, stderr=output)
             with self.lock:

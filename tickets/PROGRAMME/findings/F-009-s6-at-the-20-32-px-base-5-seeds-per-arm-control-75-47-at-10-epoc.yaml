@@ -1,0 +1,50 @@
+schema_version: '2.0'
+finding_id: F-009
+task_id: T-013
+result_kind: mixed
+importance: material
+observation: 'S6 at the 20/32 px base (5 seeds per arm): control 75.47% at 10 epochs (6.68 s) and 75.62%
+  at 12 (8.07 s); compile plus fused SGD runs 11-12% faster per epoch (5.92 s, 7.17 s) at 75.06% and 75.61%;
+  freezing stage 1 at 60% costs 0.7-0.9 pp (74.61%, 74.95%) for 15% less time; freezing stages 1 then
+  2 costs 1.6-1.7 pp; ending at 28 px and evaluating at 32 px drops accuracy to 69.0-69.4%.'
+interpretation: 'H14 is supported for time (about 11% per epoch); its 0.41 pp dip at 10 epochs (about
+  2.9 combined SE) is unresolved between noise, compile numerics and fused SGD. H11 is disconfirmed at
+  these freeze points: early stages still learn late in short runs. H12 is strongly disconfirmed: the
+  network does not tolerate a 28 to 32 px train-test gap, plausibly through BatchNorm statistics and the
+  global max-pool scale. The control curve is nearly flat beyond 10 epochs, so epochs to target are sensitive
+  to small accuracy shifts.'
+decision_implication: Reject freezing and FixRes endings; separate compile from fused SGD with more seeds
+  before adopting either; fine-tune the epoch count near 9-10 with at least 10 seeds.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: unresolved
+  rationale: fused SGD or compiled kernels may change numerics
+  discriminating_test: compile-only and fused-only arms with 10 seeds
+- kind: mechanism
+  disposition: supported
+  rationale: freezing and low final resolution remove capacity the short run still needs
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s6-novel-systems-table.csv
+  locator: research/evidence/T-013/s6-novel-systems-table.csv
+  sha256: 6640b4110160da0cc4469eb5411c41e209d3468b42c8428416aa47498da8f5e9
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: s6-novel-systems-frontier.csv
+  locator: research/evidence/T-013/s6-novel-systems-frontier.csv
+  sha256: 693d9651f71bd969dfafde1ea5151851df0b54762f77a7e54e7ed886d974d80c
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Freezing and FixRes rejected; compile decomposed in S8.
