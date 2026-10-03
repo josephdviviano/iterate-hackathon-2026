@@ -277,8 +277,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--parallel", type=int, default=1)
     parser.add_argument("--from-probe", type=int, default=0,
                         help="start from the stored round that observed this many probes; 0 is round 1")
-    parser.add_argument("--mechanism", action="store_true",
-                        help="state the counterexample at the effect-row level and give each seed a distinct repair hypothesis")
+    parser.add_argument("--object-diff", action="store_true",
+                        help="state the counterexample as object differences (R24); the default states it at the effect-row level with one repair hypothesis per seed (R31)")
     parser.add_argument("--geometry-rule", action="store_true", help="add the rule against hidden geometry to every seed")
     parser.add_argument("--conditions", default=None, help="report: comma-separated round 2 conditions to compare")
     parser.add_argument("--dry-run", action="store_true", help="print the split and the seed, synthesize nothing")
@@ -290,7 +290,7 @@ def main(argv: list[str] | None = None) -> None:
                             args.passive_condition, args.conditions.split(",") if args.conditions else None))
         return
     run_round(args.game, args.level, args.train_frac, args.source_condition, args.condition, args.from_probe,
-              args.runs, backend_cfg(args), args.parallel, args.start, args.dry_run, args.mechanism, args.geometry_rule)
+              args.runs, backend_cfg(args), args.parallel, args.start, args.dry_run, not args.object_diff, args.geometry_rule)
 
 
 if __name__ == "__main__":

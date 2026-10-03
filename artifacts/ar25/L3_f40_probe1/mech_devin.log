@@ -1,0 +1,30 @@
+probes [8] (steps [71]); train 30, held out 43
+artifacts: /Users/jdv/code/iterate/artifacts/ar25/L3_f40_probe1/mech_devin
+
+Objects of type `wall` under action ACTION1 with touching neighbours [] show mixed outcomes: born x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample at the mechanism level. Step 71, action 1, refuted every program of a committee of 8. Rows where every program was wrong; this is the mechanic to repair:
+  - row `wall | ACTION1 | [target]`, object wall_h_0: observed h 12 -> 9, pixels changed, x 45 -> 42; predicted no_change (4 programs); gone (2 programs); h 12 -> 9, pixels changed, x 45 -> 42 (2 programs)
+  - row `wall | ACTION1 | [player,reflection,target]`, object wall_h_1: observed h 15 -> 12, pixels changed, x 45 -> 42, y 18 -> 21; predicted no_change (4 programs); gone (2 programs); h 15 -> 12, pixels changed, x 45 -> 42, y 18 -> 21 (2 programs)
+  - row `wall | ACTION1 | [player,target]`, object wall_h_2: observed h 18 -> 27, pixels changed, x 45 -> 42, y 45 -> 36; predicted no_change (4 programs); gone (2 programs); h 18 -> 27, pixels changed, x 45 -> 42, y 45 -> 36 (2 programs)
+  - row `player | ACTION1 | [reflection,target,wall,wall]`, object piece_1: observed pixels changed; predicted pixels changed (6 programs); no_change (1 program); pixels changed, w 12 -> 9 (1 program)
+  - row `reflection | ACTION1 | [player,target,wall]`, object reflection_0: observed h 3 -> 9, pixels changed, w 9 -> 3, x 48 -> 39, y 33 -> 36; predicted no_change (5 programs); h 3 -> 9, pixels changed, w 9 -> 3, x 48 -> 39, y 33 -> 36 (2 programs); h 3 -> 12, pixels changed (1 program)
+  - row `target | ACTION1 | [player,reflection,wall]`, object target_3: observed h 11 -> 12, pixels changed, y 34 -> 33; predicted no_change (5 programs); h 11 -> 12, pixels changed, y 34 -> 33 (3 programs)
+  - new object {"name": "reflection_1", "type": "reflection", "x": 48, "y": 33, "w": 3, "h": 3, "layer": 3}: observed; predicted by 0 of 8 programs
+Rows where every program was right on this transition; keep these mechanics as the earlier programs had them:
+  - counter | ACTION1 | []: no_change
+  - player | ACTION1 | [target]: no_change
+  - target | ACTION1 | [player]: no_change
+  - target | ACTION1 | []: no_change
+  - target | ACTION1 | [wall,wall]: no_change
+
+Repair hypothesis for this seed: the rule for the row(s) above is decided by a field of the object itself, such as its tags, pixels, visibility or layer. Write that rule first and verify it on the counterexample and on every earlier transition. Keep every other mechanic as the earlier programs had it; do not key the rule to this step.
+
+ar25 L3 mech_devin run3: consistent=True train=30/30 test_acc=1.0 turns=None wall=227.2s err=None
+ar25 L3 mech_devin run1: consistent=True train=30/30 test_acc=1.0 turns=None wall=248.0s err=None
+ar25 L3 mech_devin run2: consistent=True train=30/30 test_acc=1.0 turns=None wall=310.3s err=None
+ar25 L3 mech_devin run0: consistent=True train=30/30 test_acc=1.0 turns=None wall=330.4s err=None
+ar25 L3 mech_devin run4: consistent=True train=30/30 test_acc=1.0 turns=None wall=289.1s err=None
+ar25 L3 mech_devin run5: consistent=True train=30/30 test_acc=1.0 turns=None wall=272.2s err=None
+ar25 L3 mech_devin run6: consistent=True train=30/30 test_acc=1.0 turns=None wall=269.2s err=None
+ar25 L3 mech_devin run7: consistent=True train=30/30 test_acc=1.0 turns=None wall=269.3s err=None

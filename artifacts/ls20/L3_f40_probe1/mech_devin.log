@@ -1,0 +1,25 @@
+probes [1] (steps [134]); train 41, held out 58
+artifacts: /Users/jdv/code/iterate/artifacts/ls20/L3_f40_probe1/mech_devin
+
+Objects of type `counter` under action ACTION3 with touching neighbours [] show mixed outcomes: no_change x2, tags,w,x x2. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample at the mechanism level. Step 134, action 2, refuted every program of a committee of 7. Rows where every program was wrong; this is the mechanic to repair:
+  - row `player | ACTION2 | []`, object player: observed no_change; predicted y 45 -> 50 (6 programs); no_change (1 program)
+  - row `target | ACTION2 | []`, object legend: observed no_change; predicted gone (4 programs); no_change (3 programs)
+  - row `counter | ACTION2 | []`, object step_bar: observed no_change; predicted tags ['budget', '14'] -> ['budget', '12'], w 14 -> 12, x 41 -> 43 (7 programs)
+Rows where every program was right on this transition; keep these mechanics as the earlier programs had them:
+  - target | ACTION2 | []: no_change
+  - refuel | ACTION2 | []: no_change
+  - button | ACTION2 | []: no_change
+  - counter | ACTION2 | []: no_change
+
+Repair hypothesis for this seed: the rule for the row(s) above is decided by a field of the object itself, such as its tags, pixels, visibility or layer. Write that rule first and verify it on the counterexample and on every earlier transition. Keep every other mechanic as the earlier programs had it; do not key the rule to this step.
+
+ls20 L3 mech_devin run2: consistent=True train=41/41 test_acc=0.8793103448275862 turns=None wall=83.3s err=None
+ls20 L3 mech_devin run3: consistent=True train=41/41 test_acc=0.8793103448275862 turns=None wall=103.6s err=None
+ls20 L3 mech_devin run4: consistent=True train=41/41 test_acc=0.8793103448275862 turns=None wall=83.3s err=None
+ls20 L3 mech_devin run1: consistent=True train=41/41 test_acc=0.8793103448275862 turns=None wall=186.2s err=None
+ls20 L3 mech_devin run0: consistent=True train=41/41 test_acc=0.8793103448275862 turns=None wall=207.3s err=None
+ls20 L3 mech_devin run6: consistent=True train=41/41 test_acc=0.8793103448275862 turns=None wall=86.3s err=None
+ls20 L3 mech_devin run5: consistent=True train=41/41 test_acc=0.8793103448275862 turns=None wall=227.3s err=None
+ls20 L3 mech_devin run7: consistent=True train=41/41 test_acc=0.8793103448275862 turns=None wall=186.2s err=None

@@ -1,0 +1,27 @@
+probes [39] (steps [124]); train 31, held out 43
+artifacts: /Users/jdv/code/iterate/artifacts/m0r0/L3_f40_probe1/mech_devin
+
+Objects of type `marker` under action ACTION6 with touching neighbours [hit,wall] show mixed outcomes: gone x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample at the mechanism level. Step 124, action 4, refuted every program of a committee of 8. Rows where every program was wrong; this is the mechanic to repair:
+  - row `player | ACTION4 | [hazard]`, object block_right: observed x 34 -> 30; predicted x 34 -> 30 (5 programs); no_change (2 programs); gone (1 program)
+  - row `player | ACTION4 | [wall]`, object block_left: observed no_change; predicted x 18 -> 22 (7 programs); x 18 -> 30, y 18 -> 14 (1 program)
+  - row `wall | ACTION4 | [hazard]`, object wall_0_2: observed w 20 -> 21, x 44 -> 43; predicted w 20 -> 21, x 44 -> 43 (6 programs); no_change (2 programs)
+  - row `wall | ACTION4 | [wall]`, object wall_0_8: observed w 20 -> 21; predicted w 20 -> 21 (6 programs); no_change (2 programs)
+Rows where every program was right on this transition; keep these mechanics as the earlier programs had them:
+  - wall | ACTION4 | [hazard,marker,marker,player,wall]: no_change
+  - hazard | ACTION4 | [marker,player,wall,wall]: no_change
+  - marker | ACTION4 | [wall]: no_change
+  - marker | ACTION4 | [hazard]: no_change
+  - marker | ACTION4 | [wall]: no_change
+
+Repair hypothesis for this seed: the rule for the row(s) above is decided by a field of the object itself, such as its tags, pixels, visibility or layer. Write that rule first and verify it on the counterexample and on every earlier transition. Keep every other mechanic as the earlier programs had it; do not key the rule to this step.
+
+m0r0 L3 mech_devin run1: consistent=True train=31/31 test_acc=0.7906976744186046 turns=None wall=145.1s err=None
+m0r0 L3 mech_devin run0: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=165.4s err=None
+m0r0 L3 mech_devin run3: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=186.3s err=None
+m0r0 L3 mech_devin run2: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=289.5s err=None
+m0r0 L3 mech_devin run4: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=207.4s err=None
+m0r0 L3 mech_devin run6: consistent=True train=31/31 test_acc=0.7906976744186046 turns=None wall=165.7s err=None
+m0r0 L3 mech_devin run5: consistent=True train=31/31 test_acc=0.7906976744186046 turns=None wall=207.1s err=None
+m0r0 L3 mech_devin run7: consistent=True train=31/31 test_acc=0.7674418604651163 turns=None wall=206.7s err=None

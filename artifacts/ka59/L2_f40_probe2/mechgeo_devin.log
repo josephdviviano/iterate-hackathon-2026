@@ -1,0 +1,29 @@
+probes [11, 2] (steps [87, 78]); train 31, held out 42
+artifacts: /Users/jdv/code/iterate/artifacts/ka59/L2_f40_probe2/mechgeo_devin
+
+Objects of type `block` under action ACTION1 with touching neighbours [player,portal] show mixed outcomes: no_change x2, w,x,y x1, h,w,x,y x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample at the mechanism level. Step 78, action 3, refuted every program of a committee of 2. Rows where every program was wrong; this is the mechanic to repair:
+  - row `block | ACTION3 | [player,portal]`, object token_0: observed x 33 -> 18; predicted x 33 -> 3 (1 program); x 33 -> 0 (1 program)
+Rows where every program was right on this transition; keep these mechanics as the earlier programs had them:
+  - player | ACTION3 | [block,block,portal]: no_change
+  - block | ACTION3 | [player,portal]: no_change
+  - block | ACTION3 | [portal]: no_change
+  - target | ACTION3 | [portal]: no_change
+  - target | ACTION3 | [portal]: no_change
+  - target | ACTION3 | [portal]: no_change
+  - target | ACTION3 | [portal]: no_change
+  - portal | ACTION3 | [block,block,block,player,target,target,target,target]: no_change
+
+Repair hypothesis for this seed: the rule for the row(s) above is decided by a field of the object itself, such as its tags, pixels, visibility or layer. Write that rule first and verify it on the counterexample and on every earlier transition. Keep every other mechanic as the earlier programs had it; do not key the rule to this step.
+
+Rule for this repair: a movement stops because of a visible object, a field of an object, or a bound that a visible object marks. Do not infer invisible floors, corridors or regions from where objects stopped; a repair that adds coordinate constants the earlier programs did not need is a lookup table and will be rejected.
+
+ka59 L2 mechgeo_devin run0: consistent=True train=31/31 test_acc=0.6904761904761905 turns=None wall=186.3s err=None
+ka59 L2 mechgeo_devin run1: consistent=True train=31/31 test_acc=0.6904761904761905 turns=None wall=227.3s err=None
+ka59 L2 mechgeo_devin run3: consistent=True train=31/31 test_acc=0.6904761904761905 turns=None wall=227.6s err=None
+ka59 L2 mechgeo_devin run4: consistent=True train=31/31 test_acc=0.6904761904761905 turns=None wall=104.2s err=None
+ka59 L2 mechgeo_devin run2: consistent=False train=30/31 test_acc=0.6904761904761905 turns=None wall=371.6s err=None
+ka59 L2 mechgeo_devin run5: consistent=True train=31/31 test_acc=0.6904761904761905 turns=None wall=145.4s err=None
+ka59 L2 mechgeo_devin run7: consistent=True train=31/31 test_acc=0.6904761904761905 turns=None wall=103.8s err=None
+ka59 L2 mechgeo_devin run6: consistent=True train=31/31 test_acc=0.6904761904761905 turns=None wall=186.4s err=None

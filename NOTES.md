@@ -243,3 +243,15 @@
     - A second batch of eight per arm on at least one level, to bound batch variance. This is the largest gap in every claim.
   ABANDONED:
     - None.
+
+- [jdv] - Naming the mechanism by construction - 76fd12d
+  The user asked that the refuting observation name the missing mechanic by construction, within the proposal set.
+  DONE:
+    - R31: the counterexample at the effect-row level (wrong rows to repair, right rows to keep) with one repair hypothesis per seed; A/B against the object-diff statement on ar25 L3 and the four failed levels, 48 sessions. ar25 L3 reaches 1.00 with all eight members in one round (object diff: 0.925, and three rounds for 1.00). ls20, m0r0 unchanged; ar25 L7 same vote but five behaviours kept instead of one; ka59 unchanged under the mechanism statement and under an explicit rule against hidden geometry.
+    - Diagnosis on ka59: all 23 repairs implement an invisible floor fitted to where blocks stopped; coordinate-literal density 1.6 to 3.8 per 100 tokens, the only level where it rises. The repair hypotheses and the prohibition were ignored. The lever is the verifier, not the prompt.
+    - Mechanism statement is now the default for committee.cegis (--object-diff restores R24's). Demo section 7 shows both round-2 statements.
+  DEFERRED:
+    - Admission rule on coordinate-literal density (train-side, 2x the round-1 median) as a verifier term against fitted geometry. Would have rejected all 23 ka59 repairs and none elsewhere. Not applied to any reported number.
+    - Second batch per arm, still the largest gap.
+  ABANDONED:
+    - Prompt-level prohibitions as a way to steer the synthesizer off a flexible wrong hypothesis class. Ignored on ka59 under two statements (R31).

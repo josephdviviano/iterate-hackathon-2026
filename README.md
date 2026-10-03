@@ -67,6 +67,12 @@ observes the next transition in time instead moves 0.00 to -0.06. Where the
 members already agree and are wrong together (m0r0 L3, ar25 L7) one
 counterexample changes nothing, and every resynthesized committee converges
 to one or two behaviours, so its disagreement signal must be rebuilt.
+Stating the counterexample at the effect-row level, with one repair
+hypothesis per seed (R31, now the default), gets ar25 L3 to 1.00 in a single
+round with all eight members, leaves the null levels null, and does not move
+ka59 L2, where all 23 repairs over three statements fit an invisible floor
+to the data; a verifier term on literal density, not a prompt, is the lever
+there.
 
 Live play on the ARC-AGI-3 engine (R25, R26, `committee.live`): the committee
 chooses its own actions on ar25 level 3. It is unanimous and right for 64
@@ -122,7 +128,7 @@ Synthesis backends, selected with `--backend`:
 |---|---|---|
 | `api` (default) | Repair loop over an OpenAI-compatible model. We serve Qwen3-Coder-30B-A3B-Instruct-FP8 with vLLM on a Modal H100 (`committee.modal_llm`). | Modal Secret `vllm-auth`: `VLLM_API_KEY`, `OPENAI_BASE_URL` |
 | `devin` | One Devin session per committee member; task and checker as attachments, program returned as structured output. | Modal Secret `devin-auth`: `DEVIN_API_KEY` |
-| `claude` | Claude Code CLI agent in an isolated workspace. Kept as an option, not used for reported numbers. | Modal Secret `claude-auth` |
+| `claude` | Claude Code CLI agent in an isolated workspace. Not used for the committee numbers R*; the reward-hacking numbers RH1 to RH9 use it. | Modal Secret `claude-auth` |
 
 ```
 uv run modal deploy -m committee.modal_llm                     # model server
@@ -166,10 +172,26 @@ instead. See research/reward_hacking_review.md.
 uv run python -m rewardhack.report score                                # hack features of every stored program
 uv run python -m rewardhack.experiment tr87 --level 1 --runs 3 --contradiction --abstain --parallel 3
 uv run python -m rewardhack.report summary                              # outcomes per condition
+uv run python -m rewardhack.report demo                                 # 90-second demo from cached artifacts, no model call
+uv run python -m rewardhack.report table                                # outcome counts per synthesizer model
+uv run python -m rewardhack.experiment ls20 --level 3 --runs 3 --frame  # program also gets the before frame, as OPINE does
+uv run python -m rewardhack.experiment re86 --level 5 --runs 3 --frame-out  # program returns the next frame, as OPINE does
+uv run modal run -m rewardhack.modal_synth --game re86 --level 5 --runs 3 --frame-out  # same, one Modal container per run
+uv run python -m rewardhack.split tr87:2 wa30:1                         # committee disagreement on decided vs undecided rows
 uv run modal deploy src/rewardhack/modal_app.py                         # open-weight synthesizer (vLLM on Modal)
 uv run python -m rewardhack.experiment tr87 --level 1 --runs 3 --contradiction --abstain \
     --backend modal --model Qwen/Qwen2.5-Coder-7B-Instruct --max-turns 4   # chat loop, 4 checker rounds
 ```
+
+Credits for this part:
+
+- Synthesizers evaluated: Claude Opus, Sonnet and Haiku through the Claude Code CLI (Anthropic);
+  Qwen2.5-Coder-7B-Instruct, Qwen2.5-Coder-32B-Instruct and Qwen3-Coder-30B-A3B-Instruct-FP8
+  (Qwen team, Alibaba, Apache-2.0); gpt-oss-20b and gpt-oss-120b (OpenAI, Apache-2.0), all served
+  with vLLM (Apache-2.0, `vllm/vllm-openai` image) on Modal H100s.
+- Ideas: impossible tasks as a cheating measure (ImpossibleBench, Zhong, Raghunathan and Carlini, 2025,
+  arXiv:2510.20270); an escalation channel for broken tasks (arXiv:2608.29460); detailed reviewer
+  feedback as an evasion trainer (arXiv:2609.28614); frame-level transition rules from OPINE-World.
 
 ## ONC-AGI evaluation (Track 2.3, science domain)
 

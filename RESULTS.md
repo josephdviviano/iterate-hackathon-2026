@@ -1567,3 +1567,91 @@ Reading:
 | Command | `committee.calibrate.aci` over `level_steps`; data in `artifacts/wrapper_gamma.json` |
 | Commit | this session, after ebfba59 |
 
+## R31. Naming the mechanism by construction: the counterexample at the effect-row level, one repair hypothesis per seed
+
+R24 and R27 showed the counterexample round lifts accuracy where the
+refuting observation names a missing mechanic. This round makes that the
+construction (`committee.cegis --mechanism`). The counterexample is stated
+in the effect-row vocabulary: for each object of the refuting transition,
+its row (type | action | context), the observed field changes, and each
+predicted change with its member count, split into the rows every program
+got wrong (the mechanic to repair) and the rows every program got right (to
+keep as they are). Each of the eight seeds then carries a different candidate
+condition for the wrong rows: a field of the object, a neighbour, a global
+object, the click position, hidden state, the exact size or fit relation, the
+order or chain of moving objects, an undrawn bound. On ka59 a third variant
+adds an explicit rule against inferring invisible regions from where objects
+stopped (`--geometry-rule`). Same probes, same common held-out set, same
+synthesizer as the object-diff statement of R24 and R27.
+
+| Level, common n | Statement | Admitted | Vote | Members | AUROC | Unanimous n (error) | Distinct | Next refutation |
+|---|---|---|---|---|---|---|---|---|
+| ar25 L3, 40 | round 1 | 8/8 | 0.475 | 0.45 to 0.65 | 0.78 | 26 (0.31) | 7 | probe 1 |
+| | object diff | 8/8 | 0.925 | 0.93 | 0.50 | 40 (0.08) | 1 | probe 5 |
+| | mechanism | 8/8 | 1.000 | 1.00 (all 8) | none | 40 (0.00) | 1 | never |
+| ls20 L3, 58 | round 1 | 7/8 | 0.879 | 0.59 to 0.88 | 0.74 | 36 (0.06) | 3 | probe 1 |
+| | object diff | 8/8 | 0.879 | 0.88 | 0.64 | 56 (0.09) | 2 | probe 1 |
+| | mechanism | 8/8 | 0.879 | 0.88 | 0.64 | 56 (0.09) | 2 | probe 1 |
+| m0r0 L3, 42 | round 1 | 8/8 | 0.786 | 0.76 to 0.79 | 0.64 | 37 (0.16) | 4 | probe 1 |
+| | object diff | 8/8 | 0.786 | 0.79 to 0.81 | 0.65 | 38 (0.16) | 2 | probe 1 |
+| | mechanism | 8/8 | 0.786 | 0.79 to 0.81 | 0.65 | 38 (0.16) | 2 | probe 1 |
+| ar25 L7, 63 | round 1 | 8/8 | 0.413 | 0.40 to 0.41 | 1.00 | 24 (0.00) | 6 | probe 1 |
+| | object diff | 7/8 | 0.429 | 0.43 | 0.50 | 63 (0.57) | 1 | probe 2 |
+| | mechanism | 7/8 | 0.429 | 0.38 to 0.43 | 0.62 | 46 (0.50) | 5 | probe 1 |
+| ka59 L2, 42 | round 1 | 7/8 | 0.857 | 0.69 to 0.86 | 0.59 | 33 (0.12) | 3 | probe 1 |
+| | object diff | 7/8 | 0.690 | 0.69 | 0.50 | 42 (0.31) | 1 | probe 13 |
+| | mechanism | 8/8 | 0.690 | 0.55 to 0.69 | 0.40 | 36 (0.36) | 2 | probe 14 |
+| | mechanism + geometry rule | 7/8 | 0.690 | 0.69 | 0.50 | 42 (0.31) | 1 | probe 13 |
+
+Coordinate-sized integer literals per 100 tokens, median over the admitted
+programs (`artifacts/repair_literals.json`):
+
+| Level | Round 1 | Object-diff repair | Mechanism repair |
+|---|---|---|---|
+| ar25 L3 | 0.3 | 0.5 | 0.4 |
+| sk48 L2 | 0.8 | 0.8 | |
+| m0r0 L3 | 2.3 | 2.4 | 2.5 |
+| ar25 L7 | 0.5 | 0.8 | 0.4 |
+| ls20 L3 | 2.8 | 2.1 | 2.1 |
+| ka59 L2 | 1.6 | 3.8 | 3.7 |
+| g50t L1 | 1.3 | 1.2 | |
+
+Reading:
+
+1. Where the repair is within the synthesizer's reach, naming the row gets
+   it in one round. ar25 L3 reaches 1.00 with all eight members after one
+   observation; the object-diff statement reached 0.925 and needed two more
+   rounds and four observations for the same result. The statement showed
+   three wall rows under action 1 where four programs predicted no change,
+   two predicted the object gone and two had the right effect; the members'
+   notes name the rule (the axis moves without checking piece rows).
+2. Where the round was null it stays null: ls20 and m0r0 produce the same
+   behaviour under either statement. On ar25 L7 the vote is the same but the
+   mechanism statement keeps five behaviours where the object diff collapsed
+   to one, so the uncertainty signal survives the round (AUROC 0.62 against
+   0.50).
+3. Where the round lost it still loses, under the mechanism statement and
+   under an explicit prohibition. All 23 admitted ka59 repairs over the three
+   statements implement the same invisible floor fitted to where blocks
+   stopped; the eight repair hypotheses were not followed, and the
+   prohibition was ignored. ka59 is the only level where the repairs'
+   coordinate-literal density rises by more than half (1.6 to 3.8), and the
+   round-1 members the probes refuted were the ones at 0.86: the right rule
+   is outside what this synthesizer proposes, and fitted geometry is its
+   fallback. A prompt cannot move it; a verifier can. An admission rule on
+   literal density, a train-side quantity, would have rejected all 23 and
+   none of the other levels' repairs. That is the reward-design lever, and it
+   mirrors RH4's finding on the exact-replay hack.
+4. The mechanism statement is now the default for `committee.cegis`
+   (`--object-diff` restores the old one): it is better on one level, equal
+   on three, and preserves diversity on the fourth.
+
+| Item | Value |
+|---|---|
+| Metric | As R24; coordinate-literal density per program |
+| Runs | 48 Devin sessions: 5 levels x 8 mechanism, 8 geometry rule; 2 not admitted (timeouts) |
+| Split | As R24 and R27; same probes and common sets |
+| Baseline | Round 1 and the object-diff round 2 on the same transitions |
+| Command | `uv run python -m committee.cegis GAME --level L --runs 8 --backend devin --parallel 4 --condition mech_devin --mechanism`; `... --geometry-rule`; `uv run python -m committee.cegis GAME --level L --report --conditions cegis_devin,mech_devin` |
+| Commit | 9591b66, 3d67a77 (code); this session (artifacts) |
+

@@ -141,7 +141,7 @@ def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
     base0 = condition_dir(game, level, train_frac, committee)
     if test_level is None and any(base0.parent.parent.glob(f"{base0.parent.name}_probe*")):
         from .cegis import report
-        rounds = report(game, level, train_frac, committee, "cegis_devin", "passive_devin")
+        rounds = report(game, level, train_frac, committee, "cegis_devin", "passive_devin", ["cegis_devin", "mech_devin"])
         print(f"\n[7] Closing the loop: observe the probe that refutes every member, resynthesize on the "
               f"counterexample, score on the {rounds['n_common']} transitions no round observed.")
         for name, r in rounds["arms"].items():
