@@ -1,0 +1,18 @@
+{
+  "name": "cifar100-speedrun",
+  "editable": ["submissions/arena/"],
+  "setup": ["cp -r submission_template submissions/arena"],
+  "run": "uv run python -m benchmark.run --submission arena --n 3",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": {"regex": "\"mean_accuracy\": ([-0-9.eE+]+)"},
+    "time": {"regex": "\"mean_training_time\": ([-0-9.eE+]+)"},
+    "complete": {"regex": "\"complete\": (true|false)"}
+  },
+  "objective": {"metric": "time", "direction": "minimize"},
+  "constraints": [
+    {"metric": "complete", "op": "==", "value": true},
+    {"metric": "accuracy", "op": ">=", "value": 0.753}
+  ],
+  "infeasible_order": {"metric": "accuracy", "direction": "maximize"}
+}

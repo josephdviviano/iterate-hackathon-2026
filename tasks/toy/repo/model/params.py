@@ -1,0 +1,3 @@
+LR = 0.1
+WIDTH = 8
+EPOCHS = 5
