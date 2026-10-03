@@ -17,7 +17,7 @@ from benchmark.api import BuildContext, TrainingData
 HYP = {
     "widths": (128, 384, 576),
     "depth": 3,  # convs per group; depth 3 adds a residual around conv2/conv3
-    "epochs": 7,
+    "epochs": 6.5,
     "batch_size": 1024,
     "lr": 9.0,
     "momentum": 0.85,
