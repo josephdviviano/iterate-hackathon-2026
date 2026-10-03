@@ -43,7 +43,7 @@ DEFAULTS = {
     "muon_momentum": 0.6,
     "muon_ns_steps": 3,
     # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
-    "res_schedule": [[0.5, 24]],
+    "res_schedule": [[0.625, 24]],
 }
 
 
