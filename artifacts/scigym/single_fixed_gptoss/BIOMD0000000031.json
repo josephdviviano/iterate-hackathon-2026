@@ -1,0 +1,218 @@
+{
+ "system": "BIOMD0000000031",
+ "arm": "single_fixed",
+ "model": "gptoss",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 6,
+ "n_truth_reactions": 4,
+ "n_members": 1,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": {
+  "precision": 0.16666666666666666,
+  "recall": 0.25,
+  "f1": 0.2
+ },
+ "rms_majority": {
+  "precision": 0.16666666666666666,
+  "recall": 0.25,
+  "f1": 0.2
+ },
+ "rms_best_member": 0.2,
+ "ste_medoid": 0.34359952928752685,
+ "ste_partial": 0.3432162346843954,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_dxmb set to 24.98",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 2
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_dxmb set to 249.8",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.30769230769230765,
+   "rms_majority_f1": 0.30769230769230765,
+   "calls": 4
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_2i2t set to 1000",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.6666666666666666,
+   "rms_majority_f1": 0.6666666666666666,
+   "calls": 6
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_2i2t set to 10",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2,
+   "rms_majority_f1": 0.2,
+   "calls": 8
+  }
+ ],
+ "calls": 8,
+ "wall_s": 768.0,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_dxmb set to 24.98",
+  "initial concentration of id_dxmb set to 249.8",
+  "initial concentration of id_2i2t set to 1000",
+  "initial concentration of id_2i2t set to 10"
+ ],
+ "members": [
+  {
+   "text": "```\nR1: id_2i2t -> id_dxmb ; k1 * id_2i2t\nR2: id_dxmb -> id_wv4z ; k2 * id_dxmb\nR3: id_wv4z -> ; k3 * id_wv4z\nR4: id_rhn6 -> ; k4 * id_rhn6 * id_wv4z\nR5: -> id_7wlx ; k5\nR6: -> id_hxcn ; k6\nparams: k1 = 0.02, k2 = 0.01, k3 = 0.001, k4 = 0.0005, k5 = 0.0, k6 = 0.0\n```",
+   "keys": [
+    [
+     [
+      "id_2i2t"
+     ],
+     [
+      "id_dxmb"
+     ]
+    ],
+    [
+     [
+      "id_dxmb"
+     ],
+     [
+      "id_wv4z"
+     ]
+    ],
+    [
+     [
+      "id_wv4z"
+     ],
+     []
+    ],
+    [
+     [
+      "id_rhn6"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_7wlx"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_hxcn"
+     ]
+    ]
+   ],
+   "errors": [
+    0.3381715040232556,
+    0.33087559901957203,
+    0.3563278448794964,
+    0.47175698207916156,
+    0.3629669528780775
+   ],
+   "admitted": false
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 1,
+     "max_error": 0.17416066644515357,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 1,
+     "max_error": 0.1741630949630142,
+     "admitted": false
+    }
+   ],
+   "wall_s": 16.1
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 8,
+     "max_error": 0.3001535124168208,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 9,
+     "max_error": 0.21478963520490846,
+     "admitted": false
+    }
+   ],
+   "wall_s": 209.9
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.5548919873917472,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 8,
+     "max_error": 0.4773979888766844,
+     "admitted": false
+    }
+   ],
+   "wall_s": 231.3
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "rate law does not parse: 'k4 * id_wv4z * id_rhn6 [id_wv4z]'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.47175698207916156,
+     "admitted": false
+    }
+   ],
+   "wall_s": 136.3
+  }
+ ]
+}

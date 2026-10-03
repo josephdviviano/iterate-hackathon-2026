@@ -1,0 +1,188 @@
+{
+ "system": "BIOMD0000000076",
+ "arm": "single_fixed",
+ "model": "gptoss",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 3,
+ "n_truth_reactions": 2,
+ "n_members": 1,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": {
+  "precision": 0.5,
+  "recall": 0.5,
+  "f1": 0.5
+ },
+ "rms_majority": {
+  "precision": 0.5,
+  "recall": 0.5,
+  "f1": 0.5
+ },
+ "rms_best_member": 0.5,
+ "ste_medoid": 0.07981257609139485,
+ "ste_partial": 0.333000333000333,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_pham set to 5.9",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_pham set to 0.059",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 3
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_p5hv set to 151",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 5
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_p5hv set to 1.51",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 7
+  }
+ ],
+ "calls": 7,
+ "wall_s": 300.7,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_pham set to 5.9",
+  "initial concentration of id_pham set to 0.059",
+  "initial concentration of id_p5hv set to 151",
+  "initial concentration of id_p5hv set to 1.51"
+ ],
+ "members": [
+  {
+   "text": "```text\nR1: id_pham -> id_4g8t [id_p5hv] ; Vmax * id_pham * id_p5hv / ((Kph + id_pham)*(Kp5 + id_p5hv))\nR2: id_4g8t -> ; k_deg * id_4g8t\nparams: Vmax = 0.025, Kph = 0.5, Kp5 = 30, k_deg = 0.10\n```",
+   "keys": [
+    [
+     [
+      "id_pham"
+     ],
+     [
+      "id_4g8t"
+     ]
+    ],
+    [
+     [
+      "id_4g8t"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.07620734007956974,
+    0.04271420562161856,
+    0.2268879248091462,
+    0.2269098784737111,
+    0.22666842491097675
+   ],
+   "admitted": false
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.0001140607720094503,
+     "admitted": true
+    }
+   ],
+   "wall_s": 6.4
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.22666834819020307,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 2,
+     "max_error": 0.22666842216271468,
+     "admitted": false
+    }
+   ],
+   "wall_s": 99.2
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.1965849919322686,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 2,
+     "max_error": 0.33014378904892167,
+     "admitted": false
+    }
+   ],
+   "wall_s": 59.1
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.3317372383948453,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 2,
+     "max_error": 0.2269098784737111,
+     "admitted": false
+    }
+   ],
+   "wall_s": 102.1
+  }
+ ]
+}

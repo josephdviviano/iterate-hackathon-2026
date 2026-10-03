@@ -1,0 +1,170 @@
+{
+ "system": "BIOMD0000000098",
+ "arm": "single_fixed",
+ "model": "qwen",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 2,
+ "n_truth_reactions": 6,
+ "n_members": 1,
+ "n_admitted": 1,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.6666666666666666,
+  "recall": 0.3333333333333333,
+  "f1": 0.4444444444444444
+ },
+ "rms_majority": {
+  "precision": 0.6666666666666666,
+  "recall": 0.3333333333333333,
+  "f1": 0.4444444444444444
+ },
+ "rms_best_member": 0.4444444444444444,
+ "ste_medoid": 0.11881623455458845,
+ "ste_partial": 0.3247303555835524,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_fzx2 set to 1.5",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2222222222222222,
+   "rms_majority_f1": 0.2222222222222222,
+   "calls": 3
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_fzx2 set to 0.015",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.4444444444444444,
+   "rms_majority_f1": 0.4444444444444444,
+   "calls": 4
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_zldk set to 16",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.4444444444444444,
+   "rms_majority_f1": 0.4444444444444444,
+   "calls": 4
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_zldk set to 0.16",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.4444444444444444,
+   "rms_majority_f1": 0.4444444444444444,
+   "calls": 4
+  }
+ ],
+ "calls": 4,
+ "wall_s": 129.1,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_fzx2 set to 1.5",
+  "initial concentration of id_fzx2 set to 0.015",
+  "initial concentration of id_zldk set to 16",
+  "initial concentration of id_zldk set to 0.16"
+ ],
+ "members": [
+  {
+   "text": "R1: id_fzx2 -> id_zldk ; k1 * id_fzx2\nR2: id_zldk -> ; k2 * id_zldk\nR3: -> id_fzx2 ; k3\nparams: k1 = 0.25, k2 = 0.1, k3 = 0.3",
+   "keys": [
+    [
+     [
+      "id_fzx2"
+     ],
+     [
+      "id_zldk"
+     ]
+    ],
+    [
+     [
+      "id_zldk"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_fzx2"
+     ]
+    ]
+   ],
+   "errors": [
+    0.11402856247249234,
+    0.12000036429956668,
+    0.11418077602294827,
+    0.13289722826262887,
+    0.1374281167607055
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.10934037969066215,
+     "admitted": true
+    }
+   ],
+   "wall_s": 8.3
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.5092478609017265,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 3,
+     "max_error": 0.5462969817109335,
+     "admitted": false
+    }
+   ],
+   "wall_s": 46.9
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.12000036429956668,
+     "admitted": true
+    }
+   ],
+   "wall_s": 28.7
+  }
+ ]
+}
