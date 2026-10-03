@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 Arch = Literal["airbench", "resnet9"]
 Flip = Literal["alternating", "random", "none"]
+Optimizer = Literal["sgd", "muon"]
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,19 @@ class RecipeConfig:
     translate: int = 2
     cutout: int = 0
     compile: bool = False
+    # Muon mode (airbench94_muon): Muon on conv filters, SGD on biases and the head, linear
+    # decay to zero, whitening-bias lr decaying over ``whiten_bias_epochs``.
+    optimizer: Optimizer = "sgd"
+    muon_lr: float = 0.24
+    muon_momentum: float = 0.6
+    muon_ns_steps: int = 3
+    muon_bias_lr: float = 0.053
+    muon_head_lr: float = 0.67
+    muon_weight_decay: float = 2e-6
+    # Logits divided by the head's fan-in, head initialised at unit std (airbench94_muon).
+    head_norm: bool = False
+    # Progressive resizing: ((start_fraction, size), ...); empty trains at full resolution.
+    res_schedule: tuple[tuple[float, int], ...] = ()
 
     @property
     def scaled_widths(self) -> tuple[int, int, int]:
@@ -63,6 +77,8 @@ class RecipeConfig:
             if len(widths) != 3 or not all(isinstance(w, int) and w > 0 for w in widths):
                 raise ValueError("widths must be three positive integers")
             values["widths"] = tuple(widths)
+        if "res_schedule" in values:
+            values["res_schedule"] = tuple(tuple(entry) for entry in values["res_schedule"])
         config = cls(**values)
         config.validate()
         return config
@@ -93,3 +109,14 @@ class RecipeConfig:
             raise ValueError("lr_peak_frac must be in (0, 1)")
         if self.translate < 0 or self.cutout < 0 or self.weight_decay < 0:
             raise ValueError("translate, cutout and weight_decay must be non-negative")
+        if self.optimizer not in ("sgd", "muon"):
+            raise ValueError(f"optimizer must be sgd or muon, not {self.optimizer!r}")
+        if not (self.muon_lr > 0 and self.muon_bias_lr > 0 and self.muon_head_lr > 0):
+            raise ValueError("Muon learning rates must be positive")
+        if not 0 <= self.muon_momentum < 1 or self.muon_ns_steps < 1:
+            raise ValueError("muon_momentum must be in [0, 1) and muon_ns_steps at least 1")
+        starts = [entry[0] for entry in self.res_schedule]
+        if any(len(entry) != 2 for entry in self.res_schedule) or starts != sorted(starts):
+            raise ValueError("res_schedule must be ascending (start_fraction, size) pairs")
+        if any(not 0 <= f < 1 or not 8 <= size <= 32 for f, size in self.res_schedule):
+            raise ValueError("res_schedule fractions must be in [0, 1) and sizes in [8, 32]")

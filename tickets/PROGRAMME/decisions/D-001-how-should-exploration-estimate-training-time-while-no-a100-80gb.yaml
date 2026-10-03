@@ -1,0 +1,28 @@
+schema_version: '1.0'
+decision_id: D-001
+task_id: T-005
+question: How should exploration estimate training time while no A100 80GB PCIe is available (B-001, B-002)?
+decision: 'Per the team lead''s directive, explore on one local GPU (GPU 1, one slot) and rank configurations
+  by a local proxy: eager harness prepare+train time on the otherwise idle GPU, alongside single-view
+  dev-stack accuracy. Every proxy-based selection is provisional and reopens when A100 per-epoch timings
+  exist.'
+rationale: The A100 is blocked on an external approval; local accuracy is the dominant uncertainty and
+  is hardware-independent to first order, while relative per-epoch cost on an idle Blackwell GPU is the
+  best available ordering of candidate shapes.
+alternatives:
+- 'Wait for the A100 before any selection: rejected because it stalls the accuracy frontier, which does
+  not need the A100.'
+- 'Rank by analytic FLOPs only: rejected as the primary proxy because the airbench paper reports FLOP
+  cuts that did not cut A100 wall time; FLOPs are recorded as a secondary check.'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: DIRECTIVES.md
+  locator: research/DIRECTIVES.md
+  sha256: 5d002454f5f48ac1b938ea85d5e03b885235e313411ce8d8342b681187cafbd8
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: provisional

@@ -1,0 +1,17 @@
+# Hill climb step 2 (X-002): P1 shows width, not epochs, moves single-view accuracy.
+# Extend width beyond 2x at shorter budgets, and redistribute channels across stages at
+# roughly 2x FLOPs. The 2x/10 and 2x/12 cells also re-check the refactored SGD path
+# against P1 (same recipe, new source snapshot).
+name = "s2-width"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1, 2, 3, 4]
+devices = [1]
+slots_per_device = 1
+
+[[grid]]
+width_mult = [2.0, 2.5, 3.0]
+epochs = [6, 8, 10, 12]
+
+[[grid]]
+widths = [[64, 512, 512], [128, 512, 768], [96, 384, 768]]
+epochs = [8, 10, 12]

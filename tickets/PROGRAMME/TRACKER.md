@@ -22,7 +22,7 @@
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
 - **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
-- **Next:** Select among T-005 (Single-view width by epochs frontier (P1)) by consequence and decision leverage.
+- **Next:** Continue T-013 (Local-proxy hill climb to convergence (X-002)).
 - **Open human feedback:** none
 
 ## Work completed and underway
@@ -33,7 +33,7 @@
 | [T-002](tasks/T-002-parametrised-airbench-lineage-recipe-substrate-in-the-team-folde.md) — Parametrised airbench-lineage recipe substrate in the team folder | delivery | completed | Parametrised recipe passes CPU contract tests (reset, invalid params, defaults, harness smoke for three variants) on the pinned stack and trains on real data (default 69.5% single-view, eager evaluation). |
 | [T-003](tasks/T-003-declarative-multi-gpu-sweep-runner-collation-and-runbook.md) — Declarative multi-GPU sweep runner, collation and runbook | delivery | completed | Sweep runner dispatches across both GPUs through the harness, resumes only interrupted configs, records failures, and collates reproducibly; runbook replayed from a fresh worktree. |
 | [T-004](tasks/T-004-a100-pcie-timing-calibration-and-cross-stack-accuracy-agreement.md) — A100 PCIe timing calibration and cross-stack accuracy agreement | exploration | blocked | On a rented A100 80GB PCIe in the pinned container, measure per-epoch and fixed preparation time for each frontier width with telemetry, re-time a ResNet-9 reimplementation against the 59.3 s baseline, and compare a reference configuration's 10-seed accuracy with the dev stack. |
-| [T-005](tasks/T-005-single-view-width-by-epochs-frontier-p1.md) — Single-view width by epochs frontier (P1) | exploration | ready | Measure single-view CIFAR-100 accuracy over at least four widths or depths of the airbench-lineage substrate and at least four epoch counts with five seeds per cell, plus a ResNet-9 reference arm, to locate where each width crosses 75.3%. |
+| [T-005](tasks/T-005-single-view-width-by-epochs-frontier-p1.md) — Single-view width by epochs frontier (P1) | exploration | completed | Frontier measured over 4 shapes x 4 epoch counts x 5 seeds plus a ResNet-9 arm; airbench96 shape reaches 75.37% at 10 epochs, 2x crosses at 13.7 epochs; capacity-bound (F-003). |
 | [T-006](tasks/T-006-select-the-base-regime.md) — Select the base regime | decision | proposed | Choose architecture, width, depth, batch size and epoch count by minimum interpolated A100 PCIe time at a 75.3% single-view mean, steelmanning the runner-up regime. |
 | [T-007](tasks/T-007-add-on-levers-at-the-selected-base-p2.md) — Add-on levers at the selected base (P2) | exploration | proposed | Compare Muon versus SGD with lookahead, progressive resizing, in-run proxy-loss example selection and label-smoothing level at matched accuracy with at least 10 seeds per arm at the selected base. |
 | [T-008](tasks/T-008-adopt-or-reject-add-on-levers.md) — Adopt or reject add-on levers | decision | proposed | Record which levers enter the final recipe and why each rejected lever was rejected. |
@@ -41,6 +41,7 @@
 | [T-010](tasks/T-010-official-equivalent-40-seed-qualification-on-the-a100-pcie.md) — Official-equivalent 40-seed qualification on the A100 PCIe | assurance | proposed | Run the frozen candidate in the pinned container on an A100 80GB PCIe with a private 40-seed file, cpus 4 and network none; record results, telemetry and the R-001 risk calculation. |
 | [T-011](tasks/T-011-fresh-context-compliance-review-and-independence-checks.md) — Fresh-context compliance review and independence checks | assurance | proposed | Review the frozen candidate source against every RULES.md section 3 bullet without implementation narrative, and run repeat-seed, reordered-seed and fresh-process independence checks. |
 | [T-012](tasks/T-012-open-the-upstream-pull-request-after-approval.md) — Open the upstream pull request after approval | delivery | proposed | After a recorded team-lead approval, create a clean branch from upstream main containing only the team folder and open the pull request. |
+| [T-013](tasks/T-013-local-proxy-hill-climb-to-convergence-x-002.md) — Local-proxy hill climb to convergence (X-002) | exploration | in_progress | From the P1 frontier, climb one lever at a time (width and stage allocation, epochs, optimiser, batch size, resolution schedule, regularisation, learning rates) on GPU 1, keeping a change only when the interpolated proxy time to a 75.3% single-view mean falls beyond seed noise; stop when no accessible lever improves it. |
 
 ## Issues identified
 
@@ -58,6 +59,27 @@
 - **Decision consequence:** Keep one slot per GPU, never compare local times, and take all timing from the A100 (T-004).
 - **Resolution:** Runbook section 4 sets one slot per device; local times are labelled non-evidence.
 
+### F-003 — resolved, material
+
+- **Observation:** P1 (5 seeds per cell, single-view, dev stack): the airbench94 shape plateaus at 71.5% (1x) and 74.0% (1.5x) by 24 epochs; 2x crosses 75.3% at an interpolated 13.7 epochs (12.0 s local proxy); the airbench96 shape (128/384/512, three convs per block with a residual, translate 4) reaches 75.37% at 10 epochs (9.3 s) and 76.9% at 24.
+- **Interpretation:** Single-view 75% on CIFAR-100 is capacity-bound: extra epochs barely help narrow nets, while width and depth move accuracy several points. H2 (airbench tricks reach the target within 20 epochs) and H3 (minimum-time point at airbench96-class capacity) are supported; the best cell lies at the grid edge, so the optimum may sit below 10 epochs.
+- **Decision consequence:** Climb from the airbench96 shape: probe fewer than 10 epochs and nearby depth-3 shapes before optimiser and resolution levers.
+- **Resolution:** Base for the hill climb (T-013) is the airbench96 shape.
+
+### F-004 — resolved, contextual
+
+- **Observation:** The ResNet-9 reference arm reached only 57.96% (sd 0.76 pp) at 40 epochs, versus the organisers' 75.36% for a ResNet-9 baseline at the same budget.
+- **Interpretation:** The arm reused airbench's optimiser parametrisation (lr 11.5 per 1024, BN-bias lr x64, frozen-BN momentum) on a ReLU network with trainable BatchNorm, so the shortfall reflects mistuned hyperparameters, not the architecture. Retuning is not decision-bearing: ResNet-9 costs 113.8 TFLOP per epoch and needs about 40 epochs (organiser evidence), roughly 3.4x the FLOPs of the airbench96 shape at 10 epochs.
+- **Decision consequence:** Reject ResNet-9 as a base (H1) on FLOP grounds; do not spend GPU time retuning the arm.
+- **Resolution:** H1 rejected as base; arm retained only as a recorded negative.
+
+### F-005 — resolved, material
+
+- **Observation:** Pooled within-cell sd of single-view accuracy over the 16 airbench P1 cells is 0.245 pp (cells range 0.08-0.37 pp).
+- **Interpretation:** H6 is supported: with sd near 0.25 pp, a development mean of 75.2% over 40 seeds keeps the estimated official qualification risk under 1% (about 0.4%).
+- **Decision consequence:** Use 75.3% as the conservative climbing target and 75.2% over at least 40 seeds as the final development criterion.
+- **Resolution:** Margin set; reconfirm sd at the final recipe.
+
 ### B-001 — external, open
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -70,7 +92,12 @@
 
 ## Decisions and changes
 
-- No decisions recorded.
+### D-001 — provisional
+
+- **Question:** How should exploration estimate training time while no A100 80GB PCIe is available (B-001, B-002)?
+- **Decision:** Per the team lead's directive, explore on one local GPU (GPU 1, one slot) and rank configurations by a local proxy: eager harness prepare+train time on the otherwise idle GPU, alongside single-view dev-stack accuracy. Every proxy-based selection is provisional and reopens when A100 per-epoch timings exist.
+- **Rationale:** The A100 is blocked on an external approval; local accuracy is the dominant uncertainty and is hardware-independent to first order, while relative per-epoch cost on an idle Blackwell GPU is the best available ordering of candidate shapes.
+- **Alternatives:** Wait for the A100 before any selection: rejected because it stalls the accuracy frontier, which does not need the A100.; Rank by analytic FLOPs only: rejected as the primary proxy because the airbench paper reports FLOP cuts that did not cut A100 wall time; FLOPs are recorded as a secondary check.
 
 ## Deferred or rejected work
 
@@ -109,7 +136,7 @@
 | Sequence | Workset | Decision boundary | Status |
 | ---: | --- | --- | --- |
 | 1 | Exploration enablement | Can the team run the exploration grid at scale and trust its outputs? | complete |
-| 2 | Width by epochs frontier | Is the competition capacity-bound or throughput-bound, and which base regime wins? | available |
+| 2 | Width by epochs frontier | Is the competition capacity-bound or throughput-bound, and which base regime wins? | active |
 | 3 | A100 PCIe calibration | Which time model and which accuracy correction apply to frontier decisions? | active |
 | 4 | Add-on levers at the selected base | Which levers enter the final recipe? | planned |
 | 5 | Convergence and assurance | Is the exact candidate qualifying, compliant and ready to submit? | planned |
@@ -117,13 +144,14 @@
 
 ### Explorations
 
-- **X-001:** Where does the single-view width by epochs frontier cross 75% on CIFAR-100, and is the minimum-time regime capacity-bound or throughput-bound? (test_ready; test-ready=true)
+- **X-001:** Where does the single-view width by epochs frontier cross 75% on CIFAR-100, and is the minimum-time regime capacity-bound or throughput-bound? (closed; test-ready=true)
+- **X-002:** Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate? (test_ready; test-ready=true)
 
 ### Exact frontier
 
 - State: **continue**
-- Active: none
-- Eligible: T-005
+- Active: T-013
+- Eligible: none
 - Unresolved outcomes: O-001, O-002, O-003, O-004
 - Unresolved requirements: R-001, R-002, R-003, R-004, R-005, R-007, R-008
 - Pending assessments: none

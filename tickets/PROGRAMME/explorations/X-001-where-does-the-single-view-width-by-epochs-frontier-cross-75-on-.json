@@ -78,7 +78,7 @@
       "why_material": "The margin sets the epoch count at the threshold."
     }
   ],
-  "disposition": "test_ready",
+  "disposition": "closed",
   "exploration_id": "X-001",
   "hypotheses": [
     {
@@ -95,7 +95,7 @@
         "ResNet-9 reference arm accuracy at 40 epochs (P1)",
         "A100 per-epoch timing (T-004)"
       ],
-      "status": "candidate"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "H2",
@@ -110,7 +110,7 @@
       "evidence_needed": [
         "P1 frontier table"
       ],
-      "status": "selected"
+      "status": "tested"
     },
     {
       "hypothesis_id": "H3",
@@ -126,7 +126,7 @@
         "P1 frontier table",
         "A100 per-epoch time per width (T-004)"
       ],
-      "status": "selected"
+      "status": "tested"
     },
     {
       "hypothesis_id": "H4",
@@ -172,7 +172,7 @@
         "Pooled sd from P1 cells",
         "40-seed confirmation run (T-010)"
       ],
-      "status": "candidate"
+      "status": "tested"
     }
   ],
   "interpretation_forks": [],
@@ -279,7 +279,12 @@
       "decision_rule": "Select the width minimising E*(w) times A100 per-epoch time from T-004; if no width reaches 75.3% below 30 epochs, H3 dominates and the next probe moves to wider residual nets with Cutout; if the 1x width wins, shift effort to throughput levers.",
       "information_gain": "Separates capacity-bound from throughput-bound accounts and supplies the sd estimate for the margin, in one bounded grid.",
       "resource_bound": "About 85 runs of 10-60 s each on two local GPUs, roughly one to two GPU-hours.",
-      "status": "ready"
+      "status": "run",
+      "result_finding_ids": [
+        "F-003",
+        "F-004",
+        "F-005"
+      ]
     },
     {
       "probe_id": "P2",
@@ -300,7 +305,7 @@
     "H2",
     "H3"
   ],
-  "synthesis": "P1 is the smallest probe that separates the capacity-bound (H3) and throughput-bound (H1, narrow-width H2) accounts and yields the sd estimate for H6; optimiser and data-volume levers (H4, H5) stay dormant until a base is selected.",
+  "synthesis": "P1 answered the question: single-view 75% on CIFAR-100 is capacity-bound (H3 supported) and airbench-lineage nets reach it within about 10 epochs (H2 supported); the airbench96 shape gives the best proxy time (<= 9.3 s at 10 epochs). H1 is rejected as a base on FLOP grounds (F-004). H6 holds with pooled sd 0.245 pp (F-005). H4 and H5 move to the hill-climb portfolio X-002 under T-013.",
   "task_id": "T-005",
   "trigger": "programme_start"
 }

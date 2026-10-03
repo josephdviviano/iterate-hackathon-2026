@@ -89,7 +89,8 @@ class AirbenchNet(nn.Module):
             ConvGroup(w2, w3, depth, momentum),
         )
         self.head = nn.Linear(w3, NUM_CLASSES, bias=False)
-        self.scale = config.scaling_factor
+        self.head_norm = config.head_norm
+        self.scale = 1 / w3 if config.head_norm else config.scaling_factor
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.normalize(x, self.whiten.weight.dtype)
@@ -172,6 +173,8 @@ def reset_model(model: nn.Module) -> None:
             module.reset_parameters()
     if isinstance(model, AirbenchNet):
         model.whiten.bias.zero_()
+        if model.head_norm:
+            model.head.weight.div_(model.head.weight.float().std().to(model.head.weight.dtype))
 
 
 @torch.no_grad()

@@ -1,0 +1,248 @@
+{
+  "connections": [],
+  "design_space": [
+    {
+      "dimension": "capacity-shape",
+      "current_assumption": "128/384/512 with three convs per block is the right shape.",
+      "alternatives": [
+        "96/256/384 depth 3",
+        "128/512/768 depth 3",
+        "two-conv nets at 2.5-3x width",
+        "channels shifted to late stages"
+      ],
+      "why_material": "Capacity is the binding constraint (F-003); shape sets both accuracy per epoch and seconds per epoch."
+    },
+    {
+      "dimension": "budget",
+      "current_assumption": "10 epochs.",
+      "alternatives": [
+        "6-9 epochs",
+        "fractional epochs tuned to the target"
+      ],
+      "why_material": "Time is linear in epochs; the best P1 cell sits at the grid edge."
+    },
+    {
+      "dimension": "optimiser",
+      "current_assumption": "airbench SGD with lookahead and triangular schedule.",
+      "alternatives": [
+        "Muon on filters with SGD on biases and head",
+        "learning-rate and weight-decay retune"
+      ],
+      "why_material": "Muon cut CIFAR-10 epochs by about 20%."
+    },
+    {
+      "dimension": "batch-size",
+      "current_assumption": "1024.",
+      "alternatives": [
+        "768",
+        "1536",
+        "2048"
+      ],
+      "why_material": "Larger batches raise GPU efficiency but may need more epochs."
+    },
+    {
+      "dimension": "resolution",
+      "current_assumption": "32 px throughout.",
+      "alternatives": [
+        "24 then 32 px",
+        "24, 28 then 32 px"
+      ],
+      "why_material": "Low-resolution epochs cost about 44% fewer FLOPs."
+    },
+    {
+      "dimension": "regularisation",
+      "current_assumption": "label smoothing 0.2, translate 4, no Cutout.",
+      "alternatives": [
+        "label smoothing 0.1 or 0.3",
+        "translate 2",
+        "lookahead off"
+      ],
+      "why_material": "Short budgets on CIFAR-100 may want less regularisation."
+    },
+    {
+      "dimension": "systems",
+      "current_assumption": "Eager execution.",
+      "alternatives": [
+        "torch.compile in build"
+      ],
+      "why_material": "Compile cut CIFAR-10 time 14% at unchanged accuracy; it changes time, not accuracy."
+    }
+  ],
+  "disposition": "test_ready",
+  "exploration_id": "X-002",
+  "hypotheses": [
+    {
+      "hypothesis_id": "H7",
+      "proposition": "The airbench96 shape reaches 75.3% below 10 epochs, or a nearby depth-3 shape reaches it at lower proxy time.",
+      "mechanism": "Residual three-conv blocks raise accuracy per epoch enough that fewer epochs or fewer channels suffice.",
+      "changed_dimensions": [
+        "capacity-shape",
+        "budget"
+      ],
+      "prediction": "Interpolated time to 75.3% below 9.3 s for some depth-3 shape.",
+      "disconfirming_result": "No depth-3 cell beats 9.3 s.",
+      "decision_changed": "Base shape and epoch budget.",
+      "evidence_needed": [
+        "S3 sweep"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "H4",
+      "proposition": "Muon on conv filters reduces epochs to 75.3% by at least 10% at the selected shape.",
+      "mechanism": "Orthogonalised updates equalise progress across filter directions.",
+      "changed_dimensions": [
+        "optimiser"
+      ],
+      "prediction": "Muon reaches the target in at least 10% fewer epochs at small Newton-Schulz overhead.",
+      "disconfirming_result": "Proxy time at target within noise of SGD or worse.",
+      "decision_changed": "Optimiser of the recipe.",
+      "evidence_needed": [
+        "S4 lever sweep"
+      ],
+      "status": "candidate"
+    },
+    {
+      "hypothesis_id": "H5",
+      "proposition": "Progressive resizing (24 or 24-28 px early, 32 px late) lowers proxy time by at least 5% at matched accuracy.",
+      "mechanism": "Early epochs learn coarse features at lower resolution and lower cost.",
+      "changed_dimensions": [
+        "resolution"
+      ],
+      "prediction": "Time at target at least 5% lower.",
+      "disconfirming_result": "Accuracy loss costs more epochs than the cheaper epochs save.",
+      "decision_changed": "Resolution schedule.",
+      "evidence_needed": [
+        "S4 lever sweep"
+      ],
+      "status": "candidate"
+    },
+    {
+      "hypothesis_id": "H8",
+      "proposition": "A larger batch (1536 or 2048) lowers proxy time at matched accuracy through higher GPU efficiency.",
+      "mechanism": "Fewer, larger steps use the GPU better; airbench's decoupled parametrisation keeps step sizes comparable.",
+      "changed_dimensions": [
+        "batch-size"
+      ],
+      "prediction": "Seconds per epoch fall more than epochs to target rise.",
+      "disconfirming_result": "Epochs to target rise by more than the per-epoch saving.",
+      "decision_changed": "Batch size.",
+      "evidence_needed": [
+        "S4 lever sweep"
+      ],
+      "status": "candidate"
+    },
+    {
+      "hypothesis_id": "H9",
+      "proposition": "Weaker regularisation (label smoothing 0.1, lookahead off) suits short wide runs.",
+      "mechanism": "Short budgets underfit rather than overfit, so regularisation slows convergence.",
+      "changed_dimensions": [
+        "regularisation"
+      ],
+      "prediction": "Accuracy at fixed epochs rises at least 0.2 pp.",
+      "disconfirming_result": "Accuracy falls or is unchanged.",
+      "decision_changed": "Label smoothing and lookahead settings.",
+      "evidence_needed": [
+        "S4 lever sweep"
+      ],
+      "status": "candidate"
+    },
+    {
+      "hypothesis_id": "H10",
+      "proposition": "torch.compile lowers seconds per epoch by at least 10% at unchanged accuracy.",
+      "mechanism": "Kernel fusion removes elementwise and launch overhead.",
+      "changed_dimensions": [
+        "systems"
+      ],
+      "prediction": "Compiled proxy time at least 10% lower with accuracy within noise.",
+      "disconfirming_result": "Gain under 5% or accuracy changes.",
+      "decision_changed": "Whether timing claims use compile.",
+      "evidence_needed": [
+        "S5 compile check"
+      ],
+      "status": "candidate"
+    }
+  ],
+  "interpretation_forks": [],
+  "material_dimensions": [
+    "capacity-shape",
+    "budget",
+    "optimiser",
+    "batch-size",
+    "resolution",
+    "regularisation",
+    "systems"
+  ],
+  "observations": [
+    {
+      "observation_id": "OBS-p1",
+      "statement": "P1: the airbench96 shape reaches 75.37% single-view at 10 epochs (9.3 s local proxy, the best cell, at the grid edge); 2x two-conv width crosses at 13.7 epochs (12.0 s); narrow nets plateau below 75% (F-003).",
+      "evidence": [
+        {
+          "evidence_id": "E-001",
+          "kind": "file",
+          "label": "P1 frontier table",
+          "locator": "research/evidence/T-005/p1-frontier-table.csv",
+          "state": "verified",
+          "sha256": "536f0ae28919c5c3790f0247b98e761f4eb0efaba979f062b16cf66427daffd8"
+        }
+      ]
+    }
+  ],
+  "omitted_dimensions": [
+    {
+      "dimension": "evaluation-protocol",
+      "rationale": "Fixed by RULES.md: single view, no TTA."
+    },
+    {
+      "dimension": "hardware",
+      "rationale": "Fixed to GPU 1 by the team-lead directive; A100 timing is blocked (B-001, B-002)."
+    }
+  ],
+  "probes": [
+    {
+      "probe_id": "S3",
+      "hypothesis_ids": [
+        "H7"
+      ],
+      "method": "Depth-3 sweep: 128/384/512 at 6-10 epochs, 96/256/384 and 128/512/768 at 6, 8, 10 epochs, translate 2 vs 4 at 8 and 10 epochs; 5 seeds each.",
+      "decision_rule": "Select the shape and translate setting with the lowest interpolated proxy time to 75.3%.",
+      "information_gain": "Fixes the base before lever comparisons, which are only meaningful at the right shape.",
+      "resource_bound": "13 configurations, about 15-20 minutes on GPU 1.",
+      "status": "ready"
+    },
+    {
+      "probe_id": "S4",
+      "hypothesis_ids": [
+        "H4",
+        "H5",
+        "H8",
+        "H9"
+      ],
+      "method": "At the S3 base, run each lever at two epoch counts bracketing the target with 5 seeds, and interpolate proxy time to 75.3%.",
+      "decision_rule": "Adopt a lever if its interpolated proxy time is at least 3% lower than the base and its accuracy gain at fixed epochs exceeds two standard errors.",
+      "information_gain": "One pass decides four levers at the regime that matters.",
+      "resource_bound": "About 10-16 configurations per pass.",
+      "status": "proposed"
+    },
+    {
+      "probe_id": "S5",
+      "hypothesis_ids": [
+        "H10"
+      ],
+      "method": "Run the climbed recipe eager and compiled, 5 seeds each.",
+      "decision_rule": "Use compile for final timing if it saves at least 5% with accuracy within noise.",
+      "information_gain": "Separates a systems gain from recipe gains.",
+      "resource_bound": "2 configurations.",
+      "status": "proposed"
+    }
+  ],
+  "question": "Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate?",
+  "schema_version": "1.0",
+  "selected_hypothesis_ids": [
+    "H7"
+  ],
+  "synthesis": "Climb coordinate-wise from the P1 best cell: settle shape and budget first (S3), then levers at that shape (S4), then systems (S5), repeating S4 at the new optimum until no lever beats noise.",
+  "task_id": "T-013",
+  "trigger": "plateau"
+}

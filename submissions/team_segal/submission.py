@@ -20,7 +20,7 @@ from benchmark.api import BuildContext, TrainingData
 from .config import RecipeConfig
 from .data import TrainingStream
 from .model import AirbenchNet, init_whitening, make_model, reset_model
-from .train import fit, make_optimizer
+from .train import fit
 
 
 def build(context: BuildContext) -> SimpleNamespace:
@@ -41,8 +41,8 @@ def prepare(state: SimpleNamespace, data: TrainingData, seed: int) -> None:
 
 
 def train(state: SimpleNamespace) -> nn.Module:
-    fit(state.model, state.step_model, state.stream, state.optimizer, state.config)
-    del state.stream, state.optimizer
+    fit(state.model, state.step_model, state.stream, state.config)
+    del state.stream
     return state.model
 
 
@@ -63,7 +63,6 @@ def _prepare(
         model.whiten.bias.requires_grad = True
     generator = torch.Generator(device=device).manual_seed(seed)
     state.stream = TrainingStream(images, labels, config, generator)
-    state.optimizer = make_optimizer(model, config)
 
 
 def _warm_up(state: SimpleNamespace, eval_batch_size: int) -> None:
@@ -79,8 +78,8 @@ def _warm_up(state: SimpleNamespace, eval_batch_size: int) -> None:
     )
     warm = replace(config, epochs=2.0, whiten_bias_epochs=1.0)
     _prepare(state, synthetic, seed=0, config=warm)
-    fit(state.model, state.step_model, state.stream, state.optimizer, warm)
-    del state.stream, state.optimizer
+    fit(state.model, state.step_model, state.stream, warm)
+    del state.stream
     state.model.eval()
     with torch.inference_mode():
         for batch in (eval_batch_size, 10_000 % eval_batch_size or eval_batch_size):

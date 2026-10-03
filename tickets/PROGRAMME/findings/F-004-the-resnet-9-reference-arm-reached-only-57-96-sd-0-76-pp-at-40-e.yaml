@@ -1,0 +1,46 @@
+schema_version: '2.0'
+finding_id: F-004
+task_id: T-005
+result_kind: negative
+importance: contextual
+observation: The ResNet-9 reference arm reached only 57.96% (sd 0.76 pp) at 40 epochs, versus the organisers'
+  75.36% for a ResNet-9 baseline at the same budget.
+interpretation: 'The arm reused airbench''s optimiser parametrisation (lr 11.5 per 1024, BN-bias lr x64,
+  frozen-BN momentum) on a ReLU network with trainable BatchNorm, so the shortfall reflects mistuned hyperparameters,
+  not the architecture. Retuning is not decision-bearing: ResNet-9 costs 113.8 TFLOP per epoch and needs
+  about 40 epochs (organiser evidence), roughly 3.4x the FLOPs of the airbench96 shape at 10 epochs.'
+decision_implication: Reject ResNet-9 as a base (H1) on FLOP grounds; do not spend GPU time retuning the
+  arm.
+requirement_ids:
+- R-003
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: supported
+  rationale: airbench hyperparameters applied unchanged to a ReLU network with trainable BN
+  discriminating_test: null
+- kind: mechanism
+  disposition: not_applicable
+  rationale: the organisers' ResNet-9 baseline already reaches 75.4% at 40 epochs
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: p1-frontier-table.csv
+  locator: research/evidence/T-005/p1-frontier-table.csv
+  sha256: 536f0ae28919c5c3790f0247b98e761f4eb0efaba979f062b16cf66427daffd8
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: p1-summary.txt
+  locator: research/evidence/T-005/p1-summary.txt
+  sha256: 58fc61e7bdb3f8f0a84300fb85ff0b186c0711bfb8de45107b6f378f23aea427
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: H1 rejected as base; arm retained only as a recorded negative.

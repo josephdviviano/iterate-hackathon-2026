@@ -1,0 +1,49 @@
+schema_version: '2.0'
+finding_id: F-003
+task_id: T-005
+result_kind: positive
+importance: material
+observation: 'P1 (5 seeds per cell, single-view, dev stack): the airbench94 shape plateaus at 71.5% (1x)
+  and 74.0% (1.5x) by 24 epochs; 2x crosses 75.3% at an interpolated 13.7 epochs (12.0 s local proxy);
+  the airbench96 shape (128/384/512, three convs per block with a residual, translate 4) reaches 75.37%
+  at 10 epochs (9.3 s) and 76.9% at 24.'
+interpretation: 'Single-view 75% on CIFAR-100 is capacity-bound: extra epochs barely help narrow nets,
+  while width and depth move accuracy several points. H2 (airbench tricks reach the target within 20 epochs)
+  and H3 (minimum-time point at airbench96-class capacity) are supported; the best cell lies at the grid
+  edge, so the optimum may sit below 10 epochs.'
+decision_implication: 'Climb from the airbench96 shape: probe fewer than 10 epochs and nearby depth-3
+  shapes before optimiser and resolution levers.'
+requirement_ids:
+- R-003
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: p1-frontier-table.csv
+  locator: research/evidence/T-005/p1-frontier-table.csv
+  sha256: 536f0ae28919c5c3790f0247b98e761f4eb0efaba979f062b16cf66427daffd8
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: p1-frontier-epochs.csv
+  locator: research/evidence/T-005/p1-frontier-epochs.csv
+  sha256: 4c3c130f3c4234637766fb40c5fc83e5b50af3ba111bca5b6e6b6a22f62fd3bf
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-003
+  kind: file
+  label: p1-summary.txt
+  locator: research/evidence/T-005/p1-summary.txt
+  sha256: 58fc61e7bdb3f8f0a84300fb85ff0b186c0711bfb8de45107b6f378f23aea427
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Base for the hill climb (T-013) is the airbench96 shape.

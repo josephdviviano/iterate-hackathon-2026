@@ -1,0 +1,25 @@
+# Hill climb step 3 (X-002): the airbench96 shape (three convs per block with a residual)
+# reaches 75.3% at <= 10 epochs in P1, the best proxy time. Probe below 10 epochs, a smaller
+# and a larger depth-3 shape, and translate 2 versus 4.
+name = "s3-deep"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1, 2, 3, 4]
+devices = [1]
+slots_per_device = 1
+
+[base]
+block_depth = 3
+translate = 4
+
+[[grid]]
+widths = [[128, 384, 512]]
+epochs = [6, 7, 8, 9, 10]
+
+[[grid]]
+widths = [[96, 256, 384], [128, 512, 768]]
+epochs = [6, 8, 10]
+
+[[grid]]
+widths = [[128, 384, 512]]
+translate = [2]
+epochs = [8, 10]

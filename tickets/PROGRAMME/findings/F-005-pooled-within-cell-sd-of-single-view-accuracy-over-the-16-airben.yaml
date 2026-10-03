@@ -1,0 +1,36 @@
+schema_version: '2.0'
+finding_id: F-005
+task_id: T-005
+result_kind: positive
+importance: material
+observation: Pooled within-cell sd of single-view accuracy over the 16 airbench P1 cells is 0.245 pp (cells
+  range 0.08-0.37 pp).
+interpretation: 'H6 is supported: with sd near 0.25 pp, a development mean of 75.2% over 40 seeds keeps
+  the estimated official qualification risk under 1% (about 0.4%).'
+decision_implication: Use 75.3% as the conservative climbing target and 75.2% over at least 40 seeds as
+  the final development criterion.
+requirement_ids:
+- R-001
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: p1-summary.txt
+  locator: research/evidence/T-005/p1-summary.txt
+  sha256: 58fc61e7bdb3f8f0a84300fb85ff0b186c0711bfb8de45107b6f378f23aea427
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: p1-frontier-table.csv
+  locator: research/evidence/T-005/p1-frontier-table.csv
+  sha256: 536f0ae28919c5c3790f0247b98e761f4eb0efaba979f062b16cf66427daffd8
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Margin set; reconfirm sd at the final recipe.

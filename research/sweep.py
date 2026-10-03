@@ -1,12 +1,15 @@
 """Run, inspect and collate declarative sweeps of recipe configurations through the harness.
 
-    python research/sweep.py run research/sweeps/p1-frontier.toml [--retry-failed] [--dry-run]
+    python research/sweep.py run SWEEP.toml [--retry-failed] [--resnapshot] [--dry-run]
     python research/sweep.py status research/sweeps/p1-frontier.toml
     python research/sweep.py collate research/sweeps/p1-frontier.toml [--frontier epochs=0.753]
 
 A sweep file expands ``[base]`` with every ``[[grid]]`` block (cartesian product over list
 values) and every ``[[configs]]`` entry. A configuration's identity hashes its parameters,
-seeds and the submission source, so editing the recipe never reuses stale results. Each
+seeds and the sweep's source snapshot: the first ``run`` copies the submission folder to
+``<results>/source`` and every run, status and collation uses that snapshot, so editing the
+live recipe neither disturbs a running sweep nor reuses stale results (``--resnapshot``
+replaces the snapshot, which makes every configuration pending again). Each
 configuration runs as one harness invocation over all seeds on one device slot. Slot locks
 live in a host-wide directory, so concurrent sweeps from several agents share GPUs safely.
 An interrupted run leaves no record and is rerun on resume; a failed run is recorded and
@@ -24,6 +27,7 @@ import json
 import math
 import os
 import queue
+import shutil
 import signal
 import statistics
 import subprocess
@@ -97,8 +101,24 @@ class Sweep:
         devices = [str(d) for d in self.devices] or ["cpu"]
         return [f"{d}-{k}" for d in devices for k in range(self.slots_per_device)]
 
+    @property
+    def snapshot(self) -> Path:
+        return self.root / "source"
+
+    @property
+    def source(self) -> Path:
+        """The frozen snapshot once it exists, otherwise the live submission folder."""
+        return self.snapshot if self.snapshot.is_dir() else self.submission
+
+    def take_snapshot(self, replace: bool = False) -> None:
+        if self.snapshot.is_dir() and not replace:
+            return
+        shutil.rmtree(self.snapshot, ignore_errors=True)
+        ignore = shutil.ignore_patterns("__pycache__")
+        shutil.copytree(self.submission, self.snapshot, ignore=ignore)
+
     def config_id(self, params: dict) -> str:
-        key = json.dumps([params, self.seeds, source_hash(self.submission)], sort_keys=True)
+        key = json.dumps([params, self.seeds, source_hash(self.source)], sort_keys=True)
         return hashlib.sha256(key.encode()).hexdigest()[:12]
 
     def run_dir(self, params: dict) -> Path:
@@ -190,6 +210,9 @@ class Runner:
 
     def run(self) -> int:
         self.sweep.root.mkdir(parents=True, exist_ok=True)
+        self.sweep.take_snapshot()
+        if source_hash(self.sweep.source) != source_hash(self.sweep.submission):
+            self.log("snapshot-differs-from-live", snapshot=str(self.sweep.source))
         work: queue.Queue[dict] = queue.Queue()
         todo = self.pending()
         for params in todo:
@@ -255,7 +278,8 @@ class Runner:
             "params": params,
             "seeds": sweep.seeds,
             "submission": str(sweep.submission),
-            "source_hash": source_hash(sweep.submission),
+            "source": str(sweep.source),
+            "source_hash": source_hash(sweep.source),
         }
         (run_dir / "spec.json").write_text(json.dumps(spec, indent=2) + "\n")
         (run_dir / "seeds.json").write_text(json.dumps(sweep.seeds))
@@ -266,7 +290,7 @@ class Runner:
             "-m",
             "benchmark.run",
             "--submission-path",
-            str(sweep.submission),
+            str(sweep.source),
             "--n",
             str(len(sweep.seeds)),
             "--seed-file",
@@ -368,16 +392,23 @@ def frontier(rows: list[dict], x: str, target: float) -> list[dict]:
     out = []
     for key, members in groups.items():
         members.sort(key=lambda r: r[x])
-        crossing = None
+        crossing = time_at = None
         for lo, hi in itertools.pairwise(members):
             if lo["mean_acc"] < target <= hi["mean_acc"]:
                 frac = (target - lo["mean_acc"]) / (hi["mean_acc"] - lo["mean_acc"])
                 crossing = round(lo[x] + frac * (hi[x] - lo[x]), 3)
+                if lo["mean_time_local"] is not None and hi["mean_time_local"] is not None:
+                    span = hi["mean_time_local"] - lo["mean_time_local"]
+                    time_at = round(lo["mean_time_local"] + frac * span, 3)
                 break
         if crossing is None and members and members[0]["mean_acc"] >= target:
             crossing = f"<= {members[0][x]}"
+            time_at = f"<= {members[0]['mean_time_local']}"
         best = max(m["mean_acc"] for m in members)
-        out.append(json.loads(key) | {f"{x}_at_target": crossing, "best_mean_acc": best})
+        out.append(
+            json.loads(key)
+            | {f"{x}_at_target": crossing, "time_local_at_target": time_at, "best_mean_acc": best}
+        )
     return out
 
 
@@ -405,12 +436,15 @@ def main() -> None:
         command.add_argument("sweep", type=Path)
         if name == "run":
             command.add_argument("--retry-failed", action="store_true")
+            command.add_argument("--resnapshot", action="store_true")
             command.add_argument("--dry-run", action="store_true")
         if name == "collate":
             command.add_argument("--frontier", help="X=TARGET, e.g. epochs=0.753")
     args = parser.parse_args()
     sweep = Sweep.load(args.sweep)
     if args.command == "run":
+        if args.resnapshot and not args.dry_run:
+            sweep.take_snapshot(replace=True)
         runner = Runner(sweep, retry_failed=args.retry_failed)
         if args.dry_run:
             for params in runner.pending():
