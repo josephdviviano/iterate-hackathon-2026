@@ -1140,3 +1140,125 @@ them calls for new hypotheses, which is the resynthesis step.
 Runs: 1, deterministic, with 20 random probe orders. Split: temporal, 40%
 train per level. Baseline: equal-weight vote with no probes. Command:
 `uv run python -m committee.selection`. Commit: uncommitted, base ee733d0.
+
+## R24. Closing the loop: resynthesis on the first falsifying probe, four levels
+
+Round 1 is the stored seeded committee of 8 (R4, R6, R17, R21). Probing by
+disagreement observes held-out transitions in order of vote entropy until one
+transition refutes every surviving member; on all four levels that is the
+first probe (R23). Round 2 observes it: the probe joins the train set, each
+seed carries the counterexample and what the refuted programs predicted
+(grouped by prediction, pixels omitted), and 8 new programs are synthesized
+with Devin under the unchanged contract. Control: a passive committee of 8 on
+the first train+1 transitions in time, as an agent that keeps playing instead
+of probing. Every arm is scored on the transitions that no arm observed. On
+ar25 L3 a round 3 starts from the round 2 committee, which is refuted after
+three more probes (steps 101, 63, 64), and trains on 33 transitions.
+
+ar25 L3, 40 common transitions:
+
+| Arm | Observed | Admitted | Vote | Members | AUROC | Unanimous n (error) | Distinct | Next refutation |
+|---|---|---|---|---|---|---|---|---|
+| Round 1 | 0 | 8/8 | 0.475 | 0.45 to 0.65 | 0.78 | 26 (0.31) | 7 | probe 1 |
+| Round 2 | 1 | 8/8 | 0.925 | 0.93 | 0.50 | 40 (0.08) | 1 | probe 5 |
+| Round 3 | 4 | 8/8 | 1.000 | 0.90 to 1.00 | none | 36 (0.00) | 2 | never |
+| Passive | 1 | 7/8 | 0.650 | 0.12 to 0.88 | 0.97 | 4 (0.00) | 6 | probe 1 |
+
+sk48 L2, 66 common:
+
+| Arm | Observed | Admitted | Vote | Members | AUROC | Unanimous n (error) | Distinct | Next refutation |
+|---|---|---|---|---|---|---|---|---|
+| Round 1 | 0 | 8/8 | 0.697 | 0.61 to 0.98 | 0.91 | 40 (0.00) | 6 | probe 53 |
+| Round 2 | 1 | 8/8 | 0.864 | 0.80 to 0.86 | 0.47 | 62 (0.15) | 2 | probe 23 |
+| Passive | 1 | 7/8 | 0.636 | 0.45 to 0.64 | 0.60 | 43 (0.30) | 3 | probe 1 |
+
+m0r0 L3, 42 common:
+
+| Arm | Observed | Admitted | Vote | Members | AUROC | Unanimous n (error) | Distinct | Next refutation |
+|---|---|---|---|---|---|---|---|---|
+| Round 1 | 0 | 8/8 | 0.786 | 0.76 to 0.79 | 0.64 | 37 (0.16) | 4 | probe 1 |
+| Round 2 | 1 | 8/8 | 0.786 | 0.79 to 0.81 | 0.65 | 38 (0.16) | 2 | probe 1 |
+| Passive | 1 | 8/8 | 0.762 | 0.76 to 0.79 | 0.89 | 33 (0.06) | 5 | probe 32 |
+
+ar25 L7, 63 common:
+
+| Arm | Observed | Admitted | Vote | Members | AUROC | Unanimous n (error) | Distinct | Next refutation |
+|---|---|---|---|---|---|---|---|---|
+| Round 1 | 0 | 8/8 | 0.413 | 0.40 to 0.41 | 1.00 | 24 (0.00) | 6 | probe 1 |
+| Round 2 | 1 | 7/8 | 0.429 | 0.43 | 0.50 | 63 (0.57) | 1 | probe 2 |
+| Passive | 1 | 8/8 | 0.413 | 0.40 to 0.43 | 1.00 | 25 (0.00) | 4 | probe 1 |
+
+Reading:
+
+1. Where the counterexample names a missing mechanic, one round lifts every
+   member. On ar25 L3 the members' own notes state it ("pieces do not block
+   the axis; it moves onto and under piece rows"): the vote goes 0.48 to
+   0.93, and a third round with 4 observations in total reaches 1.00 on the
+   40 remaining transitions and is never refuted. On sk48 L2 the vote goes
+   0.70 to 0.86. The passive control at the same train size moves 0.00 to
+   -0.06 and stays bimodal.
+2. Where the members already agree and are wrong together (m0r0 L3, ar25
+   L7), one counterexample changes nothing: 0.79 to 0.79 and 0.41 to 0.43,
+   and the next probe refutes the new committee at once.
+3. The cost is convergence. Round 2 committees have 1 or 2 distinct
+   behaviours, AUROC of disagreement falls to 0.47 to 0.65, and on ar25 L7
+   the committee is unanimous and wrong on 57 percent. After resynthesis the
+   disagreement signal cannot be read from the committee; the next probe
+   needs new seeds or another criterion.
+4. Caveat: one batch of 8 per arm. The batch spread is visible in the passive
+   arms (0.12 to 0.88 on ar25 L3). Round 1 was synthesized earlier the same
+   day; the backend and prompt code are unchanged since 13:41.
+
+| Item | Value |
+|---|---|
+| Metric | Vote accuracy, member accuracy, AUROC, unanimous and split error on the common held-out set |
+| Runs | 8 sessions per arm: 4 active, 4 passive, 1 round 3; 72 Devin sessions, 3 not admitted (2 timeouts at 900 s, 1 inconsistent) |
+| Split | Temporal 40 percent plus the observed probes; passive arms `--train-n` train+1 |
+| Baseline | Round 1 and the passive arm on the same transitions |
+| Command | `uv run python -m committee.cegis GAME --level L --runs 8 --backend devin --parallel 4`; `... --from-probe 1 ...` for round 3; `uv run python -m committee.experiment GAME --level L --train-n N --runs 8 --seeded --backend devin --condition passive_devin`; `uv run python -m committee.cegis GAME --level L --report` |
+| Commit | code d1fc873, 79e43c6; artifacts 59be4da, 79e43c6, 47e5907, dd76b2f; reports `artifacts/<game>/<split>_probe<n>/cegis_report.json` |
+
+## R25. Live play on the ARC-AGI-3 engine: the committee as the explorer
+
+The ar25 game runs locally through the `arc-agi` package; its source is
+downloaded with the ARC key into `cache/arc_games` and is never read. The
+engine is set to level 3, whose start state equals the recorded one. Each
+move, every member predicts the outcome of every available action from the
+observed object state (the released extractor). The agent takes the action
+with the highest vote entropy; when every action is unanimous it prefers an
+action whose predicted state is new, then one that changes the state, and it
+never repeats a state-action pair. Every member is scored against the
+observed next state. Budget 300 moves; the game ends itself at about 160.
+
+| Committee | Seed | Moves | Vote accuracy | AUROC | Unanimous n (error) | Split n (error) | First move with every member wrong |
+|---|---|---|---|---|---|---|---|
+| Round 1 | 0 | 160 | 0.40 | 0.60 | 140 (0.54) | 20 (1.00) | 64 |
+| Round 1 | 1 | 161 | 0.34 | 0.81 | 94 (0.43) | 67 (1.00) | 29 |
+| Round 3 | 0 | 157 | 0.41 | 0.52 | 154 (0.58) | 3 (1.00) | 64 |
+| Round 3 | 1 | 164 | 0.39 | 0.52 | 161 (0.60) | 3 (1.00) | 64 |
+
+Reading:
+
+1. Inside the mechanics the data showed, the committees are unanimous and
+   right on every move: round 3 for 64 moves on both seeds, round 1 for 64
+   and 29. Round 1's failure at move 29 is a mechanic round 3 learned from
+   the recorded probes.
+2. The first live refutation of round 3 is a mechanic that no recorded
+   transition shows: at move 64 the counter bar starts to shrink by one per
+   action and piece names shift; the counter never changes in the 75
+   recorded level 3 transitions. Every later state carries it, so every later
+   prediction is wrong. Disagreement at that move is 0.00 on both committees.
+   This is an unknown unknown: not flagged, and the cue for resynthesis with
+   the observed transition as the counterexample (R24), not for probing.
+3. Where members disagree live, the vote is wrong every time (split error
+   1.00 in all four runs). AUROC is 0.52 to 0.81 only because the shared
+   blind spot after move 64 fills the unanimous bin with errors.
+
+| Item | Value |
+|---|---|
+| Metric | Live vote accuracy, AUROC, unanimous and split error, first refuting move |
+| Runs | 4: two seeds per committee, one engine run each |
+| Split | Committees from R4 (round 1) and R24 (round 3); test is the live trajectory |
+| Baseline | Round 1 committee |
+| Command | `uv run python -m committee.live ar25 --level 3 --steps 300 --seed S [--probe 4]` |
+| Commit | dd76b2f; logs `artifacts/ar25/live/` |

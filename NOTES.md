@@ -189,3 +189,20 @@
     - Everything in HANDOFF.md "Unexplored directions", in that order.
   ABANDONED:
     - An auxiliary network that synthesizes a combined program from the committee: no training signal, two LLM versions of it already failed (R8, R19), and the oracle check shows no headroom. Enumeration of mechanism combinations: does not scale.
+
+- [jdv] - Closed loop (R23 to R25), live play, track table - dd76b2f
+  Plan from HANDOFF.md, then the CEGIS loop on four levels, a round 3 on ar25 L3, live play with the user's ARC key, and the track table in CLAUDE.md.
+  DONE:
+    - Merged origin/main (pyplasmode submodule) into jdv and pushed jdv. main untouched (user decision: pull from main, push jdv only).
+    - R23: the oracle "any member right" equals the best member on every level, and the first disagreement probe refutes every member on every level. Probing never selects; it signals a missing hypothesis.
+    - Demo: equal-weight header, conformal-set section [6], closed-loop section [7]. A per-member key cache keeps the demo at 2.3 s.
+    - R24: round 2 on the first falsifying probe on four levels, each with a passive control at the same train size, and a round 3 on ar25 L3: 0.48 to 0.93 to 1.00 on the common held-out set (passive 0.65). sk48 L2 0.70 to 0.86. Null on m0r0 L3 and ar25 L7. Round 2 committees converge to 1 or 2 behaviours, so the disagreement signal is gone after resynthesis (ar25 L7: unanimous and wrong on 57 percent). 72 Devin sessions, 3 not admitted.
+    - R25: live play on the local ARC-AGI-3 engine (arc-agi package, key in .env.committee, games in cache/arc_games). Round 3 is unanimous and right for 64 moves on both seeds, then a counter mechanic that no recorded transition shows refutes every member with disagreement 0.00.
+    - CLAUDE.md carries the organizers' Track 2 text and a requirement-to-evidence table across the three builds; the DESIGN_DOC table is marked superseded.
+  DEFERRED:
+    - Live counterexample round: resynthesize with the live transitions through move 64 as the counterexample and replay live. 8 sessions. Needs a trajectory recorder; live.py stores actions, not states.
+    - Live play on sk48, m0r0 and tr87 (downloaded). ft09 is click-only and live.py skips clicks.
+    - A second batch per arm, to answer the batch-variance caveat in R24.
+  ABANDONED:
+    - Exploring by disagreement alone: when every action is unanimous the explorer wandered 58 moves inside the known region. Novelty of the predicted state and no repeated state-action pairs were added instead (R25 protocol).
+    - Disagreement as the detector of unknown unknowns: at the live counter tick both committees were unanimous and wrong (R25). The observed transition as a counterexample for resynthesis is the mechanism there, not probing.

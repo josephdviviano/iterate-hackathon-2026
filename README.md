@@ -81,7 +81,9 @@ uv run python -m committee.cegis ar25 --level 3 --dry-run     # the first falsif
 uv run python -m committee.cegis ar25 --level 3 --runs 8 --backend devin --parallel 4   # round 2 committee
 uv run python -m committee.experiment ar25 --level 3 --train-n 30 --runs 8 --seeded \
     --backend devin --condition passive_devin                 # passive control: next transition in time
-uv run python -m committee.cegis ar25 --level 3 --report      # round 1 vs round 2 vs passive
+uv run python -m committee.cegis ar25 --level 3 --report      # every stored round vs passive
+uv run python -m committee.cegis ar25 --level 3 --from-probe 1 --runs 8 --backend devin   # round 3
+uv run python -m committee.live ar25 --level 3 --steps 300 --probe 4   # live play, local engine, needs ARC_API_KEY
 uv run pytest
 ```
 
@@ -113,6 +115,9 @@ Local runs read credentials from `.env.committee` (gitignored).
   served with vLLM (Apache-2.0) on Modal.
 - APIs: Devin API (Cognition) as a synthesis backend; Claude Code CLI (Anthropic) as an
   optional backend.
+- Engine: `arc-agi` (ARC Prize Foundation) runs the ARC-AGI-3 games locally for live
+  play (`committee.live`). Game source is downloaded with the user's ARC key into
+  `cache/arc_games` (gitignored) and is never read by our code.
 - Libraries: numpy, matplotlib, openai (client), httpx, modal, pytest, uv.
 - Ideas: ontology error and effect rows from OPINE-World; parallel sampling and
   coverage from GRAM (Baek et al., 2026, arXiv:2605.19376); query by committee

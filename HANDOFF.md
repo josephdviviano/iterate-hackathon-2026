@@ -171,3 +171,15 @@ video, README.md and the submission.
   there is no live play yet.
 - PDFs are tracked; predicted-state dumps are not.
 - No Claude account for synthesis; Devin and Modal only.
+
+## Update 2026-10-03 18:20 BST
+
+- R23, R24 and R25 are recorded; see the NOTES.md entry "Closed loop".
+  New modules: `committee.cegis` (rounds chain with `--from-probe`),
+  `committee.selection`, `committee.live` (local ARC-AGI-3 engine through the
+  `arc-agi` package; `ARC_API_KEY` is in `.env.committee`; game source in
+  `cache/arc_games`, gitignored and never read).
+- Live finding: the round 3 committee is refuted at move 64 by a counter
+  mechanic that no recorded transition shows. The next step is a live
+  counterexample round (resynthesize on the live transitions, replay live).
+- `jdv` is pushed to origin. `main` is untouched by the user's decision.
