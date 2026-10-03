@@ -24,8 +24,18 @@ ar25 level 3, trained on the first 40% of the level, tested on the rest
 | Held-out effect rows never seen in train | η undefined on 51 of 90 | entropy on all 90 |
 | Probes until a counterexample falsifies every hypothesis | OPINE-World count priority: 7 | disagreement: 1 (random: 2.7) |
 
-On tr87 level 1 to level 2 (R5) every program carries over and the committee
-is unanimous and right on all 28 transitions.
+Across four splits (R4 to R7), 8 seeded programs each:
+
+| Split | Unanimous transitions, error | Split transitions, error | Probes to falsify: disagreement / count priority / random |
+|---|---|---|---|
+| ar25 L3 | 27, 0.30 | 17, 0.83 to 1.00 | 1 / 7 / 2.7 |
+| m0r0 L3 | 38, 0.16 | 6, 0.67 | 1 / 10 / 4.8 |
+| tr87 L1 to L2 | 28, 0.00 | 0 | |
+| ft09 L5 | 31, 0.00 | 0 | |
+
+When the committee agrees it is mostly right. When it splits it is mostly
+wrong. On the two levels with a split, probing where it disagrees finds a
+counterexample that falsifies every hypothesis in one move.
 
 ## Demo
 

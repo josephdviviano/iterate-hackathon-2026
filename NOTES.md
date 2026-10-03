@@ -31,9 +31,13 @@
     - Contradiction injection with an abstain channel, 2x2 on tr87 L1 and L6, 24 runs, $3.16 (RESULTS.md RH1). Hack rate 0/12. Abstain 5/6 when offered, each naming the exact pair. No false abstains on intact data.
     - Tests verified to fail under three breakages: literal mass forced to 0, is_hack ignoring the pair, contradiction with delta 0.
     - README.md section and commands. Pitch sentence: the simplicity prior is the hack detector, and the agent says "no rule exists" instead of forcing a pass.
+    - Open-weight sweep on Modal: vLLM engine (`rewardhack.modal_app`, app `rewardhack-vllm`, separate from the committee's `committee-llm`), chat loop with checker feedback (`rewardhack.oss_synth`), `--backend modal|openai`. Qwen2.5-Coder-7B and Qwen3-Coder-30B-FP8, 48 runs (RESULTS.md RH3). Both too weak to reach exact replay in 4 rounds; 30B attempts layout enumeration in 4/24 programs.
+    - Found a real hack in the committee's artifacts: `tr87/L1_f60/api_qwen/run2` passes exact replay by enumerating cursor columns, held-out accuracy 0.25 (RESULTS.md RH4). Added the enumerating class (>= 5 layout guards) to the memorising flag. Claude programs have 0 guards.
+    - Modal image lessons: unpinned `pip_install("vllm")` resolves to a source build; `vllm/vllm-openai` image needs no `add_python` and a `python` symlink; `modal.parameter` needs real annotations, so no `from __future__ import annotations`.
   DEFERRED:
     - Harder games for the contradiction test. tr87 is the easiest level set; Opus did not hack even without the channel. ar25 L3 and the mixed-row games are where the Opus 5.5 card predicts 3-6x more attempts.
-    - Other models as synthesizer (sonnet, haiku). The literature puts hack rates at 0% for Opus-class and up to 14% for weaker models, so a model sweep is the cheapest way to show the detectors catching a real hack.
+    - Sonnet and Haiku as `claude -p` synthesizers. They keep the tool loop that the open-weight chat loop lacks, so they can reach exact replay, and the literature puts their hack rates above Opus.
+    - 30B with 8 rounds through the committee's API loop, where the one real hack came from.
     - Decoy-file trap (Hack-Verifiable Environments). Needs `--output-format stream-json` tool-call logging. After the abstain and contradiction results are recorded.
     - CoT monitors and activation probes. Closed model, program-only output, so there is no reasoning trace or activations to monitor.
   ABANDONED:
@@ -58,6 +62,11 @@
     - Train instances n in {3, 4, 6}; test n in {1, 2, 5, 8, 10}. The strategy must be a rule in (n, m, t); test instances never enter the workspace.
     - H4: on 36 unseen instances with n up to 30, the three members that finish agree with each other and with the family best to 1e-4 on every instance. Committee disagreement carries no information on this task; recorded as such.
     - Outer hill-climb loop `src/hoeffding/climb.py`: population = seed runs plus children; fitness = mean fraction of the Bernoulli-to-Hoeffding gap closed on 39 climb instances (train plus n in {15, 20}), rejected or timed-out instances score zero; each round the top 2 parents' source, the per-instance best so far, and the instances where parents disagree or fail go into the children's workspace. The certified value is the only reward. Disagreement and rejection counts are logged per round in `artifacts/hoeffding/climb/log.json`.
+    - H5: the same certifier reproduces the Problem 6.39 ladder (naive 0.25, explicit laws 0.38 to 0.39, construction limit 0.4007, ceiling 0.417). H6: a 4- and 5-atom refutation search finds 0 wins over the family on 72 Hoeffding instances. Decision: the hill-climb and disagreement claims move to 6.39; Hoeffding stays as the calibration benchmark.
+    - Task abstraction `src/hoeffding/task.py`: a task binds instances, walls, the exact certifier, the agent contract and a standalone verifier. The runner, workspace, committee and climb are task-agnostic. Second task `linear.py`: C(c) = sup P(sum c_i X_i < 0) over iid laws (Bellec-Fritz family). Train c in {(1,1,1,-2), (1,1,1,1,-3), (1,2,-3)}; test c in {(2,-1,-1) proven 2/3, (1,1,-2), (1,1,1,1,1,-4), (2,1,1,-3)}. Lower wall = best two-atom law; upper wall only where published. Ties do not count. At most 64 atoms.
+    - Sign convention checked: P(2 X1 < X2 + X3) is the proven 2/3 case, so the anchor is c = (2, -1, -1), not (1, 1, -2).
+    - Linear climb launched from the stub: 3 rounds, 2 children, top 2, opus, 30 turns.
+    - Decision: committee disagreement is not claimed as an uncertainty signal on the bound tasks. A member's output is one law, and the certifier settles any disagreement in milliseconds, so the signal is consumed the moment it is produced. Disagreement is worth something only where resolution costs something, which is the ARC case (an action in the environment). The bound tasks keep: exact falsification, calibration of self-reported confidence against proofs, and the hill-climb.
   DEFERRED:
     - A harder family where search fails, so that disagreement can carry information: t close to n m with large n, or the Bellec-Fritz inequalities (AlphaEvolve's naive run reached 0.389 against the known 0.400695). Only if the pitch needs a disagreement result from this task; H3 already gives the calibration result.
     - Float-only verifier as a reward-hacking control. The exact verifier makes it moot for scoring; only a demo item.
@@ -94,3 +103,16 @@
   ABANDONED:
     - Claim that the MDL vote beats a single program on accuracy. R4 shows 0.477 vs 0.480 mean; the shortest member was not the best. The reported benefit is calibrated uncertainty and faster falsification, not point accuracy.
     - Tuning the open-model repair loop further. Two models and a best-of-rounds fix left exact replay unreached on tr87 L1; the time goes to results with Devin.
+
+- [jdv] - R6, R7 and the cross-split summary - f88afc5
+  Two more Devin splits. m0r0 L3 is a second informative level; ft09 L5 is saturated.
+  DONE:
+    - R6 m0r0 L3: seeded 8 of 8 admitted against 1 of 3 unseeded; unanimous error 0.16, split error 0.80; AUROC 0.68; disagreement falsifies all members in 1 probe against 10 by count priority and 4.8 random; vote 0.77 against 0.69 mean single program.
+    - R7 ft09 L5: all 11 programs 1.00, unanimous, error 0.00.
+    - Summary table across the four splits in RESULTS.md and README.md. Write-up page with equations, diagram and charts published as an artifact.
+    - PDFs untracked and binary patterns added to .gitignore.
+  DEFERRED:
+    - Rewriting history to drop the PDFs from the two commits that still hold them. The user decides before the first push.
+    - Demo video and final README pass.
+  ABANDONED:
+    - Nothing new.
