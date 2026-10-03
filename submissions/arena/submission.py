@@ -13,12 +13,13 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    stages=[[24, 4], [32, 5]],  # [resolution, epochs] in training order
+    stages=[[24, 5], [32, 4]],  # [resolution, epochs] in training order
     batch_size=768,
     lr=0.5,
     momentum=0.9,
     weight_decay=1e-3,
     label_smoothing=0.2,
+    pad=2,  # random-crop translation range in pixels
     warmup=0.25,
     widths=[32, 128, 320, 640],
     act="relu",
@@ -27,6 +28,7 @@ DEFAULTS = dict(
     muon=True,  # orthogonalized (Newton-Schulz) momentum updates for conv filters
     muon_lr=0.14,
     muon_momentum=0.6,
+    ns_steps=3,
     alt_flip=True,
 )
 
@@ -47,11 +49,11 @@ def newton_schulz(g, steps=3, eps=1e-7):
     return x.T if tall else x
 
 
-def muon_update(p, g, buf, lr, momentum):
+def muon_update(p, g, buf, lr, momentum, ns_steps=3):
     buf.mul_(momentum).add_(g)
     g = g.add(buf, alpha=momentum)
     p.mul_(len(p) ** 0.5 / p.norm())  # fixed filter norm instead of weight decay
-    p.sub_(newton_schulz(g.reshape(len(g), -1)).view(p.shape) * lr)
+    p.sub_(newton_schulz(g.reshape(len(g), -1), ns_steps).view(p.shape) * lr)
 
 
 def conv_bn(c_in, c_out, act, pool=False):
@@ -127,6 +129,7 @@ def build(context: BuildContext):
     state.bufs = [torch.zeros_like(p) for p in params]
     mom, wd, ls = cfg["momentum"], cfg["weight_decay"], cfg["label_smoothing"]
     muon_scale, muon_mom = cfg["muon_lr"] / cfg["lr"], cfg["muon_momentum"]
+    ns = cfg["ns_steps"]
     muon_fn = torch.compile(muon_update, dynamic=False) if cuda else muon_update
 
     def step(x):
@@ -145,7 +148,7 @@ def build(context: BuildContext):
             torch._foreach_mul_(g_sgd, state.lr)
             torch._foreach_sub_(p_sgd, g_sgd)
             for i in conv:
-                muon_fn(params[i], grads[i], state.bufs[i], state.lr * muon_scale, muon_mom)
+                muon_fn(params[i], grads[i], state.bufs[i], state.lr * muon_scale, muon_mom, ns)
 
     model.train()
     state.xs, state.steps = {}, {}
@@ -199,17 +202,17 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     std = torch.tensor(STD, device=device).view(1, 3, 1, 1)
     images = data.images.to(device, non_blocking=True).float().div_(255)
     images = ((images - mean) / std).to(torch.bfloat16)
-    state.images = F.pad(images, (4, 4, 4, 4), mode="reflect")
+    pad = state.cfg["pad"]
+    state.images = F.pad(images, (pad,) * 4, mode="reflect")
     state.labels = data.labels.to(device, non_blocking=True)
     state.gen = torch.Generator(device=device).manual_seed(seed)
 
 
-def augment(padded, gen, flip=None):
+def augment(padded, gen, flip=None, h=32, w=32):
     n, c, hp, wp = padded.shape
-    h, w = hp - 8, wp - 8
     dev = padded.device
-    dy = torch.randint(0, 9, (n,), device=dev, generator=gen)
-    dx = torch.randint(0, 9, (n,), device=dev, generator=gen)
+    dy = torch.randint(0, hp - h + 1, (n,), device=dev, generator=gen)
+    dx = torch.randint(0, wp - w + 1, (n,), device=dev, generator=gen)
     ar_h = torch.arange(h, device=dev)
     ar_w = torch.arange(w, device=dev)
     rows = (dy[:, None] + ar_h)[:, None, :, None].expand(n, c, h, wp)
