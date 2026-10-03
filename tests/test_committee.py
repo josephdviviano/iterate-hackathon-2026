@@ -92,3 +92,8 @@ def test_mechanism_text_names_the_wrong_row_and_keeps_the_right_ones():
     assert "object p: observed x 0 -> 3; predicted x 0 -> 1 (2 programs); x 0 -> 2 (1 program)" in text
     assert "wall | ACTION1 | []: no_change" in text and "wall" not in text.split("keep these")[0].split("repair:")[1]
     assert repair_hypothesis(0) != repair_hypothesis(1)
+    born = {"name": "b", "type": "wall", "x": 9, "y": 9, "w": 1, "h": 1}
+    test_b = [Transition(7, 1, 1, None, False, [], [], before, after + [born])]
+    members_b = [Member(f"m{k}", "def transition_function(s,a): return s", [moved(1) + [born]], length=10) for k in range(2)]
+    repair = mechanism_text(members_b, test_b, [0]).split("keep these")[0]
+    assert "new object" not in repair and "object p: observed x 0 -> 3; predicted x 0 -> 1 (2 programs)" in repair

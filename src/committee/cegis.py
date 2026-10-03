@@ -145,7 +145,11 @@ def mechanism_text(members: list[Member], test: list[Transition], probes: list[i
     born = [ao for bo, ao in pair_objects(t.before_objs, t.after_objs) if bo is None]
     for ao in born:
         n = sum(1 for m in alive if m.objects(last) is not None and any(canonical([o]) == canonical([ao]) for o in m.objects(last)))
-        wrong.append(f"new object {_brief(json.dumps(ao, sort_keys=True))}: observed; predicted by {n} of {len(alive)} programs")
+        (right if n == len(alive) else wrong).append(
+            f"new object {_brief(json.dumps(ao, sort_keys=True))}: observed; predicted by {n} of {len(alive)} programs")
+    if returns_frame(members[0].mode):  # the frame is what refuted them; the rows above are its object view
+        cells = Counter(frame_diff(m.test_preds[last], t.after_grid, limit=4) for m in alive if m.test_preds[last] is not None)
+        wrong += [f"frame cells, {n} program{'s' if n > 1 else ''}: {d.strip()}" for d, n in cells.most_common()]
     lines = [f"Counterexample at the mechanism level. Step {t.step}, action {json.dumps(t.action)}, refuted every program "
              f"of a committee of {len(alive)}. Rows where every program was wrong; this is the mechanic to repair:"]
     lines += [f"  - {w}" for w in wrong] or ["  - (no object row differs; the difference is in object naming or pixels)"]

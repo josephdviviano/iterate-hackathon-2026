@@ -25,7 +25,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from .cegis import counterexample_text, probe_split_dir, split_after_probes, stored_round
+from .cegis import counterexample_text, mechanism_text, probe_split_dir, repair_hypothesis, split_after_probes, stored_round
 from .committee import Member, auroc
 from .env import call_expr, engine_source, extract_objects, is_frame, returns_frame, takes_frame
 from .evaluate import members_from
@@ -252,11 +252,13 @@ def trajectory(game: str, level: int, actions: list[int]) -> list[Transition]:
 
 
 def live_round(game: str, level: int, train_frac: float, probe: int, log_path: Path, through: int,
-               condition: str, runs: int, cfg: dict, parallel: int, dry_run: bool) -> None:
+               condition: str, runs: int, cfg: dict, parallel: int, dry_run: bool,
+               source_condition: str = "committee_devin", round_condition: str = "cegis_devin",
+               mechanism: bool = True) -> None:
     """Resynthesize on the live trajectory: the recorded train set of the stored round plus the live
     transitions up to and including the refuting move, which is stated as the counterexample."""
     train, test = temporal_split(build_buffer(game), level, train_frac)
-    probes, cond = stored_round(game, level, train_frac, "committee_devin", "cegis_devin", probe)
+    probes, cond = stored_round(game, level, train_frac, source_condition, round_condition, probe)
     train_r, _ = split_after_probes(train, test, probes)
     members = members_for(cond)
     mode = members[0].mode
@@ -270,10 +272,11 @@ def live_round(game: str, level: int, train_frac: float, probe: int, log_path: P
     witnesses = [Member(m.name, m.source, [p], m.length, mode, [o] if engine_src else None)
                  for m, p, o in zip(members, preds, objs)]
     cfg = {**cfg, "mode": mode}
-    text = counterexample_text(witnesses, [t], [0]).replace("The last transition in transitions.md",
-                                                            f"Transition {len(train_r) + refuting} in transitions.md")
+    text = (mechanism_text if mechanism else counterexample_text)(witnesses, [t], [0]).replace(
+        "The last transition in transitions.md", f"Transition {len(train_r) + refuting} in transitions.md")
     train_all = train_r + live
-    seeds = [f"{s}\n\n{text}" for s in make_seeds(train_all, runs)]
+    seeds = [f"{s}\n\n{text}" + (f"\n\n{repair_hypothesis(k)}" if mechanism else "")
+             for k, s in enumerate(make_seeds(train_all, runs))]
     base = ARTIFACTS / game / f"L{level}_f{int(round(train_frac * 100))}_probe{probe}_live{through}" / condition
     print(f"train {len(train_r)} recorded + {len(live)} live (refuting move {refuting}); artifacts {base}\n\n{seeds[0]}\n")
     if dry_run:
@@ -299,6 +302,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--resynth-from", default=None, help="a live log: resynthesize on its trajectory")
     parser.add_argument("--through", type=int, default=70, help="last live move to include in train")
+    parser.add_argument("--source-condition", default="committee_devin", help="the round 1 committee a live round starts from")
+    parser.add_argument("--round-condition", default="cegis_devin", help="the stored rounds --probe refers to")
+    parser.add_argument("--object-diff", action="store_true", help="state the live counterexample as an object diff, not a mechanism")
     parser.add_argument("--runs", type=int, default=8)
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--dry-run", action="store_true")
@@ -307,7 +313,8 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     if args.resynth_from:
         live_round(args.game, args.level, args.train_frac, args.probe, Path(args.resynth_from), args.through,
-                   args.condition or "live_devin", args.runs, backend_cfg(args), args.parallel, args.dry_run)
+                   args.condition or "live_devin", args.runs, backend_cfg(args), args.parallel, args.dry_run,
+                   args.source_condition, args.round_condition, not args.object_diff)
         return
     args.condition = args.condition or ("cegis_devin" if args.probe else "committee_devin")
     if args.members_dir:
