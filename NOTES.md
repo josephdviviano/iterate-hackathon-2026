@@ -34,10 +34,13 @@
     - Open-weight sweep on Modal: vLLM engine (`rewardhack.modal_app`, app `rewardhack-vllm`, separate from the committee's `committee-llm`), chat loop with checker feedback (`rewardhack.oss_synth`), `--backend modal|openai`. Qwen2.5-Coder-7B and Qwen3-Coder-30B-FP8, 48 runs (RESULTS.md RH3). Both too weak to reach exact replay in 4 rounds; 30B attempts layout enumeration in 4/24 programs.
     - Found a real hack in the committee's artifacts: `tr87/L1_f60/api_qwen/run2` passes exact replay by enumerating cursor columns, held-out accuracy 0.25 (RESULTS.md RH4). Added the enumerating class (>= 5 layout guards) to the memorising flag. Claude programs have 0 guards.
     - Modal image lessons: unpinned `pip_install("vllm")` resolves to a source build; `vllm/vllm-openai` image needs no `add_python` and a `python` symlink; `modal.parameter` needs real annotations, so no `from __future__ import annotations`.
+    - Sonnet and Haiku sweep, 48 runs, $6.39 (RESULTS.md RH5). Haiku hacks 11/12 contradiction runs with a call counter, even with the abstain channel. Sonnet 0/12 hacks, abstains 2/6. Order dependence flags 11/11 Haiku hacks and 0/24 Opus and Sonnet intact programs.
+    - Three hack classes seen, each needing its own detector: tabulation (literal mass), layout enumeration (layout guards), call-order special-casing (order dependence, contradiction construction). Demo story: Haiku program `artifacts/rewardhack/tr87/L1_f60/contradiction/haiku/run1`.
+    - Modal `rewardhack-vllm` app stopped after the sweep. The crash-loop container the user saw (ta-01M40X638...) was the 40960 context error, fixed before the runs.
   DEFERRED:
     - Harder games for the contradiction test. tr87 is the easiest level set; Opus did not hack even without the channel. ar25 L3 and the mixed-row games are where the Opus 5.5 card predicts 3-6x more attempts.
-    - Sonnet and Haiku as `claude -p` synthesizers. They keep the tool loop that the open-weight chat loop lacks, so they can reach exact replay, and the literature puts their hack rates above Opus.
     - 30B with 8 rounds through the committee's API loop, where the one real hack came from.
+    - Order dependence as a verifier gate in the committee pipeline. It is a one-line addition to `verify.run_program` but that file belongs to the committee build; raise it with that session.
     - Decoy-file trap (Hack-Verifiable Environments). Needs `--output-format stream-json` tool-call logging. After the abstain and contradiction results are recorded.
     - CoT monitors and activation probes. Closed model, program-only output, so there is no reasoning trace or activations to monitor.
   ABANDONED:
@@ -67,6 +70,10 @@
     - Sign convention checked: P(2 X1 < X2 + X3) is the proven 2/3 case, so the anchor is c = (2, -1, -1), not (1, 1, -2).
     - Linear climb launched from the stub: 3 rounds, 2 children, top 2, opus, 30 turns.
     - Decision: committee disagreement is not claimed as an uncertainty signal on the bound tasks. A member's output is one law, and the certifier settles any disagreement in milliseconds, so the signal is consumed the moment it is produced. Disagreement is worth something only where resolution costs something, which is the ARC case (an action in the environment). The bound tasks keep: exact falsification, calibration of self-reported confidence against proofs, and the hill-climb.
+    - Two-tier verification `src/hoeffding/tiers.py`: a float tier returns [value, value + tie mass + rounding margin] as a bracket for the exact value; the policy certifies a candidate only when the bracket's upper end reaches the incumbent certified best, skips it otherwise, and audits 10 percent of skips. Reward and reported bounds come from the exact tier only. Ties are mass in the bracket, not a veto, so dyadic laws are not force-certified. Test fails when the tie mass is dropped from the bracket. Measured: exact tier is 6x to 20x the float tier, 80 s at 32 random atoms with a 6-term c.
+    - Linear climb from the stub: round 1 child reached 0.3734 on (1,1,1,-2); round 2 child reached 0.3915, above AlphaEvolve's naive 0.389, by rediscovering the Bellec-Fritz tie-breaking ladder (signed perturbations on shared levels). On the held-out proven anchor (2,-1,-1) it certifies 0.6596 against 2/3. Children left confidence at 0 (timeouts), so calibration is not scored for them.
+    - H8: linear climb round 3 reached 0.3976 on (1,1,1,-2) with a self-similar law, 0.003 under the Bellec-Fritz limit, plus certified values on four vectors with no published number. Every climbing child timed out at 900 s, so `confidence` stayed 0; raise the timeout or ask for confidence first in the next run.
+    - H9: replay of the certification policy on identical cached laws: 82 percent of certifications skipped on the plateaued Hoeffding climb, 1 of 18 on the still-improving linear climb, bests identical, 0 audit disagreements. Policy moved into the child's check.py (certify only a law that beats the child's own best per instance); float sums exactly on the boundary count as exact ties so dyadic laws are not force-certified. Timeout raised to 1800 s, 40 turns; contract asks for confidence in the first edit. Linear climb resumed for rounds 4 and 5 with --tiers.
   DEFERRED:
     - A harder family where search fails, so that disagreement can carry information: t close to n m with large n, or the Bellec-Fritz inequalities (AlphaEvolve's naive run reached 0.389 against the known 0.400695). Only if the pitch needs a disagreement result from this task; H3 already gives the calibration result.
     - Float-only verifier as a reward-hacking control. The exact verifier makes it moot for scoring; only a demo item.
@@ -116,3 +123,14 @@
     - Demo video and final README pass.
   ABANDONED:
     - Nothing new.
+
+- [jdv] - Targeted committee growth tried and dropped - 0a8a623
+  Built `committee.active`, ran it on ar25 L3 and m0r0 L3 from the same first 3 members as the seeded committees.
+  DONE:
+    - R8 recorded as a negative result. Probe disagreement fell 0.22 to 0.07 on m0r0 while held-out errors stayed the same six transitions. ar25 targeted AUROC 0.61 against 0.77 seeded. Every targeted member sided with the majority (Devin: "I sided with the majority").
+    - `committee.evaluate --curve` added: metrics by member count in run order.
+  DEFERRED:
+    - Literature review of baselines by three research agents; then implement the two or three baselines that can run on the offline buffers.
+  ABANDONED:
+    - Targeted growth as the construction method. The user chose independent seeded synthesis. Reasons: probes drawn from training states do not reach the unseen states where held-out errors occur; one disputed mechanic touches few held-out transitions; vote counts in the seed anchor the synthesizer; sequential rounds cost about three times the wall clock.
+    - Probes from predicted future states (committee rollouts). Not built. The anchoring problem would carry over, and time goes to baselines, the demo and the video.
