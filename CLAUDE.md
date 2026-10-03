@@ -6,6 +6,7 @@ Do only work that increases the score or decreases the risk of disqualification.
 
 - Track: not selected. After selection, delete the other tracks below.
 - Deadline: approximately 2026-10-04 11:00 BST. Replace with the official time.
+- Repository: private. The papers in research/pdfs are open access. Do not raise licence or privacy caveats about them.
 
 ## Rules
 
@@ -35,6 +36,8 @@ A rule violation or unfair play can disqualify the team. If a task does not obey
 6. Do not commit keys, tokens or absolute paths.
 7. Other persons and sessions edit this repository in parallel. Do not run `git reset --hard`, force-push or other commands that can delete their work.
 8. Do not start a new feature in the last 3 hours. Use those hours for repairs, the video, README.md and the submission.
+9. All resources in `external/` should be used as read-only references. For any feature that draws on that work, we should reimplement it in our own codebase, do not copy the code verbatim.
+
 
 ## Submission and rounds
 
