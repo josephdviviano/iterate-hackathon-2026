@@ -51,6 +51,9 @@ def main():
     for arm in arms:
         ws = os.path.join(arena, arm)
         ar = load_ar(ws)
+        arm_start = start  # an arm that joined later is timed from its own START
+        if os.path.exists(os.path.join(ws, "START")):
+            arm_start = dt.datetime.fromisoformat(open(os.path.join(ws, "START")).read().strip())
         t = json.load(open(os.path.join(ws, "task.json")))
         obj, order = t["objective"], t.get("infeasible_order") or t["objective"]
         runs = []
@@ -58,7 +61,7 @@ def main():
             exp = os.path.basename(log)[:-4]
             m = ar.extract_metrics(t, open(log, errors="replace").read())
             done = os.path.exists(os.path.join(ws, "runs", f"{exp}.json"))
-            at = (os.path.getmtime(log) - start.timestamp()) / 3600
+            at = (os.path.getmtime(log) - arm_start.timestamp()) / 3600
             runs.append({"exp": exp, "m": m, "ok": ar.valid(t, m), "feasible": ar.valid(t, m) and ar.feasible(t, m),
                          "done": done, "at": at})  # fmt: skip
         sign = 1 if obj["direction"] == "minimize" else -1
@@ -70,7 +73,7 @@ def main():
         idle = now.timestamp() - os.path.getmtime(os.path.join(arena, "logs", f"{arm}.jsonl")) \
             if os.path.exists(os.path.join(arena, "logs", f"{arm}.jsonl")) else None
         hits = audit(arena, arm, [a for a in arms if a != arm])
-        print(f"\n== {arm}: {len(runs)} runs ({sum(not r['ok'] for r in runs)} without metrics); "
+        print(f"\n== {arm} (since {arm_start:%H:%M}, {(now - arm_start).total_seconds() / 3600:.2f} h): {len(runs)} runs ({sum(not r['ok'] for r in runs)} without metrics); "
               f"agent log idle {idle:.0f}s; isolation {'clean' if not hits else f'FLAGGED x{len(hits)}'}"
               if idle is not None else f"\n== {arm}: {len(runs)} runs")  # fmt: skip
         if best:

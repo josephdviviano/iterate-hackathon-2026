@@ -12,12 +12,29 @@ import sys
 argv = sys.argv[1:]
 prompt = sys.stdin.read()  # research.py sends the prompt on stdin
 tools = argv[argv.index("--tools") + 1]
-role = re.search(r"^ROLE: (\w+)", prompt, re.MULTILINE).group(1)
+role = re.search(r"^ROLE: ([\w-]+)", prompt, re.MULTILINE).group(1)
 with open(os.environ["FAKE_LLM_LOG"], "a") as f:
     f.write(json.dumps({"role": role, "tools": tools, "cwd_files": os.listdir("."),
-                        "model": argv[argv.index("--model") + 1], "has_results": "=== RESULTS" in prompt, "prompt_bytes": len(prompt.encode())}) + "\n")
+                        "model": argv[argv.index("--model") + 1], "has_results": "=== RESULTS" in prompt, "prompt_bytes": len(prompt.encode()), "has_literature": "=== LITERATURE" in prompt}) + "\n")
 tree = re.findall(r"^(H[\d.]+)\t\d\t[^\t]*\topen\t", prompt, re.MULTILINE)
-if role == "search":
+if role == "lit-plan":
+    out = {"question": "Does a lower learning rate help short schedules?", "queries": ["learning rate short schedule"],
+           "rubric": ["reports learning rate ablations"], "exclude": ["pretrained"]}
+elif role == "lit-triage":
+    idx = [int(i) for i in re.findall(r"^\[(\d+)\]", prompt, re.MULTILINE)]
+    out = {"scores": [{"index": i, "score": 3 if i == 0 else (2 if i == 1 else 0), "reason": "r"} for i in idx]}
+elif role == "lit-extract":
+    out = {"cards": [
+        {"claim": "lower lr converges faster", "conditions": "small nets", "effect": "-10% steps", "evidence": "ablation",
+         "quote": "Lower learning rates converge faster in short schedules on small networks.", "hypotheses": ["H1.1"]},
+        {"claim": "invented", "conditions": "-", "effect": "-", "evidence": "-",
+         "quote": "This sentence does not appear anywhere in the paper text at all.", "hypotheses": []}]}
+elif role == "lit-synthesize":
+    cards = re.findall(r"^(C\d{4}) ", prompt, re.MULTILINE)
+    out = {"digest": "The literature says lower learning rates help in short schedules.",
+           "claims": [{"card": c, "kind": "conditional", "hypotheses": ["H1.1"], "use": "try it"} for c in cards],
+           "summary": "one claim"}
+elif role == "search":
     out = {"findings": [{"source": "arXiv:0000.00000", "claim": "lower lr helps", "relevance": "H1",
                          "hypotheses": ["H1"]}], "summary": "one finding"}
 elif role == "review":

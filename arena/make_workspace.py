@@ -25,7 +25,7 @@ def sh(*cmd, cwd=None):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("dest")
-    p.add_argument("--framework", required=True, choices=["baseline", "hypothesis"])
+    p.add_argument("--framework", required=True, choices=["baseline", "hypothesis", "hypothesis-lit", "hypothesis-dr"])
     p.add_argument("--task", required=True, help="directory with task.json and task.md")
     p.add_argument("--repo", required=True, help="the task's repository (git url/path, or a plain dir)")
     p.add_argument("--commit", default="", help="ref to check out (git repos)")
@@ -59,10 +59,18 @@ def main():
         "ar.py": os.path.join(FRAMEWORK, "core", "ar.py"),
         "program.md": os.path.join(FRAMEWORK, a.framework, "program.md"),
     }
-    if a.framework == "hypothesis":
+    if a.framework.startswith("hypothesis"):
         files["research.py"] = os.path.join(FRAMEWORK, "hypothesis", "research.py")
+    if a.framework in ("hypothesis-lit", "hypothesis-dr"):
+        files["lit.py"] = os.path.join(FRAMEWORK, "hypothesis", "lit.py")
     for name, src in files.items():
-        shutil.copyfile(src, os.path.join(a.dest, name))
+        if os.path.abspath(src) != os.path.abspath(os.path.join(a.dest, name)):
+            shutil.copyfile(src, os.path.join(a.dest, name))
+    if a.framework.startswith("hypothesis"):
+        lit = {"hypothesis": "off", "hypothesis-lit": "async", "hypothesis-dr": "forced"}[a.framework]
+        with open(os.path.join(a.dest, "framework.json"), "w") as f:
+            json.dump({"lit": lit}, f)
+        files["framework.json"] = os.path.join(a.dest, "framework.json")
     ws = {"env": dict(kv.split("=", 1) for kv in a.env)}
     if a.cpus:
         ws["cpus"] = a.cpus

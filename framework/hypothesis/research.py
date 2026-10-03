@@ -69,7 +69,7 @@ NOTEBOOK_DIR = os.path.join(ROOT, "notebook")
 HISTORY_DIR = os.path.join(ROOT, "history")
 DRAFTS_DIR = os.path.join(ROOT, "drafts")
 STATE = ["hypothesis.tsv", "ideas.tsv", "predictions.tsv", "meta.tsv", "world_model.md",
-         "notebook/", "history/", "drafts/"]  # fmt: skip
+         "notebook/", "history/", "drafts/", "lit/"]  # fmt: skip
 
 HYPO_COLS = ["id", "level", "parent", "status", "confidence", "evidence", "source", "statement"]
 IDEA_COLS = ["id", "hypothesis", "priority", "status", "expected", "description", "note"]
@@ -86,6 +86,11 @@ LLM_CMD = os.environ.get("RESEARCH_LLM_CMD", "claude")
 META_MODEL = os.environ.get("RESEARCH_META_MODEL", "claude-opus-5-5")
 META_EFFORT = os.environ.get("RESEARCH_META_EFFORT", "high")
 META_TIMEOUT = int(os.environ.get("RESEARCH_META_TIMEOUT", "2400"))
+# literature extension (framework.json: {"lit": "off" | "async" | "forced"}), see lit.py
+FRAMEWORK_FILE = os.path.join(ROOT, "framework.json")
+LIT_DIR = os.path.join(ROOT, "lit")
+LIT_READ_FILE = os.path.join(LIT_DIR, "read.json")
+MAX_OPEN_REQUESTS = 2
 
 WORLD_MODEL = """\
 # World model
@@ -447,15 +452,31 @@ def inputs_results():
             f"=== OUTCOMES AND POST-MORTEMS (notebook) ===\n{''.join(notes) or '(none yet)'}\n")  # fmt: skip
 
 
-def llm(role, prompt, schema, tools=""):
+def lit_mode():
+    return (read_json(FRAMEWORK_FILE, {}) or {}).get("lit", "off")
+
+
+def inputs_literature(n=3):
+    """The newest literature digests (literature extension only)."""
+    ddir = os.path.join(LIT_DIR, "digests")
+    if lit_mode() == "off" or not os.path.isdir(ddir):
+        return ""
+    names = sorted(os.listdir(ddir))[-n:]
+    body = "".join(f"--- {name[:-3]} ---\n{read_text(os.path.join(ddir, name))[:5000]}\n" for name in names)
+    return f"=== LITERATURE (newest digests from the literature pipeline) ===\n{body or '(none yet)'}\n"
+
+
+def llm(role, prompt, schema, tools="", model=None, effort=None, budget=None):
     """One separate, stateless LLM call with structured output. Returns (dict, cost)."""
     os.makedirs(META_DIR, exist_ok=True)
     # the prompt goes on stdin: as an argument it hits the OS limit once the results grow (~128 KB)
-    cmd = [LLM_CMD, "-p", "--model", META_MODEL, "--effort", META_EFFORT, "--tools", tools,
+    cmd = [LLM_CMD, "-p", "--model", model or META_MODEL, "--effort", effort or META_EFFORT, "--tools", tools,
            "--no-session-persistence", "--strict-mcp-config", "--output-format", "json",
            "--json-schema", json.dumps(schema)]  # no MCP servers: the prompt is the only input  # fmt: skip
     if tools:
         cmd += ["--allowedTools", tools]
+    if budget:
+        cmd += ["--max-budget-usd", f"{budget:.2f}"]
     with tempfile.TemporaryDirectory() as empty:  # nothing on disk to look at: only the prompt
         p = subprocess.run(cmd, cwd=empty, input=prompt, capture_output=True, text=True, timeout=META_TIMEOUT)
     stamp = time.strftime("%Y%m%dT%H%M%S")
@@ -480,12 +501,12 @@ def journal(kind, cost, summary):
 
 def run_ideate():
     prompt = f"""ROLE: ideate. You generate experiment ideas for an autonomous research loop.
-You get exactly these inputs: the task, the hypothesis tree, the results so far, and the current
-idea queue. Nothing else is available to you; do not use tools.
+You get exactly these inputs: the task, the hypothesis tree, the results so far, the current idea
+queue{', and the newest literature digests' if lit_mode() != 'off' else ''}. Nothing else is available to you; do not use tools.
 
 {TREE_RULES}
 
-{inputs_task()}{inputs_hypotheses()}{inputs_results()}=== CURRENT QUEUE (ideas.tsv) ===
+{inputs_task()}{inputs_hypotheses()}{inputs_results()}{inputs_literature()}=== CURRENT QUEUE (ideas.tsv) ===
 {read_text(IDEAS_FILE)}
 Write ideas for the open hypotheses (prefer Lvl3 hypotheses without a decisive test yet). Each idea
 is ONE concrete change to the files the task lets the experimenter edit, cleanly testing one
@@ -545,7 +566,7 @@ skeptical review. Nothing else is available to you; do not use tools.
 
 {TREE_RULES}
 
-{task}{tree}{res}=== SEARCH ===
+{task}{tree}{res}{inputs_literature()}=== SEARCH ===
 {json.dumps(search, indent=1)}
 === REVIEW ===
 {json.dumps(review, indent=1)}
@@ -598,6 +619,66 @@ Lvl2 mechanisms and Lvl3 predictions."""
     return summary
 
 
+def run_deepresearch():
+    import lit
+
+    req = lit.new_request("", [], [], [], "auto", last_exp())
+    did = lit.run_request(req)
+    cost = (lit.R.read_json(os.path.join(lit.REQ_DIR, f"{req['id']}.json")) or {}).get("cost", 0.0)
+    journal("deepresearch", float(cost), f"{req['id']} -> {did}: {req.get('question', '')[:200]}")
+    return f"{req['id']} -> {did}"
+
+
+def ensure_lit_server():
+    """The async feed: one `lit.py serve` process per workspace, restarted if it died."""
+    if lit_mode() != "async":
+        return
+    st = read_json(os.path.join(STATE_DIR, "lit_serve.json"), {}) or {}
+    if pid_alive(st.get("pid")):
+        return
+    os.makedirs(META_DIR, exist_ok=True)
+    log = open(os.path.join(META_DIR, "lit-serve.log"), "a")
+    subprocess.Popen([sys.executable, os.path.join(ROOT, "lit.py"), "serve"], cwd=ROOT, stdout=log,
+                     stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)  # fmt: skip
+
+
+def lit_digests():
+    ddir = os.path.join(LIT_DIR, "digests")
+    names = sorted(n[:-3] for n in os.listdir(ddir)) if os.path.isdir(ddir) else []
+    read = set(read_json(LIT_READ_FILE, []) or [])
+    return names, [n for n in names if n not in read]
+
+
+def cmd_lit(args):
+    if lit_mode() == "off":
+        die("the literature extension is not enabled in this workspace")
+    import lit
+
+    if args.action == "ask":
+        if lit_mode() != "async":
+            die("requests are automatic in this workspace (a deep-research step runs after every experiment)")
+        open_reqs = [r for r in lit.requests() if r["status"] in ("open", "running")]
+        if len(open_reqs) >= MAX_OPEN_REQUESTS:
+            die(f"{len(open_reqs)} requests are already open ({', '.join(r['id'] for r in open_reqs)}); wait for a digest")
+        if not args.question:
+            die("--question is required")
+        req = lit.new_request(args.question, args.hypothesis, args.must, args.exclude, "agent", last_exp())
+        ensure_lit_server()
+        print(f"{req['id']} queued; its digest will appear as lit/digests/D{req['id'][1:]}.md (`lit inbox`)")
+    elif args.action == "inbox":
+        names, unread = lit_digests()
+        for r in lit.requests()[-6:]:
+            print(f"{r['id']} {r['status']:<8} {r.get('digest') or '':<5} {r['question'][:110] or '(automatic)'}")
+        print(f"unread digests: {', '.join(unread) or 'none'}  (files in lit/digests/; `lit read D003` marks read)")
+    elif args.action == "read":
+        names, _ = lit_digests()
+        if args.id not in names:
+            die(f"no digest {args.id}")
+        read = sorted(set(read_json(LIT_READ_FILE, []) or []) | {args.id})
+        write_json(LIT_READ_FILE, read)
+        print(read_text(os.path.join(LIT_DIR, "digests", f"{args.id}.md")))
+
+
 def jobs():
     return {k: v for k, v in (read_json(JOBS_FILE, {}) or {}).items() if pid_alive(v.get("pid"))}
 
@@ -640,8 +721,16 @@ def meta_due(hypos, ideas, metas):
     return None, ""
 
 
-def auto_meta():
+def auto_meta(after_log=False):
     hypos, ideas, metas = read_tsv(HYPO_FILE, HYPO_COLS), read_tsv(IDEAS_FILE, IDEA_COLS), read_tsv(META_FILE, META_COLS)
+    if after_log and lit_mode() == "forced" and results():
+        if start_meta("deepresearch", f"forced literature step after {last_exp()}"):
+            print(f"deep research started in the background for {last_exp()} (then ideate)")
+        else:
+            with open(os.path.join(STATE_DIR, "deepresearch_pending"), "w") as f:
+                f.write(last_exp())
+            print("deep research queued: it starts when the running meta-step finishes")
+        return
     kind, why = meta_due(hypos, ideas, metas)
     if kind and start_meta(kind, why):
         print(f"meta-step started in the background: {kind} ({why})")
@@ -678,7 +767,11 @@ def cmd_init(args):
         for s in STATE:
             if "/" + s not in have:
                 f.write("/" + s + "\n")
-    print("initialized the research state")
+    if lit_mode() != "off":
+        for d in ("requests", "digests", "cache"):
+            os.makedirs(os.path.join(LIT_DIR, d), exist_ok=True)
+        ensure_lit_server()
+    print("initialized the research state" + (f" (literature: {lit_mode()})" if lit_mode() != "off" else ""))
     if not args.no_seed:
         start_meta("revise", "seed the hypothesis tree")
         print("seeding the hypothesis tree in the background (revise, then ideate); run the baseline meanwhile")
@@ -708,6 +801,15 @@ def cmd_status(args):
         print(f"last meta-step: {m['step']} {m['kind']} after {m['after_exp']} (${m['cost_usd']}): {m['summary'][:200]}")
         cost = sum(float(x["cost_usd"] or 0) for x in metas)
         print(f"meta-steps so far: {len(metas)}, ${cost:.2f}")
+    unread = []
+    if lit_mode() != "off":
+        ensure_lit_server()
+        _, unread = lit_digests()
+        import lit
+
+        reqs = lit.requests()
+        print(f"literature ({lit_mode()}): {len(reqs)} requests "
+              f"({sum(r['status'] in ('open', 'running') for r in reqs)} open), unread digests: {', '.join(unread) or 'none'}")  # fmt: skip
     fl = read_json(INFLIGHT_FILE)
     pm = missing_postmortems(preds)
     if fl:
@@ -718,6 +820,8 @@ def cmd_status(args):
             steps.append(f"world model: finish the full update for {last_exp()}, then `snapshot` again")
         if pm:
             steps.append(f"post-mortems: {', '.join(pm)}")
+        if unread:
+            steps.append(f"read the new literature digest(s) {', '.join(unread)} (`lit read D0xx`) and use them")
         steps.append("draft the next idea (patch + pre-registration) in drafts/, then `python ar.py wait`")
         for n, s in enumerate(steps, 1):
             print(f"  {n}. {s}")
@@ -906,22 +1010,35 @@ def cmd_log(args):
         write_tsv(PRED_FILE, PRED_COLS, preds)
     print(f"verdict {verdict}; predictions: {pred or '-'}; pre-registration: {prereg}")
     print(f"next: Outcome in notebook/{row['exp']}.md, changelog line + current best in world_model.md, `snapshot`, launch")
-    auto_meta()
+    auto_meta(after_log=True)
 
 
 def cmd_meta(args):
     if args.action == "_run":  # the background process
         kind = args.kind
         try:
-            print(run_revise() if kind == "revise" else run_ideate(), flush=True)
-            if kind == "revise":
+            if kind == "deepresearch":  # forced literature step after an experiment, then fresh ideas
+                print(run_deepresearch(), flush=True)
+                hypos, ideas, metas = read_tsv(HYPO_FILE, HYPO_COLS), read_tsv(IDEAS_FILE, IDEA_COLS), read_tsv(META_FILE, META_COLS)
+                if meta_due(hypos, ideas, metas)[0] == "revise":
+                    kind = "revise"
+                    print(run_revise(), flush=True)
                 kind = "ideate"
                 print(run_ideate(), flush=True)
+            else:
+                print(run_revise() if kind == "revise" else run_ideate(), flush=True)
+                if kind == "revise":
+                    kind = "ideate"
+                    print(run_ideate(), flush=True)
         except Exception as exc:  # recorded, so `status` shows it; the next log retries
             journal(f"{kind}-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
             raise
         finally:
             write_json(JOBS_FILE, {})
+            pending = os.path.join(STATE_DIR, "deepresearch_pending")
+            if os.path.exists(pending):  # an experiment was logged while this ran: research it now
+                os.remove(pending)
+                start_meta("deepresearch", "experiment logged during the previous meta-step")
         return
     if args.action == "wait":
         if not jobs():
@@ -981,10 +1098,19 @@ def build_parser():
     s.set_defaults(fn=cmd_log)
     s = sub.add_parser("meta")
     s.add_argument("action", choices=["wait", "_run"])
-    s.add_argument("kind", nargs="?", choices=["ideate", "revise"])
+    s.add_argument("kind", nargs="?", choices=["ideate", "revise", "deepresearch"])
     s.add_argument("--max", type=float, default=540)
     s.set_defaults(fn=cmd_meta)
     sub.add_parser("snapshot").set_defaults(fn=cmd_snapshot)
+    if lit_mode() != "off":
+        s = sub.add_parser("lit", help="the literature extension")
+        s.add_argument("action", choices=["ask", "inbox", "read"])
+        s.add_argument("id", nargs="?")
+        s.add_argument("--question", default="")
+        s.add_argument("--hypothesis", action="append", default=[])
+        s.add_argument("--must", action="append", default=[], help="a criterion a relevant paper must meet")
+        s.add_argument("--exclude", action="append", default=[])
+        s.set_defaults(fn=cmd_lit)
     return p
 
 

@@ -174,8 +174,9 @@ class TestTaskSpecs(unittest.TestCase):
 
     def test_framework_files_contain_no_task_knowledge(self):
         words = ["cifar", "accuracy", "val_bpb", "nanochat", "torch", "gpu", "epoch", "75%", "0.753", "seeds"]
-        for rel in ["framework/core/ar.py", "framework/baseline/program.md",
-                    "framework/hypothesis/program.md", "framework/hypothesis/research.py"]:  # fmt: skip
+        for rel in ["framework/core/ar.py", "framework/baseline/program.md", "framework/hypothesis/program.md",
+                    "framework/hypothesis/research.py", "framework/hypothesis/lit.py",
+                    "framework/hypothesis-lit/program.md", "framework/hypothesis-dr/program.md"]:  # fmt: skip
             text = open(os.path.join(ROOT, rel)).read().lower()
             hits = [w for w in words if w in text]
             self.assertEqual(hits, [], f"{rel} mentions {hits}")
@@ -190,7 +191,7 @@ class TestTaskSpecs(unittest.TestCase):
         self.assertEqual(base[base.index("**NEVER STOP**"):], hyp[hyp.index("**NEVER STOP**"):])
 
 
-class TestHypothesisFramework(Workspace):
+class HypothesisBase(Workspace):
     framework = "hypothesis"
 
     def setUp(self):
@@ -199,6 +200,22 @@ class TestHypothesisFramework(Workspace):
         os.environ.update(RESEARCH_LLM_CMD=os.path.join(ROOT, "tests", "fake_llm.py"), FAKE_LLM_LOG=self.llm_log)
         os.chmod(os.environ["RESEARCH_LLM_CMD"], 0o755)
         os.environ.pop("FAKE_LLM_REFUTE", None)
+        fixture = os.path.join(self.tmp, "lit_fixture.json")
+        json.dump({"papers": [
+            {"title": f"Paper {k}", "abstract": f"Abstract {k} about learning rates.", "year": "2024",
+             "arxiv": "", "url": f"https://example.org/{k}", "source": "fixture"} for k in range(25)],
+            "texts": {"Paper 0": "Intro. Lower learning rates converge faster in short schedules on small networks. More."}},
+            open(fixture, "w"))
+        os.environ["RESEARCH_LIT_FIXTURE"] = fixture
+
+    def tearDown(self):
+        st = os.path.join(self.ws, ".ar", "lit_serve.json")
+        if os.path.exists(st):
+            try:
+                os.kill(json.load(open(st))["pid"], 9)
+            except (ProcessLookupError, KeyError):
+                pass
+        super().tearDown()
 
     def calls(self):
         return [json.loads(line) for line in open(self.llm_log)] if os.path.exists(self.llm_log) else []
@@ -212,6 +229,19 @@ class TestHypothesisFramework(Workspace):
         self.ok("research.py", "snapshot")
         self.ok("research.py", "meta", "wait", "--max", "60")
 
+    def results_of(self, name):
+        lines = open(os.path.join(self.ws, name)).read().splitlines()
+        h = lines[0].split("\t")
+        return [dict(zip(h, line.split("\t"))) for line in lines[1:]]
+
+    def wait_for(self, path, timeout=60):
+        import time
+
+        end = time.time() + timeout
+        while not os.path.exists(path) and time.time() < end:
+            time.sleep(0.2)
+        self.assertTrue(os.path.exists(path), f"{path} never appeared")
+
     def prereg_draft(self, iid, lo, hi):
         draft = os.path.join(self.ws, "drafts", f"{iid}.prereg.md")
         open(draft, "w").write(
@@ -220,6 +250,9 @@ class TestHypothesisFramework(Workspace):
             "- If it moves the opposite way: revert\n- If it crashes: fix\n")
         return draft
 
+
+
+class TestHypothesisFramework(HypothesisBase):
     def test_meta_steps_are_separate_calls_with_only_their_inputs(self):
         self.start()
         roles = [c["role"] for c in self.calls()]
@@ -250,11 +283,6 @@ class TestHypothesisFramework(Workspace):
         research = load_research(self.ws)
         research.run_ideate()
         self.assertGreater(self.calls()[-1]["prompt_bytes"], 140_000)
-
-    def results_of(self, name):
-        lines = open(os.path.join(self.ws, name)).read().splitlines()
-        h = lines[0].split("\t")
-        return [dict(zip(h, line.split("\t"))) for line in lines[1:]]
 
     def test_full_cycle_and_auto_ideate(self):
         self.start()
@@ -299,6 +327,45 @@ class TestHypothesisFramework(Workspace):
         hypo = {h["id"]: h["status"] for h in self.results_of("hypothesis.tsv")}
         self.assertEqual((hypo["H1"], hypo["H1.1"], hypo["H3"]), ("refuted", "retired", "open"))
         self.assertTrue(all(i["status"] == "dropped" for i in self.results_of("ideas.tsv")))
+
+
+class TestLiteratureAsync(HypothesisBase):
+    framework = "hypothesis-lit"
+
+    def test_agent_requests_become_verified_digests(self):
+        self.start()
+        out = self.ok("research.py", "lit", "ask", "--question", "does lower lr help?", "--hypothesis", "H1.1",
+                      "--must", "reports lr ablations", "--exclude", "pretrained")  # fmt: skip
+        self.assertIn("R001 queued", out)
+        digest = os.path.join(self.ws, "lit", "digests", "D001.md")
+        self.wait_for(digest)
+        text = open(digest).read()
+        self.assertIn("25 papers found, 4 relevant, 4 read in full, 1 verified claims", text)  # invented quote dropped
+        self.assertIn("C0001", text)
+        stages = [line.split("\t")[1] for line in open(os.path.join(self.ws, "lit", "ledger.tsv")).read().splitlines()[1:]]
+        self.assertEqual(stages, ["plan", "triage", "triage"] + ["extract"] * 4 + ["synthesize"])
+        self.assertIn("unread digests: D001", self.ok("research.py", "lit", "inbox"))
+        self.assertIn("lower learning rates", self.ok("research.py", "lit", "read", "D001"))
+        self.assertIn("unread digests: none", self.ok("research.py", "lit", "inbox"))
+        research = load_research(self.ws)
+        research.run_ideate()
+        self.assertTrue(self.calls()[-1]["has_literature"])
+        self.assertIn("(literature: async)", open(os.path.join(self.ws, "framework.json")).read().replace('"', "") + "(literature: async)")
+
+
+class TestLiteratureForced(HypothesisBase):
+    framework = "hypothesis-dr"
+
+    def test_deep_research_runs_after_every_experiment(self):
+        self.start()  # logs the baseline: forced deep research, then ideate
+        self.ok("research.py", "meta", "wait", "--max", "60")
+        self.assertTrue(os.path.exists(os.path.join(self.ws, "lit", "digests", "D001.md")))
+        req = json.load(open(os.path.join(self.ws, "lit", "requests", "R001.json")))
+        self.assertEqual((req["from"], req["after"], req["status"]), ("auto", "E000", "done"))
+        kinds = [m["kind"] for m in self.results_of("meta.tsv")]
+        self.assertEqual(kinds[-2:], ["deepresearch", "ideate"])
+        self.assertTrue(self.calls()[-1]["has_literature"])
+        self.assertIn("requests are automatic", self.fails("research.py", "lit", "ask", "--question", "x"))
 
 
 def load_research(ws):
