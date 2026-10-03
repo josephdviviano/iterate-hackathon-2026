@@ -125,11 +125,13 @@ def init_whitening(layer, images, eps=5e-4):
     layer.weight.copy_(torch.cat((scaled, -scaled)))
 
 
-def augment(padded, flip_bits, epoch, r, contrast=0.0, brightness=0.0):
+def augment(padded, flip_bits, epoch, r, contrast=0.0, brightness=0.0, translate=True):
     """Random translate by up to r pixels (from reflect-padded images) + alternating flip."""
     n = len(padded)
     device = padded.device
     shifts = torch.randint(0, 2 * r + 1, (n, 2), device=device)
+    if not translate:  # still drawn above so the RNG stream is unchanged
+        shifts = torch.full_like(shifts, r)
     base = torch.arange(32, device=device)
     rows = (base[None, :] + shifts[:, :1])[:, None, :, None]
     cols = (base[None, :] + shifts[:, 1:])[:, None, None, :]
@@ -343,7 +345,8 @@ def train(state) -> nn.Module:
     while step < total:
         whiten_on = epoch < hyp["whiten_bias_epochs"]
         model.whiten_bias_grad = whiten_on
-        imgs = augment(state.padded, state.flip_bits, epoch, r, hyp["contrast"], hyp["brightness"])
+        translate = epoch + 1 > hyp["res_schedule"][-1][0]  # no translate in epochs that are entirely low-res
+        imgs = augment(state.padded, state.flip_bits, epoch, r, hyp["contrast"], hyp["brightness"], translate)
         perm = torch.randperm(n, device=imgs.device)
         imgs = imgs[perm].contiguous(memory_format=torch.channels_last)
         labels = state.labels[perm]
