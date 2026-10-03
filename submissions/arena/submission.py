@@ -34,7 +34,7 @@ HYP = {
     "contrast": 0.13,  # per-image contrast/brightness jitter amplitudes (uniform +-)
     "brightness": 0.14,
     "lowres_epochs": 1.5,  # first epochs train on whole images downsampled to lowres_size
-    "lowres_size": 24,
+    "lowres_size": 20,
     "muon_lr": 0.16,
     "muon_momentum": 0.8,
     "ns_steps": 3,
