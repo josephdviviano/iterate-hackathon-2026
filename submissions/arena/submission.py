@@ -13,7 +13,7 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    stages=[[32, 8]],  # [resolution, epochs] in training order
+    stages=[[24, 4], [32, 5]],  # [resolution, epochs] in training order
     batch_size=768,
     lr=0.5,
     momentum=0.9,
@@ -22,6 +22,8 @@ DEFAULTS = dict(
     warmup=0.25,
     widths=[32, 128, 320, 640],
     act="relu",
+    logit_scale=0.125,
+    bn_weight=True,  # train BatchNorm weights (else frozen at 1)
     muon=True,  # orthogonalized (Newton-Schulz) momentum updates for conv filters
     muon_lr=0.14,
     muon_momentum=0.6,
@@ -76,7 +78,7 @@ class Residual(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self, num_classes, widths, act="relu"):
+    def __init__(self, num_classes, widths, act="relu", scale=0.125):
         super().__init__()
         w = widths
         self.register_buffer("mean", torch.tensor(MEAN).view(1, 3, 1, 1), persistent=False)
@@ -91,7 +93,7 @@ class Net(nn.Module):
             GlobalMaxPool(),
         )
         self.fc = nn.Linear(w[3], num_classes, bias=False)
-        self.scale = 0.125
+        self.scale = scale
 
     def features(self, x):
         return self.fc(self.body(x)) * self.scale
@@ -108,13 +110,17 @@ def build(context: BuildContext):
     cfg = {**DEFAULTS, **(context.parameters or {})}
     device = context.device
     cuda = device.type == "cuda"
-    model = Net(context.num_classes, cfg["widths"], cfg["act"]).to(device).to(memory_format=torch.channels_last)
+    model = Net(context.num_classes, cfg["widths"], cfg["act"], cfg["logit_scale"]).to(device).to(memory_format=torch.channels_last)
     state = SimpleNamespace(model=model, context=context, cfg=cfg, device=device)
     features = torch.compile(model.features, dynamic=False) if cuda else model.features
     bs = cfg["batch_size"]
     state.y = torch.zeros(bs, dtype=torch.long, device=device)
     state.lr = torch.zeros((), device=device)
-    params = list(model.parameters())
+    if not cfg["bn_weight"]:
+        for m in model.modules():
+            if isinstance(m, nn.BatchNorm2d):
+                m.weight.requires_grad_(False)
+    params = [p for p in model.parameters() if p.requires_grad]
     conv = [i for i, p in enumerate(params) if p.ndim == 4] if cfg["muon"] else []
     sgd = [i for i in range(len(params)) if i not in conv]
     decay = [i for i in sgd if params[i].ndim > 1]
