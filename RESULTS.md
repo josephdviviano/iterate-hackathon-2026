@@ -371,6 +371,34 @@ ar25 the best program (0.64) is among the longest by every measure. The
 should be treated as an untested choice, and the vote reported with equal
 weights unless a prior is validated.
 
+## R15. Open-loop rollouts and level progression
+
+Each member predicts the held-out trajectory from its own previous
+prediction with the real actions, resynchronised to the observed state only
+at the first step and at a level change. Program memory persists across
+the level boundary. `committee.rollout`; files `rollout_*.json`.
+
+| | horizon | n | vote accuracy, teacher forced → open loop | members exactly right, open loop | disagreement, teacher forced → open loop |
+|---|---|---|---|---|---|
+| ar25 L3 | 2-5 | 4 | 1.00 → 1.00 | 5.0 of 8 | 0.08 → 0.32 |
+| | 6-10 | 5 | 0.40 → 0.40 | 2.0 of 8 | 0.35 → 0.44 |
+| | 11+ | 34 | 0.41 → 0.00 | 1.1 of 8 | 0.10 → 0.54 |
+| m0r0 L3 | 2-10 | 9 | 1.00 → 1.00 | 8.0 of 8 | 0.00 → 0.00 |
+| | 11+ | 34 | 0.71 → 0.62 | 4.9 of 8 | 0.08 → 0.07 |
+| tr87 L1 trained, rolled through L2 then L3 | all | 53 | 1.00 → 1.00 | 8.0 of 8 | 0.00 → 0.00 |
+
+| Item | Value |
+|---|---|
+| Steps until a member's first open-loop miss | ar25: 2 or 8 per member; m0r0: 32 for all; tr87: none in 53 steps |
+| Command | `uv run python -m committee.rollout ar25 --level 3 --train-frac 0.4`; `uv run python -m committee.rollout tr87 --level 1 --train-frac 1.0 --test-level 2 --test-levels 2 3` |
+
+Reading: on ar25 the programs diverge from the true trajectory within a few
+steps and from each other, so open-loop disagreement grows with the horizon
+while the teacher-forced disagreement does not; that growth is the quantity
+a planner would read as its trust horizon. On m0r0 and tr87 the committee
+is stable in open loop, and on tr87 the level-1 rule carries hidden state
+through two further levels.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a

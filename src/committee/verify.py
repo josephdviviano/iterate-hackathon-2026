@@ -35,14 +35,21 @@ try:
 except Exception:
     json.dump({"load_error": traceback.format_exc()[-800:]}, open(sys.argv[3], "w")); sys.exit(0)
 rows = json.load(open(sys.argv[2]))
+open_loop = len(sys.argv) > 4 and sys.argv[4] == "open"
 out = []
+prev = None
 for r in rows:
+    # open loop: the program consumes its own last prediction, except where the row says to
+    # resync (a level entry, or the first row), which mirrors what an agent can observe
+    before = r["before"] if (not open_loop or prev is None or r.get("resync")) else prev
     try:
-        pred = mod.transition_function(copy.deepcopy(r["before"]), r["action"])
+        pred = mod.transition_function(copy.deepcopy(before), r["action"])
         pred = json.loads(json.dumps(pred))
         out.append({"pred": pred})
+        prev = pred
     except Exception:
         out.append({"error": traceback.format_exc()[-400:]})
+        prev = None
 json.dump(out, open(sys.argv[3], "w"))
 '''
 
@@ -76,18 +83,27 @@ class Verdict:
 
 
 def run_program(source: str, train: list[Transition], test: list[Transition],
-                timeout_s: float = 120) -> Verdict:
+                timeout_s: float = 120, open_loop: bool = False) -> Verdict:
+    """Teacher forcing by default. With open_loop, the test rows are predicted from the program's
+    own previous prediction; the first test row and any row at a level change start from the
+    observed state. Train rows are always teacher forced."""
     bad = static_violations(source)
     if bad:
         return Verdict([], [], [], error=f"forbidden: {bad}")
-    rows = [{"before": t.before_objs, "action": t.action} for t in train + test]
+    rows = [{"before": t.before_objs, "action": t.action, "resync": True} for t in train]
+    prev_level = None
+    for i, t in enumerate(test):
+        rows.append({"before": t.before_objs, "action": t.action,
+                     "resync": i == 0 or (prev_level is not None and t.level != prev_level)})
+        prev_level = t.level
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp)
         (p / "program.py").write_text(source)
         (p / "run.py").write_text(_RUNNER)
         (p / "rows.json").write_text(json.dumps(rows))
         try:
-            proc = subprocess.run([sys.executable, "-I", "run.py", "program.py", "rows.json", "out.json"],
+            proc = subprocess.run([sys.executable, "-I", "run.py", "program.py", "rows.json", "out.json",
+                                   "open" if open_loop else "teacher"],
                                   cwd=tmp, capture_output=True, text=True, timeout=timeout_s)
         except subprocess.TimeoutExpired:
             return Verdict([], [], [], error="timeout")
