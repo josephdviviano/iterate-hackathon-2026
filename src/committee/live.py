@@ -134,7 +134,8 @@ class MemberProcess:
         shutil.rmtree(self.dir, ignore_errors=True)
 
 
-def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0, verbose: bool = True) -> dict:
+def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0, verbose: bool = True,
+         brief: bool = False) -> dict:
     """Candidate actions are scored by stateless what-if predictions; the chosen action is scored by
     each member's persistent process, which sees the trajectory in order."""
     from arcengine import GameAction, GameState
@@ -187,7 +188,7 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
                    "vote_correct": vote == truth, "members_correct": sum(correct), "alive": len(alive),
                    "level_advance": advanced, "levels_completed": frame.levels_completed, "state": str(frame.state)}
             log.append(row)
-            if verbose:
+            if verbose and not (brief and dis[j] == 0 and row["vote_correct"] and t % 10 and not advanced):
                 print(f"  step {t:3d}  action {action}  disagreement {dis[j]:.2f} ({len(set(keys))} outcomes)  "
                       f"vote {'right' if row['vote_correct'] else 'WRONG'}  members right {sum(correct)}/{len(members)}"
                       f"  never wrong {len(alive)}" + ("  level advanced" if advanced else ""), flush=True)
@@ -280,6 +281,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--runs", type=int, default=8)
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--brief", action="store_true", help="print only every 10th move and the moves with disagreement or error")
     add_backend_args(parser)
     args = parser.parse_args(argv)
     if args.resynth_from:
@@ -295,7 +297,7 @@ def main(argv: list[str] | None = None) -> None:
         tag = f"L{args.level}_{args.condition}_probe{args.probe}"
     members = members_for(cond)
     print(f"{args.game} level {args.level}, live, {len(members)} members from {cond.relative_to(ARTIFACTS)}")
-    out = play(args.game, args.level, members, args.steps, args.seed)
+    out = play(args.game, args.level, members, args.steps, args.seed, brief=args.brief)
     print(f"  steps {out['steps']} (scored {out['scored']})  vote accuracy {out['vote_accuracy']}  "
           f"AUROC {out['auroc_disagreement_vs_error']}  unanimous {out['unanimous_n']} (error {out['unanimous_error']})"
           f"  split {out['split_n']} (error {out['split_error']})  all members wrong first at step "

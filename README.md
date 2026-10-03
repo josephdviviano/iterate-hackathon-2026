@@ -57,6 +57,30 @@ vote shares hold a 90% coverage target on all four informative levels
 is the honest answer; where it is mostly right they return a single state
 66% to 77% of the time at 0.88 to 0.93 accuracy.
 
+Closing the loop (RESULTS.md R23, R24): on every level the first disagreement
+probe refutes every member, so probing never selects among programs; it
+signals a missing hypothesis. Resynthesis on that counterexample, with the
+refuted predictions stated in the seed, lifts ar25 L3 from 0.48 to 0.93 and,
+after a third round with four observations in total, to 1.00 on the 40
+remaining transitions; sk48 L2 goes 0.70 to 0.86. A passive control that
+observes the next transition in time instead moves 0.00 to -0.06. Where the
+members already agree and are wrong together (m0r0 L3, ar25 L7) one
+counterexample changes nothing, and every resynthesized committee converges
+to one or two behaviours, so its disagreement signal must be rebuilt.
+
+Live play on the ARC-AGI-3 engine (R25, R26, `committee.live`): the committee
+chooses its own actions on ar25 level 3. It is unanimous and right for 64
+moves, then a mechanic no recorded transition shows (a hidden move budget
+whose bar starts to shrink) refutes every member with disagreement 0.00.
+Resynthesis on that live counterexample yields a committee that predicts the
+tick and lifts live accuracy from 0.40 to 0.71 and 0.86 on two trajectories,
+until the next unseen mechanic refutes it.
+
+Replication on four games never used before (ls20 L3, ka59 L2, g50t L1,
+wa30 L3; same code and protocol): unanimous error 0.00 to 0.12, split error
+above it on every level, AUROC 0.69 to 1.00, conformal coverage 0.90 to 0.96
+against the 0.90 target (`artifacts/calibration_new.json`).
+
 ## Demo
 
 ```
@@ -141,3 +165,46 @@ uv run modal deploy src/rewardhack/modal_app.py                         # open-w
 uv run python -m rewardhack.experiment tr87 --level 1 --runs 3 --contradiction --abstain \
     --backend modal --model Qwen/Qwen2.5-Coder-7B-Instruct --max-turns 4   # chat loop, 4 checker rounds
 ```
+
+## ONC-AGI evaluation (Track 2.3, science domain)
+
+The same method on a science benchmark with a live agent. ONC-AGI worlds are
+patient cohorts with a binary outcome and a hidden planted mechanism, or no
+mechanism. The agent must list the driver features, or an empty list, and in
+sequential mode must buy its own data. Our agent is a committee of hypothesis
+programs, one per causal role family (direct, conservative, sparse, confounder,
+upstream cause, interaction, correlated block, null). Each hypothesis is admitted
+by cross-validated log loss, weighted by likelihood, and the committee reports
+P(signal), P(driver) per feature and p(y | x). Disagreement over driver sets
+decides when to buy more data and when to stop. Post-outcome features are
+filtered before any hypothesis sees the data. Rewards: the benchmark score per
+episode, a Brier calibration term and the potential-based drop in disagreement.
+See RESULTS.md entries O1 to O7. Toy and generated worlds are not benchmark
+results (the benchmark worlds ship in a later ONC-AGI release).
+
+```
+uv run onc-agi smoke                                          # the benchmark's own reference run
+uv run python -m onc.baselines                                # baseline and cheater scorecards, both modes (O1)
+uv run python -m onc.evaluate --store toy --mode both         # committee agent, calibration, conformal, acquisition designs (O2, O3)
+uv run python -m onc.worlds --out artifacts/onc/dev --n-per-role 8 --seed 0 --check   # 200 generated dev worlds (O4)
+uv run python -m onc.evaluate --store artifacts/onc/dev --mode both --weighting likelihood
+uv run python -m onc.hacks --store toy                        # reward-hacking checks 1 to 3 (O5)
+uv run python -m onc.arc_lookup --game ar25 --level 3 --train-frac 0.4 --condition committee_devin   # check 5, the ARC lookup-table hack (O6)
+uv run python -m onc.train --store artifacts/onc/dev --arm all --iterations 12   # policy training, arms A to D (O7)
+uv run pytest tests/test_onc_committee.py tests/test_onc_rewards.py tests/test_onc_worlds.py tests/test_onc_policy.py tests/test_onc_arc_lookup.py
+```
+
+Credits for this part:
+
+- Benchmark: ONC-AGI (Bradley Segal, BSD-3-Clause), read from the `external/ONC-AGI`
+  submodule and installed as a package: its engine, scorer, agent kit, baselines,
+  cheaters and toy fixture worlds. Our dev-world generator reimplements the toy
+  worlds' shape and roles from its documentation; no code is copied.
+- Libraries that ONC-AGI brings in: pandas, PyArrow, pydantic, SciPy, statsmodels,
+  FastAPI, Uvicorn. We call SciPy (clustering, tests) and scikit-learn (logistic
+  regression) directly.
+- `external/re-arc` (Michael Hodel, MIT) is a read-only reference submodule; no
+  code in this repository uses it.
+- Ideas: adaptive conformal inference (Gibbs and Candès, 2021); potential-based
+  reward shaping (Ng, Harada and Russell, 1999); the Brier score as a proper
+  scoring rule (Brier, 1950); group-relative policy gradient (GRPO, Shao et al., 2024).
