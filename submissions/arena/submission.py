@@ -30,6 +30,7 @@ HYP = {
     "scaling_factor": 1 / 9,
     "compile": True,
     "res_schedule": ((20, 2), (24, 3), (28, 2)),  # (resolution, epochs) stages before full 32 px
+    "freeze_first_full_res": True,  # freeze group 1's first conv block in the 32 px epochs
     "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
     "muon_lr": 0.205,
     "muon_momentum": 0.655,
@@ -69,12 +70,14 @@ class ConvGroup(nn.Module):
         self.pool = nn.MaxPool2d(2)
         self.activ = nn.GELU()
 
-    def forward(self, x):
+    def forward(self, x, detach_first: bool = False):
         for i, (conv, norm) in enumerate(zip(self.convs, self.norms)):
             x = conv(x)
             if i == 0:
                 x = self.pool(x)
             x = self.activ(norm(x))
+            if i == 0 and detach_first:
+                x = x.detach()
         return x
 
 
@@ -97,13 +100,17 @@ class Net(nn.Module):
         self.head = nn.Linear(w3, num_classes, bias=False)
         self.scale = hyp["scaling_factor"]
 
-    def forward(self, x, detach_whiten: bool = False):
+    def forward(self, x, detach_whiten: bool = False, freeze_first: bool = False):
         # x: normalized fp16 channels_last images. Once the whitening bias is frozen,
-        # detaching its output skips the backward into it at full resolution.
+        # detaching its output skips the backward into it at full resolution;
+        # freeze_first also stops training the first conv block of group 1.
         x = self.whiten(x)
         if detach_whiten:
             x = x.detach()
-        return self.head(self.layers(x)) * self.scale
+        x = self.layers[1](self.layers[0](x), detach_first=freeze_first)
+        for layer in self.layers[2:]:
+            x = layer(x)
+        return self.head(x) * self.scale
 
 
 class Classifier(nn.Module):
@@ -159,14 +166,18 @@ def muon_update(params, grads, bufs, lr, momentum: float, ns_steps: int, precond
 
 
 class MuonStep:
-    """Muon on a fixed list of conv filters, compiled and captured once as a CUDA graph.
+    """Muon on a fixed list of conv filters, compiled and captured as CUDA graphs.
 
-    Parameters keep their storage across trials (they are reset in place), so the graph
-    built in build() is reused: each step copies the fresh grads into static buffers,
-    writes the lr into a GPU scalar and replays the graph. reset() clears the momentum.
+    Parameters keep their storage across trials (they are reset in place), so the graphs
+    built in build() are reused: each step copies the fresh grads into static buffers,
+    writes the lr into a GPU scalar and replays the graph for the set of filters that
+    received grads (all of them, or one of `subsets` when some are frozen).
+    reset() clears the momentum.
     """
 
-    def __init__(self, params, momentum, ns_steps, use_graph, compiled=False, precond=False):
+    def __init__(
+        self, params, momentum, ns_steps, use_graph, compiled=False, precond=False, subsets=()
+    ):
         self.precond = precond
         self.update_fn = torch.compile(muon_update, dynamic=False) if compiled else muon_update
         self.params = params
@@ -174,21 +185,29 @@ class MuonStep:
         self.bufs = [torch.zeros_like(p) for p in params]
         self.lr_t = torch.zeros((), device=params[0].device, dtype=torch.float32)
         self.momentum, self.ns_steps = momentum, ns_steps
-        self.graph = None
+        self.graphs = {}
         if use_graph:
-            side = torch.cuda.Stream()
-            side.wait_stream(torch.cuda.current_stream())
-            with torch.cuda.stream(side), torch.no_grad():
-                for _ in range(3):
-                    self._update()
-            torch.cuda.current_stream().wait_stream(side)
-            self.graph = torch.cuda.CUDAGraph()
-            with torch.cuda.graph(self.graph), torch.no_grad():
-                self._update()
+            for idx in (tuple(range(len(params))), *subsets):
+                side = torch.cuda.Stream()
+                side.wait_stream(torch.cuda.current_stream())
+                with torch.cuda.stream(side), torch.no_grad():
+                    for _ in range(3):
+                        self._update(idx)
+                torch.cuda.current_stream().wait_stream(side)
+                graph = torch.cuda.CUDAGraph()
+                with torch.cuda.graph(graph), torch.no_grad():
+                    self._update(idx)
+                self.graphs[idx] = graph
 
-    def _update(self):
+    def _update(self, idx):
         self.update_fn(
-            self.params, self.grads, self.bufs, self.lr_t, self.momentum, self.ns_steps, self.precond
+            [self.params[i] for i in idx],
+            [self.grads[i] for i in idx],
+            [self.bufs[i] for i in idx],
+            self.lr_t,
+            self.momentum,
+            self.ns_steps,
+            self.precond,
         )
 
     def reset(self):
@@ -196,12 +215,13 @@ class MuonStep:
 
     @torch.no_grad()
     def step(self, lr):
-        torch._foreach_copy_(self.grads, [p.grad for p in self.params])
+        idx = tuple(i for i, p in enumerate(self.params) if p.grad is not None)
+        torch._foreach_copy_([self.grads[i] for i in idx], [self.params[i].grad for i in idx])
         self.lr_t.fill_(lr)
-        if self.graph is not None:
-            self.graph.replay()
+        if idx in self.graphs:
+            self.graphs[idx].replay()
         else:
-            self._update()
+            self._update(idx)
 
 
 # ----------------------------------------------------------------------------- whitening
@@ -246,6 +266,12 @@ def downscale(x, size):
     return out.half().contiguous(memory_format=torch.channels_last)
 
 
+def train_flags(hyp, epoch, res):
+    """(detach the whitening output, freeze group 1's first block) for this epoch."""
+    detach_whiten = epoch >= hyp["whiten_bias_epochs"]
+    return detach_whiten, detach_whiten and hyp["freeze_first_full_res"] and res is None
+
+
 def resolution_at(schedule, epoch):
     """Resolution for this epoch from the (resolution, epochs) stages; None = full size."""
     for res, n_epochs in schedule:
@@ -273,6 +299,8 @@ def build(context: BuildContext):
     state.muon = None
     if hyp["optimizer"] == "muon":
         filters = [p for p in net.parameters() if p.ndim == 4 and p.requires_grad]
+        first = net.layers[1].convs[0].weight
+        frozen_subset = tuple(i for i, p in enumerate(filters) if p is not first)
         cuda = device.type == "cuda"
         state.muon = MuonStep(
             filters,
@@ -281,6 +309,7 @@ def build(context: BuildContext):
             use_graph=cuda,
             compiled=cuda and hyp["compile"],
             precond=hyp["ns_precond"],
+            subsets=(frozen_subset,) if hyp["freeze_first_full_res"] else (),
         )
 
     # Warm up compilation on synthetic data (untimed); prepare() resets everything after.
@@ -291,15 +320,15 @@ def build(context: BuildContext):
         )
         y = torch.randint(0, context.num_classes, (bs,), device=device)
         net.train()
-        # Warm exactly the (resolution, detach) variants that train() will use.
-        variants = {(32, False)}
+        # Warm exactly the (resolution, flags) variants that train() will use.
+        variants = {(32, False, False)}
         for e in range(math.ceil(hyp["epochs"])):
-            res = resolution_at(hyp["res_schedule"], e) or 32
-            variants.add((res, e >= hyp["whiten_bias_epochs"]))
-        for res, detach in sorted(variants):
+            res = resolution_at(hyp["res_schedule"], e)
+            variants.add((res or 32, *train_flags(hyp, e, res)))
+        for res, detach, freeze in sorted(variants):
             xs = x if res == 32 else downscale(x, res)
             for _ in range(3):
-                out = train_net(xs, detach)
+                out = train_net(xs, detach, freeze)
                 loss = F.cross_entropy(
                     out, y, label_smoothing=hyp["label_smoothing"], reduction="none"
                 ).sum()
@@ -410,6 +439,7 @@ def train(state) -> nn.Module:
         res = resolution_at(hyp["res_schedule"], epoch)
         if res is not None:
             inputs_all = downscale(inputs_all, res)
+        flags = train_flags(hyp, epoch, res)
         perm = torch.randperm(n, device=inputs_all.device)
         if epoch >= hyp["whiten_bias_epochs"]:
             opt.param_groups[0]["base_lr"] = 0.0
@@ -417,7 +447,7 @@ def train(state) -> nn.Module:
             if step >= total:
                 break
             idx = perm[b * bs : (b + 1) * bs]
-            out = train_net(inputs_all[idx], epoch >= hyp["whiten_bias_epochs"])
+            out = train_net(inputs_all[idx], *flags)
             loss = F.cross_entropy(out, state.labels[idx], label_smoothing=ls, reduction="none").sum()
             loss.backward()
             f = lr_factor(step, total)
