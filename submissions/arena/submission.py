@@ -27,6 +27,7 @@ with open(__file__, "rb") as _f:
 DEFAULTS = {
     "epochs": 7.25,
     "batch_size": 1536,
+    "tail_batch_size": 1024,  # batch size for the 32 px phase; 0 uses batch_size throughout
     "lr": 9.0,  # per 1024 examples, decoupled from momentum (airbench convention)
     "momentum": 0.85,
     "weight_decay": 0.012,  # per 1024 examples, decoupled from the learning rate
@@ -54,7 +55,7 @@ DEFAULTS = {
     "muon_head": True,  # also train the linear head with Muon (without renormalization)
     "muon_head_lr_scale": 0.5,  # head Muon LR relative to the filters'
     # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
-    "res_schedule": [[2 / 7.25, 16], [3.25 / 7.25, 24]],
+    "res_schedule": [[2 / 7.25, 16], [3.25 / 7.25, 24], [4.5 / 7.25, 28]],
 }
 
 
@@ -216,12 +217,14 @@ class Muon(torch.optim.Optimizer):
     total_steps = 1  # set by prepare; filters are renormalized every 2 + int(15 * progress) steps
     steps_done = 0
     next_renorm = 0
+    progress = None  # fraction of training samples seen, set by _fit
 
     @torch.no_grad()
     def step(self):
         renorm = self.steps_done >= self.next_renorm
         if renorm:
-            self.next_renorm = self.steps_done + 2 + int(15 * self.steps_done / self.total_steps)
+            progress = self.progress if self.progress is not None else self.steps_done / self.total_steps
+            self.next_renorm = self.steps_done + 2 + int(15 * progress)
         self.steps_done += 1
         for group in self.param_groups:
             shape_groups = group["shape_groups"]
@@ -343,7 +346,7 @@ def build(context: BuildContext):
             for size in sizes:
                 prepare(state, synthetic, seed=0)
                 state.whiten_bias_steps = 3
-                _fit(state, total_steps=6, size=size)
+                _fit(state, total_steps=6, size=size, batch_size=_phase_batch(state, size))
         state.classifier.eval()
         with torch.inference_mode():
             for size in (context.eval_batch_size, 10_000 % context.eval_batch_size, 1):
@@ -420,6 +423,9 @@ def prepare(state, data: TrainingData, seed: int) -> None:
         for group in opt.param_groups:
             group["initial_lr"] = group["lr"]
 
+    for group in state.optimizer.param_groups:
+        group["wd_per_example"] = group["weight_decay"] / batch_size
+
     state.batch_size = batch_size
     state.steps_per_epoch = len(data.labels) // batch_size
     state.total_steps = math.ceil(hyp["epochs"] * state.steps_per_epoch)
@@ -444,32 +450,48 @@ def _epoch_size(hyp, frac):
     return 32
 
 
-def _fit(state, total_steps, size=None):
-    hyp, net, optimizer = state.hyp, state.net, state.optimizer
-    labels, batch_size, steps_per_epoch = state.labels, state.batch_size, state.steps_per_epoch
-    warmup_steps = int(total_steps * hyp["warmup"])
-    decay_steps = max(warmup_steps + 1, round(total_steps * hyp["decay_end"]))
-    tail_start = total_steps - hyp["tail_steps"] if size is None else total_steps + 1
-    ema_decay = 0.95**5 * (torch.arange(total_steps + 1) / total_steps) ** 3
-    step = 0
+def _phase_batch(state, size):
+    tail_bs = state.hyp["tail_batch_size"]
+    return min(tail_bs, len(state.labels)) if tail_bs and size >= 28 else state.batch_size
+
+
+def _fit(state, total_steps, size=None, batch_size=None):
+    """Train for a sample budget; every schedule (LR, resolution, lookahead, tail) follows samples seen."""
+    hyp, net = state.hyp, state.net
+    labels, unit = state.labels, state.batch_size  # unit: the step size the cadences were tuned for
+    n = len(labels)
+    if size is None:
+        total = hyp["epochs"] * state.steps_per_epoch * unit
+    else:  # warmup: a few steps of one shape
+        total = total_steps * batch_size
+    warmup, decay_end = hyp["warmup"] * total, hyp["decay_end"] * total
+    tail_start = total - hyp["tail_steps"] * unit if size is None else float("inf")
+    whiten_until = hyp["whiten_bias_epochs"] / hyp["epochs"] * total if size is None else 3 * batch_size
+    look_every, tail_every = hyp["ema_every"] * unit, hyp["tail_every"] * unit
+    next_look, next_tail, in_tail = look_every, None, False
+    seen, epoch = 0, 0
     net.train()
-    for epoch in range(math.ceil(total_steps / steps_per_epoch)):
+    while seen < total:
         images = batch_crop(state.images, 32) if hyp["translate"] else state.images
         if epoch % 2 == 1:
             images = images.flip(-1)
         if hyp["cutout"]:
             images = batch_cutout(images, hyp["cutout"])
-        order = torch.randperm(len(labels), device=labels.device)
-        for i in range(steps_per_epoch):
-            if step >= total_steps:
+        order = torch.randperm(n, device=labels.device)
+        i = 0
+        while seen < total:
+            progress = seen / total
+            step_size = size or _epoch_size(hyp, progress)
+            bs = batch_size or _phase_batch(state, step_size)
+            if i + bs > n:
                 break
-            idx = order[i * batch_size : (i + 1) * batch_size]
+            idx = order[i : i + bs]
+            i += bs
             x = images[idx]
-            step_size = size or _epoch_size(hyp, step / total_steps)  # step-indexed switch points
             if step_size != 32:
                 x = F.interpolate(x, size=(step_size, step_size), mode="bilinear", antialias=True)
                 x = x.contiguous(memory_format=torch.channels_last)
-            outputs = state.train_net(x, step < state.whiten_bias_steps)
+            outputs = state.train_net(x, seen < whiten_until)
             loss = F.cross_entropy(
                 outputs.float(),
                 labels[idx],
@@ -479,29 +501,37 @@ def _fit(state, total_steps, size=None):
             for opt in state.optimizers:
                 opt.zero_grad(set_to_none=True)
             loss.backward()
+            for group in state.optimizer.param_groups:  # kilostep rule: decay per step scales with batch
+                group["weight_decay"] = group["wd_per_example"] * bs
             for opt in state.optimizers:
                 final_lr = hyp["muon_final_lr"] if isinstance(opt, Muon) else hyp["final_lr"]
-                if step < warmup_steps:
-                    frac = step / warmup_steps
+                if seen < warmup:
+                    frac = seen / warmup
                     scale = 0.2 * (1 - frac) + frac
                 else:
-                    frac = min(1.0, (step - warmup_steps) / (decay_steps - warmup_steps))
+                    frac = min(1.0, (seen - warmup) / (decay_end - warmup))
                     scale = (1 - frac) + final_lr * frac
                 for group in opt.param_groups:
                     group["lr"] = group["initial_lr"] * scale
+                if isinstance(opt, Muon):
+                    opt.progress = progress
                 opt.step()
-            step += 1
-            if step == tail_start:
+            seen += bs
+            if not in_tail and seen >= tail_start:
+                in_tail, next_tail = True, tail_start + tail_every
                 if hyp["ema_every"]:
                     _lookahead(state, 1.0)
                 torch._foreach_copy_(state.tail_ema, [p.detach() for p in state.tail_params])
-            elif step > tail_start:
-                if (step - tail_start) % hyp["tail_every"] == 0:
+            elif in_tail:
+                if seen >= next_tail:
+                    next_tail += tail_every
                     with torch.no_grad():
                         torch._foreach_lerp_(state.tail_ema, state.tail_params, hyp["tail_weight"])
-            elif hyp["ema_every"] and step % hyp["ema_every"] == 0:
-                _lookahead(state, ema_decay[step].item())
-    if step > tail_start:
+            elif hyp["ema_every"] and seen >= next_look:
+                next_look += look_every
+                _lookahead(state, 0.95**5 * min(1.0, seen / total) ** 3)
+        epoch += 1
+    if in_tail:
         with torch.no_grad():  # evaluate the final EMA weights; BN buffers stay from the net
             torch._foreach_copy_(state.tail_params, state.tail_ema)
     elif hyp["ema_every"]:
