@@ -23,7 +23,7 @@ HYP = {
     "momentum": 0.85,
     "weight_decay": 0.012,
     "bias_scaler": 64.0,
-    "label_smoothing": 0.3,
+    "label_smoothing": 0.2,
     "whiten_bias_epochs": 3,
     "translate": 2,
     "bn_momentum": 0.6,
