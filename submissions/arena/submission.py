@@ -29,6 +29,7 @@ HYP = {
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
     "compile": True,
+    "compile_mode": "max-autotune",
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -159,7 +160,7 @@ def build(context: BuildContext):
     model = Classifier(net).to(device)
     train_net = net
     if hyp["compile"] and device.type == "cuda":
-        train_net = torch.compile(net)
+        train_net = torch.compile(net, mode=hyp["compile_mode"])
     state = SimpleNamespace(hyp=hyp, context=context, model=model, net=net, train_net=train_net)
 
     # Warm up compilation on synthetic data (untimed); prepare() resets everything after.
