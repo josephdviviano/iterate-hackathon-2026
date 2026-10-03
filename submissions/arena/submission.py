@@ -25,7 +25,7 @@ with open(__file__, "rb") as _f:
 
 # Override any value with --params, e.g. '{"epochs": 9, "widths": [128, 384, 768]}'.
 DEFAULTS = {
-    "epochs": 8.0,
+    "epochs": 7.25,
     "batch_size": 1536,
     "lr": 9.0,  # per 1024 examples, decoupled from momentum (airbench convention)
     "momentum": 0.85,
@@ -54,7 +54,7 @@ DEFAULTS = {
     "muon_head": True,  # also train the linear head with Muon (without renormalization)
     "muon_head_lr_scale": 0.5,  # head Muon LR relative to the filters'
     # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
-    "res_schedule": [[0.375, 16], [0.5, 24]],
+    "res_schedule": [[2 / 7.25, 16], [3.25 / 7.25, 24]],
 }
 
 
@@ -445,11 +445,6 @@ def _fit(state, total_steps, size=None):
         images = batch_crop(state.images, 32) if hyp["translate"] else state.images
         if epoch % 2 == 1:
             images = images.flip(-1)
-        epoch_size = size or _epoch_size(hyp, epoch * steps_per_epoch / total_steps)
-        if epoch_size != 32:
-            images = F.interpolate(
-                images, size=(epoch_size, epoch_size), mode="bilinear", antialias=True
-            ).contiguous(memory_format=torch.channels_last)
         if hyp["cutout"]:
             images = batch_cutout(images, hyp["cutout"])
         order = torch.randperm(len(labels), device=labels.device)
@@ -457,7 +452,12 @@ def _fit(state, total_steps, size=None):
             if step >= total_steps:
                 break
             idx = order[i * batch_size : (i + 1) * batch_size]
-            outputs = state.train_net(images[idx], step < state.whiten_bias_steps)
+            x = images[idx]
+            step_size = size or _epoch_size(hyp, step / total_steps)  # step-indexed switch points
+            if step_size != 32:
+                x = F.interpolate(x, size=(step_size, step_size), mode="bilinear", antialias=True)
+                x = x.contiguous(memory_format=torch.channels_last)
+            outputs = state.train_net(x, step < state.whiten_bias_steps)
             loss = F.cross_entropy(
                 outputs.float(),
                 labels[idx],
