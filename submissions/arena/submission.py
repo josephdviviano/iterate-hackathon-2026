@@ -16,7 +16,7 @@ from benchmark.api import BuildContext, TrainingData
 
 HYP = {
     "epochs": 9.5,
-    "batch_size": 2000,
+    "batch_size": 1536,
     "lr": 9.0,
     "momentum": 0.85,
     "weight_decay": 0.012,
@@ -30,8 +30,8 @@ HYP = {
     "scaling_factor": 1 / 9,
     "compile": True,
     "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
-    "muon_lr": 0.24,
-    "muon_momentum": 0.6,
+    "muon_lr": 0.205,
+    "muon_momentum": 0.655,
     "ns_steps": 3,
     "compile_mode": "max-autotune",
 }
