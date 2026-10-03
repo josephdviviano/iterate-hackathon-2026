@@ -121,6 +121,7 @@ class Net(nn.Module):
 
 
 def build(context: BuildContext):
+    torch.backends.cudnn.benchmark = True
     cfg = {**DEFAULTS, **(context.parameters or {})}
     device = context.device
     cuda = device.type == "cuda"
