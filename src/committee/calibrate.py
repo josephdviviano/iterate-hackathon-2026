@@ -222,9 +222,12 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Calibration battery and adaptive conformal sets for the committee.")
     parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--gamma", type=float, default=0.05)
+    parser.add_argument("--levels", default=None, help="game:level pairs, comma separated; default is the R22 set")
+    parser.add_argument("--out", default="artifacts/calibration.json")
     args = parser.parse_args(argv)
-    out = run(args.alpha, args.gamma)
-    Path("artifacts/calibration.json").write_text(json.dumps(out, indent=1))
+    levels = tuple((g, int(l)) for g, l in (p.split(":") for p in args.levels.split(","))) if args.levels else LEVELS
+    out = run(args.alpha, args.gamma, levels)
+    Path(args.out).write_text(json.dumps(out, indent=1))
     p = out["pooled"]
     print(f"pooled n={p['n']}: vote-share ECE {p['ece_vote_share']}, Brier {p['brier_vote_share']}; "
           f"selective by disagreement: acc@50% {p['selective_by_disagreement']['selective_acc_50']}, "
