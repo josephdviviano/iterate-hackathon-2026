@@ -247,6 +247,32 @@ first. At the state level (R4) the disagreement order falsifies all members
 in one probe. The exploration claim is therefore at the granularity the
 agent predicts, the exact next state.
 
+## R10. Committee size and confidence intervals
+
+Every subset of the 8 seeded members for K = 2 and 4 (60 sampled of 70 for
+K = 4), the full committee for K = 8; equal-weight disagreement; mean and
+standard deviation over subsets. Bootstrap over transitions (1000 draws)
+for the full committee's AUROC. Command: `committee.evaluate.k_sweep`.
+
+| | ar25 L3: AUROC | unanimous error | split error, n | m0r0 L3: AUROC | unanimous error | split error, n |
+|---|---|---|---|---|---|---|
+| K = 2 | 0.61 ± 0.11 | 0.45 ± 0.09 | 0.81 ± 0.29, 7.5 | 0.64 ± 0.09 | 0.18 ± 0.04 | 0.82 ± 0.17, 3.7 |
+| K = 4 | 0.68 ± 0.10 | 0.39 ± 0.09 | 0.82 ± 0.10, 11.9 | 0.68 ± 0.05 | 0.16 ± 0.02 | 0.72 ± 0.11, 5.5 |
+| K = 8 | 0.77 | 0.30 | 0.88, 17 | 0.68 | 0.16 | 0.67, 6 |
+
+| Item | Value |
+|---|---|
+| AUROC 95% CI, K = 8 | ar25 (0.64, 0.88); m0r0 (0.52, 0.86) |
+| Pooled over both levels, 88 transitions | AUROC 0.75, 95% CI (0.66, 0.84) |
+| Vote accuracy by K | ar25 0.47, 0.48, 0.48; m0r0 0.76, 0.77, 0.77 |
+| Commit | see the commit that adds k_sweep.json |
+
+Reading: calibration improves with committee size on both levels, and the
+unanimous error falls as members are added, which is what a version-space
+reading predicts: more consistent hypotheses expose more of the transitions
+where agreement was accidental. Per level the interval is wide, as the small
+n demands; pooled, the interval excludes 0.5. Accuracy does not move with K.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a

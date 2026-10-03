@@ -143,3 +143,81 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def k_sweep(game: str, level: int, train_frac: float, condition: str, lam: float = 0.01,
+            test_level: int | None = None, ks: tuple[int, ...] = (2, 4, 8), n_boot: int = 1000, seed: int = 0) -> dict:
+    """Calibration against committee size: every subset of the stored members for each K (sampled
+    when there are many), and a transition bootstrap of the full committee's AUROC."""
+    import random
+    from itertools import combinations
+
+    from .committee import auroc
+
+    cond = condition_dir(game, level, train_frac, condition, test_level)
+    train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
+    runs = load_runs(cond, train, test)
+    after = [t.after_objs for t in test]
+    members = [Member(name, src, preds, description_length(src))
+               for name, m, src, preds in runs if m["consistent"] and preds]
+    rng = random.Random(seed)
+    out: dict = {"n_members": len(members), "by_k": []}
+    for k in ks:
+        if k > len(members):
+            continue
+        subsets = list(combinations(range(len(members)), k))
+        if len(subsets) > 60:
+            subsets = rng.sample(subsets, 60)
+        rows = []
+        for sub in subsets:
+            e = Committee([members[i] for i in sub], lam=lam).evaluate(after)
+            un = next(r for r in e["reliability_uniform"] if r["bin"] == "unanimous")
+            split = [p for p in e["per_transition"] if p["uniform_disagreement"] > 0]
+            rows.append((e["auroc_uniform_disagreement_vs_error"], e["vote_accuracy"], un["error_rate"],
+                         (sum(not p["correct"] for p in split) / len(split)) if split else None, len(split)))
+        def mean_sd(vals):
+            vals = [v for v in vals if v is not None]
+            if not vals:
+                return (None, None)
+            m = sum(vals) / len(vals)
+            return (round(m, 3), round((sum((v - m) ** 2 for v in vals) / max(1, len(vals) - 1)) ** 0.5, 3))
+        out["by_k"].append({"k": k, "n_subsets": len(subsets),
+                            "auroc": mean_sd([r[0] for r in rows]), "vote_accuracy": mean_sd([r[1] for r in rows]),
+                            "unanimous_error": mean_sd([r[2] for r in rows]), "split_error": mean_sd([r[3] for r in rows]),
+                            "split_n": mean_sd([r[4] for r in rows])})
+    full = Committee(members, lam=lam).evaluate(after)
+    d = [p["uniform_disagreement"] for p in full["per_transition"]]
+    err = [not p["correct"] for p in full["per_transition"]]
+    boots = []
+    for _ in range(n_boot):
+        idx = [rng.randrange(len(d)) for _ in range(len(d))]
+        a = auroc([d[i] for i in idx], [err[i] for i in idx])
+        if a is not None:
+            boots.append(a)
+    boots.sort()
+    out["auroc_full"] = full["auroc_uniform_disagreement_vs_error"]
+    out["auroc_ci95"] = (round(boots[int(0.025 * len(boots))], 3), round(boots[int(0.975 * len(boots))], 3)) if boots else None
+    out["per_transition"] = [{"disagreement": x, "error": e} for x, e in zip(d, err)]
+    (cond / "k_sweep.json").write_text(json.dumps(out, indent=1))
+    return out
+
+
+def pooled_auroc(parts: list[dict], n_boot: int = 1000, seed: int = 0) -> dict:
+    """AUROC over the transitions of several levels pooled, with a transition bootstrap."""
+    import random
+
+    from .committee import auroc
+
+    rows = [r for p in parts for r in p["per_transition"]]
+    d = [r["disagreement"] for r in rows]
+    err = [r["error"] for r in rows]
+    rng = random.Random(seed)
+    boots = []
+    for _ in range(n_boot):
+        idx = [rng.randrange(len(d)) for _ in range(len(d))]
+        a = auroc([d[i] for i in idx], [err[i] for i in idx])
+        if a is not None:
+            boots.append(a)
+    boots.sort()
+    return {"n": len(rows), "auroc": round(auroc(d, err), 3),
+            "ci95": (round(boots[int(0.025 * len(boots))], 3), round(boots[int(0.975 * len(boots))], 3))}
