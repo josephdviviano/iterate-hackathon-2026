@@ -30,6 +30,8 @@ HYP = {
     "scale": 1 / 9,
     "lookahead": True,
     "compile": True,
+    "contrast": 0.13,  # per-image contrast/brightness jitter amplitudes (uniform +-)
+    "brightness": 0.14,
     "lowres_epochs": 1.5,  # first epochs train on whole images downsampled to lowres_size
     "lowres_size": 24,
     "muon_lr": 0.16,
@@ -123,7 +125,7 @@ def init_whitening(layer, images, eps=5e-4):
     layer.weight.copy_(torch.cat((scaled, -scaled)))
 
 
-def augment(padded, flip_bits, epoch, r):
+def augment(padded, flip_bits, epoch, r, contrast=0.0, brightness=0.0):
     """Random translate by up to r pixels (from reflect-padded images) + alternating flip."""
     n = len(padded)
     device = padded.device
@@ -136,6 +138,11 @@ def augment(padded, flip_bits, epoch, r):
     out = padded[idx_n, idx_c, rows, cols]
     flip = flip_bits if epoch % 2 == 0 else ~flip_bits
     out = torch.where(flip[:, None, None, None], out.flip(-1), out)
+    if contrast or brightness:
+        mean = out.mean(dim=(1, 2, 3), keepdim=True)
+        c = 1 + (torch.rand(n, 1, 1, 1, device=device) * 2 - 1) * contrast
+        b = (torch.rand(n, 1, 1, 1, device=device) * 2 - 1) * brightness
+        out = (out - mean) * c + mean + b
     return out
 
 
@@ -336,7 +343,7 @@ def train(state) -> nn.Module:
     while step < total:
         whiten_on = epoch < hyp["whiten_bias_epochs"]
         model.whiten_bias_grad = whiten_on
-        imgs = augment(state.padded, state.flip_bits, epoch, r) if r > 0 else state.padded
+        imgs = augment(state.padded, state.flip_bits, epoch, r, hyp["contrast"], hyp["brightness"])
         perm = torch.randperm(n, device=imgs.device)
         imgs = imgs[perm].contiguous(memory_format=torch.channels_last)
         labels = state.labels[perm]
