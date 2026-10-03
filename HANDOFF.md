@@ -65,7 +65,15 @@ Write R34 to R37, the README results section, the report page and the
 pitch in this order, one answer per question, with the number and the
 entry.
 
-| Question | Answer so far | Entries | Which step updates it |
+The environment was rewritten (frame in, frame out, R32 and R33). Every
+number below comes from the old object contract unless it says R33, and the
+user's instruction (23:10) is that those numbers are not all trustworthy.
+They are the provisional shape of each answer, nothing more. The headline
+answers come only from the runs in the new environment, steps P1 to P4; the
+objects-mode entries stay in RESULTS as history and appear in the write-up
+only beside their new-environment counterpart.
+
+| Question | Provisional answer (objects mode) | Entries | Re-established by |
 |---|---|---|---|
 | 1. Does a committee predict better than a single program? | No. The vote equals or sits just under the best single program; the oracle equals the best member. Same in OPINE's environment (pilot). | R3, R23, R33 | P1 |
 | 2. Are its predictions calibrated? | The vote share is not (ECE 0.22); the adaptive conformal sets hold 0.90 on all eight levels (0.88 to 0.99) and live (0.91 to 0.96); where the committee is mostly wrong the coverage is bought by abstention, and the selective score prices that. | R22, R27, R29, R30 | P1 (calibrate on the new conditions), P3 |
@@ -81,7 +89,7 @@ rollouts (R15), probe policy (R28), wrapper step size (R30), terrain objects
 
 ## The plan
 
-Budget: 101 Devin sessions in the base plan, 33 more on one contingency; four steps, P1 to P4; plus 36 in the reward-hacking queue (Q), last and optional. Every step feeds one of the five questions above.
+Budget: 133 Devin sessions in the base plan (P1 77, P2 40, P3 up to 8, P4 8), 32 more if P2 shows a lift (the passive and object-diff arms), plus 36 in the reward-hacking queue (Q), last and optional. Every step feeds one of the five questions above; the objects-mode numbers are not reused for any headline.
 A session is 2 to 10 minutes; run arms at `--parallel 4` and keep about 20
 sessions concurrent at most (that worked all day). Set a time limit per
 step; at the limit record the result, positive or negative.
@@ -96,7 +104,7 @@ step; at the limit record the result, positive or negative.
    its meta says `status: suspended` and the program is the 114-byte stub,
    stop and tell the user; nothing below can run.
 
-### P1. The comparison in OPINE's environment under the final text (44 sessions, about 1 h)
+### P1. The comparison in OPINE's environment under the final text (77 sessions, about 1.5 h)
 
 Conditions `baseline_opine_devin` (3 unseeded) and `committee_opine_devin`
 (8 seeded), mode `--frame-out`. Never add to the pilot conditions
@@ -109,11 +117,14 @@ uv run python -m committee.experiment GAME --level L --train-frac 0.4 --runs 8 -
 uv run python -m committee.evaluate GAME --level L --train-frac 0.4 --condition committee_opine_devin
 ```
 
-1. ka59 L2 first (11 sessions). It measures the text effect against the
-   pilot: if the single mean and the vote are within 0.03 of R33's, the
-   pilot stands for ar25 L3, m0r0 L3 and sk48 L2; if not, rerun those three
-   (33 sessions, the contingency).
-2. ar25 L7, ls20 L3, g50t L1 (33 sessions), the levels with no frame data.
+1. All seven levels, ka59 L2 first: ar25 L3, m0r0 L3, sk48 L2, ar25 L7,
+   ls20 L3, g50t L1, ka59 L2 (77 sessions). The user wants every headline
+   number from the rewritten environment under one task text, so the pilot
+   (R33, draft text) is a consistency check only: report the ka59 and ar25
+   L3 differences between pilot and final in one line.
+2. Questions 1, 2 and 3 are answered from these runs alone: single against
+   committee (admission, accuracy), the calibration battery, and unanimous
+   against split error with the AUROC.
 3. Record R34: per level, single programs and committee in objects mode and
    in the OPINE environment side by side (admission, vote, members, AUROC,
    unanimous and split error), plus the conformal battery:
@@ -121,12 +132,20 @@ uv run python -m committee.evaluate GAME --level L --train-frac 0.4 --condition 
    (`--condition` is in the port). No kill criterion: this is the
    measurement the user asked for.
 
-### P2. The counterexample round in OPINE's environment (about 40 sessions, 1 h)
+### P2. The counterexample round in OPINE's environment (40 to 72 sessions, 1 to 2 h)
 
-Only on levels where the round-1 vote under P1 is below 0.95 (ar25 L3 is at
-1.00 and is skipped). Expected: ka59, m0r0, sk48, g50t, ar25 L7. The
-mechanism statement is the default, the mode is inherited from the source
-committee, and there is no passive arm (R24 settled that).
+Only on levels where the round-1 vote under P1 is below 0.95 (ar25 L3 was
+at 1.00 in the pilot and would be skipped). Expected: ka59, m0r0, sk48,
+g50t, ar25 L7 (40 sessions). The mechanism statement is the default and the
+mode is inherited from the source committee. Then, on the two levels with
+the largest lift, two more arms so that questions 4 and 5 are answered in
+this environment and not inherited from R24 and R31: the passive control
+(`committee.experiment ... --train-n <train+probes> --seeded --frame-out
+--condition passive_opine_devin`, 8 each, question 4) and the object-diff
+statement (`committee.cegis ... --object-diff --condition cegisobj_opine_devin`,
+8 each, question 5). If no level lifts by 0.05 or more, skip both arms and
+record that: in this environment the repair step adds nothing measurable,
+which is itself the answer.
 
 ```
 uv run python -m committee.cegis GAME --level L --train-frac 0.4 --source-condition committee_opine_devin --condition cegis_opine_devin --dry-run
@@ -135,8 +154,8 @@ uv run python -m committee.cegis GAME --level L --train-frac 0.4 --source-condit
 ```
 
 A level whose committee is never refuted (dry run says so) is skipped.
-Record R35: does the loop still lift accuracy once the environment is
-right, and does the new committee converge as before? Stop rule: one round
+Record R35 (question 4: round 1 against round 2 against passive) and R36
+(question 5: mechanism statement against object diff). Stop rule: one round
 per level; a second round only where the first lifted the vote by 0.10 or
 more.
 
@@ -151,7 +170,7 @@ uv run python -m committee.live ar25 --level 3 --steps 300 --seed 1 --members-di
 ```
 
 If the committee is refuted within the game's 160 moves, one live
-counterexample round (8 sessions) as in R26, then replay. Record R36. This
+counterexample round (8 sessions) as in R26, then replay. Record R37. This
 is the live demo in the proper environment; keep the 75-move `--brief`
 command for the pitch.
 
@@ -160,7 +179,7 @@ command for the pitch.
 A second committee batch on m0r0 L3 in the OPINE environment,
 `committee_opine2_devin`, same seeds. Record R37: vote, AUROC and unanimous
 error for batch 1 and batch 2. This bounds the caveat under every claim in
-this project.
+this project. Record R38.
 
 A second synthesizer on Modal was considered and dropped by the user
 (2026-10-03 22:05): no experiment uses the open models.
@@ -207,14 +226,14 @@ against Claude synthesis stands for the committee).
 
 ### After the experiments (no sessions)
 
-1. RESULTS entries R34 to R37, each with metric, runs, split, baseline,
+1. RESULTS entries R34 to R38, each with metric, runs, split, baseline,
    command and commit. Every number in README.md and on the page comes from
    there.
 2. README.md: the results section gets the OPINE-environment table and the
    loop result in that environment. The credits already list arc-agi.
 3. CLAUDE.md track table: the "no live play" gap is closed (R25, R26);
    update that row and the known-gaps line.
-4. Report page: one section for R34 to R37. Read it before publishing;
+4. Report page: the five questions answered from R34 to R38, the objects-mode numbers beside them as history. Read it before publishing;
    another session edits its ONC part.
 5. HANDOFF.md: replace this plan with what was run.
 6. The user merges `jdv` into `main`; run the demo from `main`; push.
