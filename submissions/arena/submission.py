@@ -18,7 +18,7 @@ HYP = {
     "widths": (128, 384, 576),
     "depth": 3,  # convs per group; depth 3 adds a residual around conv2/conv3
     "epochs": 6.75,
-    "batch_size": 1024,
+    "batch_size": 1536,
     "lr": 9.0,
     "momentum": 0.85,
     "weight_decay": 0.012,
