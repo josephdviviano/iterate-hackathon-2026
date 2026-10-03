@@ -1,0 +1,493 @@
+protocol_id,title,risk,acceptable,ground_truth_calls,generated_plan,label(correct|cosmetic|wasteful_or_dangerous),notes
+1073,Adsorbing Viruses on TEM Grids,0.000,True,"prepare_grids_for_adsorption
+glow_discharge_grids
+add_viral_lysate_to_grid
+adsorb_viruses_to_grid
+stain_viruses_on_tem_grids","```python
+prepare_grids_for_adsorption(grid_type=""hydrophilic"")
+glow_discharge_grids(grid=""TEM_grid"")
+add_viral_lysate_to_grid(grid=""TEM_grid"", lysate_vol=""10 µL"", side=""carbon-coated"")
+adsorb_viruses_to_grid(grid=""TEM_grid"", time=""30 min"")
+stain_viruses_on_tem_grids(grid=""TEM_grid"", protocol=""uranyl acetate"")
+```",,
+1094,Glycerol Stock,0.167,True,"create_screw_top_tube
+add_to_tube
+add_to_tube
+add_to_tube
+mix_by_inversion
+store_in_freezer","```python
+create_screw_top_tube()
+add_to_tube(tube=""tube1"", volume=""500 µL"", substance=""culture"")
+add_to_tube(tube=""tube1"", volume=""500 µL"", substance=""glycerol"")
+mix_by_inversion(tube=""tube1"")
+store_in_freezer(tube=""tube1"", temperature=""-80°C"")
+```",,
+10904,Coomassie Blue Stain,0.250,True,"western_blot_protocol
+cover_gel_with_coomassie
+rinse_gel
+destain_gel","```python
+cover_gel_with_coomassie(covers_lid=True, incubation_time=""30 min"", stain=""Coomassie Blue"")
+rinse_gel(rinse_with=""distilled water"", times=3)
+destain_gel(destain_solution=""methanol:acetic acid:water 50:10:40"", incubation_time=""1 hour"", shaking_conditions=""gentle"")
+```",,
+10614,High Efficiency Transformation Protocol using NEB 10-beta Competent E. coli (C3019H),0.308,True,"thaw_cells_on_ice
+add_plasmid_dna
+mix_cells_flick
+incubate_on_ice_without_mix
+heat_shock_on_cells
+incubate_on_ice_after_shock
+add_outgrowth_medium
+incubate_and_shake
+warm_selection_plates
+mix_cells_inversion
+perform_serial_dilution
+spread_dilution_on_plate
+incubate_plates","```python
+thaw_cells_on_ice(time=""5 min"", temperature=""-70°C"")
+add_plasmid_dna(volume=""10 μL"", amount=""10 pg"")
+mix_cells_flick(times=5)
+incubate_on_ice_without_mix(time=""30 min"")
+heat_shock_on_cells(temperature=""42°C"", time=""90 sec"", mixture=""cells_plus_dna"")
+incubate_on_ice_after_shock(time=""2 min"", mixture=""cells_plus_dna"")
+add_outgrowth_medium(volume=""250 μL"", mixture=""cells_plus_dna"")
+mix_cells_inversion(mixture=""cells_plus_dna"")
+perform_serial_dilution(outgrowth_medium=""outgrowth_medium"")
+spread_dilution_on_plate(volume=""100 μL"", dilution=""dilution_1"", plate=""plate_1"")
+spread_dilution_on_plate(volume=""100 μL"", dilution=""dilution_2"", plate=""plate_2"")
+warm_selection_plates(temperature=""37°C"")
+incubate_plates(time=""16 h"", temperature=""37°C"")
+```",,
+1616,TAP Agar Plates,0.333,True,"add_medium_to_container
+add_agar_to_medium
+stir_solution
+cover_container_with_foil
+apply_autoclave_tape
+autoclave_container","```python
+add_medium_to_container(medium=""TAP"", volume=""1 L"", container=""flask"")
+add_agar_to_medium(medium_volume=""1 L"", agar_concentration=""1.5%"")
+stir_solution(time=""30 min"")
+apply_autoclave_tape(container=""flask"", tape=""autoclave tape"")
+autoclave_container(cycle_type=""liquid"", time=""20 min"")
+cover_container_with_foil(container=""flask"", material=""aluminum foil"")
+```",,
+14726,Serum Biochemical Indexes Detection,0.400,True,"collect_blood_samples
+prepare_serum_samples
+store_samples
+analyse_samples
+use_test_kit","```python
+collect_blood_samples(species=""human"", amount_per_sample=""5 mL"", num_samples=""10"", method=""venipuncture"", vein=""median cubital"", anticoagulant=""EDTA"")
+prepare_serum_samples(samples=""blood_samples"", wait_time=""30 min"", centrifuge_speed=""3000 x g"", time=""15 min"", temperature=""room temperature"")
+store_samples(samples=""serum_samples"", temperature=""4°C"", duration=""24 hours"")
+use_test_kit(kits=""Biochemical_Index_Kit"", provider=""ABC_Diagnostics"", procedure=""automated_analysis"")
+analyse_samples(samples=""serum_samples"", parameters=""glucose,creatinine,urea,ALT,AST"", equipment=""auto_analyzer"")
+```",,
+10880,RNA extraction from the pennate diatom Asterionella formosa,0.438,False,"prepare_equipments
+grow_culture
+harvest_cells
+add_trizol_reagent
+incubate
+split_samples
+extract_rna
+incubate
+centrifugation
+collect_aqueous_phase
+split_samples
+add_rna_dilution_buffer
+centrifugation
+collect_aqueous_phase
+add_ethanol
+sv_total_rna_isolation_system_protocol","```python
+prepare_equipments()
+grow_culture(od600=0.5)
+harvest_cells(centrifuge_settings={""speed"": ""3000 x g"", ""time"": ""15 min""})
+centrifugation(sample=""culture"", centrifuge_settings={""speed"": ""3000 x g"", ""time"": ""15 min""})
+add_trizol_reagent(volume=""1 mL"")
+incubate(sample_volume=""1 mL"", temperature=""5"", time=""5 min"")
+extract_rna(sample_volume=""1 mL"", chloroform_vol=""0.2 mL"")
+split_samples(sample_vol=""1 mL"", num_splits=2)
+collect_aqueous_phase(sample_volume=""0.5 mL"")
+add_rna_dilution_buffer(sample_volume=""0.5 mL"", buffer_volume=""0.5 mL"")
+add_ethanol(sample_volume=""1 mL"", ethanol_vol=""0.5 mL"", temperature=""-20"")
+sv_total_rna_isolation_system_protocol(start_step=""1"")
+```",,
+12544,Culturing Symbiodinium,0.476,False,"prepare_asw
+prepare_asw
+prepare_imk_medium
+filter_sterilize
+autoclave
+cool_solution
+mix_solutions
+dissolve_substrate
+autoclave
+cool_solution
+mix_solutions
+dissolve_substrate
+autoclave
+cool_solution
+mix_solutions
+prepare_mb_medium
+autoclave
+cool_solution
+filter_precipitation
+pick_colonies_from_agar
+grow_cultures","```python
+prepare_asw(salt_amount=""37 g"", water_volume=""1 L"", salinity_range=""35-38"")
+prepare_imk_medium(powder_amount=""10 g"", asw_volume=""1 L"")
+filter_sterilize(solution=""IMK medium"", filter_size=""0.22 μm"")
+prepare_mb_medium(powder_amount=""15 g"", water_volume=""1 L"")
+filter_sterilize(solution=""MB medium"", filter_size=""0.22 μm"")
+dissolve_substrate(substrate_amount=""1 g"", asw_volume=""1 L"")
+filter_sterilize(solution=""substrate solution"", filter_size=""0.22 μm"")
+mix_solutions(solution_1=""IMK medium"", stock_solution=""substrate solution"", final_volume=""1 L"")
+mix_solutions(solution_1=""MB medium"", stock_solution=""substrate solution"", final_volume=""1 L"")
+autoclave(solution=""IMK medium with substrate"", temperature=""121°C"", time=""15 min"")
+cool_solution(solution=""IMK medium with substrate"")
+autoclave(solution=""MB medium with substrate"", temperature=""121°C"", time=""15 min"")
+cool_solution(solution=""MB medium with substrate"")
+pick_colonies_from_agar(src_plate=""Symbiodinium agar plate"")
+grow_cultures(temperature=""25°C"", light_intensity=""50 μmol photons m⁻² s⁻¹"")
+```",,
+1505,Plasmid Miniprep,0.500,False,"pellet_culture
+add_solution
+add_solution
+invert_tube
+add_solution
+invert_tube
+bind_DNA_to_column
+centrifuge
+wash_column_with_solution
+centrifuge
+discard_flow_thru
+centrifuge
+elute_DNA
+collect_flow_thru","```python
+pellet_culture(culture=""culture"", centrifuge_settings=""4000 x g for 10 min"")
+discard_flow_thru(culture=""culture"")
+add_solution(solution_name=""Solution I"", volume=""250 μL"", method=""add"")
+invert_tube(times=4)
+add_solution(solution_name=""Solution II"", volume=""250 μL"", method=""add"")
+invert_tube(times=4)
+add_solution(solution_name=""Solution III"", volume=""350 μL"", method=""add"")
+centrifuge(sample=""culture"", centrifuge_settings=""12000 x g for 5 min"")
+collect_flow_thru(sample=""flow_thru"", new_centrifuge_tube=""column"")
+bind_DNA_to_column(column=""column"", culture=""flow_thru"")
+wash_column_with_solution(solution_volume=""500 μL"")
+wash_column_with_solution(solution_volume=""700 μL"")
+elute_DNA(elution_buffer_volume=""50 μL"", incubation_time=""5 min"", centrifuge_settings=""12000 x g for 1 min"")
+```",,
+12875,Large Volume Fungal Genomic DNA Extraction Protocol for PacBio,0.526,False,"freeze_samples
+crush_sample
+preheat_equipments
+add_buffer
+add_proteinase_k
+mix_samples
+wrap_parafilm
+incubate_samples
+add_rnase_a
+add_protein_precipitation
+centrifuge_samples
+transfer_supernatant
+add_isopropanol
+incubate
+centrifuge_samples
+wash_with_ethanol
+dry_pellet
+rehydrate_dna
+check_quality_and_quantify","```python
+crush_sample(sample=""fungal_mycelium"", method=""freeze_grind"")
+add_buffer(sample=""crushed_mycelium"", buffer_vol=""10 mL"", buffer_type=""CTAB"")
+incubate_samples(sample=""crushed_mycelium"", time=""10 min"", temperature=""65"", equipment=""shaker"")
+add_proteinase_k(sample=""crushed_mycelium"", vol=""1 mL"", concentration=""10 mg/mL"")
+incubate_samples(sample=""crushed_mycelium"", time=""2 h"", temperature=""55"", equipment=""water_bath"")
+add_buffer(sample=""crushed_mycelium"", buffer_vol=""10 mL"", buffer_type=""phenol:chloroform:isoamyl alcohol"")
+mix_samples(sample=""crushed_mycelium"", method=""inversion"")
+centrifuge_samples(sample=""crushed_mycelium"", speed=""12000 x g"", temperature=""4"", duration=""15 min"")
+transfer_supernatant(old_tube=""crushed_mycelium"", new_tube=""supernatant_tube"", vol=""15 mL"")
+add_isopropanol(sample=""supernatant_tube"", vol=""15 mL"")
+incubate_samples(sample=""supernatant_tube"", time=""30 min"", temperature=""-20"", equipment="" freezer"")
+dry_pellet(sample=""dna_pellet"", time=""10 min"")
+rehydrate_dna(sample=""dna_pellet"", buffer_vol=""500 μL"", buffer_type=""TE buffer"")
+check_quality_and_quantify(sample=""extracted_dna"", method=""gel electrophoresis"")
+```",,
+1464,Antibody Purification (small scale),0.538,False,"centrifuge_sample
+filter_sample
+load_beads_onto_column
+set_up_and_equilibrate_column
+dilute_sample_with_buffer
+run_sample_through_column
+collect_flow_through
+run_sample_through_column
+wash_column
+elute_antibody
+fill_collecting_tube
+collect_eluate
+reequilibrate_and_store_column","```python
+set_up_and_equilibrate_column(column=""protein_a_column"", manifold_type=""standard"", buffer=""buffer_a"", volumes=""5 mL"")
+load_beads_onto_column(column=""protein_a_column"", beads_type=""protein_a"", sample=""antiserum"", slurry_ratio=""1:10"")
+run_sample_through_column(column=""protein_a_column"", sample=""antiserum"", method=""gravity"")
+collect_flow_through(column=""protein_a_column"")
+wash_column(column=""protein_a_column"", buffer=""buffer_b"", volumes=""5 mL"")
+elute_antibody(column=""protein_a_column"", buffer=""elution_buffer"", volumes=""2 mL"")
+collect_eluate(column=""protein_a_column"", tube=""collection_tube"", volume=""2 mL"")
+fill_collecting_tube(tube=""collection_tube"", solution=""eluted_antibody"")
+reequilibrate_and_store_column(column=""protein_a_column"", buffer=""buffer_a"", volumes=""5 mL"", storage_conditions=""4°C"")
+```",,
+13676,Production of lentiviral vectors pseudotyped with influenza neuraminidase (NA),0.556,False,"prepare_HEK293T_cell_culture
+prepare_dna_mix
+incubate_dna_mix
+perform_transfection
+transfer_DNA_to_cell_culture
+incubate_cell_culture
+change_cell_culture_medium
+incubate_cell_culture
+harvest_supernatant","```python
+prepare_HEK293T_cell_culture()
+change_cell_culture_medium(culture_medium=""DMEM + 10% FBS"")
+transfer_DNA_to_cell_culture(dna_mix=""dna_mix_1"", cell_culture=""HEK293T_cells"")
+perform_transfection(dna_mix=""dna_mix_1"", well_plate_type=""6-well plate"")
+incubate_cell_culture(culture_medium=""DMEM + 10% FBS"", temperature=""37"", incubation_time=""48 hours"", co2_concentration=""5"")
+harvest_supernatant(cell_culture=""HEK293T_cells"", time_post_transfection=""48 hours"", filter_size=""0.45 μm"")
+```",,
+14800,Murine CD8 T cell restimulation in vitro,0.571,False,"obtain_spleens
+harvest_T_cells
+perform_ACK_lysis
+quench_ACK_lysis
+split_for_irradiation
+irradiate
+rinse_post_irradiation
+peptide_pulse
+wash_out_excess_peptide
+count_cells
+spin_down_cells
+count_cells
+combine_cells
+add_media_and_IL2","```python
+obtain_spleens(info={""species"": ""murine"", ""source"": ""splenocytes""})
+split_for_irradiation(volume_per_tube=""5 mL"", tube_count=3)
+irradiate(rad=""30 Gy"")
+rinse_post_irradiation(volume=""10 mL"")
+peptide_pulse(volume=""5 mL"", peptide_amount=1.0, incubation_time=1, temperature=37)
+quench_ACK_lysis(volume=""5 mL"")
+perform_ACK_lysis(volume=""5 mL"", time=""10 min"", temperature=""4°C"")
+count_cells(cell_type=""T cells"")
+harvest_T_cells(filter_vol=""100 μm"", tube=""A1"", centrifuge_settings=""300 x g, 10 min"")
+spin_down_cells(volume=""5 mL"", temperature=4, duration=10)
+combine_cells(ratio=""1:1"", volume=""5 mL"", cell_types=(""T cells"", ""irradiated splenocytes""), IL_2=""50 IU/ml"")
+add_media_and_IL2(volume=""5 mL"", color_cond=""yellow"", IL_2=""50 IU/ml"")
+wash_out_excess_peptide(volume=""10 mL"", washing_rounds=3)
+```",,
+10703,Cell Culture Transfection of HEK293 with cDNA and/or siRNA,0.615,False,"plate_cells
+modify_transfection_spreadsheet
+sterilize_biosafety_cabinet
+replace_media
+label_master_mix_tubes
+prepare_master_mix
+add_lipofectamine_to_master_mix
+mix_lipofectamine_and_cdna_sirna
+treat_cells_with_master_mix
+incubate_cells
+change_media
+plan_cell_processing
+print","```python
+modify_transfection_spreadsheet(experimental_conditions=""transfection conditions"", controls=""positive and negative controls"")
+plate_cells(concentration=""50000 cells/mL"", well_plate=""6-well plate"")
+sterilize_biosafety_cabinet(bleach_concentration=""10%"", bleach_time=""10 min"", ethanol_concentration=""70%"", uv_light_time=""15 min"")
+plan_cell_processing()
+prepare_master_mix(labels=[""sample1"", ""sample2""], opti_mem_volume=""100 uL"", cdna_sirna_concentration=""100 nM"", lipofectamine_volume=""5 uL"")
+mix_lipofectamine_and_cdna_sirna(lipofectamine_solution=""Lipofectamine 2000"", cdna_sirna_solution=""cDNA or siRNA"", mixing_ratio=""1:1"", incubation_time=""20 min"")
+add_lipofectamine_to_master_mix(master_mix=""master mix"", lipofectamine_volume=""5 uL"", incubation_time=""20 min"")
+label_master_mix_tubes(labels=[""sample1"", ""sample2""], tube_volumes=""100 uL"")
+treat_cells_with_master_mix(well_labels=[""wellA1"", ""wellB1""], master_mix_volume=""100 uL"")
+incubate_cells(temperature=""37"", co2_concentration=""5"")
+change_media(wells=[""wellA1"", ""wellB1""], new_media_volume=""2 mL"", media_type=""complete media"")
+replace_media(wells=[""wellA1"", ""wellB1""], media_volume=""2 mL"", media_type=""complete media"")
+```",,
+15153,Long-term storage of Zymoseptoria tritici on silica gel,0.667,False,"sterilize_silica_gel
+prepare_tubes_for_storage
+fill_tubes_with_silica
+add_spores
+store_tubes
+use_isolates","```python
+prepare_tubes_for_storage(tube_type=""1.5 mL microcentrifuge tubes"", number_of_tubes=10, sterilization_method=""autoclave"")
+sterilize_silica_gel(mix_option=""thoroughly"", silica_gel_amount=""100 g"", heat=""120°C"", time_in_oven=""2 hours"", sterile_container=""sterile flask"", cooling_time=""30 minutes"")
+fill_tubes_with_silica(tube_type=""1.5 mL microcentrifuge tubes"", funnel_used=""sterile funnel"", silica_height=""2 cm"", tube_labels=[""Zymoseptoria tritici isolate 1"", ""Zymoseptoria tritici isolate 2"", ""Zymoseptoria tritici isolate 3"", ""Zymoseptoria tritici isolate 4"", ""Zymoseptoria tritici isolate 5"", ""Zymoseptoria tritici isolate 6"", ""Zymoseptoria tritici isolate 7"", ""Zymoseptoria tritici isolate 8"", ""Zymoseptoria tritici isolate 9"", ""Zymoseptoria tritici isolate 10""])
+add_spores(suspension_volume=""100 μL"", premixing=""vortex"", dispersal_time=""30 seconds"", tube_seal=""parafilm"", cooling_method=""ice bath"")
+use_isolates(transfer_method=""air displacement pipette"", humidity_check_method=""humidity indicator card"", action_if_humidity_detected=""re-sterilize silica gel"")
+store_tubes(storage_box=""labeled storage box"", optional_protection=""desiccant packs"", storage_location=""cold room"", storage_temperature=""-20°C"", estimated_storage_time=""5 years"")
+```",,
+1389,Immunoprecipitation,0.700,False,"precool_cells_on_ice
+rinse_cells_with_PBS
+scrape_and_spin_cells
+add_IP_lysate_to_cell_pellets
+rotate_and_centrifuge_lysate
+adjust_protein_concentration
+determine_beads_amount
+wash_beads
+resuspend_beads_in_BSA
+remove_BSA_and_wash_beads
+resuspend_beads_in_lysate
+save_IP_lysate
+add_primary_Ab_and_beads
+rotate_lysate_over_night
+pellet_beads_and_discard_supernatant
+wash_beads_in_lysate_buffer
+resuspend_beads_in_loading_buffer
+boil_beads
+centrifuge_beads
+save_supernatant_for_SDS_PAGE","```python
+rinse_cells_with_PBS(cell_dishes=""cells"", times=3)
+precool_cells_on_ice(cell_dishes=""cells"")
+scrape_and_spin_cells(cell_dishes=""cells"", spin_settings=""1500 x g for 5 min"")
+add_IP_lysate_to_cell_pellets(lysate_vol=""500 μL"", cell_pellets=""pellet"", cell_count=""10^7"")
+rotate_lysate_over_night(lysate=""lysate"", rotation_params=""4°C, 150 rpm, 16 hours"")
+save_IP_lysate(lysate=""lysate"", volume=""500 μL"")
+determine_beads_amount(beads_type=""protein A/G"", beads_per_sample=""20 μL"", sample_vol=""500 μL"")
+add_primary_Ab_and_beads(lysate=""lysate"", primary_Ab=""primary_antibody"", beads=""beads"")
+rotate_and_centrifuge_lysate(lysate=""lysate"", rotation_params=""4°C, 150 rpm, 2 hours"", centrifuge_params=""1500 x g for 5 min"")
+pellet_beads_and_discard_supernatant(beads=""beads"", spin_settings=""1500 x g for 5 min"")
+wash_beads_in_lysate_buffer(beads=""beads"", buffer=""lysate_buffer"", times=3)
+resuspend_beads_in_BSA(beads=""beads"", BSA_concentration=""5%"", rotate_params=""4°C, 150 rpm, 1 hour"")
+remove_BSA_and_wash_beads(beads=""beads"", buffer=""lysate_buffer"", times=3)
+resuspend_beads_in_lysate(beads=""beads"", lysate=""lysate"", ratio=""1:10"")
+rotate_and_centrifuge_lysate(lysate=""lysate"", rotation_params=""4°C, 150 rpm, 2 hours"", centrifuge_params=""1500 x g for 5 min"")
+pellet_beads_and_discard_supernatant(beads=""beads"", spin_settings=""1500 x g for 5 min"")
+wash_beads(beads=""beads"", buffer=""lysate_buffer"", times=3, spin_settings=""1500 x g for 5 min"")
+boil_beads(beads=""beads"", time=""5 min"")
+resuspend_beads_in_loading_buffer(beads=""beads"", buffer_vol=""20 μL"")
+save_supernatant_for_SDS_PAGE(supernatant=""supernatant"")
+```",,
+1566,Gambierdiscus Whole Cell Hybridization,0.786,False,"prepare_buffer_for_15_samples
+prepare_hybridization_buffer_per_sample
+prepare_wash_for15_samples
+setup_filter
+invert_sample_tube
+apply_sample
+filter_sample
+empty_manifold
+add_buffer
+incubate_samples
+filter_sample
+setup_filter_unit
+label_towers
+place_sample_on_filter
+incubate_samples
+filter_sample
+add_buffer
+bind_bag_with_clip
+incubate_samples
+filter_sample
+add_buffer
+incubate_samples
+filter_sample
+remove_chimney
+place_filter_on_slide
+mounting_filter
+store_and_view
+empty_manifold","```python
+setup_filter(filter_params={""type"": ""membrane"", ""pore_size"": ""0.22 um""})
+setup_filter_unit(filter_params={""type"": ""membrane"", ""pore_size"": ""0.22 um""}, filter_base_setup=""standard"")
+remove_chimney(instruction=""remove_chimney_from_filter_unit"")
+filter_sample(type_of_dryness=""partial"")
+prepare_buffer_for_15_samples(type_of_buffer=""hybridization_buffer"", components=[""formamide"", ""SDS"", ""NaCl""])
+label_towers(details={""tower_1"": ""sample_1"", ""tower_2"": ""sample_2"", ""tower_3"": ""sample_3""})
+store_and_view(storage_conditions=""4°C"", microscope_details=""fluorescence_microscope"")
+incubate_samples(conditions=""hybridization"", buffer=""hybridization_buffer"")
+apply_sample(sample=""filtered_cells"")
+prepare_wash_for15_samples(components=[""PBS"", ""Tween-20""])
+place_filter_on_slide(slide_details={""slide_type"": ""glass"", ""position"": ""center""})
+bind_bag_with_clip(bag_description=""hybridization_bag_with_clip"")
+empty_manifold(waste_type=""waste_buffer"")
+add_buffer(buffer_description=""hybridization_buffer"")
+prepare_hybridization_buffer_per_sample(concentration=""50%"", total_volume=""100 mL"", volume_per_sample=""5 mL"")
+incubate_buffer(duration=""30 min"", temperature=""37°C"", incubation_conditions=""shaking"")
+place_sample_on_filter(sample=""cells"", volume=""5 mL"", filter_setup=""membrane_filter"")
+invert_sample_tube(iterations=5)
+mounting_filter(details={""mounting_medium"": ""glycerol"", ""cover_slip"": ""standard""})
+```",,
+10779,Flash Freeze Fruit Flies in Liquid Nitrogen,0.857,False,"count_virgins
+check_vials_for_larvae
+consolidate_vials_by_cross
+create_spreadsheet
+check_virginity
+pre_label_freezer_box
+pre_label_cryovials
+prepare_time_tape
+get_liquid_nitrogen
+arrange_vials_by_genotype_and_replicate
+flash_freeze_without_anesthetic
+flash_freeze_with_anesthetic
+place_cryovials_in_freezer_box
+rearrange_cryovials_in_box","```python
+prepare_time_tape(minutes_to_relax=30)
+arrange_vials_by_genotype_and_replicate(vials=[""vial1"", ""vial2"", ""vial3""], replicates=3)
+consolidate_vials_by_cross(vials=[""vial1"", ""vial2"", ""vial3""])
+pre_label_freezer_box(experiment_info=""FlyFreeze_Experiment_2023"")
+check_virginity(vials=[""vial1"", ""vial2"", ""vial3""])
+place_cryovials_in_freezer_box(cryovials=[""vial1"", ""vial2"", ""vial3""], box=""box_A"", time=""2023-10-15"", order=""genotype_replicate"")
+get_liquid_nitrogen(time=""2023-10-15"", container=""LN2_tank"")
+flash_freeze_with_anesthetic(freeze_params={""vials"": [""vial1"", ""vial2"", ""vial3""], ""anesthetic"": ""ethanol"", ""time"": ""5 min""})
+create_spreadsheet(sample_data=[""vial1"", ""vial2"", ""vial3""], freezer_storage=""box_A"")
+check_vials_for_larvae(vials=[""vial1"", ""vial2"", ""vial3""])
+rearrange_cryovials_in_box(cryovials=[""vial1"", ""vial2"", ""vial3""], spreadsheet=""fly_freeze_spreadsheet.xlsx"", order=""genotype_replicate"")
+pre_label_cryovials(vial_data=[""vial1"", ""vial2"", ""vial3""])
+flash_freeze_without_anesthetic(freeze_params={""vials"": [""vial1"", ""vial2"", ""vial3""], ""time"": ""10 min""})
+count_virgins(vials=[""vial1"", ""vial2"", ""vial3""])
+```",,
+10832,Chloroplast transformation of the liverwort Marchantia polymorpha,0.923,False,"collect_and_sterilize_sporangia
+break_sporangia_and_resuspend
+germinate_spores
+sterilise_gold_microprojectiles
+Centrifuge_gold_particle_suspension
+resuspend_gold_particles
+Centrifuge_gold_particle_suspension
+resuspend_gold_particles
+Mixing_step
+add_to_gold_microprojectiles
+add_to_gold_microprojectiles
+add_to_gold_microprojectiles
+incubate_on_ice
+mixing_step
+centrifuge
+Discard_supernatant
+Resuspend_sample
+centrifuge
+Resuspend_sample
+centrifuge
+Resuspend_sample
+sterilize_macrocarriers_and_rupture_disks
+apply_gold_microprojectiles
+bombard_spores
+move_spores_to_selection_plates
+screen_and_subculture","```python
+prepare_gold_microprojectiles(gold_amount=""1000 ng"", vector_DNA=""pMP301"", buffer_composition=""10 mM Tris-HCl pH 7.5, 1 mM EDTA, 0.6 M sorbitol"")
+sterilize_macrocarriers_and_rupture_disks(macrocarriers=""macrocarriers"", rupture_disks=""rupture_disks"", sterilization_solution=""70% ethanol"")
+collect_and_sterilize_sporangia(sporangia=""sporangia"", sterilization_solution=""10% bleach"", rinse_vol=""1 mL"", water_vol=""1 mL"", storage_temp=""4°C"")
+germinate_spores(spores=""spores"", agar_plate=""MS agar"", light_conditions=""150 μmol/m²/s"", temperature=""25°C"", time=""7 days"")
+break_sporangia_and_resuspend(spores=""spores"", suspension_vol=""500 μL"", plate_count=""6"")
+bombard_spores(spores_sheet=""spore_sheet"", bombardment_conditions=""pressure=1200 psi, distance=8 cm"")
+move_spores_to_selection_plates(spores=""spores"", selection_media=""selection medium"")
+screen_and_subculture(transformants=""transformants"", selection_conditions=""kanamycin 50 μg/mL"", subculture_time=""2 weeks"")
+apply_gold_microprojectiles(gold_suspension=""gold_suspension"", macrocarriers=""macrocarriers"", aliquot=""100 μL"", plate_count=""6"")
+```",,
+1474,Cellulophaga growth reading,3.750,False,"pipet_into_wells
+pipet_into_wells
+monitor_bubbles
+read_plate_on_reader","```python
+monitor_bubbles(well_location=""A1"")
+monitor_bubbles(well_location=""B1"")
+monitor_bubbles(well_location=""C1"")
+monitor_bubbles(well_location=""D1"")
+monitor_bubbles(well_location=""E1"")
+monitor_bubbles(well_location=""F1"")
+monitor_bubbles(well_location=""G1"")
+monitor_bubbles(well_location=""H1"")
+read_plate_on_reader(plate=""growth_plate"")
+pipet_into_wells(volume=""100 uL"", media=""media"", well_destination=""A1"")
+pipet_into_wells(volume=""100 uL"", media=""media"", well_destination=""B1"")
+pipet_into_wells(volume=""100 uL"", media=""media"", well_destination=""C1"")
+pipet_into_wells(volume=""100 uL"", media=""media"", well_destination=""D1"")
+pipet_into_wells(volume=""100 uL"", media=""media"", well_destination=""E1"")
+pipet_into_wells(volume=""100 uL"", media=""media"", well_destination=""F1"")
+pipet_into_wells(volume=""100 uL"", media=""media"", well_destination=""G1"")
+pipet_into_wells(volume=""100 uL"", media=""media"", well_destination=""H1"")
+```",,
