@@ -13,7 +13,7 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    stages=[[16, 4], [24, 3], [32, 3]],  # [resolution, epochs] in training order
+    stages=[[16, 4], [24, 3], [32, 4]],  # [resolution, epochs] in training order
     batch_size=768,
     lr=0.5,
     momentum=0.9,
@@ -29,6 +29,7 @@ DEFAULTS = dict(
     muon_lr=0.14,
     muon_momentum=0.6,
     ns_steps=3,
+    freeze={"32": 3},  # resolution -> number of leading blocks frozen while training at it
     alt_flip=True,
 )
 
@@ -98,10 +99,12 @@ class Net(nn.Module):
         self.fc = nn.Linear(w[3], num_classes, bias=False)
         self.scale = scale
 
-    def segments(self):
+    def segments(self, frozen=0):
         # Compiled separately so the head's gradients arrive before the stem's.
-        stem, tail = self.body[:-3], self.body[-3:]
-        return [stem, lambda x: self.fc(tail(x)) * self.scale]
+        # The first `frozen` blocks form their own (no-grad) segment.
+        stem, tail = self.body[frozen:-3], self.body[-3:]
+        segs = [stem, lambda x: self.fc(tail(x)) * self.scale]
+        return [self.body[:frozen], *segs] if frozen else segs
 
     def features(self, x):
         for f in self.segments():
@@ -122,16 +125,6 @@ def build(context: BuildContext):
     cuda = device.type == "cuda"
     model = Net(context.num_classes, cfg["widths"], cfg["act"], cfg["logit_scale"]).to(device).to(memory_format=torch.channels_last)
     state = SimpleNamespace(model=model, context=context, cfg=cfg, device=device)
-    if cuda:
-        segs = [torch.compile(f, dynamic=False) for f in model.segments()]
-    else:
-        segs = model.segments()
-
-    def features(x):
-        for f in segs:
-            x = f(x)
-        return x
-
     bs = cfg["batch_size"]
     state.y = torch.zeros(bs, dtype=torch.long, device=device)
     state.lr = torch.zeros((), device=device)
@@ -150,10 +143,32 @@ def build(context: BuildContext):
     muon_fn = torch.compile(muon_update, dynamic=False) if cuda else muon_update
     side = torch.cuda.Stream() if cuda else None
 
-    def step(x):
+    def make_step(frozen):
         # Forward, backward and nesterov SGD (coupled weight decay) on static buffers.
         # Muon updates run on a side stream as soon as each filter gradient is ready,
-        # overlapping with the rest of the backward pass.
+        # overlapping with the rest of the backward pass. The first `frozen` blocks
+        # run without gradients and are not updated.
+        segs = model.segments(frozen)
+        if cuda:
+            segs = [torch.compile(f, dynamic=False) for f in segs]
+        fixed = {id(p) for p in model.body[:frozen].parameters()}
+        active = [i for i, p in enumerate(params) if id(p) not in fixed]
+        act_conv = [i for i in conv if i in active]
+        act_sgd = [i for i in sgd if i in active]
+        act_decay = [i for i in decay if i in active]
+
+        def step(x):
+            if frozen:
+                with torch.no_grad(), torch.autocast(device.type, dtype=torch.bfloat16):
+                    x = segs[0](x)
+            for f in segs[1 if frozen else 0:]:
+                with torch.autocast(device.type, dtype=torch.bfloat16):
+                    x = f(x)
+            update(x, active, act_conv, act_sgd, act_decay)
+
+        return step
+
+    def update(logits, active, conv, sgd, decay):
         muon_lr = state.lr * muon_scale
         main = torch.cuda.current_stream() if cuda else None
 
@@ -171,8 +186,10 @@ def build(context: BuildContext):
 
         handles = [params[i].register_hook(hook(i)) for i in conv]
         with torch.autocast(device.type, dtype=torch.bfloat16):
-            loss = F.cross_entropy(features(x), state.y, label_smoothing=ls)
-        grads = list(torch.autograd.grad(loss, params))
+            loss = F.cross_entropy(logits, state.y, label_smoothing=ls)
+        grads = [None] * len(params)
+        for i, g in zip(active, torch.autograd.grad(loss, [params[i] for i in active])):
+            grads[i] = g
         for h in handles:
             h.remove()
         if cuda and conv:
@@ -191,6 +208,7 @@ def build(context: BuildContext):
     model.train()
     state.xs, state.steps = {}, {}
     for res in sorted({r for r, _ in cfg["stages"]}):
+        step = make_step(cfg["freeze"].get(str(res), 0))
         x = torch.zeros(bs, 3, res, res, device=device, dtype=torch.bfloat16)
         x = x.contiguous(memory_format=torch.channels_last)
         state.xs[res] = x
