@@ -15,15 +15,16 @@ STD = (0.2673, 0.2564, 0.2762)
 DEFAULTS = dict(
     # [resolution, epochs, frozen leading blocks] in training order. Frozen blocks run
     # without gradients (FreezeOut-style), which makes the full-resolution stage cheap.
-    stages=[[16, 4, 0], [24, 3, 1], [32, 1, 2], [32, 3, 3]],
+    stages=[[16, 5, 0], [24, 3, 1], [32, 1, 2], [32, 3, 3]],
     batch_size=768,
     lr=0.5,
     momentum=0.9,
     weight_decay=1e-3,
     label_smoothing=0.2,
     pad=2,  # random-crop translation range in pixels
+    final_crop=True,  # random crops in the last stage too
     warmup=0.25,
-    widths=[32, 128, 320, 640],
+    widths=[32, 128, 256, 640],
     act="relu",
     logit_scale=0.125,
     bn_weight=True,  # train BatchNorm weights (else frozen at 1)
@@ -269,11 +270,14 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     state.gen = torch.Generator(device=device).manual_seed(seed)
 
 
-def augment(padded, gen, flip=None, h=32, w=32):
+def augment(padded, gen, flip=None, h=32, w=32, crop=True):
     n, c, hp, wp = padded.shape
     dev = padded.device
-    dy = torch.randint(0, hp - h + 1, (n,), device=dev, generator=gen)
-    dx = torch.randint(0, wp - w + 1, (n,), device=dev, generator=gen)
+    if crop:
+        dy = torch.randint(0, hp - h + 1, (n,), device=dev, generator=gen)
+        dx = torch.randint(0, wp - w + 1, (n,), device=dev, generator=gen)
+    else:
+        dy = dx = torch.full((n,), (hp - h) // 2, device=dev)
     ar_h = torch.arange(h, device=dev)
     ar_w = torch.arange(w, device=dev)
     rows = (dy[:, None] + ar_h)[:, None, :, None].expand(n, c, h, wp)
@@ -300,8 +304,10 @@ def train(state, max_steps=None) -> nn.Module:
     flip = None
     if cfg["alt_flip"]:
         flip = torch.rand(n, device=state.device, generator=state.gen) < 0.5
-    for res, frozen in epochs:
-        x_all = augment(state.images, state.gen, flip)
+    last = len(epochs) - cfg["stages"][-1][1]
+    for e, (res, frozen) in enumerate(epochs):
+        crop = cfg["final_crop"] or e < last
+        x_all = augment(state.images, state.gen, flip, crop=crop)
         if flip is not None:
             flip = ~flip
         if res != 32:
