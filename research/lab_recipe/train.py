@@ -17,9 +17,14 @@ from .model import AirbenchNet
 Schedule = Callable[[int], float]
 
 
-def zeropower_via_newtonschulz5(g: torch.Tensor, steps: int, eps: float = 1e-7) -> torch.Tensor:
+NS_COEFFICIENTS = {"airbench": (3.4445, -4.7750, 2.0315), "hiverge": (3.4576, -4.7391, 2.0843)}
+
+
+def zeropower_via_newtonschulz5(
+    g: torch.Tensor, steps: int, eps: float = 1e-7, coefficients: str = "airbench"
+) -> torch.Tensor:
     """Approximately orthogonalise a matrix with a quintic Newton-Schulz iteration (Muon)."""
-    a, b, c = (3.4445, -4.7750, 2.0315)
+    a, b, c = NS_COEFFICIENTS[coefficients]
     x = g.bfloat16()
     x = x / (x.norm() + eps)
     transposed = g.size(0) > g.size(1)
@@ -35,11 +40,36 @@ class Muon(torch.optim.Optimizer):
     """Muon for conv filters as in airbench94_muon: Nesterov momentum, orthogonalised update,
     and per-step renormalisation of each filter bank to norm sqrt(out_channels)."""
 
-    def __init__(self, params, lr: float, momentum: float, ns_steps: int) -> None:
+    def __init__(
+        self,
+        params,
+        lr: float,
+        momentum: float,
+        ns_steps: int,
+        coefficients: str = "airbench",
+        renorm: str = "every",
+        weight_decay: float = 0.0,
+        total_steps: int = 1,
+    ) -> None:
         super().__init__(params, {"lr": lr, "momentum": momentum, "ns_steps": ns_steps})
+        self.coefficients = coefficients
+        self.renorm = renorm
+        self.decoupled_wd = weight_decay
+        self.total_steps = total_steps
+        self.step_count = 0
+        self.last_norm_step = 0
 
     @torch.no_grad()
     def step(self) -> None:
+        # hiverge renormalises filters every 2 + int(15 * progress) steps, not every step.
+        if self.renorm == "hiverge":
+            cadence = 2 + int(15 * self.step_count / self.total_steps)
+            do_norm = self.step_count - self.last_norm_step >= cadence
+            if do_norm:
+                self.last_norm_step = self.step_count
+        else:
+            do_norm = True
+        self.step_count += 1
         for group in self.param_groups:
             for p in group["params"]:
                 if p.grad is None:
@@ -50,9 +80,14 @@ class Muon(torch.optim.Optimizer):
                 buf = state["momentum_buffer"]
                 buf.mul_(group["momentum"]).add_(p.grad)
                 g = p.grad.add(buf, alpha=group["momentum"])
-                p.mul_(len(p) ** 0.5 / p.norm())
-                update = zeropower_via_newtonschulz5(g.reshape(len(g), -1), group["ns_steps"])
+                if do_norm:
+                    p.mul_(len(p) ** 0.5 / p.norm())
+                update = zeropower_via_newtonschulz5(
+                    g.reshape(len(g), -1), group["ns_steps"], coefficients=self.coefficients
+                )
                 p.add_(update.view(g.shape).to(p.dtype), alpha=-group["lr"])
+                if self.decoupled_wd:
+                    p.mul_(1 - group["lr"] * self.decoupled_wd)
 
 
 @dataclass
@@ -150,7 +185,16 @@ def make_optimisation(
     ]
     groups = [g | {"weight_decay": wd / g["lr"]} for g in groups if g["params"]]
     sgd = torch.optim.SGD(groups, momentum=config.momentum, nesterov=True)
-    muon = Muon(filters, config.muon_lr, config.muon_momentum, config.muon_ns_steps)
+    muon = Muon(
+        filters,
+        config.muon_lr,
+        config.muon_momentum,
+        config.muon_ns_steps,
+        coefficients=config.muon_coefficients,
+        renorm=config.muon_renorm,
+        weight_decay=config.muon_decoupled_wd * config.batch_size,
+        total_steps=total_steps,
+    )
     whiten_steps = max(1, ceil(config.whiten_bias_epochs * steps_per_epoch))
     schedules = []
     for group in sgd.param_groups:
@@ -240,17 +284,24 @@ def fit(
             if freezable:
                 model.frozen_groups = scheduled(config.freeze_schedule, step, total_steps, 0)
             size = scheduled(config.res_schedule, step, total_steps, None)
-            if size is not None and size != inputs.size(-1):
+            if config.resize_in_model and freezable:
+                model.train_size = size  # resized inside the (compiled) forward
+            elif size is not None and size != inputs.size(-1):
                 inputs = F.interpolate(
                     inputs, size=(size, size), mode="bilinear", align_corners=False, antialias=True
                 )
             if selector is not None:
                 inputs, labels = selector.select(inputs, labels, step)
             plan.set_lr(step)
-            outputs = step_model(inputs)
-            loss = F.cross_entropy(
-                outputs, labels, label_smoothing=config.label_smoothing, reduction="sum"
-            )
+            if config.mixup_alpha and step < config.mixup_until * total_steps:
+                loss = mixup_loss(step_model, inputs, labels, config, stream.generator)
+            else:
+                loss = F.cross_entropy(
+                    step_model(inputs),
+                    labels,
+                    label_smoothing=config.label_smoothing,
+                    reduction="sum",
+                )
             loss.backward()
             plan.step()
             plan.zero_grad()
@@ -261,5 +312,47 @@ def fit(
                 break
     if freezable:
         model.frozen_groups = 0
+        model.train_size = None
     if lookahead is not None:
+        if config.lookahead_flush and step % 5:
+            lookahead.update(decay=0.95**5 * (step / total_steps) ** 3)
         lookahead.update(decay=1.0)
+    if config.bn_recal_batches:
+        recalibrate_batchnorm(model, stream, config.bn_recal_batches)
+
+
+def mixup_loss(
+    step_model: nn.Module,
+    inputs: torch.Tensor,
+    labels: torch.Tensor,
+    config: RecipeConfig,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    """Mixup: blend each image with a permuted partner and mix the two label losses."""
+    lam = float(
+        torch.distributions.Beta(config.mixup_alpha, config.mixup_alpha).sample()
+    )  # global RNG, seeded by the harness before every trial
+    perm = torch.randperm(len(inputs), device=inputs.device, generator=generator)
+    outputs = step_model(lam * inputs + (1 - lam) * inputs[perm])
+    ls = config.label_smoothing
+    return lam * F.cross_entropy(outputs, labels, label_smoothing=ls, reduction="sum") + (
+        1 - lam
+    ) * F.cross_entropy(outputs, labels[perm], label_smoothing=ls, reduction="sum")
+
+
+@torch.no_grad()
+def recalibrate_batchnorm(model: nn.Module, stream: TrainingStream, batches: int) -> None:
+    """Re-estimate BatchNorm running statistics for the final weights with a few no-grad
+    training-mode passes over full-resolution training batches (timed, inside train)."""
+    norms = [m for m in model.modules() if isinstance(m, nn.BatchNorm2d)]
+    momenta = [m.momentum for m in norms]
+    for m in norms:
+        m.reset_running_stats()
+        m.momentum = None  # cumulative average over the recalibration batches
+    model.train()
+    for i, (inputs, _) in enumerate(stream.epoch(0)):
+        if i == batches:
+            break
+        model(inputs)
+    for m, momentum in zip(norms, momenta, strict=True):
+        m.momentum = momentum

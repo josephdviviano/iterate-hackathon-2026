@@ -16,6 +16,14 @@ NUM_CLASSES = 100
 WHITEN_KERNEL = 2
 
 
+def activate(x: torch.Tensor, name: str) -> torch.Tensor:
+    if name == "gelu":
+        return F.gelu(x)
+    if name == "silu":
+        return F.silu(x)
+    return F.celu(x, alpha=0.075)  # Page's ResNet-9 CELU
+
+
 def max_pool2(x: torch.Tensor, impl: str) -> torch.Tensor:
     """2x2 max-pool (floor mode). ``amax`` reshapes and reduces instead of saving indices, so
     its backward is a fusable elementwise mask rather than an atomic scatter."""
@@ -29,6 +37,9 @@ def max_pool2(x: torch.Tensor, impl: str) -> torch.Tensor:
 def global_max(x: torch.Tensor, impl: str) -> torch.Tensor:
     if impl == "torch":
         return F.adaptive_max_pool2d(x, 1).flatten(1)
+    if impl == "flatmax":
+        # Fable's GlobalAmaxPool: max with indices over the flattened map (gather backward).
+        return x.flatten(2).max(2).values
     return x.amax(dim=(2, 3))
 
 
@@ -78,9 +89,11 @@ class ConvGroup(nn.Module):
         bn_momentum: float,
         pool_first: bool = False,
         pool_impl: str = "torch",
+        activation: str = "gelu",
     ) -> None:
         super().__init__()
         self.pool_impl = pool_impl
+        self.activation = activation
         # pool_first max-pools before the widening conv, cutting its cost 4x.
         self.pool_first = pool_first
         self.conv1 = Conv(cin, cout)
@@ -93,13 +106,13 @@ class ConvGroup(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.pool_first:
-            x = F.gelu(self.norm1(self.conv1(max_pool2(x, self.pool_impl))))
+            x = activate(self.norm1(self.conv1(max_pool2(x, self.pool_impl))), self.activation)
         else:
-            x = F.gelu(self.norm1(max_pool2(self.conv1(x), self.pool_impl)))
-        y = F.gelu(self.norm2(self.conv2(x)))
+            x = activate(self.norm1(max_pool2(self.conv1(x), self.pool_impl)), self.activation)
+        y = activate(self.norm2(self.conv2(x)), self.activation)
         if self.residual is None:
             return y
-        return x + F.gelu(self.residual(y))
+        return x + activate(self.residual(y), self.activation)
 
 
 class AirbenchNet(nn.Module):
@@ -108,9 +121,14 @@ class AirbenchNet(nn.Module):
     def __init__(self, config: RecipeConfig) -> None:
         super().__init__()
         w1, w2, w3 = config.scaled_widths
-        whiten_width = 2 * 3 * WHITEN_KERNEL**2
+        k = config.whiten_kernel
+        whiten_width = 2 * 3 * k**2
         self.normalize = Normalize()
-        self.whiten = nn.Conv2d(3, whiten_width, WHITEN_KERNEL, padding=0, bias=True)
+        self.whiten = nn.Conv2d(3, whiten_width, k, padding=0, bias=True)
+        self.activation = config.activation
+        self.head_pool = config.head_pool
+        self.global_pool = config.global_pool
+        self.train_size: int | None = None
         self.whiten.weight.requires_grad = False
         depths = config.stage_depths or (config.block_depth,) * 3
         pools = config.pool_first or (False, False, False)
@@ -118,7 +136,15 @@ class AirbenchNet(nn.Module):
         widths = (whiten_width, w1, w2, w3)
         self.groups = nn.Sequential(
             *(
-                ConvGroup(widths[i], widths[i + 1], depths[i], momentum, pools[i], config.pool_impl)
+                ConvGroup(
+                    widths[i],
+                    widths[i + 1],
+                    depths[i],
+                    momentum,
+                    pools[i],
+                    config.pool_impl,
+                    config.activation,
+                )
                 for i in range(3)
             )
         )
@@ -131,15 +157,24 @@ class AirbenchNet(nn.Module):
         self.frozen_groups = 0
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        size = self.train_size if self.training else None
+        if size is not None and size != x.size(-1):
+            x = F.interpolate(
+                x, size=(size, size), mode="bilinear", align_corners=False, antialias=True
+            )
         x = self.normalize(x, self.whiten.weight.dtype)
         frozen = self.frozen_groups if self.training else 0
         if frozen:
             with torch.no_grad():
-                x = self.groups[:frozen](F.gelu(self.whiten(x)))
+                x = self.groups[:frozen](activate(self.whiten(x), self.activation))
             x = self.groups[frozen:](x)
         else:
-            x = self.groups(F.gelu(self.whiten(x)))
-        x = global_max(x, self.pool_impl)
+            x = self.groups(activate(self.whiten(x), self.activation))
+        if self.head_pool == "maxmean":
+            # Compile-safe max+mean pooling (adaptive pools, no amax).
+            x = 0.5 * (F.adaptive_max_pool2d(x, 1) + F.adaptive_avg_pool2d(x, 1)).flatten(1)
+        else:
+            x = global_max(x, self.global_pool or self.pool_impl)
         return (self.head(x) * self.scale).float()
 
 

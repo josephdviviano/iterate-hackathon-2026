@@ -41,6 +41,35 @@ def batch_cutout(
     return torch.where(mask.unsqueeze(1), fill.view(1, 3, 1, 1).to(images.dtype), images)
 
 
+def colour_jitter(
+    images: torch.Tensor, brightness: float, contrast: float, generator: torch.Generator
+) -> torch.Tensor:
+    """Per-image random brightness scale and contrast about the image mean (hiverge-style)."""
+    n = len(images)
+    u = torch.rand(n, 2, device=images.device, generator=generator) * 2 - 1
+    b = (1 + brightness * u[:, 0]).view(n, 1, 1, 1).to(images.dtype)
+    c = (1 + contrast * u[:, 1]).view(n, 1, 1, 1).to(images.dtype)
+    mean = images.mean(dim=(1, 2, 3), keepdim=True)
+    return ((images - mean) * c + mean * b).clamp_(0, 1)
+
+
+def hiverge_jitter(
+    images: torch.Tensor,
+    brightness: float,
+    contrast: float,
+    stats: tuple[torch.Tensor, torch.Tensor],
+    generator: torch.Generator,
+) -> torch.Tensor:
+    """hiverge jitter in normalised units: x_n += U(-b, b), then x_n *= 1 + U(-c, c)."""
+    std, mean = (t.view(1, 3, 1, 1).to(images.dtype) for t in stats)
+    n = len(images)
+    u = torch.rand(n, 2, device=images.device, generator=generator) * 2 - 1
+    shift = (brightness * u[:, 0]).view(n, 1, 1, 1).to(images.dtype)
+    scale = (1 + contrast * u[:, 1]).view(n, 1, 1, 1).to(images.dtype)
+    normalised = ((images - mean) / std + shift) * scale
+    return normalised * std + mean
+
+
 class TrainingStream:
     """Per-trial training data on the device; yields shuffled, augmented, fixed-size batches."""
 
@@ -59,6 +88,7 @@ class TrainingStream:
         self.generator = generator
         self.labels = labels
         self.channel_mean = images.float().mean(dim=(0, 2, 3))
+        self.stats = torch.std_mean(images.float(), dim=(0, 2, 3))
         base = images
         if config.flip != "none":
             # Alternating flip fixes a random flip per image in epoch 0, then flips every image
@@ -84,6 +114,15 @@ class TrainingStream:
             images = self._random_flip(images)
         if config.cutout:
             images = batch_cutout(images, config.cutout, self.channel_mean, self.generator)
+        if config.brightness or config.contrast:
+            if config.jitter_mode == "hiverge":
+                images = hiverge_jitter(
+                    images, config.brightness, config.contrast, self.stats, self.generator
+                )
+            else:
+                images = colour_jitter(
+                    images, config.brightness, config.contrast, self.generator
+                )
         order = torch.randperm(len(images), device=images.device, generator=self.generator)
         bs = config.batch_size
         for step in range(self.steps_per_epoch):

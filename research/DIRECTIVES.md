@@ -39,3 +39,14 @@ indices and `research/sweep.py` refuses sweep files naming any other device. GPU
 competing agent's processes are never touched. Because the competitor shares the host's CPU,
 power and PCIe, each sweep launch logs GPU utilisation and host load, and every comparison
 uses an in-sweep control.
+
+## 2026-10-03, request 5
+
+> Ensure we've tested and hill climbed all strategies from the parallel task fully. This should
+> include novel algorithm alternatives. modal is authed for timing tests
+
+Effect: task T-018 and exploration X-003 audit every strategy from the CIFAR-10 record lineage
+(airbench, airbench94_muon, airbench96_faster, hiverge, Fable/Fulcrum, hlb-CIFAR10, Page), the
+competitor's programme and novel alternatives against the converged recipe;
+`research/strategy-coverage.md` holds the matrix. Modal A100 runs need a payment method on the
+Modal account (both A100 variants refuse to launch without one).

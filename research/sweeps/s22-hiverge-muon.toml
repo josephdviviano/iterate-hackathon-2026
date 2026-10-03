@@ -1,0 +1,58 @@
+# Coverage (X-003): the hiverge CIFAR-10 record's optimiser stack ported faithfully onto the
+# converged architecture, against an SGD control. 10 seeds.
+name = "s22-hiverge-muon"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108, 1109]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+compile = true
+fused_sgd = true
+
+[[configs]]                       # SGD control (converged recipe)
+scaling_factor = 0.16666666666666666
+epochs = 8.25
+
+[[grid]]                          # hiverge stack
+optimizer = ["muon"]
+head_norm = [true]
+lookahead = [false]
+muon_coefficients = ["hiverge"]
+muon_renorm = ["hiverge"]
+muon_decoupled_wd = [1.0418e-6]
+muon_weight_decay = [1.0418e-6]
+muon_lr = [0.205]
+muon_momentum = [0.655]
+momentum = [0.825]
+muon_bias_lr = [0.0573]
+muon_head_lr = [0.5415]
+whiten_bias_epochs = [0.2]
+label_smoothing = [0.09]
+fused_sgd = [false]
+batch_size = [1024, 1536]
+epochs = [8.25, 10.0]
+
+[[grid]]                          # Muon lr bracket at batch 1536
+optimizer = ["muon"]
+head_norm = [true]
+lookahead = [false]
+muon_coefficients = ["hiverge"]
+muon_renorm = ["hiverge"]
+muon_decoupled_wd = [1.0418e-6]
+muon_weight_decay = [1.0418e-6]
+muon_lr = [0.15, 0.3]
+muon_momentum = [0.655]
+momentum = [0.825]
+muon_bias_lr = [0.0573]
+muon_head_lr = [0.5415]
+whiten_bias_epochs = [0.2]
+label_smoothing = [0.09]
+fused_sgd = [false]
+batch_size = [1536]
+epochs = [8.25]

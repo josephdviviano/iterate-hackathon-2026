@@ -69,6 +69,22 @@ class RecipeConfig:
     selector_update_every: int = 4
     # Progressive freezing: ((start_fraction, frozen_stages), ...) for airbench nets.
     freeze_schedule: tuple[tuple[float, int], ...] = ()
+    # Coverage levers (CIFAR-10 lineage, competitor and novel alternatives).
+    activation: str = "gelu"
+    whiten_kernel: int = 2
+    head_pool: str = "max"
+    brightness: float = 0.0
+    contrast: float = 0.0
+    mixup_alpha: float = 0.0
+    mixup_until: float = 0.5
+    lookahead_flush: bool = False
+    bn_recal_batches: int = 0
+    jitter_mode: str = "multiplicative"
+    global_pool: str = ""
+    resize_in_model: bool = False
+    muon_coefficients: str = "airbench"
+    muon_renorm: str = "every"
+    muon_decoupled_wd: float = 0.0
 
     def selector_config(self) -> RecipeConfig:
         """The small airbench94-shaped selector used for in-run example selection."""
@@ -164,6 +180,22 @@ class RecipeConfig:
             raise ValueError("select_fraction must be in (0, 1] and selector_update_every >= 1")
         if self.pool_impl not in ("torch", "amax"):
             raise ValueError("pool_impl must be torch or amax")
+        if self.activation not in ("gelu", "silu", "celu"):
+            raise ValueError("activation must be gelu, silu or celu")
+        if self.whiten_kernel not in (2, 3) or self.head_pool not in ("max", "maxmean"):
+            raise ValueError("whiten_kernel must be 2 or 3 and head_pool max or maxmean")
+        if min(self.brightness, self.contrast, self.mixup_alpha, self.bn_recal_batches) < 0:
+            raise ValueError("jitter, mixup_alpha and bn_recal_batches must be non-negative")
+        if self.jitter_mode not in ("multiplicative", "hiverge"):
+            raise ValueError("jitter_mode must be multiplicative or hiverge")
+        if self.global_pool not in ("", "torch", "flatmax", "amax"):
+            raise ValueError("global_pool must be torch, flatmax or amax")
+        if self.muon_coefficients not in ("airbench", "hiverge"):
+            raise ValueError("muon_coefficients must be airbench or hiverge")
+        if self.muon_renorm not in ("every", "hiverge") or self.muon_decoupled_wd < 0:
+            raise ValueError("muon_renorm must be every or hiverge; muon_decoupled_wd >= 0")
+        if not 0 <= self.mixup_until <= 1:
+            raise ValueError("mixup_until must be in [0, 1]")
         modes = ("default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs")
         if self.compile_mode not in modes:
             raise ValueError(f"compile_mode must be one of {modes}")

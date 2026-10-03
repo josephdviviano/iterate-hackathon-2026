@@ -6,7 +6,7 @@
 The image replicates the repository Dockerfile (CUDA 12.4.1 cuDNN devel on Ubuntu 22.04,
 uv 0.10.8, Python 3.12.10, ``uv sync --frozen`` from uv.lock, so PyTorch 2.4.0+cu124) but
 copies only the harness. Each configuration ships its sweep's frozen source snapshot at call
-time, runs once through ``benchmark.run`` over all seeds in a fresh, non-preemptible container
+time, runs once through ``benchmark.run`` over all seeds in a fresh container
 with 4 CPUs and networking blocked, and its results are written into the sweep's normal run
 directory, so ``research/sweep.py status|collate`` work unchanged.
 
@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import subprocess
 import sys
 import tarfile
@@ -28,7 +29,7 @@ from pathlib import Path
 import modal
 
 REPO = Path(__file__).resolve().parents[1]
-GPU = "A100-80GB"
+GPU = os.environ.get("C100_MODAL_GPU", "A100-80GB")
 APP_DIR = "/app"
 HARNESS_PYTHON = f"{APP_DIR}/.venv/bin/python"
 
@@ -85,7 +86,6 @@ def download_data() -> str:
     volumes={"/data": data_volume},
     timeout=3600,
     block_network=True,
-    nonpreemptible=True,
     single_use_containers=True,
     max_containers=4,
 )

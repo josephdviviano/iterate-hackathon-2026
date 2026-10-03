@@ -18,11 +18,11 @@
 <!-- writing-tools:generated:start -->
 ## Current position
 
-- **State:** needs_design
+- **State:** continue
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
-- **Why:** The current evidence frontier requires repair, a new discriminating task, requirement redesign, or an explicit programme decision.
-- **Next:** Repair the design or issue only the work needed to resolve the stated frontier.
+- **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
+- **Next:** Continue T-018 (Coverage pass: every lineage, competitor and novel strategy (X-003)).
 - **Open human feedback:** none
 
 ## Work completed and underway
@@ -46,6 +46,7 @@
 | [T-015](tasks/T-015-official-equivalent-40-seed-qualification-on-the-a100-pcie.md) — Official-equivalent 40-seed qualification on the A100 PCIe | assurance | proposed | Run the frozen converged candidate in the pinned container on an A100 80GB PCIe with a private 40-seed file, cpus 4 and network none; record results, telemetry, the R-001 risk calculation and the dev-stack versus A100 accuracy comparison; fall back to 8.5 or 8.75 epochs (D-007) if the mean is below 75.2%. |
 | [T-016](tasks/T-016-fresh-context-compliance-review-and-independence-checks.md) — Fresh-context compliance review and independence checks | assurance | ready | Review the frozen converged candidate against every RULES.md section 3 bullet without implementation narrative, and run repeat-seed, reordered-seed and fresh-process independence checks. |
 | [T-017](tasks/T-017-open-the-upstream-pull-request-after-approval.md) — Open the upstream pull request after approval | delivery | proposed | After a recorded team-lead approval, create a clean branch from upstream main containing only the team folder and open the pull request. |
+| [T-018](tasks/T-018-coverage-pass-every-lineage-competitor-and-novel-strategy-x-003.md) — Coverage pass: every lineage, competitor and novel strategy (X-003) | exploration | in_progress | Test every untested strategy from the CIFAR-10 record lineage (airbench, airbench94_muon, airbench96_faster, hiverge, Fable/Fulcrum, hlb-CIFAR10, Page), the competitor's programme and novel alternatives against the converged recipe; climb any that beats control beyond noise and record a disposition for each. |
 
 ## Issues identified
 
@@ -333,8 +334,8 @@
 
 ### Exact frontier
 
-- State: **needs_design**
-- Active: none
+- State: **continue**
+- Active: T-018
 - Eligible: none
 - Unresolved outcomes: O-001, O-002, O-003, O-004
 - Unresolved requirements: R-001, R-002, R-003, R-005, R-007, R-008
