@@ -20,10 +20,12 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from .cegis import counterexample_text, probe_split_dir, split_after_probes, stored_round
 from .committee import Member, auroc, description_length
 from .evaluate import load_runs
-from .experiment import ARTIFACTS, condition_dir
-from .loader import CLICK, ROOT, Transition, final_engine_source, load_bundle, run_extractor
+from .experiment import ARTIFACTS, add_backend_args, backend_cfg, condition_dir, run_split
+from .loader import CLICK, ROOT, Transition, build_buffer, final_engine_source, load_bundle, run_extractor, temporal_split
+from .seeds import make_seeds
 from .synth_api import load_env_file
 from .verify import canonical, run_program
 
@@ -150,10 +152,57 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
             "levels_completed": levels_done, "wall_s": round(time.time() - t0, 1), "log": log}
 
 
+def trajectory(game: str, level: int, actions: list[int]) -> list[Transition]:
+    """Replay recorded live actions on a fresh engine and return the observed transitions.
+    Steps are move indices; level advances are flagged so the loader's split rules apply."""
+    env = open_game(game)
+    engine_src = final_engine_source(load_bundle(game))
+    frame, grid = start(env, level)
+    before = run_extractor(engine_src, [grid])[0]
+    levels_done = frame.levels_completed
+    out = []
+    for i, a in enumerate(actions):
+        from arcengine import GameAction
+        frame = env.step(GameAction[f"ACTION{a}"])
+        after = run_extractor(engine_src, [frame.frame[-1].tolist()])[0]
+        advanced = frame.levels_completed > levels_done or frame.full_reset
+        levels_done = frame.levels_completed
+        out.append(Transition(i, level, a, None, advanced, [], [], before, after))
+        before = after
+    return out
+
+
+def live_round(game: str, level: int, train_frac: float, probe: int, log_path: Path, through: int,
+               condition: str, runs: int, cfg: dict, parallel: int, dry_run: bool) -> None:
+    """Resynthesize on the live trajectory: the recorded train set of the stored round plus the live
+    transitions up to and including the refuting move, which is stated as the counterexample."""
+    train, test = temporal_split(build_buffer(game), level, train_frac)
+    probes, cond = stored_round(game, level, train_frac, "committee_devin", "cegis_devin", probe)
+    train_r, _ = split_after_probes(train, test, probes)
+    members = members_for(cond)
+    log = json.loads(log_path.read_text())["log"]
+    live = [t for t in trajectory(game, level, [r["action"] for r in log[:through + 1]]) if not t.level_advance]
+    refuting = next(r["step"] for r in log if r["members_correct"] == 0)
+    t = live[refuting]
+    preds = [predict(m.source, t.before_objs, [t.action_id])[0] for m in members]
+    witnesses = [Member(m.name, m.source, [p], m.length) for m, p in zip(members, preds)]
+    text = counterexample_text(witnesses, [t], [0]).replace("The last transition in transitions.md",
+                                                            f"Transition {len(train_r) + refuting} in transitions.md")
+    train_all = train_r + live
+    seeds = [f"{s}\n\n{text}" for s in make_seeds(train_all, runs)]
+    base = ARTIFACTS / game / f"L{level}_f{int(round(train_frac * 100))}_probe{probe}_live{through}" / condition
+    print(f"train {len(train_r)} recorded + {len(live)} live (refuting move {refuting}); artifacts {base}\n\n{seeds[0]}\n")
+    if dry_run:
+        return
+    base.parent.mkdir(parents=True, exist_ok=True)
+    (base.parent / "split.json").write_text(json.dumps(
+        {"source": str(cond.relative_to(ARTIFACTS)), "live_log": str(log_path.relative_to(ARTIFACTS)),
+         "through": through, "refuting_move": refuting, "actions": [r["action"] for r in log[:through + 1]]}, indent=1))
+    run_split(train_all, [], base, seeds, cfg, f"{game} L{level} {condition}", 0, parallel)
+
+
 def main(argv: list[str] | None = None) -> None:
     import argparse
-
-    from .cegis import probe_split_dir
 
     parser = argparse.ArgumentParser(description="Play a game live with a stored committee as the explorer.")
     parser.add_argument("game")
@@ -161,12 +210,27 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--train-frac", type=float, default=0.4)
     parser.add_argument("--condition", default=None, help="committee_devin for round 1, cegis_devin with --probe")
     parser.add_argument("--probe", type=int, default=0, help="use the round that observed this many probes")
+    parser.add_argument("--members-dir", default=None, help="any condition directory under artifacts/")
     parser.add_argument("--steps", type=int, default=30)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--resynth-from", default=None, help="a live log: resynthesize on its trajectory")
+    parser.add_argument("--through", type=int, default=70, help="last live move to include in train")
+    parser.add_argument("--runs", type=int, default=8)
+    parser.add_argument("--parallel", type=int, default=4)
+    parser.add_argument("--dry-run", action="store_true")
+    add_backend_args(parser)
     args = parser.parse_args(argv)
+    if args.resynth_from:
+        live_round(args.game, args.level, args.train_frac, args.probe, Path(args.resynth_from), args.through,
+                   args.condition or "live_devin", args.runs, backend_cfg(args), args.parallel, args.dry_run)
+        return
     args.condition = args.condition or ("cegis_devin" if args.probe else "committee_devin")
-    cond = (probe_split_dir(args.game, args.level, args.train_frac, args.probe, args.condition) if args.probe
-            else condition_dir(args.game, args.level, args.train_frac, args.condition))
+    if args.members_dir:
+        cond, tag = ARTIFACTS / args.members_dir, args.members_dir.replace("/", "_")
+    else:
+        cond = (probe_split_dir(args.game, args.level, args.train_frac, args.probe, args.condition) if args.probe
+                else condition_dir(args.game, args.level, args.train_frac, args.condition))
+        tag = f"L{args.level}_{args.condition}_probe{args.probe}"
     members = members_for(cond)
     print(f"{args.game} level {args.level}, live, {len(members)} members from {cond.relative_to(ARTIFACTS)}")
     out = play(args.game, args.level, members, args.steps, args.seed)
@@ -174,7 +238,7 @@ def main(argv: list[str] | None = None) -> None:
           f"AUROC {out['auroc_disagreement_vs_error']}  unanimous {out['unanimous_n']} (error {out['unanimous_error']})"
           f"  split {out['split_n']} (error {out['split_error']})  all members wrong first at step "
           f"{out['first_all_wrong']}  levels completed {out['levels_completed']}  wall {out['wall_s']}s")
-    path = ARTIFACTS / args.game / "live" / f"L{args.level}_{args.condition}_probe{args.probe}_seed{args.seed}.json"
+    path = ARTIFACTS / args.game / "live" / f"{tag}_seed{args.seed}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, indent=1))
 
