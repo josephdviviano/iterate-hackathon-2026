@@ -1378,5 +1378,62 @@ Reading:
 | Split | Temporal 40 percent; round 2 adds the refuting probes |
 | Baseline | Round 1 on the same transitions |
 | Command | `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --runs 8 --seeded --backend devin --condition committee_devin --parallel 4`; `uv run python -m committee.evaluate GAME --level L --train-frac 0.4 --condition committee_devin`; `uv run python -m committee.calibrate --levels ls20:3,ka59:2,g50t:1 --out artifacts/calibration_new.json`; `uv run python -m committee.cegis GAME --level L --runs 8 --backend devin --parallel 4`; `... --report` |
-| Commit | d120ec5 (round 1), ef4bab1 (calibration), this commit (round 2) |
+| Commit | d120ec5 (round 1), ef4bab1 (calibration), f5d4253 (round 2) |
+
+## R28. Probe policy: disagreement on seen rows first does not select either
+
+Question: a disputed transition on a row with no train counts is a place where
+every member extrapolates; probing it refutes rather than selects. Among the
+split held-out transitions of the seven informative levels, every member is
+wrong on 62 of 88 (70 percent) whose rows include one with no train counts,
+against 16 of 67 (24 percent) whose rows were all seen. Does a probe order
+that prefers disputed transitions on seen rows select among members?
+
+Simulated exploration (R4 protocol) with three orders: disagreement;
+disagreement restricted to transitions whose rows all have train counts, with
+the unrestricted order as the fallback (`explore.simulate`, strategy
+`seen_disagreement`); random, 20 orders.
+
+| Level | Order | Refuted at probe | Members left by probe | Selecting probes | Survivors' vote accuracy, start to after selection |
+|---|---|---|---|---|---|
+| ar25 L3 | disagreement | 1 | 8, 0 | 0 | 0.48 |
+| | seen rows first | 2 | 8, 8, 0 | 0 | 0.48 |
+| | random | mean 2.7 | | mean 0.4 | 0.48 to mean 0.51 |
+| m0r0 L3 | disagreement | 1 | 8, 0 | 0 | 0.77 |
+| | seen rows first | 24 | 8, 6, 6, ... | 1 | 0.77 to 0.77 |
+| | random | mean 4.8 | | mean 0.1 | 0.77 |
+| sk48 L2 | disagreement | 1 | 8, 0 | 0 | 0.69 |
+| | seen rows first | 1 | 8, 0 | 0 | 0.69 |
+| | random | mean 22.2 | | mean 1.6 | 0.69 to mean 0.76 |
+| ar25 L7 | disagreement | 1 | 8, 0 | 0 | 0.42 |
+| | seen rows first | 14 | 8, 8, ... | 0 | 0.42 |
+| | random | mean 1.6 | | mean 0.1 | 0.42 |
+| ls20 L3 | both | 1 | 7, 0 | 0 | 0.86 |
+| | random | mean 8.4 | | mean 0.9 | 0.86 |
+| ka59 L2 | disagreement | 2 | 7, 2, 0 | 1 | 0.82 to 0.84 |
+| | seen rows first | 6 | 7, 2, 2, ... | 1 | 0.82 to 0.84 |
+| | random | mean 4.0 | | mean 0.6 | 0.82 |
+| g50t L1 | both | 9 | 4, 1, 1, ... | 1 | 0.52 to 0.43 |
+| | random | mean 2.1 | | mean 0.4 | 0.52 to mean 0.51 |
+
+Reading. The restriction delays the refutation (24 probes on m0r0, 14 on
+ar25 L7) and selects no better: at most one selecting probe on any level, and
+the survivors' vote accuracy moves by at most 0.02, downward on g50t where the
+single survivor is a worse program. After the first selecting probe the
+survivors agree on every remaining seen-row transition, so there is nothing
+left to distinguish there; the next informative probe is on an unseen row,
+and that one refutes them all. The random order's small gains (sk48 0.69 to
+0.76) come from hitting a seen-row split that happens to separate the best
+member. Conclusion, as R23: the hypotheses are missing, not misordered;
+disagreement on unseen rows is the right flag for "none of my hypotheses
+covers this", and the repair is synthesis.
+
+| Item | Value |
+|---|---|
+| Metric | Probes until refutation, selecting probes, survivors' vote accuracy on unobserved transitions |
+| Runs | Deterministic from stored members; random order 20 seeds |
+| Split | Temporal 40 percent, round 1 committees |
+| Baseline | Unrestricted disagreement order, random order |
+| Command | `uv run python -m committee.selection` style run; data in `artifacts/probe_policy.json` |
+| Commit | this session, after f5d4253 |
 

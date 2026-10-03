@@ -68,7 +68,7 @@ def simulate(members: list[Member], test: list[Transition], strategy: str, lam: 
     members_left = [len(alive)]
     vote_error_left: list[float] = []
     falsified_at = None
-    static_priority = count_priority(train, test) if strategy == "counts" and train else None
+    static_priority = count_priority(train, test) if strategy in ("counts", "seen_disagreement") and train else None
     rng = rng or random.Random(0)
 
     def vote_error(current: list[Member]) -> float:
@@ -90,6 +90,13 @@ def simulate(members: list[Member], test: list[Transition], strategy: str, lam: 
         if strategy == "disagreement":
             c = Committee(alive, lam=lam)
             pick = max(unobserved, key=lambda i: (c.vote(i).disagreement, -i))
+        elif strategy == "seen_disagreement":
+            # most disputed transition among those whose rows all have train counts; a probe there
+            # can select among members, where a probe on an unseen row mostly refutes them all
+            assert static_priority is not None
+            c = Committee(alive, lam=lam)
+            seen = [i for i in unobserved if static_priority[i] < 1.0]
+            pick = max(seen or unobserved, key=lambda i: (c.vote(i).disagreement, -i))
         elif strategy == "counts":
             assert static_priority is not None
             pick = max(unobserved, key=lambda i: (static_priority[i], -i))

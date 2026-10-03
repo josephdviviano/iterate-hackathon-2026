@@ -54,3 +54,21 @@ def test_oracle_headroom_and_best_survivor_track_the_member_that_is_right():
     assert (h2["best_member"], h2["oracle"]) == (2 / 3, 1.0)
     tr = simulate([m1, m3], test, "disagreement", lam=0.0)
     assert tr.members_left[:2] == [2, 1] and tr.best_error_left[:2] == [0.0, 0.0]
+
+
+def test_seen_disagreement_probes_a_seen_row_before_an_unseen_one():
+    # transition 0 is a row seen in train (player, action 1); transition 1 is an unseen row (block).
+    # Two of three members agree on the seen one; all three differ and are wrong on the unseen one.
+    before = [{"name": "p", "type": "player", "x": 0, "y": 0, "w": 1, "h": 1}]
+    before2 = [{"name": "b", "type": "block", "x": 5, "y": 5, "w": 1, "h": 1}]
+    A = [{"name": "p", "type": "player", "x": 1, "y": 0, "w": 1, "h": 1}]
+    B = [{"name": "p", "type": "player", "x": 2, "y": 0, "w": 1, "h": 1}]
+    blk = lambda x: [{"name": "b", "type": "block", "x": x, "y": 5, "w": 1, "h": 1}]
+    train = [Transition(1, 1, 1, None, False, [], [], before, A)]
+    test = [Transition(10, 1, 1, None, False, [], [], before, A), Transition(11, 1, 1, None, False, [], [], before2, blk(6))]
+    members = [Member(f"m{k}", "def transition_function(s,a): return s", preds, length=10)
+               for k, preds in enumerate([[A, blk(7)], [A, blk(8)], [B, blk(9)]])]
+    plain = simulate(members, test, "disagreement", 0.0, train)
+    seen = simulate(members, test, "seen_disagreement", 0.0, train)
+    assert plain.probes[0] == 1 and plain.falsified_at == 1          # unseen row first, everyone refuted
+    assert seen.probes[0] == 0 and seen.members_left[:2] == [3, 2]   # seen row first, two survivors
