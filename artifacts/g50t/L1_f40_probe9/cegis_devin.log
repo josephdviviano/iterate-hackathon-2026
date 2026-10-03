@@ -1,0 +1,22 @@
+probes [30, 0, 1, 2, 3, 4, 5, 6, 7] (steps [66, 36, 37, 38, 39, 40, 41, 42, 43]); train 44, held out 43
+artifacts: /Users/jdv/code/iterate/artifacts/g50t/L1_f40_probe9/cegis_devin
+
+Objects of type `ghost` under action ACTION2 with touching neighbours [wall] show mixed outcomes: y x2, x x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample. The last transition in transitions.md (step 43, action 4) refuted every program of an earlier committee of 1 programs. Each replayed all the other transitions exactly and predicted this one wrong:
+
+1 program(s) predicted:
+  observed but not predicted: {"name": "wall_007", "type": "wall", "x": 14, "y": 9, "w": 28, "h": 34, "layer": 0}
+  predicted but not observed: {"name": "wall_008", "type": "wall", "x": 14, "y": 9, "w": 28, "h": 34, "layer": 0}
+  predicted but not observed: {"name": "ghost_007", "type": "ghost", "x": 14, "y": 8, "w": 5, "h": 5, "layer": 1}
+
+Find the mechanic those programs missed. It must explain this transition and every earlier one, and it must not be a special case keyed to this step.
+
+g50t L1 cegis_devin run1: consistent=True train=44/44 test_acc=0.37209302325581395 turns=None wall=271.4s err=None
+g50t L1 cegis_devin run2: consistent=False train=0/0 test_acc=None turns=None wall=291.4s err=forbidden: ['replay']
+g50t L1 cegis_devin run3: consistent=True train=44/44 test_acc=0.5348837209302325 turns=None wall=375.8s err=None
+g50t L1 cegis_devin run0: consistent=True train=44/44 test_acc=0.5813953488372093 turns=None wall=417.0s err=None
+g50t L1 cegis_devin run4: consistent=True train=44/44 test_acc=0.37209302325581395 turns=None wall=188.2s err=None
+g50t L1 cegis_devin run5: consistent=True train=44/44 test_acc=0.3953488372093023 turns=None wall=208.2s err=None
+g50t L1 cegis_devin run6: consistent=True train=44/44 test_acc=0.37209302325581395 turns=None wall=166.5s err=None
+g50t L1 cegis_devin run7: consistent=True train=44/44 test_acc=0.4418604651162791 turns=None wall=207.9s err=None

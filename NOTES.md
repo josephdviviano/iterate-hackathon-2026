@@ -206,3 +206,17 @@
   ABANDONED:
     - Exploring by disagreement alone: when every action is unanimous the explorer wandered 58 moves inside the known region. Novelty of the predicted state and no repeated state-action pairs were added instead (R25 protocol).
     - Disagreement as the detector of unknown unknowns: at the live counter tick both committees were unanimous and wrong (R25). The observed transition as a counterexample for resynthesis is the mechanism there, not probing.
+
+- [jdv] - Replication on four new games, live loop closed - 74314e3
+  Four games never used before, the live counterexample round, and the ONC gap analysis.
+  DONE:
+    - R26: live resynthesis on the move-64 counter counterexample. All 8 members replay 104 transitions and name the hidden move budget. Live vote 0.40 to 0.71 and 0.86; refuted later by an action-3 mechanic. Persistent member processes keep hidden state (round 1 seed 1 moved from refutation at 29 to 64).
+    - R27: committees on ls20 L3, g50t L1, wa30 L3, ka59 L2 from a census of all 25 bundles. Calibration replicates (unanimous 0.00 to 0.12 vs split 0.26 to 1.00; conformal 0.90 to 0.96). The counterexample round does not: null, loss (ka59 0.86 to 0.69, one behaviour), marginal (g50t). Two lifts, three nulls, one marginal, one loss over seven levels.
+    - Repair: the anti-network filter rejected six ka59 programs for the word socket (a game object). Imports only now, mutant-checked; programs re-verified under the unchanged replay rule.
+    - calibrate takes --levels and --out; R22 default unchanged (0.932 pooled). README carries the closed loop, live play and replication paragraphs. CLAUDE.md carries the track table.
+  DEFERRED:
+    - Second live round on the next counterexample (action 3 at move 70). 8 sessions; live_round needs --members-dir for a live-round base.
+    - Passive arms on the four new levels.
+    - ONC refute-then-resynthesize measurement: specified in chat (refutation on new batches, counterexample-conditioned templates, passive control, scoring on later batches over the 200 dev worlds). Owner: the ONC session.
+  ABANDONED:
+    - "Resynthesis on the first counterexample lifts accuracy" as a general claim. R27 shows it is level dependent and can lose (ka59). The claim is now: it lifts where the probe names one missing mechanic, and convergence of the new committee is the warning sign.

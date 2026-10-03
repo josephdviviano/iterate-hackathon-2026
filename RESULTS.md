@@ -1310,3 +1310,73 @@ Reading:
 | Command | `uv run python -m committee.live ar25 --level 3 --probe 4 --resynth-from artifacts/ar25/live/L3_cegis_devin_probe4_seed0.json --through 70 --runs 8 --backend devin --parallel 4`; `uv run python -m committee.live ar25 --level 3 --steps 300 --seed S --members-dir ar25/L3_f40_probe4_live70/live_devin` |
 | Commit | 0409cac (round), 00d9874 (harness and logs) |
 
+## R27. Replication on four games never used before
+
+Same code and protocol as R4 and R24. Levels were chosen from a census of all
+25 bundles (modellable transitions per level, no click actions, games not used
+so far): ls20 L3 (99 transitions), g50t L1 (87), wa30 L3 (79), ka59 L2 (73).
+Round 1 is 8 seeded programs on the first 40 percent of the level. Round 2
+runs where round 1 is not saturated: the disagreement probes that refute every
+member join the train set, 1 on ls20, 2 on ka59 and 9 on g50t, where the
+version space shrinks for eight probes first. No passive arm on these levels
+(R24's passive arms moved 0.00 to -0.06).
+
+Round 1, full held-out set:
+
+| Level | n test | Admitted | Vote | Mean member | AUROC | Unanimous n (error) | Split n (error) | Distinct |
+|---|---|---|---|---|---|---|---|---|
+| ls20 L3 | 59 | 7/8 | 0.864 | 0.823 | 0.77 | 36 (0.06) | 23 (0.26) | 4 |
+| ka59 L2 | 44 | 7/8 | 0.818 | 0.756 | 0.69 | 33 (0.12) | 11 (0.36) | 6 |
+| g50t L1 | 52 | 4/8 | 0.519 | 0.481 | 0.83 | 21 (0.10) | 31 (0.74) | 4 |
+| wa30 L3 | 47 | 8/8 | 0.957 | 0.963 | 1.00 | 45 (0.00) | 2 (1.00) | 2 |
+
+Adaptive conformal sets (R22 protocol, `artifacts/calibration_new.json`):
+
+| Level | Coverage at 0.90 target | Mean set size | Abstain rate | Singleton rate, accuracy |
+|---|---|---|---|---|
+| ls20 L3 | 0.898 | 1.46 | 0.37 | 0.59, 0.89 |
+| ka59 L2 | 0.955 | 2.11 | 0.84 | 0.14, 0.83 |
+| g50t L1 | 0.962 | 3.04 | 0.83 | 0.12, 1.00 |
+| pooled, 3 new levels | 0.936 | | | vote-share ECE 0.12 |
+| pooled, all 7 informative levels | 0.934 | | | vote-share ECE 0.17 (`artifacts/calibration_7.json`) |
+
+Round 2 against round 1 on the transitions neither observed:
+
+| Level, common n | Arm | Observed | Admitted | Vote | Members | AUROC | Unanimous n (error) | Distinct | Next refutation |
+|---|---|---|---|---|---|---|---|---|---|
+| ls20 L3, 58 | Round 1 | 0 | 7/8 | 0.879 | 0.59 to 0.88 | 0.74 | 36 (0.06) | 3 | probe 1 |
+| | Round 2 | 1 | 8/8 | 0.879 | 0.88 | 0.64 | 56 (0.09) | 2 | probe 1 |
+| ka59 L2, 42 | Round 1 | 0 | 7/8 | 0.857 | 0.69 to 0.86 | 0.59 | 33 (0.12) | 3 | probe 1 |
+| | Round 2 | 2 | 7/8 | 0.690 | 0.69 | 0.50 | 42 (0.31) | 1 | probe 13 |
+| g50t L1, 43 | Round 1 | 0 | 4/8 | 0.465 | 0.35 to 0.49 | 0.78 | 14 (0.14) | 4 | probe 1 |
+| | Round 2 | 9 | 7/8 | 0.488 | 0.37 to 0.58 | 0.71 | 17 (0.12) | 7 | probe 6 |
+
+Reading:
+
+1. The calibration result replicates on all four games: unanimous error 0.00
+   to 0.12 against split error 0.26 to 1.00, AUROC 0.69 to 1.00, and conformal
+   coverage 0.90 to 0.96 at the 0.90 target with the same abstention pattern
+   (0.37 where the committee is mostly right, 0.83 to 0.84 where it is not).
+2. The counterexample round does not replicate as a lift. Null on ls20 (0.88
+   to 0.88). A loss on ka59 (0.86 to 0.69): all seven members converge on the
+   same wrong program and are unanimous and wrong on 31 percent. Marginal on
+   g50t (0.47 to 0.49), where it raises admission from 4 to 7, the best member
+   from 0.49 to 0.58, and the next refutation from probe 1 to probe 6. Over
+   the seven levels with a round 2: two clear lifts (R24), three nulls, one
+   marginal, one loss.
+3. Convergence is again the warning sign. The round 2 committees have 1 or 2
+   distinct behaviours on ls20 and ka59; g50t, the one that gained, kept 7.
+4. Repair recorded: ka59's object type is named `socket`, and the anti-network
+   filter rejected six valid programs for the word. The filter now matches
+   socket imports only (mutant-checked test); the six programs were
+   re-verified under the unchanged exact-replay rule before any evaluation.
+
+| Item | Value |
+|---|---|
+| Metric | As R4, R22 and R24 |
+| Runs | 32 round 1 sessions (4 not admitted: 1 ls20, 1 ka59, 4 g50t minus the re-verified), 24 round 2 sessions (2 not admitted) |
+| Split | Temporal 40 percent; round 2 adds the refuting probes |
+| Baseline | Round 1 on the same transitions |
+| Command | `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --runs 8 --seeded --backend devin --condition committee_devin --parallel 4`; `uv run python -m committee.evaluate GAME --level L --train-frac 0.4 --condition committee_devin`; `uv run python -m committee.calibrate --levels ls20:3,ka59:2,g50t:1 --out artifacts/calibration_new.json`; `uv run python -m committee.cegis GAME --level L --runs 8 --backend devin --parallel 4`; `... --report` |
+| Commit | d120ec5 (round 1), ef4bab1 (calibration), this commit (round 2) |
+

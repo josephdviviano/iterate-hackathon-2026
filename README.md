@@ -79,7 +79,12 @@ until the next unseen mechanic refutes it.
 Replication on four games never used before (ls20 L3, ka59 L2, g50t L1,
 wa30 L3; same code and protocol): unanimous error 0.00 to 0.12, split error
 above it on every level, AUROC 0.69 to 1.00, conformal coverage 0.90 to 0.96
-against the 0.90 target (`artifacts/calibration_new.json`).
+against the 0.90 target (`artifacts/calibration_new.json`). The counterexample
+round did not replicate there (R27): null on ls20 L3, a loss on ka59 L2 (0.86
+to 0.69, every member on one wrong program), marginal on g50t L1 (0.47 to
+0.49). Over seven levels: two clear lifts, three nulls, one marginal, one loss.
+The lift is level dependent, and a resynthesized committee that converges to
+one behaviour is the warning sign.
 
 ## Demo
 
