@@ -130,28 +130,37 @@ def run_config(source: bytes, name: str, params: dict, seeds: list[int]) -> dict
     single_use_containers=True,
     max_containers=4,
 )
-def run_interleaved(source: bytes, name: str, arms: list[dict], blocks: list[list[int]]) -> dict:
+def run_interleaved(
+    sources: list[tuple[str, bytes]], arms: list[dict], blocks: list[list[int]], host: int = 0
+) -> dict:
     """Run every arm on one host, block by block, reversing the arm order in alternate blocks
-    (ABC, CBA, ...), so arm differences are paired within a host and drift averages out."""
+    (ABC, CBA, ...), so arm differences are paired within a host and drift averages out.
+
+    ``sources`` holds (directory name, tarball) per submission; each arm is
+    ``{"submission": index into sources, "params": {...}}``."""
     work = Path("/tmp/work")
-    submission = work / name
-    submission.mkdir(parents=True)
-    with tarfile.open(fileobj=io.BytesIO(source), mode="r:gz") as archive:
-        archive.extractall(submission, filter="data")
+    paths = []
+    for name, source in sources:
+        path = work / name
+        path.mkdir(parents=True)
+        with tarfile.open(fileobj=io.BytesIO(source), mode="r:gz") as archive:
+            archive.extractall(path, filter="data")
+        paths.append(path)
     runs = []
     for block, seeds in enumerate(blocks):
         order = list(range(len(arms)))
-        for arm in order if block % 2 == 0 else order[::-1]:
+        # Alternate the arm order across blocks and hosts (ABC, CBA, ...).
+        for arm in order if (block + host) % 2 == 0 else order[::-1]:
             seed_file = work / "seeds.json"
             seed_file.write_text(json.dumps(seeds))
             results = work / f"results-b{block}-a{arm}"
             command = [
                 HARNESS_PYTHON, "-m", "benchmark.run",
-                "--submission-path", str(submission),
+                "--submission-path", str(paths[arms[arm]["submission"]]),
                 "--n", str(len(seeds)),
                 "--seed-file", str(seed_file),
                 "--no-accuracy-target",
-                "--params", json.dumps(arms[arm]),
+                "--params", json.dumps(arms[arm]["params"]),
                 "--data-root", "/data",
                 "--results-root", str(results),
             ]  # fmt: skip
@@ -165,7 +174,7 @@ def run_interleaved(source: bytes, name: str, arms: list[dict], blocks: list[lis
                     "results": _tar_directory(results) if results.exists() else None,
                 }
             )
-    return {"gpu": _gpu_report(), "runs": runs}
+    return {"gpu": _gpu_report(), "runs": runs, "host": host}
 
 
 @app.function(
@@ -271,14 +280,18 @@ def interleave(sweep: str, hosts: int = 2, blocks: int = 2) -> None:
         raise SystemExit(f"{len(spec.seeds)} seeds do not split into {chunks} host-blocks")
     size = len(spec.seeds) // chunks
     seed_blocks = [spec.seeds[i * size : (i + 1) * size] for i in range(chunks)]
+    sources = [(spec.submission.name, _tar_directory(spec.source))]
+    arms = [{"submission": 0, "params": params} for params in spec.configs]
     calls = [
-        (_tar_directory(spec.source), spec.submission.name, spec.configs,
-         seed_blocks[h * blocks : (h + 1) * blocks])
-        for h in range(hosts)
-    ]  # fmt: skip
+        (sources, arms, seed_blocks[h * blocks : (h + 1) * blocks], h) for h in range(hosts)
+    ]
     print(f"{spec.name}: {len(spec.configs)} arms x {hosts} hosts x {blocks} blocks on {GPU}")
     rows = []
-    for host, outcome in enumerate(run_interleaved.starmap(calls)):
+    for outcome in run_interleaved.starmap(calls, order_outputs=False, return_exceptions=True):
+        if isinstance(outcome, Exception):
+            print(f"host failed (e.g. preempted); its blocks are missing: {outcome!r}")
+            continue
+        host = outcome["host"]
         for run in outcome["runs"]:
             params = spec.configs[run["arm"]]
             out = spec.root / "interleaved" / f"h{host}-b{run['block']}-{spec.run_dir(params).name}"
@@ -301,7 +314,7 @@ def interleave(sweep: str, hosts: int = 2, blocks: int = 2) -> None:
             }
             rows.append(row)
             print(json.dumps({k: v for k, v in row.items() if k != "summary"}))
-    (spec.root / "interleaved.json").write_text(json.dumps(rows, indent=2) + "\n")
+        (spec.root / "interleaved.json").write_text(json.dumps(rows, indent=2) + "\n")
 
 
 @app.local_entrypoint()
@@ -313,3 +326,59 @@ def profile_step(
     script = (REPO / "research" / "profile_step.py").read_text()
     extra = ["--bandwidth"] if bandwidth else []
     print(run_profile.remote(_tar_directory(path), path.name, script, json.loads(params), extra))
+
+
+@app.local_entrypoint()
+def compare(spec: str) -> None:
+    """Same-host paired comparison of different submissions (see research/comparisons/).
+
+        .venv-modal/bin/modal run research/modal_a100.py::compare --spec <comparison toml>
+
+    The TOML gives ``name``, ``seeds``, ``hosts``, ``blocks`` and ``[[arms]]`` with ``label``,
+    ``submission`` (repo-relative directory) and optional ``params``. Results go to
+    ``results/comparisons/<name>/h<host>-b<block>-<label>/``.
+    """
+    import tomllib  # noqa: PLC0415
+
+    config = tomllib.loads(Path(spec).read_text())
+    hosts, blocks = config.get("hosts", 2), config.get("blocks", 2)
+    seeds = config["seeds"]
+    if len(seeds) % (hosts * blocks):
+        raise SystemExit(f"{len(seeds)} seeds do not split into {hosts * blocks} host-blocks")
+    size = len(seeds) // (hosts * blocks)
+    seed_blocks = [seeds[i * size : (i + 1) * size] for i in range(hosts * blocks)]
+    directories = list(dict.fromkeys(arm["submission"] for arm in config["arms"]))
+    names = [Path(d).name for d in directories]
+    if len(set(names)) != len(names):
+        raise SystemExit("submission directory names must be unique")
+    sources = [(Path(d).name, _tar_directory((REPO / d).resolve())) for d in directories]
+    arms = [
+        {"submission": directories.index(arm["submission"]), "params": arm.get("params", {})}
+        for arm in config["arms"]
+    ]
+    root = REPO / "results" / "comparisons" / config["name"]
+    root.mkdir(parents=True, exist_ok=True)
+    calls = [
+        (sources, arms, seed_blocks[h * blocks : (h + 1) * blocks], h) for h in range(hosts)
+    ]
+    print(f"{config['name']}: {len(arms)} arms x {hosts} hosts x {blocks} blocks on {GPU}")
+    rows = []
+    for outcome in run_interleaved.starmap(calls, order_outputs=False, return_exceptions=True):
+        if isinstance(outcome, Exception):
+            print(f"host failed (e.g. preempted); its blocks are missing: {outcome!r}")
+            continue
+        host = outcome["host"]
+        for run in outcome["runs"]:
+            label = config["arms"][run["arm"]]["label"]
+            out = root / f"h{host}-b{run['block']}-{label}"
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "harness.log").write_text(run["log"])
+            if run["results"]:
+                with tarfile.open(fileobj=io.BytesIO(run["results"]), mode="r:gz") as archive:
+                    archive.extractall(out / "harness", filter="data")
+            rows.append(
+                {"host": host, "gpu": outcome["gpu"], "block": run["block"], "label": label,
+                 "exit_code": run["exit_code"]}
+            )  # fmt: skip
+            print(json.dumps(rows[-1]))
+        (root / "comparison.json").write_text(json.dumps(rows, indent=2) + "\n")

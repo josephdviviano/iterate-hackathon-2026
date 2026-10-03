@@ -113,8 +113,11 @@ class ConvGroup(nn.Module):
         pool_overlap: bool = False,
         pool_ceil: bool = False,
         skip_discarded: bool = False,
+        post_add_activation: bool = False,
     ) -> None:
         super().__init__()
+        # ResNet-style GELU(residual + x) instead of airbench96's x + GELU(residual).
+        self.post_add_activation = post_add_activation
         # Floor-mode 2x2 pooling of an odd map drops the conv's last row and column; pad the
         # top-left only and convolve unpadded so those outputs are never computed (exact).
         self.skip_discarded = skip_discarded and not (pool_overlap or pool_ceil or rep)
@@ -153,7 +156,10 @@ class ConvGroup(nn.Module):
         y = activate(self.norm2(self.conv2(x)), self.activation)
         if self.residual is None or not self.residual_active:
             return y
-        deep = x + activate(self.residual(y), self.activation)
+        if self.post_add_activation:
+            deep = activate(self.residual(y) + x, self.activation)
+        else:
+            deep = x + activate(self.residual(y), self.activation)
         if not self.residual_ramping:
             return deep
         return torch.lerp(y, deep, self.residual_gate.to(y.dtype))
@@ -192,6 +198,7 @@ class AirbenchNet(nn.Module):
                     config.pool_overlap,
                     config.stage3_ceil and i == 2,
                     config.skip_discarded,
+                    config.post_add_activation,
                 )
                 for i in range(3)
             )

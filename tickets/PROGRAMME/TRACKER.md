@@ -313,6 +313,46 @@
 - **Decision consequence:** Reject score-bank data pruning in all modes; close the data-selection dimension for this recipe.
 - **Resolution:** Data pruning rejected.
 
+### F-039 — open, material
+
+- **Observation:** S37 (20 fresh seeds 3800-3819, current submission base with whitening-bias autograd off, control 75.16%): BN-bias lr scaler 32 75.35% (+0.19), scaler 16 75.50% (+0.34); LSE pool tau 1.0/2.0 75.27/75.15% with +4.0/+1.6% local time; conv init gain 0.5 75.22% (+0.06); stack scaler 32 + pool 1.0 + gain 0.5 75.40% (+0.24). Per-arm SE about 0.05-0.07 pp.
+- **Interpretation:** The BN-bias learning rate is too high in the converged recipe: across S31 and S37 accuracy rises monotonically as the scaler falls (128: -0.28, 64: 0, 32: +0.19/+0.20, 16: +0.34), replicated on fresh seeds. The LSE pool does not pay for its time and init gain is within noise.
+- **Decision consequence:** Scan the scaler further down (16, 8, 4, 2), test switch-time scaling and the stack with WSD + balanced order (S39); reject LSE pool and init gain; convert the best stack into an epoch cut.
+
+### F-040 — open, material
+
+- **Observation:** S36b (20 seeds 3600-3619, after fixing the momentum-buffer memory format; control 75.14% at 5.34 s local): narrowing at the 20->32 px switch to 128/384/512 (Taylor saliency) 74.88% at 5.09 s; to 448: Taylor 74.59%, random 74.62%, weight norm 74.58% (4.95-5.18 s); to 128/320/512 74.55% at 4.70 s; training 128/384/768 in the 20 px phase then 640: 75.29% at 5.41 s. S36 narrow-throughout controls: 512 -0.40 pp at -7.2%, 448 -0.65 pp at -9.9%.
+- **Interpretation:** Gradient saliency adds nothing: random channel selection matches Taylor and weight-norm selection, so the transplant works by keeping width early, not by sniffing important channels. Narrowing trades about 0.05-0.06 pp per 1% local time, at the exchange rate (about 0.054), so no net gain. The reverse, extra width only in the cheap 20 px phase (768 then 640), gains +0.15 pp for about +1.4% local time, which is favourable if the time holds on A100.
+- **Decision consequence:** Reject saliency narrowing; carry wide-early (768 -> 640) as a candidate for paired A100 timing and stacking with the BN-bias scaler.
+
+### F-041 — resolved, material
+
+- **Observation:** S38 (20 seeds 3900-3919; first two cells on the dev stack, the rest on Modal A100, torch 2.4): 128/384/640 at 8.25 epochs 75.16%; 128/384/512 at 8.75 / 9.25 epochs 74.97 / 75.26%; 128/384/448 at 9.0 / 9.5 epochs 74.79 / 75.07%; 128/320/512 at 9.0 epochs 74.84%.
+- **Interpretation:** A narrower last stage needs about one extra epoch to match 640 at 8.25 (512 reaches 75.26% only at 9.25 epochs, +12% steps at about 7% cheaper steps, about +4% time), and 448 or 320/512 never catch up within the tested budgets. The width frontier has not moved: 640 at 8.25 epochs stays the efficient point.
+- **Decision consequence:** Keep widths 128/384/640; close the width-reallocation direction.
+- **Resolution:** Width unchanged.
+
+### F-042 — resolved, material
+
+- **Observation:** S40 (Modal A100, torch 2.4, 20 seeds 4200-4219): control 75.16%; post-add residual activation GELU(BN(conv3)+x) 75.03%; BN-bias scaler 16 75.56% (+0.40); scaler 16 with post-add activation 75.26%.
+- **Interpretation:** The teammates' residual placement hurts on our recipe (-0.13 pp alone, -0.30 pp on the scaler-16 base). The BN-bias scaler 16 gain replicates for the fourth time and on the official torch 2.4 stack (+0.40 pp).
+- **Decision consequence:** Reject post-add activation; scaler 16 proceeds to the epoch ladder (S41).
+- **Resolution:** Post-add activation rejected.
+
+### F-043 — resolved, material
+
+- **Observation:** S41 (40 fresh seeds 4300-4339; first four cells on Modal A100 torch 2.4, last two on the dev stack): control 8.25 epochs 75.19% (SE 0.031); BN-bias scaler 16 at 8.25 / 8.0 / 7.75 epochs: 75.43 / 75.26 / 75.10% (SE 0.04); scaler 16 in the 20 px phase then 64: 8.0 / 7.75 epochs 75.17 / 75.00%. S39 (20 seeds): scaler 16/8/4/2 +0.30/+0.23/+0.07/-0.25 pp; 64->16 at the switch +0.08; 16->64 +0.37.
+- **Interpretation:** Scaler 16 is a robust +0.24 to +0.40 pp across five sweeps and both stacks; it buys 0.25 epoch at matched accuracy (8.0 epochs: 75.26% vs 75.19% control), about -3% time. 7.75 epochs leaves only about 2.5 SE above 75%. The phase-switched variant does not replicate the S39 estimate.
+- **Decision consequence:** Adopt bias_scaler 16 and 8.0 epochs in the submission; re-qualify on A100 PCIe with 40 fresh random seeds.
+- **Resolution:** Adopted: bias_scaler 16, 8.0 epochs.
+
+### F-044 — resolved, blocking
+
+- **Observation:** M7a (Modal, NVIDIA A100 80GB PCIe 300 W, torch 2.4.0, 40 fresh random uint32 seeds, network blocked): updated submission defaults (whitening-bias autograd off, BN-bias scaler 16, 8.0 epochs) reach 75.290% mean single-view accuracy (SD 0.256) at 5.640 s mean prepare+train (SD 0.029). M7b landed on an A100-SXM4 (400 W): 75.332% at 5.255 s. T-015 measured 6.027 s for the previous defaults on a different PCIe host.
+- **Interpretation:** The updated submission qualifies on the official card with a margin of about 7 SE (P(40-seed mean < 75%) negligible). Time is about 6% below the T-015 qualification, consistent with the paired -3% of the whitening change and the 3% step cut; the cross-host comparison carries 1.5-9% host variance.
+- **Decision consequence:** The updated defaults are the current entry; any further adoption needs a fresh official-equivalent run.
+- **Resolution:** Updated submission qualifies at 5.640 s on A100 PCIe.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -389,6 +429,13 @@
 - **Decision:** Adopt whitening-bias autograd removal after the freeze (H2); do not adopt loss-in-graph (H5), coordinate-descent tuning (H4), cuDNN benchmark limit 0 (H3) or skipping pool-discarded rows (H1).
 - **Rationale:** H2 saves 2.96% (SE 0.09) on the official A100 PCIe and is exact; H5/H3/H4 gains on PCIe are within noise and H3+H4 push the cold build to 409 s of 600 s; H1 is 1.2% slower.
 - **Alternatives:** Adopt the full four-lever stack (-3.41% on PCIe, not significantly better than H2 alone, larger build-time risk); Adopt nothing until a PCIe-only timing run (unnecessary: H2 is exact and consistent on every host-block)
+
+### D-010 — settled
+
+- **Question:** Which accuracy lever and budget enter the submission after S37-S41?
+- **Decision:** Set bias_scaler 16 and epochs 8.0 (384 steps); keep everything else.
+- **Rationale:** Scaler 16 replicated in five sweeps (+0.24 to +0.40 pp) and holds control accuracy at 8.0 epochs (75.26% vs 75.19%, 40 seeds), a 3% step cut with an unchanged qualification margin; 7.75 epochs is too close to 75%.
+- **Alternatives:** 7.75 epochs (75.10%, about 2.5 SE above the threshold; qualification risk too high); WSD + balanced order on top (no added gain over scaler 16 in S39)
 
 ## Deferred or rejected work
 

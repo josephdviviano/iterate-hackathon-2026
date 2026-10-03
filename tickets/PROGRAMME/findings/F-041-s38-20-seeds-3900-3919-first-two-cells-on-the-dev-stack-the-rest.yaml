@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-041
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S38 (20 seeds 3900-3919; first two cells on the dev stack, the rest on Modal A100, torch
+  2.4): 128/384/640 at 8.25 epochs 75.16%; 128/384/512 at 8.75 / 9.25 epochs 74.97 / 75.26%; 128/384/448
+  at 9.0 / 9.5 epochs 74.79 / 75.07%; 128/320/512 at 9.0 epochs 74.84%.'
+interpretation: 'A narrower last stage needs about one extra epoch to match 640 at 8.25 (512 reaches 75.26%
+  only at 9.25 epochs, +12% steps at about 7% cheaper steps, about +4% time), and 448 or 320/512 never
+  catch up within the tested budgets. The width frontier has not moved: 640 at 8.25 epochs stays the efficient
+  point.'
+decision_implication: Keep widths 128/384/640; close the width-reallocation direction.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: times mix dev-stack and A100 hosts, so only the epoch-matched accuracy comparison is used
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s38-width-frontier-table.csv
+  locator: research/evidence/T-019/s38-width-frontier-table.csv
+  sha256: d7e1f4b9fa73cd0e9401b5ed2d557779fe08209bef4f9aa7007541cc11f209dd
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Width unchanged.

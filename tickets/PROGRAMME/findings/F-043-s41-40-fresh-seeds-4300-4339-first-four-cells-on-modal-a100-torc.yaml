@@ -1,0 +1,35 @@
+schema_version: '2.0'
+finding_id: F-043
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S41 (40 fresh seeds 4300-4339; first four cells on Modal A100 torch 2.4, last two on the
+  dev stack): control 8.25 epochs 75.19% (SE 0.031); BN-bias scaler 16 at 8.25 / 8.0 / 7.75 epochs: 75.43
+  / 75.26 / 75.10% (SE 0.04); scaler 16 in the 20 px phase then 64: 8.0 / 7.75 epochs 75.17 / 75.00%.
+  S39 (20 seeds): scaler 16/8/4/2 +0.30/+0.23/+0.07/-0.25 pp; 64->16 at the switch +0.08; 16->64 +0.37.'
+interpretation: 'Scaler 16 is a robust +0.24 to +0.40 pp across five sweeps and both stacks; it buys 0.25
+  epoch at matched accuracy (8.0 epochs: 75.26% vs 75.19% control), about -3% time. 7.75 epochs leaves
+  only about 2.5 SE above 75%. The phase-switched variant does not replicate the S39 estimate.'
+decision_implication: Adopt bias_scaler 16 and 8.0 epochs in the submission; re-qualify on A100 PCIe with
+  40 fresh random seeds.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: unresolved
+  rationale: a lower BN-bias lr steadies early training (the gain sits in the 20 px phase), but the switched
+    variant's failure to replicate leaves the phase story open
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s41-bias-epoch-ladder-table.csv
+  locator: research/evidence/T-019/s41-bias-epoch-ladder-table.csv
+  sha256: f2a571e1606573c4fb955769e896d3b9cd0bf4330fb4cf9a57a15271d35741f9
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: 'Adopted: bias_scaler 16, 8.0 epochs.'

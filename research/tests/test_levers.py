@@ -116,6 +116,7 @@ LEVERS = {
         "lr_shape": "wsd_sqrt",
         "order": "balanced",
     },
+    "post-add": SMALL | {"block_depth": 3, "post_add_activation": True},
     "celu": SMALL | {"activation": "celu", "epochs": 2.3},
     "select": SMALL | {"select_fraction": 0.5, "selector_widths": [16, 32, 32]},
     "freeze": SMALL | {"freeze_schedule": [[0.5, 1], [0.75, 2]], "res_schedule": [[0.6, 24]]},

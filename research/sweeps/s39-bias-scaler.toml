@@ -1,0 +1,41 @@
+# BN-bias lr scaler scan below 16 (X-005): S31/S37 show accuracy rising monotonically as the
+# scaler falls (128 -0.28, 32 +0.19, 16 +0.34 pp). Also switch-time scaling (agent round 2 H4) and
+# the stack with WSD 0.6 + balanced order. 20 fresh seeds, current submission base.
+name = "s39-bias-scaler"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [4000, 4001, 4002, 4003, 4004, 4005, 4006, 4007, 4008, 4009, 4010, 4011, 4012, 4013, 4014, 4015, 4016, 4017, 4018, 4019]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+epochs = 8.25
+whiten_grad_off = true
+
+[[configs]]                                   # control (scaler 64)
+[[configs]]
+bias_scaler = 16.0
+[[configs]]
+bias_scaler = 8.0
+[[configs]]
+bias_scaler = 4.0
+[[configs]]
+bias_scaler = 2.0
+[[configs]]                                   # 64 in the 20 px phase, 16 after the switch
+bias_scaler_final = 16.0
+[[configs]]                                   # 16 in the 20 px phase, 64 after (mechanism check)
+bias_scaler = 16.0
+bias_scaler_final = 64.0
+[[configs]]
+bias_scaler = 16.0
+lr_shape = "wsd"
+lr_decay_start = 0.6
+order = "balanced"

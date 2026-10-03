@@ -1,0 +1,41 @@
+# Epoch ladder for the BN-bias lr scaler win (X-005): scaler 16 gives +0.30/+0.34 pp at 8.25
+# epochs (S37, S39) and 16 then 64 after the 20->32 px switch +0.37 pp (S39). Convert into a
+# shorter budget: 40 fresh seeds per cell on Modal (official torch 2.4 stack).
+name = "s41-bias-epoch-ladder"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [4300, 4301, 4302, 4303, 4304, 4305, 4306, 4307, 4308, 4309, 4310, 4311, 4312, 4313, 4314, 4315, 4316, 4317, 4318, 4319, 4320, 4321, 4322, 4323, 4324, 4325, 4326, 4327, 4328, 4329, 4330, 4331, 4332, 4333, 4334, 4335, 4336, 4337, 4338, 4339]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+compile_mode = "max-autotune"
+fused_sgd = true
+whiten_grad_off = true
+
+[[configs]]                                   # control (= submission)
+epochs = 8.25
+[[configs]]
+epochs = 8.25
+bias_scaler = 16.0
+[[configs]]
+epochs = 8.0
+bias_scaler = 16.0
+[[configs]]
+epochs = 7.75
+bias_scaler = 16.0
+[[configs]]
+epochs = 8.0
+bias_scaler = 16.0
+bias_scaler_final = 64.0
+[[configs]]
+epochs = 7.75
+bias_scaler = 16.0
+bias_scaler_final = 64.0

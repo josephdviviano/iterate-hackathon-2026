@@ -1,0 +1,28 @@
+# Rerun of C1 after a host preemption cancelled it (results are now written per host as they
+# arrive). Same-host paired comparison on Modal A100 (official torch 2.4 stack): our updated
+# submission (whitening-bias autograd off, BN-bias scaler 16, 8.0 epochs; reference) against the
+# teammates' hypothesis-branch iterations I001 (SGD airbench96 reproduction, 8.5 epochs), I044
+# (Muon, 16/24/32 px, renorm cadence) and I049 (tip: Muon, 16/20/32 px).
+# 4 hosts x 1 block x 10 seeds = 40 trials per arm; arm order alternates between hosts.
+#   .venv-modal/bin/modal run research/modal_a100.py::compare --spec research/comparisons/c2-arena-vs-segal.toml
+#   .venv-blackwell/bin/python research/compare_report.py research/comparisons/c2-arena-vs-segal.toml
+name = "c2-arena-vs-segal"
+hosts = 4
+blocks = 1
+seeds = [4400, 4401, 4402, 4403, 4404, 4405, 4406, 4407, 4408, 4409, 4410, 4411, 4412, 4413, 4414, 4415, 4416, 4417, 4418, 4419, 4420, 4421, 4422, 4423, 4424, 4425, 4426, 4427, 4428, 4429, 4430, 4431, 4432, 4433, 4434, 4435, 4436, 4437, 4438, 4439]
+
+[[arms]]
+label = "segal"
+submission = "submissions/team_segal"
+
+[[arms]]
+label = "arena-I001"
+submission = "research/comparators/arena_I001"
+
+[[arms]]
+label = "arena-I044"
+submission = "research/comparators/arena_I044"
+
+[[arms]]
+label = "arena-I049"
+submission = "research/comparators/arena_I049"

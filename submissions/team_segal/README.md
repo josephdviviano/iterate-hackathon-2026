@@ -15,8 +15,8 @@ python -m benchmark.run --submission team_segal --n 40
 | Initialisation | Identity (dirac) init of every 3×3 conv; whitening weights from the eigen-decomposition of 2×2 patches of 5,000 training images, computed in `prepare` |
 | Data | Per-trial channel statistics; reflect-padded translation by up to 2 px; alternating flip (a fixed random flip per image, with all images flipped on odd epochs) |
 | Resolution | Bilinear (antialiased) downsampling to 20 px for the first half of training, then the native 32 px |
-| Optimiser | Nesterov SGD in airbench's decoupled parametrisation (lr 11.5 and wd 0.0153 per 1024 examples, momentum 0.85, BN-bias lr ×64), batch 1024, triangular schedule, lookahead, label smoothing 0.2; the whitening bias trains for 3 epochs, then leaves autograd (about 3% faster on the A100 PCIe, exact) |
-| Budget | 8.25 epochs (396 steps of 1024 images) |
+| Optimiser | Nesterov SGD in airbench's decoupled parametrisation (lr 11.5 and wd 0.0153 per 1024 examples, momentum 0.85, BN-bias lr ×16), batch 1024, triangular schedule, lookahead, label smoothing 0.2; the whitening bias trains for 3 epochs, then leaves autograd (about 3% faster on the A100 PCIe, exact) |
+| Budget | 8.0 epochs (384 steps of 1024 images) |
 | Execution | fp16 channels_last with fp32 BatchNorm; `torch.compile(mode="max-autotune", dynamic=False)` (Inductor autotuning and CUDA graphs, built in `build`) and fused SGD on CUDA |
 
 ## Phase boundaries and rule compliance

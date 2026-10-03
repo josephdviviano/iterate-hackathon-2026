@@ -1,0 +1,35 @@
+schema_version: '2.0'
+finding_id: F-044
+task_id: T-019
+result_kind: positive
+importance: blocking
+observation: 'M7a (Modal, NVIDIA A100 80GB PCIe 300 W, torch 2.4.0, 40 fresh random uint32 seeds, network
+  blocked): updated submission defaults (whitening-bias autograd off, BN-bias scaler 16, 8.0 epochs) reach
+  75.290% mean single-view accuracy (SD 0.256) at 5.640 s mean prepare+train (SD 0.029). M7b landed on
+  an A100-SXM4 (400 W): 75.332% at 5.255 s. T-015 measured 6.027 s for the previous defaults on a different
+  PCIe host.'
+interpretation: The updated submission qualifies on the official card with a margin of about 7 SE (P(40-seed
+  mean < 75%) negligible). Time is about 6% below the T-015 qualification, consistent with the paired
+  -3% of the whitening change and the 3% step cut; the cross-host comparison carries 1.5-9% host variance.
+decision_implication: The updated defaults are the current entry; any further adoption needs a fresh official-equivalent
+  run.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: the -6% versus T-015 crosses hosts; a same-host pair would pin it down
+  discriminating_test: paired old-vs-new defaults on one PCIe host
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: m7-official-equivalent.txt
+  locator: research/evidence/T-019/m7-official-equivalent.txt
+  sha256: 6ccc1b3489d24c7efc77e5f590908009dd6f658419e74f7d779c51f06c85530b
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Updated submission qualifies at 5.640 s on A100 PCIe.

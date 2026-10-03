@@ -1,0 +1,23 @@
+schema_version: '1.0'
+decision_id: D-010
+task_id: T-019
+question: Which accuracy lever and budget enter the submission after S37-S41?
+decision: Set bias_scaler 16 and epochs 8.0 (384 steps); keep everything else.
+rationale: Scaler 16 replicated in five sweeps (+0.24 to +0.40 pp) and holds control accuracy at 8.0 epochs
+  (75.26% vs 75.19%, 40 seeds), a 3% step cut with an unchanged qualification margin; 7.75 epochs is too
+  close to 75%.
+alternatives:
+- 7.75 epochs (75.10%, about 2.5 SE above the threshold; qualification risk too high)
+- WSD + balanced order on top (no added gain over scaler 16 in S39)
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s41-bias-epoch-ladder-table.csv
+  locator: research/evidence/T-019/s41-bias-epoch-ladder-table.csv
+  sha256: f2a571e1606573c4fb955769e896d3b9cd0bf4330fb4cf9a57a15271d35741f9
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: settled

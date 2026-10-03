@@ -23,6 +23,7 @@ LAB_EQUIVALENT = SMALL | {
     "scaling_factor": 1 / 6,
     "global_pool": "flatmax",
     "whiten_grad_off": True,
+    "bias_scaler": 16.0,
 }
 
 
@@ -45,7 +46,7 @@ def test_defaults_are_the_converged_recipe():
     from benchmark._submission.config import RecipeConfig
 
     config = RecipeConfig()
-    assert config.widths == (128, 384, 640) and config.epochs == 8.25
+    assert config.widths == (128, 384, 640) and config.epochs == 8.0 and config.bias_scaler == 16.0
     assert config.res_schedule == ((0.0, 20), (0.5, 32)) and config.translate == 2
     assert config.scaling_factor == pytest.approx(1 / 6)
     assert config.compile and config.fused_sgd and config.compile_mode == "max-autotune"

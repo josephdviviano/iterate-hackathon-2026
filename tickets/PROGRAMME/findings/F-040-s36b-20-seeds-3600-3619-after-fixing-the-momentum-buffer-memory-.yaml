@@ -1,0 +1,42 @@
+schema_version: '2.0'
+finding_id: F-040
+task_id: T-019
+result_kind: mixed
+importance: material
+observation: 'S36b (20 seeds 3600-3619, after fixing the momentum-buffer memory format; control 75.14%
+  at 5.34 s local): narrowing at the 20->32 px switch to 128/384/512 (Taylor saliency) 74.88% at 5.09
+  s; to 448: Taylor 74.59%, random 74.62%, weight norm 74.58% (4.95-5.18 s); to 128/320/512 74.55% at
+  4.70 s; training 128/384/768 in the 20 px phase then 640: 75.29% at 5.41 s. S36 narrow-throughout controls:
+  512 -0.40 pp at -7.2%, 448 -0.65 pp at -9.9%.'
+interpretation: 'Gradient saliency adds nothing: random channel selection matches Taylor and weight-norm
+  selection, so the transplant works by keeping width early, not by sniffing important channels. Narrowing
+  trades about 0.05-0.06 pp per 1% local time, at the exchange rate (about 0.054), so no net gain. The
+  reverse, extra width only in the cheap 20 px phase (768 then 640), gains +0.15 pp for about +1.4% local
+  time, which is favourable if the time holds on A100.'
+decision_implication: Reject saliency narrowing; carry wide-early (768 -> 640) as a candidate for paired
+  A100 timing and stacking with the BN-bias scaler.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: width matters in the expensive 32 px phase roughly in proportion to its cost, while early
+    width is cheap and transfers through the transplant
+  discriminating_test: random vs Taylor equality
+- kind: data_measurement
+  disposition: unresolved
+  rationale: local times are noisy (shared host); the wide-early cost needs same-host A100 timing
+  discriminating_test: paired Modal arm
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s36b-narrowing-table.csv
+  locator: research/evidence/T-019/s36b-narrowing-table.csv
+  sha256: 3600e38db7c76d5d8847c140c99537074e61b2e7c16de470f1d13d8026bcf0f0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

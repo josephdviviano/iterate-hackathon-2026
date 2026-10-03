@@ -1,0 +1,36 @@
+schema_version: '2.0'
+finding_id: F-039
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S37 (20 fresh seeds 3800-3819, current submission base with whitening-bias autograd off,
+  control 75.16%): BN-bias lr scaler 32 75.35% (+0.19), scaler 16 75.50% (+0.34); LSE pool tau 1.0/2.0
+  75.27/75.15% with +4.0/+1.6% local time; conv init gain 0.5 75.22% (+0.06); stack scaler 32 + pool 1.0
+  + gain 0.5 75.40% (+0.24). Per-arm SE about 0.05-0.07 pp.'
+interpretation: 'The BN-bias learning rate is too high in the converged recipe: across S31 and S37 accuracy
+  rises monotonically as the scaler falls (128: -0.28, 64: 0, 32: +0.19/+0.20, 16: +0.34), replicated
+  on fresh seeds. The LSE pool does not pay for its time and init gain is within noise.'
+decision_implication: Scan the scaler further down (16, 8, 4, 2), test switch-time scaling and the stack
+  with WSD + balanced order (S39); reject LSE pool and init gain; convert the best stack into an epoch
+  cut.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: unresolved
+  rationale: BN-bias gradients sum over all spatial positions, so their effective lr grows with resolution;
+    a lower scaler may mainly matter in the 32 px phase
+  discriminating_test: S39 switch-time scaler arms
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s37-s31-confirm-table.csv
+  locator: research/evidence/T-019/s37-s31-confirm-table.csv
+  sha256: 5e790e9961f9452402c08174b75e24b75a5d10807d4a13654fc04c5fa6c16bed
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

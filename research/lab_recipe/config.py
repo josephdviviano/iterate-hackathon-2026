@@ -149,6 +149,8 @@ class RecipeConfig:
     # Agent round 2 (budget reallocation).
     stage1_cooldown: tuple[float, float] | None = None
     bias_scaler_final: float | None = None
+    # Teammates' hypothesis-branch block: activation after the residual add.
+    post_add_activation: bool = False
 
     def _validate_narrowing(self) -> None:
         widths = self.switch_widths
