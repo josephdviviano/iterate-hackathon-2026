@@ -17,7 +17,7 @@ from benchmark.api import BuildContext, TrainingData
 HYP = {
     "widths": (128, 384, 576),
     "depth": 3,  # convs per group; depth 3 adds a residual around conv2/conv3
-    "epochs": 6.5,
+    "epochs": 6.75,
     "batch_size": 1024,
     "lr": 9.0,
     "momentum": 0.85,
@@ -30,6 +30,8 @@ HYP = {
     "scale": 1 / 9,
     "lookahead": True,
     "compile": True,
+    "lowres_epochs": 1.5,  # first epochs train on whole images downsampled to lowres_size
+    "lowres_size": 24,
     "muon_lr": 0.16,
     "muon_momentum": 0.8,
     "ns_steps": 3,
@@ -265,14 +267,19 @@ def build(context: BuildContext):
     y = torch.randint(0, context.num_classes, (bs,), device=device)
     model.train()
     opt = make_optimizer(model, hyp, 10)
-    for bias_grad in (True, False):
-        model.whiten_bias_grad = bias_grad
-        for _ in range(3):
-            train_step(state, opt, x, y)
+    for xs in (downsample(x, hyp["lowres_size"]), x):
+        for bias_grad in (True, False):
+            model.whiten_bias_grad = bias_grad
+            for _ in range(3):
+                train_step(state, opt, xs, y)
     model.whiten_bias_grad = True
     if device.type == "cuda":
         torch.cuda.synchronize()
     return state
+
+
+def downsample(x, size):
+    return F.interpolate(x, size=(size, size), mode="bilinear", antialias=True).contiguous(memory_format=torch.channels_last)
 
 
 def train_step(state, optimizer, x, y):
@@ -323,6 +330,7 @@ def train(state) -> nn.Module:
     n = len(state.labels)
     r = hyp["translate"]
     alpha = ((0.97**5) * (torch.arange(total + 1) / total) ** 3).tolist()
+    lowres_steps = int((n // bs) * hyp["lowres_epochs"])
     step = 0
     epoch = 0
     while step < total:
@@ -340,7 +348,10 @@ def train(state) -> nn.Module:
                 g["lr"] = g["base_lr"] * f if (gi != 0 or whiten_on) else 0.0
             for g in optimizer[1].param_groups:
                 g["lr"] = g["base_lr"] * f
-            train_step(state, optimizer, imgs[i * bs : (i + 1) * bs], labels[i * bs : (i + 1) * bs])
+            xb = imgs[i * bs : (i + 1) * bs]
+            if step < lowres_steps:
+                xb = downsample(xb, hyp["lowres_size"])
+            train_step(state, optimizer, xb, labels[i * bs : (i + 1) * bs])
             step += 1
             if state.lookahead is not None and step % 5 == 0:
                 state.lookahead.update(model, decay=alpha[step])
