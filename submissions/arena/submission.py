@@ -324,6 +324,10 @@ def build(context: BuildContext):
         tail_ema=[p.detach().clone() for p in net.parameters()],
         muon_update=update,
     )
+    if cuda:  # staging buffers for the per-trial upload (no data; reused memory only)
+        shape = (50_000, 3, 32, 32)
+        state.pinned = torch.empty(shape, dtype=torch.uint8, pin_memory=True)
+        state.gpu_raw = torch.empty(shape, dtype=torch.uint8, device=device)
 
     # Untimed warmup on random synthetic images: compiles both whitening-bias graphs,
     # autotunes cuDNN, initializes cuBLAS/cuSOLVER, and warms evaluation shapes.
@@ -355,7 +359,15 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     net.reset()
     net.train()
 
-    raw = data.images.to(device, non_blocking=True).to(state.dtype)  # 0..255, exact in fp16
+    if device.type == "cuda":  # upload through a pinned staging buffer preallocated in build
+        if state.pinned.shape != data.images.shape:
+            state.pinned = torch.empty(data.images.shape, dtype=torch.uint8, pin_memory=True)
+            state.gpu_raw = torch.empty(data.images.shape, dtype=torch.uint8, device=device)
+        state.pinned.copy_(data.images)
+        state.gpu_raw.copy_(state.pinned, non_blocking=True)
+        raw = state.gpu_raw.to(state.dtype)  # 0..255, exact in fp16
+    else:
+        raw = data.images.to(state.dtype)
     var, mean = torch.var_mean(raw, dim=(0, 2, 3), keepdim=True)
     mean, std = mean.float(), var.float().sqrt()
     state.classifier.mean.copy_(mean / 255)
