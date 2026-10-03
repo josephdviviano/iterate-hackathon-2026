@@ -25,7 +25,7 @@ HYP = {
     "whiten_bias_epochs": 2,  # afterwards the whitening output is detached
     "translate": 2,
     "widths": (128, 384, 576),
-    "convs_per_group": (2, 3, 3),
+    "convs_per_group": (2, 2, 3),
     "bn_momentum": 0.6,
     "scaling_factor": 2 / 9,
     "compile": True,
