@@ -15,6 +15,11 @@ import json
 import math
 import os
 import random
+import select
+import shutil
+import subprocess
+import sys
+import tempfile
 import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -78,7 +83,60 @@ def start(env, level: int):
     return frame, frame.frame[-1].tolist()
 
 
+_STEP_RUNNER = r'''
+import sys, json, importlib.util, copy, traceback
+sys.setrecursionlimit(10000)
+spec = importlib.util.spec_from_file_location("program", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+try:
+    spec.loader.exec_module(mod)
+except Exception:
+    sys.exit(0)
+for line in sys.stdin:
+    r = json.loads(line)
+    try:
+        pred = json.loads(json.dumps(mod.transition_function(copy.deepcopy(r["before"]), r["action"])))
+        print(json.dumps({"pred": pred}), flush=True)
+    except Exception:
+        print(json.dumps({"error": traceback.format_exc()[-400:]}), flush=True)
+'''
+
+
+class MemberProcess:
+    """One long-lived process per member, so a program keeps hidden state along the trajectory as it
+    does under verify.run_program. Every call gets the observed before state (teacher forcing)."""
+
+    def __init__(self, source: str, timeout_s: float = 30):
+        self.dir = Path(tempfile.mkdtemp(prefix="live_member_"))
+        (self.dir / "program.py").write_text(source)
+        (self.dir / "run.py").write_text(_STEP_RUNNER)
+        self.timeout_s = timeout_s
+        self.proc = subprocess.Popen([sys.executable, "-I", "run.py", "program.py"], cwd=self.dir,
+                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+
+    def step(self, before: list[dict], action) -> list[dict] | None:
+        if self.proc.poll() is not None:
+            return None
+        try:
+            self.proc.stdin.write(json.dumps({"before": before, "action": action}) + "\n")
+            self.proc.stdin.flush()
+        except (BrokenPipeError, ValueError):
+            return None
+        ready, _, _ = select.select([self.proc.stdout], [], [], self.timeout_s)
+        if not ready:
+            self.proc.kill()
+            return None
+        line = self.proc.stdout.readline()
+        return json.loads(line).get("pred") if line else None
+
+    def close(self) -> None:
+        self.proc.kill()
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+
 def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0, verbose: bool = True) -> dict:
+    """Candidate actions are scored by stateless what-if predictions; the chosen action is scored by
+    each member's persistent process, which sees the trajectory in order."""
     from arcengine import GameAction, GameState
 
     env = open_game(game)
@@ -92,6 +150,7 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
     levels_done = frame.levels_completed
     log: list[dict] = []
     t0 = time.time()
+    procs = [MemberProcess(m.source) for m in members]
     with ThreadPoolExecutor(max_workers=len(members)) as pool:
         for t in range(steps):
             actions = [a for a in frame.available_actions if a not in (0, CLICK)]
@@ -112,13 +171,14 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
             j = rng.choice(choices)
             action = actions[j]
             tried.add((here, action))
+            scored = [p.step(state, action) for p in procs]
             frame = env.step(GameAction[f"ACTION{action}"])
             new_state = run_extractor(engine_src, [frame.frame[-1].tolist()])[0]
             advanced = frame.levels_completed > levels_done or frame.full_reset
             levels_done = frame.levels_completed
             truth = _key(new_state)
             seen.add(truth)
-            keys = [_key(p[j]) for p in preds]
+            keys = [_key(p) for p in scored]
             vote = Counter(keys).most_common(1)[0][0]
             correct = [k == truth for k in keys]
             if not advanced:
@@ -134,6 +194,8 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
             state = new_state
             if frame.state in (GameState.WIN, GameState.GAME_OVER):
                 break
+    for p in procs:
+        p.close()
     scored = [r for r in log if not r["level_advance"]]
     errors = [not r["vote_correct"] for r in scored]
     unanimous = [r for r in scored if r["n_distinct"] == 1]
