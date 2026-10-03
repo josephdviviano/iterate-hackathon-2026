@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Qwen3.8 NLA Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+<style>
+/* Layout: an instrument bench. Left = the specimen (conversation set as a serif document),
+   right = the readout (what the probe at layer 42 says). Cool neutral ground, one ultramarine
+   accent for "explained", amber highlighter for "under inspection". */
+:root {
+  --ground: #f3f4f6;  --surface: #ffffff;  --sunken: #eceef2;
+  --ink: #14171d;     --ink-2: #4b5262;    --ink-3: #868d9c;
+  --rule: #e1e4ea;    --rule-2: #cfd4dd;
+  --accent: #2f45cf;  --accent-ink: #ffffff; --accent-soft: #e5e8fb; --accent-line: #8b97e6;
+  --hl: #ffe27a;      --hl-line: #d6a600;  --hl-ink: #2a2100;
+  --ok: #1d7a4c;      --bad: #b23b2a;
+  --shadow: 0 1px 0 rgba(20,23,29,.03), 0 8px 24px -12px rgba(20,23,29,.14);
+  --f-doc: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0e1014; --surface: #15181e; --sunken: #1b1f27;
+    --ink: #e6e8ee; --ink-2: #a8afbd; --ink-3: #6f7686;
+    --rule: #242833; --rule-2: #313643;
+    --accent: #8e9cff; --accent-ink: #0b0e1f; --accent-soft: #1e2440; --accent-line: #5563c4;
+    --hl: #5e4c10; --hl-line: #d6a600; --hl-ink: #fff4cc;
+    --ok: #5cc28b; --bad: #f08a78; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0e1014; --surface: #15181e; --sunken: #1b1f27;
+  --ink: #e6e8ee; --ink-2: #a8afbd; --ink-3: #6f7686;
+  --rule: #242833; --rule-2: #313643;
+  --accent: #8e9cff; --accent-ink: #0b0e1f; --accent-soft: #1e2440; --accent-line: #5563c4;
+  --hl: #5e4c10; --hl-line: #d6a600; --hl-ink: #fff4cc;
+  --ok: #5cc28b; --bad: #f08a78; --shadow: none; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--ground); color: var(--ink); font: 14px/1.5 var(--f-ui); -webkit-font-smoothing: antialiased; }
+button, select, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.label { font: 500 10.5px/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.data { font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+
+/* ---------- top bar ---------- */
+header { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-bottom: 1px solid var(--rule); background: var(--surface); min-width: 0; }
+.brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.brand h1 { margin: 0; font: 600 16px/1 var(--f-doc); letter-spacing: -.01em; white-space: nowrap; }
+.brand .model { font: 400 12px/1 var(--f-data); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+header .grow { flex: 1; }
+.status { display: inline-flex; align-items: center; gap: 8px; font: 12px/1 var(--f-ui); color: var(--ink-2); white-space: nowrap; }
+.led { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink-3) 18%, transparent); }
+.led.ok { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 20%, transparent); }
+.led.busy { background: var(--hl-line); box-shadow: 0 0 0 3px color-mix(in srgb, var(--hl-line) 22%, transparent); animation: blink 1.1s ease-in-out infinite; }
+.led.bad { background: var(--bad); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 20%, transparent); }
+@keyframes blink { 50% { opacity: .35; } }
+.ckpt { display: inline-flex; align-items: center; gap: 8px; }
+.seg { display: inline-flex; padding: 2px; border-radius: 7px; background: var(--sunken); border: 1px solid var(--rule); }
+.seg button { border: 0; background: none; padding: 4px 10px; font: 500 12px/1.2 var(--f-ui); color: var(--ink-2); border-radius: 5px; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.seg button:hover:not(.on) { color: var(--ink); }
+.btn { border: 1px solid var(--rule-2); background: var(--surface); border-radius: 7px; padding: 6px 12px; font: 500 12.5px/1.2 var(--f-ui); color: var(--ink); }
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.quiet { border-color: transparent; background: none; color: var(--ink-2); padding: 4px 8px; }
+.btn.quiet:hover { color: var(--ink); background: var(--sunken); }
+.btn.update { border-color: var(--accent-line); color: var(--accent); background: var(--accent-soft); }
+.icon { width: 32px; height: 32px; display: inline-grid; place-items: center; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); color: var(--ink-2); padding: 0; }
+.icon:hover { color: var(--ink); border-color: var(--rule-2); }
+.icon svg { width: 16px; height: 16px; }
+
+/* ---------- specimen (left) ---------- */
+main { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.legend { display: flex; align-items: center; gap: 22px; padding: 10px 28px; border-bottom: 1px solid var(--rule); font-size: 12.5px; color: var(--ink-2); flex-wrap: wrap; }
+.legend .k { display: inline-flex; align-items: center; gap: 8px; }
+.legend .sw { font: 14px/1 var(--f-doc); padding: 1px 4px; border-radius: 3px; color: var(--ink); }
+.legend .sw.ex { background-image: linear-gradient(var(--accent), var(--accent)); background-size: 100% 2px; background-position: 0 100%; background-repeat: no-repeat; }
+.legend .sw.sel { background: var(--hl); color: var(--hl-ink); }
+.legend .search { margin-left: auto; position: relative; }
+.legend .search input { width: 230px; padding: 6px 10px 6px 30px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); font-size: 12.5px; }
+.legend .search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--ink-3); }
+#scroll { flex: 1; overflow-y: auto; padding: 28px; scroll-behavior: smooth; }
+.thread { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 26px; }
+
+.turn { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; }
+.turn .who { padding-top: 6px; text-align: right; }
+.turn .who .label { display: block; }
+.turn .who .n { font: 11px/1 var(--f-data); color: var(--ink-3); margin-top: 6px; display: block; }
+.turn .tools { display: flex; gap: 2px; margin-top: 6px; margin-left: -8px; opacity: 0; transition: opacity .15s; }
+.turn:hover .tools, .turn:focus-within .tools { opacity: 1; }
+.doc { font: 17px/1.75 var(--f-doc); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.turn.user .doc { color: var(--ink-2); }
+.turn.user .who .label { color: var(--ink-2); }
+.turn.assistant .who .label { color: var(--accent); }
+.turn.raw .doc { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 22px; box-shadow: var(--shadow); }
+.turn.system .doc { font-size: 15px; color: var(--ink-3); font-style: italic; }
+.rule { height: 1px; background: var(--rule); margin-left: 90px; }
+
+.tok { border-radius: 2px; cursor: pointer; }
+.tok:hover { background: var(--accent-soft); }
+.tok.ex { background-image: linear-gradient(var(--accent-line), var(--accent-line)); background-size: 100% 2px; background-position: 0 92%; background-repeat: no-repeat; }
+.tok.ex.good { background-image: linear-gradient(var(--accent), var(--accent)); }
+.tok.pending { background-image: linear-gradient(90deg, transparent 0, var(--accent) 50%, transparent 100%); background-size: 200% 2px; background-position: 0 92%; background-repeat: no-repeat; animation: scan 1s linear infinite; }
+@keyframes scan { from { background-position: 100% 92%; } to { background-position: -100% 92%; } }
+.tok.sel { background-color: var(--hl); color: var(--hl-ink); box-shadow: 0 0 0 1px var(--hl-line); }
+.tok.dim { opacity: .28; }
+.tok.special { font: 11.5px/1 var(--f-data); color: var(--ink-3); background-color: var(--sunken); padding: 1px 4px; border-radius: 3px; vertical-align: 1px; }
+.tok.special.sel { background-color: var(--hl); color: var(--hl-ink); }
+.hide-special .tok.special, .hide-special .tok.sp-nl { display: none; }
+.nl { color: var(--ink-3); font: 11px/1 var(--f-data); opacity: .7; }
+.streaming .cursor { display: inline-block; width: 8px; height: 1.05em; background: var(--accent); vertical-align: -2px; margin-left: 1px; animation: blink .9s steps(2) infinite; }
+
+/* empty state */
+.intro { max-width: 620px; margin: 6vh auto 0; }
+.intro h2 { font: 600 30px/1.15 var(--f-doc); letter-spacing: -.02em; margin: 0 0 12px; text-wrap: balance; }
+.intro p { color: var(--ink-2); font-size: 15px; line-height: 1.6; margin: 0 0 8px; max-width: 60ch; }
+.pipeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 26px 0; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.pipeline > div { padding: 14px 16px; border-right: 1px solid var(--rule); }
+.pipeline > div:last-child { border-right: 0; }
+.pipeline .step { font: 500 11px/1 var(--f-data); color: var(--accent); margin-bottom: 8px; }
+.pipeline b { display: block; font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+.pipeline span { color: var(--ink-2); font-size: 12.5px; line-height: 1.45; display: block; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.preset { border: 1px solid var(--rule-2); background: var(--surface); border-radius: 8px; padding: 8px 12px; text-align: left; max-width: 220px; }
+.preset:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+.preset b { display: block; font-size: 12.5px; font-weight: 600; }
+.preset span { display: block; font: 13px/1.35 var(--f-doc); color: var(--ink-2); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* composer */
+.composer { padding: 0 28px 20px; }
+.composer .inner { max-width: 760px; margin: 0 auto; }
+.box { background: var(--surface); border: 1px solid var(--rule-2); border-radius: 12px; box-shadow: var(--shadow); transition: border-color .15s; }
+.box:focus-within { border-color: var(--accent-line); }
+.box textarea { display: block; width: 100%; border: 0; background: none; resize: none; padding: 14px 16px 4px; font: 16px/1.5 var(--f-doc); outline: none; min-height: 54px; max-height: 38vh; }
+.box textarea::placeholder { color: var(--ink-3); }
+.controls { display: flex; align-items: flex-end; gap: 14px; padding: 8px 10px 10px 12px; flex-wrap: wrap; }
+.ctl { display: flex; flex-direction: column; gap: 5px; }
+.controls .grow { flex: 1; }
+.send { width: 38px; height: 38px; border-radius: 10px; border: 0; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.send:disabled { opacity: .35; cursor: default; }
+.send svg { width: 17px; height: 17px; }
+.drawer { display: none; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px 16px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+.drawer.open { display: grid; }
+.drawer .ctl input { width: 100%; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--ground); font: 13px var(--f-data); }
+.drawer .wide { grid-column: 1 / -1; }
+.hint { font-size: 11.5px; color: var(--ink-3); text-align: center; margin-top: 8px; }
+kbd { font: 10.5px var(--f-data); border: 1px solid var(--rule-2); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--surface); }
+
+/* ---------- readout (right) ---------- */
+aside { border-left: 1px solid var(--rule); background: var(--surface); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+aside .head { padding: 14px 20px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; gap: 10px; }
+aside .head .label { flex: 1; color: var(--ink-2); }
+#panel { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+#panel > * { flex-shrink: 0; }
+aside .foot { padding: 10px 20px; border-top: 1px solid var(--rule); font-size: 11.5px; color: var(--ink-3); line-height: 1.45; }
+
+.probe { display: flex; flex-direction: column; gap: 10px; }
+.probe-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.chip { font: 500 20px/1.2 var(--f-data); padding: 4px 10px; border-radius: 6px; background: var(--hl); color: var(--hl-ink); box-shadow: 0 0 0 1px var(--hl-line); white-space: pre; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.coords { text-align: right; font: 11px/1.6 var(--f-data); color: var(--ink-3); white-space: nowrap; }
+.ctx { font: 14px/1.6 var(--f-doc); color: var(--ink-3); overflow-wrap: anywhere; }
+.ctx mark { background: var(--hl); color: var(--hl-ink); border-radius: 2px; padding: 0 2px; }
+.ctx .after { opacity: .55; }
+.layers { display: flex; flex-direction: column; gap: 5px; }
+.strip { display: grid; grid-template-columns: repeat(64, 1fr); gap: 1.5px; height: 12px; }
+.strip i { background: var(--rule); border-radius: 1px; }
+.strip i.read { background: var(--accent); }
+.strip i.inj { background: var(--ink-3); }
+.strip-l { display: flex; justify-content: space-between; font: 10.5px/1 var(--f-data); color: var(--ink-3); }
+
+.expl { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); overflow: hidden; }
+.expl-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--rule); background: var(--ground); }
+.expl-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.claim { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; font-size: 14px; line-height: 1.6; }
+.claim .n { font: 500 11px/1.6 var(--f-data); color: var(--accent); padding-top: 2px; }
+.claim mark { background: none; color: var(--accent); font-weight: 600; }
+.thinking { font: 12.5px/1.5 var(--f-data); color: var(--ink-3); display: flex; align-items: center; gap: 8px; }
+.score { display: inline-flex; align-items: center; gap: 8px; font: 11.5px/1 var(--f-data); color: var(--ink-2); }
+.meter { width: 64px; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.raw { font: 11.5px/1.5 var(--f-data); color: var(--bad); white-space: pre-wrap; overflow-wrap: anywhere; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sec { display: flex; flex-direction: column; gap: 8px; }
+.preds { display: grid; grid-template-columns: minmax(0, auto) minmax(40px, 1fr) 46px; gap: 5px 10px; align-items: center; }
+.preds .t { font: 12.5px/1.4 var(--f-data); background: var(--sunken); border-radius: 4px; padding: 1px 6px; white-space: pre; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.preds .b { height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
+.preds .b i { display: block; height: 100%; background: var(--ink-3); border-radius: 3px; }
+.preds .v { font: 11px/1 var(--f-data); color: var(--ink-3); text-align: right; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 12.5px; }
+.facts dt { color: var(--ink-3); }
+.facts dd { margin: 0; font-family: var(--f-data); color: var(--ink-2); }
+
+.onboard { display: flex; flex-direction: column; gap: 16px; color: var(--ink-2); font-size: 13.5px; line-height: 1.6; }
+.onboard h3 { font: 600 19px/1.3 var(--f-doc); color: var(--ink); margin: 0; text-wrap: balance; }
+.onboard ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+
+.multi { display: flex; flex-direction: column; gap: 8px; }
+.mrow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); text-align: left; width: 100%; }
+.mrow:hover { border-color: var(--accent-line); }
+.mrow .chip { font-size: 12.5px; padding: 1px 6px; }
+.mrow .txt { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.spin { width: 12px; height: 12px; border: 2px solid var(--rule-2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translate(-50%, 10px); background: var(--ink); color: var(--ground); padding: 9px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 20; max-width: calc(100vw - 32px); }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.keygate { max-width: 420px; margin: 12vh auto 0; display: flex; flex-direction: column; gap: 12px; }
+.keygate input { padding: 9px 12px; border: 1px solid var(--rule-2); border-radius: 8px; background: var(--surface); font-family: var(--f-data); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+@media (max-width: 960px) {
+  html, body { height: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; height: auto; }
+  main { height: 78vh; height: 78dvh; }
+  aside { border-left: 0; border-top: 1px solid var(--rule); min-height: 60vh; }
+  #panel { overflow: visible; }
+  .controls { gap: 10px; }
+  .brand .model, .legend .k { display: none; }
+  .legend .search { margin-left: 0; width: 100%; } .legend .search input { width: 100%; }
+  #scroll, .composer, .legend { padding-left: 16px; padding-right: 16px; }
+  .turn { grid-template-columns: minmax(0, 1fr); gap: 4px; } .turn .who { text-align: left; padding: 0; } .turn .who .n { display: none; }
+  .rule { margin-left: 0; }
+  .pipeline { grid-template-columns: minmax(0, 1fr); } .pipeline > div { border-right: 0; border-bottom: 1px solid var(--rule); }
+  header { padding-left: 16px; padding-right: 16px; gap: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><h1>NLA Explorer</h1><span class="model">Qwen/Qwen3.8-27B · resid L42</span></div>
+    <span class="grow"></span>
+    <span class="status" id="status"><span class="led"></span><span>Connecting</span></span>
+    <span class="ckpt"><span class="seg" id="stageSeg" title="Which NLA checkpoint to read with"></span></span>
+    <button class="btn update" id="reloadBtn" hidden>New checkpoint · load</button>
+    <button class="icon" id="themeBtn" title="Switch light / dark" aria-label="Switch theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+  </header>
+
+  <main>
+    <div class="legend">
+      <span class="k"><span class="sw ex">token</span> explained</span>
+      <span class="k"><span class="sw sel">token</span> inspecting</span>
+      <span class="k">Click any token to explain it · <kbd>shift</kbd>-click selects a range</span>
+      <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="search" placeholder="Search explanations"></label>
+    </div>
+    <div id="scroll"><div class="thread" id="thread"></div></div>
+    <div class="composer"><div class="inner">
+      <div class="drawer" id="drawer">
+        <div class="ctl"><label class="label" for="sTemp">Chat temperature</label><input id="sTemp" type="number" step="0.1" min="0" max="2" value="0.7"></div>
+        <div class="ctl"><label class="label" for="sMax">Max reply tokens</label><input id="sMax" type="number" step="64" min="16" max="4096" value="512"></div>
+        <div class="ctl"><label class="label" for="sETemp">Explain temperature</label><input id="sETemp" type="number" step="0.1" min="0" max="2" value="0"></div>
+        <div class="ctl"><label class="label" for="sN">Samples (batch)</label><input id="sN" type="number" min="1" max="8" value="1"></div>
+        <div class="ctl"><label class="label" for="sAutoN">Auto: last N tokens</label><input id="sAutoN" type="number" min="1" max="32" value="8"></div>
+        <div class="ctl wide"><label class="label" for="sSys">System prompt (new chats)</label><input id="sSys" placeholder="none — Qwen3.8 adds no default system prompt"></div>
+      </div>
+      <div class="box">
+        <textarea id="input" rows="2" placeholder="Message Qwen3.8-27B"></textarea>
+        <div class="controls">
+          <button class="icon" id="clearBtn" title="New conversation" aria-label="New conversation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+          <button class="icon" id="settingsBtn" title="Generation settings" aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+          <div class="ctl"><span class="label">Input</span><div class="seg" id="modeSeg"><button data-v="chat" class="on">Chat</button><button data-v="raw">Raw text</button></div></div>
+          <div class="ctl"><span class="label">Explain</span><div class="seg" id="autoSeg"><button data-v="manual" class="on">On click</button><button data-v="auto">Auto</button></div></div>
+          <div class="ctl"><span class="label">Special tokens</span><div class="seg" id="specSeg"><button data-v="show" class="on">Show</button><button data-v="hide">Hide</button></div></div>
+          <div class="ctl" id="thinkCtl"><span class="label">Thinking</span><div class="seg" id="thinkSeg"><button data-v="off" class="on">Off</button><button data-v="on">On</button></div></div>
+          <span class="grow"></span>
+          <button class="send" id="sendBtn" title="Send" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+      <div class="hint"><kbd>Enter</kbd> to send · <kbd>shift</kbd>+<kbd>Enter</kbd> for a new line</div>
+    </div></div>
+  </main>
+
+  <aside>
+    <div class="head"><span class="label">Activation verbalizer readout</span><span id="panelSha" class="data" style="font-size:11px;color:var(--ink-3)"></span></div>
+    <div id="panel"></div>
+    <div class="foot">Explanations are generated by a model and can be wrong. <b>Recon</b> is the cosine between the reconstructor's rebuild of the explanation and the real activation: higher means the text carries more of what was there.</div>
+  </aside>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const qs = new URLSearchParams(location.search);
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+if (qs.get("key")) { store("nla_key", qs.get("key")); history.replaceState(null, "", location.pathname); }
+let KEY = store("nla_key") || "";
+const theme = store("nla_theme"); if (theme) document.documentElement.dataset.theme = theme;
+const LAYER = 42, NLAYERS = 64;
+
+const S = {
+  mode: "chat", auto: false, think: false, stage: null, stages: [], sha: null,
+  messages: [], tokens: [], rawText: "",
+  expl: {},            // position -> {meta, samples[], stage, live?: string}
+  pending: new Set(),
+  sel: [], anchor: null, busy: false, streaming: null, authFailed: false,
+};
+
+const PRESETS = {
+  chat: [
+    ["Einstein", "Who was Albert Einstein? Answer in two sentences."],
+    ["Charizard", "What type is Charizard, and what does it evolve from?"],
+    ["Mount Everest", "How tall is Mount Everest, and who first climbed it?"],
+    ["The heart", "Explain how the human heart pumps blood, in three short sentences."],
+    ["A secret", "My secret number is 7341. Don't repeat it. Now, what's the capital of Peru?"],
+    ["Rhyme", "Write a four-line poem about a lighthouse."],
+  ],
+  raw: [
+    ["Recipe", "Preheat the oven to 350°F. In a large bowl, whisk together the flour, baking soda and"],
+    ["Python", "def fibonacci(n):\n    if n < 2:\n        return n\n    return fibonacci(n - 1) +"],
+    ["News lede", "WASHINGTON — The Senate voted 52-48 on Tuesday to confirm the nominee, ending a months-long"],
+    ["Nursery rhyme", "Roses are red,\nviolets are blue,\nsugar is sweet,\nand so are"],
+    ["Legal", "IN WITNESS WHEREOF, the parties hereto have executed this Agreement as of the date first"],
+  ],
+};
+
+// ---------- api ----------
+async function api(path, body) {
+  const r = await fetch(path, { method: body ? "POST" : "GET",
+    headers: { "content-type": "application/json", "x-demo-key": KEY }, body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 401) { S.authFailed = true; render(); throw new Error("Access key missing or wrong."); }
+  if (!r.ok) throw new Error(((await r.text()) || r.statusText).slice(0, 300));
+  return r;
+}
+async function* sse(r) {
+  const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
+  while (true) {
+    const { value, done } = await reader.read(); if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let k; while ((k = buf.indexOf("\n\n")) >= 0) {
+      const line = buf.slice(0, k); buf = buf.slice(k + 2);
+      if (line.startsWith("data: ")) { const ev = JSON.parse(line.slice(6)); if (ev.error) throw new Error(ev.error); yield ev; }
+    }
+  }
+}
+function setStatus(kind, text) { $("#status").innerHTML = `<span class="led ${kind}"></span><span>${esc(text)}</span>`; }
+function ready() { setStatus("ok", `Ready · ${(S.stage || "").toUpperCase()} checkpoint`); }
+function toast(t) { const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove("on"), 3200); }
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function vis(t) { return t.replace(/\n/g, "↵").replace(/\t/g, "⇥") || "∅"; }
+
+let coldTimer = null;
+async function refreshStatus() {
+  const t0 = Date.now();
+  coldTimer = setTimeout(() => setStatus("busy", "Starting GPU · about 2 min"), 2500);
+  try {
+    const s = await (await api("/api/status")).json();
+    S.stages = s.stages; S.sha = s.sha;
+    if (!S.stage || !s.stages.includes(S.stage)) S.stage = s.stages[0];
+    $("#stageSeg").innerHTML = s.stages.map(x => `<button data-v="${x}" class="${x === S.stage ? "on" : ""}" title="${x === "rl" ? "After GRPO training" : "Supervised warm-start"}">${x.toUpperCase()}</button>`).join("");
+    $("#panelSha").textContent = "@" + s.sha.slice(0, 7);
+    $("#reloadBtn").hidden = !(s.latest && s.latest !== s.sha);
+    if (!S.busy) ready();
+  } catch (e) {
+    if (S.authFailed) setStatus("bad", "Needs access key");
+    else { setStatus("busy", "Starting GPU · about 2 min"); setTimeout(refreshStatus, 6000); }
+  } finally { clearTimeout(coldTimer); }
+}
+$("#stageSeg").onclick = e => { const v = e.target.dataset?.v; if (!v || v === S.stage) return;
+  S.stage = v; [...$("#stageSeg").children].forEach(b => b.classList.toggle("on", b.dataset.v === v));
+  S.expl = {}; render(); renderPanel(); ready(); toast(`Reading with the ${v.toUpperCase()} checkpoint`); };
+$("#reloadBtn").onclick = async () => {
+  setStatus("busy", "Loading new checkpoint");
+  try { const r = await (await api("/api/reload", {})).json(); toast(r.changed ? `Loaded checkpoint @${r.sha.slice(0, 7)}` : "Already on the latest checkpoint"); S.expl = {}; S.stage = null; render(); renderPanel(); }
+  catch (e) { toast("Couldn't load the checkpoint: " + e.message); }
+  refreshStatus();
+};
+
+// ---------- controls ----------
+function bindSeg(id, fn) { $(id).onclick = e => { const v = e.target.dataset?.v; if (!v) return;
+  [...$(id).children].forEach(b => b.classList.toggle("on", b.dataset.v === v)); fn(v); }; }
+bindSeg("#modeSeg", v => { S.mode = v; clearAll(); $("#thinkCtl").hidden = v !== "chat";
+  $("#input").placeholder = v === "chat" ? "Message Qwen3.8-27B" : "Paste any text. Every token becomes clickable."; });
+bindSeg("#autoSeg", v => { S.auto = v === "auto"; });
+bindSeg("#specSeg", v => document.body.classList.toggle("hide-special", v === "hide"));
+bindSeg("#thinkSeg", v => { S.think = v === "on"; });
+$("#settingsBtn").onclick = () => $("#drawer").classList.toggle("open");
+$("#clearBtn").onclick = clearAll;
+$("#themeBtn").onclick = () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = next; store("nla_theme", next);
+};
+$("#search").oninput = render;
+function clearAll() { if (S.busy) return; S.messages = []; S.tokens = []; S.expl = {}; S.sel = []; S.rawText = ""; S.streaming = null; render(); renderPanel(); }
+
+// ---------- token layout ----------
+function segments(tokens) {
+  if (S.mode === "raw") return tokens.length ? [{ role: "raw", start: 0, end: tokens.length }] : [];
+  const segs = []; let cur = null;
+  tokens.forEach((t, i) => {
+    if (t.text === "<|im_start|>") { cur = { role: null, start: i, end: i + 1 }; segs.push(cur); return; }
+    if (!cur) { cur = { role: "system", start: i, end: i + 1 }; segs.push(cur); return; }
+    if (cur.role === null && !t.special) cur.role = t.text.trim() || null;
+    cur.end = i + 1;
+  });
+  return segs.map(s => ({ ...s, role: s.role || "assistant" }));
+}
+const goodCos = c => c != null && c >= 0.8;
+function tokenHTML(t, i, matchSet, prev) {
+  const cls = ["tok"];
+  const e = S.expl[i];
+  // the "user"/"assistant" role word and its newline belong to the chat template: style them like specials
+  const roleTok = prev && prev.text === "<|im_start|>";
+  const roleNl = prev && (prev._role || prev.special) && /^\s+$/.test(t.text);
+  if (t.special || roleTok) cls.push("special");
+  if (roleNl) cls.push("sp-nl", "special");
+  if (e && e.samples.length) { cls.push("ex"); if (goodCos(e.samples[0].recon_cos)) cls.push("good"); }
+  if (S.pending.has(i)) cls.push("pending");
+  if (S.sel.includes(i)) cls.push("sel");
+  if (matchSet && !matchSet.has(i)) cls.push("dim");
+  t._role = roleTok;
+  let txt;
+  if (t.special || roleTok) txt = esc(t.text.replace(/\n/g, "↵"));
+  else if (t.text === "") txt = "∅";
+  else txt = esc(t.text).replace(/\n/g, '<span class="nl">↵</span>\n');
+  const title = `#${i} · id ${t.id}${e?.samples[0]?.recon_cos != null ? ` · recon ${e.samples[0].recon_cos.toFixed(2)}` : ""}`;
+  return `<span class="${cls.join(" ")}" data-i="${i}" title="${title}">${txt}</span>`;
+}
+
+function introHTML() {
+  if (S.authFailed) return `<div class="keygate"><h2 style="font:600 24px/1.2 var(--f-doc);margin:0">Access key needed</h2>
+    <p style="color:var(--ink-2);margin:0">This demo runs on a private GPU. Paste the key from <span class="data">demo/.demo_key</span>.</p>
+    <input id="keyIn" placeholder="access key" autocomplete="off"><button class="btn primary" id="keyBtn">Unlock</button></div>`;
+  const list = PRESETS[S.mode];
+  const chat = S.mode === "chat";
+  return `<div class="intro"><div class="label" style="color:var(--accent);margin-bottom:10px">Natural language autoencoder · layer ${LAYER} of ${NLAYERS}</div>
+    <h2>${chat ? "Talk to Qwen3.8, then read what it was representing" : "Read what Qwen3.8 represents at any token of any text"}</h2>
+    <p>${chat ? "Every token in the conversation is clickable. Pick one and the verbalizer describes the model's residual stream at that position, in plain English."
+      : "The verbalizer was trained on web-text prefixes, so plain text is where it is most reliable. Chat transcripts are slightly out of distribution."}</p>
+    <div class="pipeline">
+      <div><div class="step">capture</div><b>Activation</b><span>Residual stream after block ${LAYER} at your token, 5,120 numbers.</span></div>
+      <div><div class="step">verbalize · AV</div><b>Explanation</b><span>The activation is injected into a fine-tuned copy of the model, which writes about it.</span></div>
+      <div><div class="step">reconstruct · AR</div><b>Check</b><span>A second model rebuilds the activation from the text alone. Close match = faithful text.</span></div>
+    </div>
+    <div class="label" style="margin-bottom:2px">${chat ? "Start a conversation" : "Try a passage"}</div>
+    <div class="presets">${list.map(([n, t], k) => `<button class="preset" data-k="${k}"><b>${esc(n)}</b><span>${esc(t)}</span></button>`).join("")}</div></div>`;
+}
+
+function render() {
+  const th = $("#thread");
+  if (S.authFailed || (!S.tokens.length && S.streaming === null)) {
+    th.innerHTML = introHTML();
+    th.querySelectorAll(".preset").forEach(b => b.onclick = () => { $("#input").value = PRESETS[S.mode][+b.dataset.k][1]; send(); });
+    if ($("#keyBtn")) $("#keyBtn").onclick = () => { KEY = $("#keyIn").value.trim(); store("nla_key", KEY); S.authFailed = false; render(); refreshStatus(); };
+    return;
+  }
+  const q = $("#search").value.trim().toLowerCase();
+  const matchSet = q ? new Set(Object.entries(S.expl).filter(([, v]) => v.samples.some(s => (s.explanation || "").toLowerCase().includes(q))).map(([k]) => +k)) : null;
+  const segs = segments(S.tokens);
+  const out = []; let turnNo = 0;
+  segs.forEach((sg, k) => {
+    let inner = "";
+    for (let i = sg.start; i < sg.end; i++) inner += tokenHTML(S.tokens[i], i, matchSet, S.tokens[i - 1]);
+    const kind = ["user", "assistant", "system", "raw"].includes(sg.role) ? sg.role : "assistant";
+    if (kind === "user") turnNo++;
+    const tools = kind === "user" ? `<button class="btn quiet" data-edit="${sg.start}">Edit &amp; resend</button>`
+      : kind === "raw" ? `<button class="btn quiet" data-editraw="1">Edit text</button><button class="btn quiet" data-explainseg="${sg.start}:${sg.end}">Explain last 32 tokens</button>`
+      : `<button class="btn quiet" data-explainseg="${sg.start}:${sg.end}">Explain every token</button>`;
+    if (k && kind === "user") out.push('<div class="rule"></div>');
+    out.push(`<div class="turn ${kind}"><div class="who"><span class="label">${kind === "raw" ? "text" : kind}</span>${kind === "user" ? `<span class="n">#${turnNo}</span>` : ""}</div>
+      <div><div class="doc">${inner}</div><div class="tools">${tools}</div></div></div>`);
+  });
+  if (S.streaming !== null) out.push(`<div class="turn assistant"><div class="who"><span class="label">assistant</span></div>
+    <div><div class="doc streaming"><span id="streamText">${esc(S.streaming)}</span><span class="cursor"></span></div></div></div>`);
+  th.innerHTML = out.join("");
+}
+
+// ---------- interactions ----------
+$("#thread").addEventListener("click", e => {
+  const tok = e.target.closest(".tok");
+  if (tok) {
+    const i = +tok.dataset.i;
+    if (e.shiftKey && S.anchor !== null) {
+      const [a, b] = [Math.min(S.anchor, i), Math.max(S.anchor, i)];
+      S.sel = []; for (let k = a; k <= b && S.sel.length < 32; k++) if (!S.tokens[k].special) S.sel.push(k);
+    } else { S.sel = [i]; S.anchor = i; if (!S.expl[i] && !S.pending.has(i) && !(e.metaKey || e.ctrlKey)) explainOne(i); }
+    render(); renderPanel(); return;
+  }
+  const ed = e.target.closest("[data-edit]"); if (ed) return editUser(+ed.dataset.edit);
+  if (e.target.closest("[data-editraw]")) { if (S.busy) return; $("#input").value = S.rawText; S.tokens = []; S.expl = {}; S.sel = []; render(); renderPanel(); $("#input").focus(); return; }
+  const ex = e.target.closest("[data-explainseg]");
+  if (ex) { const [a, b] = ex.dataset.explainseg.split(":").map(Number);
+    const pos = []; for (let k = a; k < b; k++) if (!S.tokens[k].special && !S.expl[k]) pos.push(k);
+    const take = pos.slice(-32); if (!take.length) return toast("Every token here is already explained");
+    S.sel = take; S.anchor = take[0]; render(); renderPanel(); explainBatch(take); }
+});
+
+function editUser(start) {
+  if (S.busy) return;
+  const userSegs = segments(S.tokens).filter(s => s.role === "user");
+  const k = userSegs.findIndex(s => s.start === start);
+  let seen = -1, mi = -1;
+  S.messages.forEach((m, j) => { if (m.role === "user" && ++seen === k) mi = j; });
+  if (mi < 0) return;
+  $("#input").value = S.messages[mi].content; grow();
+  S.messages = S.messages.slice(0, mi);
+  retokenize(); $("#input").focus();
+}
+async function retokenize() {
+  if (!S.messages.length) { S.tokens = []; S.expl = {}; S.sel = []; render(); renderPanel(); return; }
+  const r = await (await api("/api/tokenize", { messages: S.messages, thinking: S.think })).json();
+  setTokens(r.tokens);
+}
+function setTokens(tokens) {
+  let d = 0; while (d < tokens.length && d < S.tokens.length && tokens[d].id === S.tokens[d].id) d++;
+  for (const k of Object.keys(S.expl)) if (+k >= d) delete S.expl[k];
+  S.sel = S.sel.filter(i => i < d);
+  S.tokens = tokens; render(); renderPanel();
+}
+
+const grow = () => { const t = $("#input"); t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; };
+$("#input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
+$("#input").addEventListener("input", grow);
+$("#sendBtn").onclick = send;
+function scrollDown(soft) { const s = $("#scroll"); if (!soft || s.scrollHeight - s.scrollTop - s.clientHeight < 240) s.scrollTop = s.scrollHeight; }
+
+async function send() {
+  const text = $("#input").value.trim();
+  if (!text || S.busy) return;
+  $("#input").value = ""; grow();
+  S.busy = true; $("#sendBtn").disabled = true;
+  try {
+    if (S.mode === "raw") {
+      setStatus("busy", "Tokenizing");
+      const r = await (await api("/api/tokenize", { raw: text })).json();
+      S.rawText = text; S.expl = {}; S.tokens = []; S.sel = []; setTokens(r.tokens);
+      if (S.auto) await autoExplain(0, S.tokens.length);
+    } else {
+      const sys = $("#sSys").value.trim();
+      if (!S.messages.length && sys) S.messages.push({ role: "system", content: sys });
+      S.messages.push({ role: "user", content: text });
+      S.streaming = ""; render(); scrollDown();
+      setStatus("busy", "Generating");
+      const r = await api("/api/chat", { messages: S.messages, thinking: S.think, temperature: +$("#sTemp").value, max_new_tokens: +$("#sMax").value });
+      let done = null;
+      for await (const ev of sse(r)) {
+        if (ev.delta) { S.streaming += ev.delta; const el = $("#streamText"); if (el) el.textContent = S.streaming; scrollDown(true); }
+        if (ev.done) done = ev;
+      }
+      S.streaming = null;
+      if (!done) throw new Error("The reply stream ended early.");
+      S.messages.push({ role: "assistant", content: done.text });
+      setTokens(done.tokens); scrollDown();
+      if (S.auto) { const segs = segments(S.tokens); const last = segs[segs.length - 1]; if (last) await autoExplain(last.start, last.end); }
+    }
+    ready();
+  } catch (e) {
+    if (S.streaming !== null && S.mode === "chat") S.messages.pop();
+    S.streaming = null; render(); setStatus("bad", "Request failed"); toast(e.message);
+  } finally { S.busy = false; $("#sendBtn").disabled = false; }
+}
+async function autoExplain(a, b) {
+  const n = Math.max(1, Math.min(32, +$("#sAutoN").value || 8));
+  const pos = []; for (let k = b - 1; k >= a && pos.length < n; k--) if (!S.tokens[k].special && S.tokens[k].text.trim()) pos.unshift(k);
+  await explainBatch(pos);
+}
+
+// ---------- explaining ----------
+function sameIds(ids) { return ids.length <= S.tokens.length && ids.every((x, k) => S.tokens[k].id === x); }
+
+async function explainOne(i, opts = {}) {
+  if (S.pending.has(i)) return;
+  const ids = S.tokens.slice(0, i + 1).map(t => t.id);
+  S.pending.add(i);
+  const entry = opts.append && S.expl[i] ? S.expl[i] : { meta: null, samples: [], stage: S.stage };
+  entry.live = ""; S.expl[i] = entry;
+  render(); renderPanel();
+  setStatus("busy", "Verbalizing");
+  try {
+    const r = await api("/api/explain_stream", { ids, position: i, stage: S.stage, temperature: opts.temperature ?? +$("#sETemp").value });
+    for await (const ev of sse(r)) {
+      if (!sameIds(ids)) return;
+      if (ev.meta) { entry.meta = ev.meta; entry.stage = ev.meta.stage; if (isShown(i)) renderPanel(); }
+      if (ev.delta) { entry.live += ev.delta; if (isShown(i)) updateLive(entry); }
+      if (ev.done) entry.samples.push(ev.sample);
+    }
+    ready();
+  } catch (e) { setStatus("bad", "Explain failed"); toast(e.message); }
+  finally {
+    delete entry.live; if (!entry.samples.length && !opts.append && S.expl[i] === entry) delete S.expl[i];
+    S.pending.delete(i); render(); renderPanel();
+  }
+}
+async function explainBatch(positions, opts = {}) {
+  positions = positions.filter(p => !S.pending.has(p));
+  if (!positions.length) return;
+  positions.forEach(p => S.pending.add(p)); render(); renderPanel();
+  const ids = S.tokens.slice(0, Math.max(...positions) + 1).map(t => t.id);
+  setStatus("busy", `Verbalizing ${positions.length} token${positions.length > 1 ? "s" : ""}`);
+  try {
+    const n = opts.n ?? +$("#sN").value, temp = opts.temperature ?? +$("#sETemp").value;
+    const r = await (await api("/api/explain", { ids, positions, stage: S.stage, n_samples: n, temperature: temp })).json();
+    if (sameIds(ids)) for (const res of r.results) {
+      const meta = { stage: r.stage, position: res.position, token: res.token, norm: res.norm, preds: res.preds };
+      if (opts.append && S.expl[res.position]) S.expl[res.position].samples.push(...res.samples);
+      else S.expl[res.position] = { meta, samples: res.samples, stage: r.stage };
+    }
+    ready();
+  } catch (e) { setStatus("bad", "Explain failed"); toast(e.message); }
+  positions.forEach(p => S.pending.delete(p)); render(); renderPanel();
+}
+
+// ---------- readout panel ----------
+const isShown = i => S.sel.length === 1 && S.sel[0] === i;
+function ctxHTML(i) {
+  let left = "", right = "";
+  for (let k = Math.max(0, i - 40); k < i; k++) if (!S.tokens[k].special && !S.tokens[k]._role) left += S.tokens[k].text;
+  for (let k = i + 1; k < Math.min(S.tokens.length, i + 8); k++) if (!S.tokens[k].special) right += S.tokens[k].text;
+  left = left.slice(-160).replace(/\s+/g, " "); right = right.replace(/\s+/g, " ");
+  return `…${esc(left)}<mark>${esc(vis(S.tokens[i].text))}</mark><span class="after">${esc(right)}</span>`;
+}
+function claimsHTML(text, tokText) {
+  const parts = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const hl = s => { let h = esc(s); const t = tokText.trim(); if (t.length > 1) h = h.replace(new RegExp(`"(${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})"`, "g"), '"<mark>$1</mark>"'); return h; };
+  return parts.map((p, k) => `<div class="claim"><span class="n">${k + 1}</span><div>${hl(p)}</div></div>`).join("");
+}
+function liveText(raw) {
+  const a = raw.indexOf("<explanation>");
+  if (a < 0) return null;
+  let t = raw.slice(a + 13); const b = t.indexOf("</explanation>"); if (b >= 0) t = t.slice(0, b);
+  return t;
+}
+function sampleHTML(s, k, total, tokText) {
+  const cos = s.recon_cos;
+  const head = `<div class="expl-head"><span class="label">${total > 1 ? `Sample ${k + 1} of ${total}` : "Explanation"}</span>
+    ${s.truncated ? `<span class="label" style="color:var(--bad)" title="hit the length limit before closing the explanation">cut off</span>` : ""}${cos == null ? "" : `<span class="score" title="cosine(reconstruction, activation)">recon <b>${cos.toFixed(3)}</b><span class="meter"><i style="width:${Math.max(0, Math.min(1, cos)) * 100}%"></i></span></span>`}</div>`;
+  const body = s.explanation ? claimsHTML(s.explanation, tokText)
+    : `<div style="color:var(--bad);font-size:13px">The verbalizer didn't produce an &lt;explanation&gt; block. Raw output:</div><div class="raw">${esc((s.raw || "").slice(0, 900))}</div>`;
+  return `<div class="expl">${head}<div class="expl-body">${body}</div></div>`;
+}
+function updateLive(entry) {
+  const box = $("#liveBox"); if (!box) return renderPanel();
+  const t = liveText(entry.live);
+  box.innerHTML = t === null ? `<div class="thinking"><span class="spin"></span>Reading the activation…</div>` : claimsHTML(t, entry.meta?.token || "");
+}
+function layerStrip() {
+  let cells = ""; for (let l = 0; l < NLAYERS; l++) cells += `<i class="${l === LAYER ? "read" : l === 1 ? "inj" : ""}" title="${l === LAYER ? "read: output of block " + LAYER : l === 1 ? "AV injects here (block 1)" : "block " + l}"></i>`;
+  return `<div class="layers"><div class="strip">${cells}</div><div class="strip-l"><span>block 0</span><span style="color:var(--accent)">read · ${LAYER}</span><span>${NLAYERS - 1}</span></div></div>`;
+}
+
+function renderPanel() {
+  const P = $("#panel");
+  if (!S.sel.length) {
+    P.innerHTML = `<div class="onboard"><h3>Click a token to see what the model represents there</h3>
+      <ul><li>The explanation streams in on the right as the verbalizer writes it.</li>
+      <li>Tokens you have explained get an underline. A solid underline means the explanation reconstructs the activation well (recon ≥ 0.80).</li>
+      <li><kbd>shift</kbd>-click to select a range, then explain it as a batch. <kbd>⌘</kbd>-click selects without explaining.</li>
+      <li><b>Auto</b> explains the last few tokens of every reply.</li>
+      <li>Switch between <b>SFT</b> and <b>RL</b> checkpoints in the top bar to compare.</li></ul>${layerStrip()}</div>`;
+    return;
+  }
+  if (S.sel.length > 1) {
+    const missing = S.sel.filter(i => !S.expl[i] && !S.pending.has(i));
+    P.innerHTML = `<div class="actions"><button class="btn primary" id="exSel" ${missing.length ? "" : "disabled"}>Explain ${missing.length} token${missing.length === 1 ? "" : "s"}</button>
+      <button class="btn" id="clrSel">Clear selection</button></div><div class="multi">` +
+      S.sel.map(i => { const e = S.expl[i], s = e?.samples[0];
+        const right = S.pending.has(i) ? '<span class="spin"></span>' : s?.recon_cos != null ? `<span class="score">${s.recon_cos.toFixed(2)}</span>` : "";
+        return `<button class="mrow" data-pick="${i}"><span class="chip">${esc(vis(S.tokens[i].text))}</span>
+          <span class="txt">${s?.explanation ? esc(s.explanation.split(/\n\s*\n/).slice(-1)[0]) : S.pending.has(i) ? "Verbalizing…" : "Not explained yet"}</span>${right}</button>`; }).join("") + "</div>";
+    $("#exSel").onclick = () => explainBatch(missing);
+    $("#clrSel").onclick = () => { S.sel = []; render(); renderPanel(); };
+    P.querySelectorAll("[data-pick]").forEach(c => c.onclick = () => { S.sel = [+c.dataset.pick]; S.anchor = S.sel[0]; render(); renderPanel(); });
+    return;
+  }
+  const i = S.sel[0], t = S.tokens[i], e = S.expl[i];
+  let html = `<div class="probe"><div class="probe-top"><span class="chip">${esc(vis(t.text))}</span>
+    <div class="coords">position ${i}<br>token id ${t.id}${e?.meta ? `<br>‖h‖ ${e.meta.norm.toFixed(1)}` : ""}</div></div>
+    <div class="ctx">${ctxHTML(i)}</div>${layerStrip()}</div>`;
+  if (e) {
+    html += e.samples.map((s, k) => sampleHTML(s, k, e.samples.length + (e.live !== undefined ? 1 : 0), t.text)).join("");
+    if (e.live !== undefined) html += `<div class="expl"><div class="expl-head"><span class="label">Explanation</span><span class="spin"></span></div><div class="expl-body" id="liveBox"></div></div>`;
+    else if (S.pending.has(i)) html += `<div class="expl"><div class="expl-body"><div class="thinking"><span class="spin"></span>Verbalizing…</div></div></div>`;
+    if (e.samples.length && !S.pending.has(i)) html += `<div class="actions"><button class="btn" id="more">Sample again (T = 1)</button><button class="btn quiet" id="redo">Clear &amp; re-explain</button></div>`;
+    if (e.meta) html += `<div class="sec"><span class="label">Model's next-token prediction here</span><div class="preds">${e.meta.preds.map(p =>
+      `<span class="t">${esc(vis(p.text))}</span><span class="b"><i style="width:${(p.p * 100).toFixed(1)}%"></i></span><span class="v">${(p.p * 100).toFixed(1)}%</span>`).join("")}</div></div>
+      <dl class="facts"><dt>checkpoint</dt><dd>${esc((e.stage || "").toUpperCase())} @${esc((S.sha || "").slice(0, 7))}</dd><dt>activation</dt><dd>resid_post, block ${LAYER}, d = 5120</dd></dl>`;
+  } else if (S.pending.has(i)) {
+    html += `<div class="expl"><div class="expl-body"><div class="thinking"><span class="spin"></span>Verbalizing…</div></div></div>`;
+  } else {
+    html += `<div class="actions"><button class="btn primary" id="exOne">Explain this token</button></div>`;
+  }
+  P.innerHTML = html;
+  if (e?.live !== undefined) updateLive(e);
+  $("#exOne") && ($("#exOne").onclick = () => explainOne(i));
+  $("#redo") && ($("#redo").onclick = () => { delete S.expl[i]; explainOne(i); });
+  $("#more") && ($("#more").onclick = () => explainOne(i, { temperature: 1.0, append: true }));
+}
+
+// No periodic polling: any request keeps the GPU container warm (and billing).
+render(); renderPanel(); refreshStatus();
+</script>
+</body>
+</html>
