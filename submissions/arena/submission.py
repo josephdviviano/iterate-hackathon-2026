@@ -100,7 +100,7 @@ class Net(nn.Module):
 
     def segments(self):
         # Compiled separately so the head's gradients arrive before the stem's.
-        stem, tail = self.body[:-2], self.body[-2:]
+        stem, tail = self.body[:-3], self.body[-3:]
         return [stem, lambda x: self.fc(tail(x)) * self.scale]
 
     def features(self, x):
