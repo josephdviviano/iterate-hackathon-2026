@@ -15,7 +15,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 9.0,
+    "epochs": 9.5,
     "batch_size": 2000,
     "lr": 9.0,
     "momentum": 0.85,
@@ -25,7 +25,7 @@ HYP = {
     "whiten_bias_epochs": 3,
     "translate": 2,
     "widths": (128, 384, 576),
-    "convs_per_group": 3,
+    "convs_per_group": (2, 3, 3),
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
     "compile": True,
@@ -80,15 +80,15 @@ class Net(nn.Module):
     def __init__(self, hyp, num_classes):
         super().__init__()
         w1, w2, w3 = hyp["widths"]
-        n, m = hyp["convs_per_group"], hyp["bn_momentum"]
+        (n1, n2, n3), m = hyp["convs_per_group"], hyp["bn_momentum"]
         whiten_width = 2 * 3 * 2 * 2
         self.whiten = nn.Conv2d(3, whiten_width, kernel_size=2, padding=0, bias=True)
         self.whiten.weight.requires_grad = False
         self.layers = nn.Sequential(
             nn.GELU(),
-            ConvGroup(whiten_width, w1, n, m),
-            ConvGroup(w1, w2, n, m),
-            ConvGroup(w2, w3, n, m),
+            ConvGroup(whiten_width, w1, n1, m),
+            ConvGroup(w1, w2, n2, m),
+            ConvGroup(w2, w3, n3, m),
             nn.MaxPool2d(3),
             nn.Flatten(),
         )
