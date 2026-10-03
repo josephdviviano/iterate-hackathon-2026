@@ -1,0 +1,30 @@
+schema_version: '2.0'
+finding_id: F-062
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S62 (local dev stack, the submission folder with D-013 defaults and the exact timed-path
+  fixes, 40 fresh random uint32 seeds over GPUs 0 and 1): 75.195% (SD 0.236, min 74.80) at 4.160 s and
+  75.160% (SD 0.227, min 74.88) at 4.068 s; pooled 75.177% (SE 0.036); prepare 39 ms. S49 measured 4.408
+  / 4.243 s for the previous defaults.'
+interpretation: The submission reproduces the lab result (about 75.18%) and is about 4-6% faster locally
+  than at S49, consistent with the exact fixes (-1.7%) plus 2.5% fewer steps; margin above 75% is about
+  5 SE.
+decision_implication: Commit D-013 as the current entry; an official A100 PCIe run would confirm absolute
+  time if the user wants Modal used.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s62-submission-check.txt
+  locator: research/evidence/T-019/s62-submission-check.txt
+  sha256: 9918435163d7b1ccabe001becb741c0d7fb87a2d249538367837013d43c0e08a
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Submission verified locally.

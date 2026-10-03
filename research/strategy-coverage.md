@@ -180,3 +180,15 @@ and 19→9→4→2 at 20 px. Stage 3's conv2 and residual conv run on a **3×3 g
 | Stage update thinning; weight-only freezes | agent r3 (compute) | rejected | S52 (F-054) |
 | Native-scale window crops mid-run | agent r3 (compute) | rejected (time saving far below MAC saving) | S53 |
 | Fused pool+BN Triton kernel | user idea | not built (Inductor kernels at 1.2-1.56 TB/s; ceiling 1-2%) | profiles |
+
+### Round 4 (T-019), 2026-10-04
+
+| Strategy | Source | Status | Evidence |
+| --- | --- | --- | --- |
+| Vectorised identity init, gather crop without syncs, stop at the last lookahead update, full-size warm-up | agent r4 (audit) | **adopted** (exact; -1.7% local paired) | S57 (F-058) |
+| Label smoothing 0.4 at 8.25 epochs | lead (re-tune on the new base) | **adopted** (matches the 8.5-epoch control; -2.5% steps) | S54, S55, S58, S61 (F-056, F-059, F-061) |
+| Batch 768 / 896 | lead | rejected (null at matched time) | S55 (F-056) |
+| Wide-early transplant on the new base | lead | rejected (within noise) | S54 (F-056) |
+| 1x1 stage-3 convs, 4x4 terminal grid, width 768 via 1x1, centre-tap pruning | agent r4 (topology) | rejected | S56 (F-057) |
+| Stage-3 residual 1x1; stage-1 width 96 | agent r4 (topology) | rejected (predicted savings not realised under max-autotune) | S59, S60 (F-060) |
+| Pinned-memory staged H2D copy | agent r4 (audit) | not pursued (5-10 ms, host-dependent) | — |

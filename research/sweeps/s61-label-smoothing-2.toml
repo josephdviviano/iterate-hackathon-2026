@@ -1,0 +1,40 @@
+# Label smoothing trend on the D-012 base (S58 at 8.25 epochs: 0.3 75.13%, 0.35 75.16%, 0.4
+# 75.21% vs the 8.5-epoch control 75.12%): extend to 0.5 and price 8.0 epochs. 40 fresh seeds.
+name = "s61-label-smoothing-2"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [6400, 6401, 6402, 6403, 6404, 6405, 6406, 6407, 6408, 6409, 6410, 6411, 6412, 6413, 6414, 6415, 6416, 6417, 6418, 6419, 6420, 6421, 6422, 6423, 6424, 6425, 6426, 6427, 6428, 6429, 6430, 6431, 6432, 6433, 6434, 6435, 6436, 6437, 6438, 6439]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+label_smoothing = 0.4
+epochs = 8.25
+[[configs]]
+label_smoothing = 0.5
+epochs = 8.25
+[[configs]]
+label_smoothing = 0.4
+epochs = 8.0
+[[configs]]
+label_smoothing = 0.5
+epochs = 8.0

@@ -29,6 +29,7 @@ LAB_EQUIVALENT = SMALL | {
     "stage1_cooldown": [0.6, 0.8],
     "freeze_schedule": [[0.8, 1]],
     "trim_tail": True,
+    "label_smoothing": 0.4,
 }
 
 
@@ -53,7 +54,8 @@ def test_defaults_are_the_converged_recipe():
     config = RecipeConfig()
     assert (
         config.widths == (128, 384, 640)
-        and config.epochs == 8.5
+        and config.epochs == 8.25
+        and config.label_smoothing == 0.4
         and config.stage_depths == (3, 2, 3)
         and config.bias_scaler == 16.0
     )

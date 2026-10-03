@@ -1,0 +1,23 @@
+schema_version: '1.0'
+decision_id: D-013
+task_id: T-019
+question: Which label smoothing and budget does the submission use after S54-S61?
+decision: Label smoothing 0.4 with 8.25 epochs (396-step schedule, 395 trained steps).
+rationale: LS 0.3-0.4 is consistently better than 0.2 on the new structure (S54, S55, S58); LS 0.4 at
+  8.25 epochs matches the 8.5-epoch control over 80 seeds (75.19 vs 75.15%), about 2.5% fewer steps; 0.5
+  and 8.0 epochs fall short.
+alternatives:
+- LS 0.3 at 8.25 epochs (75.13%, slightly less margin)
+- Keep LS 0.2 at 8.5 epochs (no time gain)
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s61-label-smoothing-2-table.csv
+  locator: research/evidence/T-019/s61-label-smoothing-2-table.csv
+  sha256: a63ff9665653ec64f5812d21b159af49567a0586c37dbe6ff6038601980c3e1f
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: settled

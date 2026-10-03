@@ -15,13 +15,13 @@ class RecipeConfig:
     """
 
     widths: tuple[int, int, int] = (128, 384, 640)
-    epochs: float = 8.5
+    epochs: float = 8.25
     batch_size: int = 1024
     lr: float = 11.5
     momentum: float = 0.85
     weight_decay: float = 0.0153
     bias_scaler: float = 16.0
-    label_smoothing: float = 0.2
+    label_smoothing: float = 0.4
     lr_start: float = 0.2
     lr_peak_frac: float = 0.23
     lr_end: float = 0.07

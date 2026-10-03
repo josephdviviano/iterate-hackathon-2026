@@ -1,0 +1,27 @@
+schema_version: '2.0'
+finding_id: F-059
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S58 (40 fresh seeds 6100-6139, D-012 base with trimmed tail, control 8.5 epochs 75.12%):
+  label smoothing 0.3 at 8.5 epochs 75.26%; at 8.25 epochs LS 0.3 / 0.35 / 0.4: 75.13 / 75.16 / 75.21%.'
+interpretation: 'Stronger label smoothing is worth about 0.25 epoch on the new base: LS 0.3-0.4 at 8.25
+  epochs matches or beats the 8.5-epoch control, a 3% step cut, and accuracy still rises from 0.3 to 0.4.'
+decision_implication: Extend the trend (0.5) and test 8.0 epochs (S61) before folding the best smoothing
+  and budget into a combined final configuration with the topology survivors.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s58-label-smoothing-table.csv
+  locator: research/evidence/T-019/s58-label-smoothing-table.csv
+  sha256: 53c68abdcdca3b653b58a3a021cfd4c914ae5070598eba5abfea5304e16f7d75
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

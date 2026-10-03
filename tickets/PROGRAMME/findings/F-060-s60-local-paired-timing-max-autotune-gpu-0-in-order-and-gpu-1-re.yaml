@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-060
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S60 (local paired timing, max-autotune, GPU 0 in order and GPU 1 reversed, 10 seeds each)
+  vs control: stage-3 residual 1x1 at 9.0 epochs +19.8% / +0.6%; stage-1 width 96 at 9.5 epochs +23.1%
+  / +18.0%; both at 10.0 epochs +3.9% / -0.4%. S59 (40 fresh seeds 6200-6239): control 75.22%; 75.26%,
+  75.34% and 75.39% respectively. No GPU contention was logged.'
+interpretation: The predicted per-step savings of the 1x1 residual and thinner stage 1 did not materialise
+  under max-autotune (narrow 96-channel and 1x1 shapes are not cheaper in practice), so the extra epochs
+  needed to match accuracy cost more time than they save; the accuracy gains (+0.04 to +0.17 pp) do not
+  pay for the time. The combined arm is near break-even but its timing is inconsistent across GPUs.
+decision_implication: Reject the topology changes; the D-012 structure stays.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: supported
+  rationale: kernel efficiency for narrow or 1x1 shapes is worse than MAC counts predict (as for skipped
+    rows and window crops)
+  discriminating_test: none
+- kind: data_measurement
+  disposition: unresolved
+  rationale: large GPU-to-GPU disagreement for two arms suggests autotuning variance between builds
+  discriminating_test: repeat timing with fresh builds
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s59-topology-confirm-table.csv
+  locator: research/evidence/T-019/s59-topology-confirm-table.csv
+  sha256: 5802fde4c7b254c59f70d9815a415302967e4076964f012a298d5b5b17abbda0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Rejected.

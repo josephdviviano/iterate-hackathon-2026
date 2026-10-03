@@ -1,0 +1,28 @@
+schema_version: '2.0'
+finding_id: F-061
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S61 (40 fresh seeds 6400-6439, D-012 base with trimmed tail, control 8.5 epochs 75.17%):
+  label smoothing 0.4 / 0.5 at 8.25 epochs 75.17 / 75.05%; at 8.0 epochs 74.97 / 74.90%. Pooled with S58,
+  LS 0.4 at 8.25 epochs averages 75.19% over 80 seeds against 75.15% for the matched 8.5-epoch controls.'
+interpretation: Label smoothing 0.4 buys a quarter epoch at matched accuracy (395 instead of 405 trained
+  steps, about -2.5%); 0.5 is past the optimum and 8.0 epochs is too short.
+decision_implication: Adopt label smoothing 0.4 at 8.25 epochs (D-013) and verify the submission folder
+  on 40 fresh seeds (S62).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s61-label-smoothing-2-table.csv
+  locator: research/evidence/T-019/s61-label-smoothing-2-table.csv
+  sha256: a63ff9665653ec64f5812d21b159af49567a0586c37dbe6ff6038601980c3e1f
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: 'Adopted: LS 0.4, 8.25 epochs.'

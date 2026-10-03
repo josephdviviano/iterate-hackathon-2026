@@ -452,6 +452,33 @@
 - **Decision consequence:** Adopt all three fixes and the full-size warm-up in the submission (exact; no accuracy run needed).
 - **Resolution:** Adopted (exact).
 
+### F-059 — open, material
+
+- **Observation:** S58 (40 fresh seeds 6100-6139, D-012 base with trimmed tail, control 8.5 epochs 75.12%): label smoothing 0.3 at 8.5 epochs 75.26%; at 8.25 epochs LS 0.3 / 0.35 / 0.4: 75.13 / 75.16 / 75.21%.
+- **Interpretation:** Stronger label smoothing is worth about 0.25 epoch on the new base: LS 0.3-0.4 at 8.25 epochs matches or beats the 8.5-epoch control, a 3% step cut, and accuracy still rises from 0.3 to 0.4.
+- **Decision consequence:** Extend the trend (0.5) and test 8.0 epochs (S61) before folding the best smoothing and budget into a combined final configuration with the topology survivors.
+
+### F-060 — resolved, material
+
+- **Observation:** S60 (local paired timing, max-autotune, GPU 0 in order and GPU 1 reversed, 10 seeds each) vs control: stage-3 residual 1x1 at 9.0 epochs +19.8% / +0.6%; stage-1 width 96 at 9.5 epochs +23.1% / +18.0%; both at 10.0 epochs +3.9% / -0.4%. S59 (40 fresh seeds 6200-6239): control 75.22%; 75.26%, 75.34% and 75.39% respectively. No GPU contention was logged.
+- **Interpretation:** The predicted per-step savings of the 1x1 residual and thinner stage 1 did not materialise under max-autotune (narrow 96-channel and 1x1 shapes are not cheaper in practice), so the extra epochs needed to match accuracy cost more time than they save; the accuracy gains (+0.04 to +0.17 pp) do not pay for the time. The combined arm is near break-even but its timing is inconsistent across GPUs.
+- **Decision consequence:** Reject the topology changes; the D-012 structure stays.
+- **Resolution:** Rejected.
+
+### F-061 — resolved, material
+
+- **Observation:** S61 (40 fresh seeds 6400-6439, D-012 base with trimmed tail, control 8.5 epochs 75.17%): label smoothing 0.4 / 0.5 at 8.25 epochs 75.17 / 75.05%; at 8.0 epochs 74.97 / 74.90%. Pooled with S58, LS 0.4 at 8.25 epochs averages 75.19% over 80 seeds against 75.15% for the matched 8.5-epoch controls.
+- **Interpretation:** Label smoothing 0.4 buys a quarter epoch at matched accuracy (395 instead of 405 trained steps, about -2.5%); 0.5 is past the optimum and 8.0 epochs is too short.
+- **Decision consequence:** Adopt label smoothing 0.4 at 8.25 epochs (D-013) and verify the submission folder on 40 fresh seeds (S62).
+- **Resolution:** Adopted: LS 0.4, 8.25 epochs.
+
+### F-062 — resolved, material
+
+- **Observation:** S62 (local dev stack, the submission folder with D-013 defaults and the exact timed-path fixes, 40 fresh random uint32 seeds over GPUs 0 and 1): 75.195% (SD 0.236, min 74.80) at 4.160 s and 75.160% (SD 0.227, min 74.88) at 4.068 s; pooled 75.177% (SE 0.036); prepare 39 ms. S49 measured 4.408 / 4.243 s for the previous defaults.
+- **Interpretation:** The submission reproduces the lab result (about 75.18%) and is about 4-6% faster locally than at S49, consistent with the exact fixes (-1.7%) plus 2.5% fewer steps; margin above 75% is about 5 SE.
+- **Decision consequence:** Commit D-013 as the current entry; an official A100 PCIe run would confirm absolute time if the user wants Modal used.
+- **Resolution:** Submission verified locally.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -549,6 +576,13 @@
 - **Decision:** Stage 2 without its residual conv, stage-1 lr cooldown from 60% to 80% with stage 1 frozen (no autograd) from 80%, 8.5 epochs (408 steps).
 - **Rationale:** About -10.7% local paired time (S48; -13.7% at 8.25 epochs in S46 plus 3% for the extra quarter epoch) at control accuracy (75.20% vs 75.20% in S47, 40 fresh seeds); the freeze is exact and both changes are bit-identical to the lab.
 - **Alternatives:** Depth-2 stage 2 alone at 8.25 epochs (-6.3%, equal accuracy; safer but slower); Stack at 8.25 epochs (-13.7% but about 75.11%, too little qualification margin)
+
+### D-013 — settled
+
+- **Question:** Which label smoothing and budget does the submission use after S54-S61?
+- **Decision:** Label smoothing 0.4 with 8.25 epochs (396-step schedule, 395 trained steps).
+- **Rationale:** LS 0.3-0.4 is consistently better than 0.2 on the new structure (S54, S55, S58); LS 0.4 at 8.25 epochs matches the 8.5-epoch control over 80 seeds (75.19 vs 75.15%), about 2.5% fewer steps; 0.5 and 8.0 epochs fall short.
+- **Alternatives:** LS 0.3 at 8.25 epochs (75.13%, slightly less margin); Keep LS 0.2 at 8.5 epochs (no time gain)
 
 ## Deferred or rejected work
 
