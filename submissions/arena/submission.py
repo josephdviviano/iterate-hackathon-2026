@@ -69,7 +69,7 @@ class ConvGroup(nn.Module):
         if depth == 3:
             self.conv3 = Conv(cout, cout)
             self.norm3 = BatchNorm(cout, bn_momentum)
-        self.activ = nn.GELU()
+        self.activ = nn.SiLU()
 
     def forward(self, x):
         x = self.activ(self.norm1(self.pool(self.conv1(x))))
@@ -100,7 +100,7 @@ class Net(nn.Module):
 
     def forward(self, x):
         x = (x - self.mean) / self.std
-        x = F.gelu(self.whiten(x))
+        x = F.silu(self.whiten(x))
         x = self.groups(x)
         x = F.max_pool2d(x, x.shape[-1]).flatten(1)
         return self.head(x) * self.scale
