@@ -13,7 +13,7 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    stages=[[24, 5], [32, 4]],  # [resolution, epochs] in training order
+    stages=[[24, 6], [32, 3]],  # [resolution, epochs] in training order
     batch_size=768,
     lr=0.5,
     momentum=0.9,
