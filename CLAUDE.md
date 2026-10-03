@@ -96,12 +96,15 @@ points to an entry in RESULTS.md.
 | Calibrated uncertainty | AUROC of vote entropy against error. Vote share is not a probability (ECE 0.22). Adaptive conformal sets hold 0.90 coverage on four levels. Self-reported confidence on Hoeffding scored by Brier. | R10, R22, H3 |
 | Falsification | Exact replay admits members. The first disagreement probe refutes every member on every level. Round 2 resynthesizes on the counterexample and is scored against a passive control. | R4, R23, R24 |
 | Reward design | The reward is exact replay with anti-tabulation checks (`committee.verify`). Disagreement is the exploration signal. An abstain channel in the task text. Exact certification, not float scores, on Hoeffding. | RH1, H2, H12 |
-| Knows when it reward hacks (track header) | Injected-contradiction 2x2 across Claude and open-weight synthesizers. Held-out gap, literal-mass and MDL-ratio detectors. One hack found in our own artifacts. | RH1 to RH5 |
-| Sub-track 1, evidence only | The 2x2 is a small eval that catches synthesizer reward hacking. We do not enter 2.1. | RH1, RH3, RH5 |
+| Knows when it reward hacks (track header), supporting evidence only | Injected-contradiction 2x2 across Claude and open-weight synthesizers. Held-out gap, literal-mass and MDL-ratio detectors. One hack found in our own artifacts. Demoted by the user on 2026-10-03: one line in the pitch, no further sessions unless everything else is done. | RH1 to RH5 |
+| Sub-track 1 | Not entered. The 2x2 is evidence for the header, not a 2.1 submission. | RH1, RH3, RH5 |
 | Sub-track 2 | Not addressed. Out of scope. | |
-| Bio agents | No bio domain. ARC-AGI-3 games and Hoeffding's problem stand in. The conformal route was chosen so the calibration transfers to any predictor. | R22 |
+| Bio agents | BioProt protocol generation as a selective-prediction benchmark: three open-weight models write 100 lab protocols, four uncertainty signals are scored by risk-coverage curves against random and oracle baselines, with an abstain channel and ECE and Brier. Verbalised confidence and self-consistency beat random on every model; sequence logprob does not; keeping the more confident half of the plans cuts the error by 21 to 29 percent; the R22 conformal wrapper over the same scores holds 0.90 coverage and commits on 22 to 57 percent of plans. The committee method transfers: disagreement predicts error at AUROC 0.69 to 0.77, and a cross-family committee of 15 is the strongest uncertainty on the benchmark with no elicitation call. | B1 to B4, R22 |
 
 Known gaps, to state in the pitch and not hide: reward design is spread over
-three builds and must be told as one design; no live play; no bio domain.
+three builds and must be told as one design; live play is one game and one
+level (R25, R26); the bio evidence is one benchmark (B1 to B4). The pitch
+leads with 2.3, epistemic uncertainty; the results align with that aim, and
+reward hacking is supporting evidence (user decision, 2026-10-03 22:55).
 
 - **Modal challenge (optional).** Best use of Modal, in any part of the project. Deferred, see NOTES.md.

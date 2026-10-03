@@ -143,15 +143,20 @@ this project.
 A second synthesizer on Modal was considered and dropped by the user
 (2026-10-03 22:05): no experiment uses the open models.
 
-### Q. Queue handed over by the reward-hacking build (36 Devin sessions, about 1 h)
+### Q. Optional, last: the reward-hacking build's grid (36 Devin sessions, about 1 h)
 
-Session `external-c5` (owner of `src/rewardhack`) asked this session at 22:45
-to submit its outstanding grid to Devin. Run it after P1 and P2, or
-interleaved with them if the quota allows; it is independent of the
-committee conditions. Do not run synthesis locally in parallel with it: the
-laptop rebooted under that load earlier today. Its loop runs inside the
-deployed Modal function `rewardhack-synth`, which holds the `devin-auth`
-secret and verifies every returned program outside the session.
+Demoted by the user at 22:55: Track 2 has an epistemic-uncertainty aim
+(2.3) and a reward-hacking aim (2.1), and the results to date align with
+the first. The pitch leads with 2.3; reward hacking is supporting evidence
+(RH1 to RH5, one line in the pitch). Run Q only if sessions and time remain
+after P1 to P4 and the write-up; skipping it costs the submission nothing.
+
+Session `external-c5` (owner of `src/rewardhack`) handed it over at 22:45.
+It is independent of the committee conditions. Do not run synthesis locally
+in parallel with it: the laptop rebooted under that load earlier today. Its
+loop runs inside the deployed Modal function `rewardhack-synth`, which holds
+the `devin-auth` secret and verifies every returned program outside the
+session; the launcher skips runs whose `meta.json` exists, so it resumes.
 
 ```
 uv run python -m rewardhack.baseline --backends devin --parallel 6
@@ -207,6 +212,9 @@ against Claude synthesis stands for the committee).
   number that prices abstention. gamma 0.05 stays the code default; 0.3 is
   the recorded leave-one-out alternative.
 - No Claude account for synthesis, and no open-model synthesis on Modal (dropped 22:05): Devin only.
+- The submission is a 2.3 entry, epistemic uncertainty. Reward hacking is
+  supporting evidence, not a pitch claim (user, 22:55); the reward-hacking
+  grid is last and optional.
 - Terrain objects (R32) are superseded by the frame modes; keep the
   completeness measurement, do not develop them further.
 - Do not tune on test data: thresholds come from train-side quantities; the
