@@ -179,3 +179,13 @@
     - Wider benchmark pending the Devin budget.
   ABANDONED:
     - A fixed cross-level calibration map as the calibration method. The drift between levels exceeds what it corrects.
+
+- [jdv] - Handoff written - 0749a24
+  HANDOFF.md gives state, method, credentials, commands, results index, unexplored directions and prioritized next steps for a fresh agent.
+  DONE:
+    - Write-up version 6 with mechanism-level and trajectory-level results as tables and charts.
+    - Oracle check: on every informative level "any member right" equals the best single member, so combining programs has no headroom; selection and absent hypotheses are the problems. Not yet recorded as a RESULTS entry.
+  DEFERRED:
+    - Everything in HANDOFF.md "Unexplored directions", in that order.
+  ABANDONED:
+    - An auxiliary network that synthesizes a combined program from the committee: no training signal, two LLM versions of it already failed (R8, R19), and the oracle check shows no headroom. Enumeration of mechanism combinations: does not scale.
