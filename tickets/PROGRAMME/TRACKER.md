@@ -143,6 +143,41 @@
 - **Decision consequence:** Adopt 128/384/640 as the base (D-005) and fine-tune epochs near 8.5-9 with compiled timing and 10 seeds.
 - **Resolution:** Base widths updated to 128/384/640.
 
+### F-015 — resolved, material
+
+- **Observation:** S11 (5 seeds): pooling before the widening conv in stages 2-3 cuts time 22% but drops accuracy to 73.13% and 73.52% at 10 and 12 epochs (control 75.33%, 75.62%); pooling first in all stages drops to 70.3-70.8%; reinvesting in 128/512/768 with pool-first reaches only 74.05% and 74.36%; a depth-2 first stage reaches 75.02% at 10 epochs for 7% less time (12-epoch cell pending).
+- **Interpretation:** The widening convs need full spatial resolution before pooling; their FLOPs are productive, so FLOP reallocation through pool-first is rejected. The depth-2 first stage is within noise of a time-neutral trade and does not change the base.
+- **Decision consequence:** Keep conv-then-pool in every stage and three convs per stage; spend remaining effort on low-level execution (pooling implementation, compile) and epoch tuning.
+- **Resolution:** Pool-first rejected; stage depths unchanged.
+
+### F-016 — resolved, material
+
+- **Observation:** S10 at the 128/384/512 base (5 seeds, 9 and 10 epochs): control 74.68% and 75.33%; lr peak 0.1 or 0.35, final lr 0 or 0.15, and whitening-bias epochs 1 or 6 all fall within 0.3 pp of control (best: whitening-bias 6 epochs, 6.61 s vs 6.69 s to target); a short final 32 px phase (20/28/32) and a 16 px start lose 1.2-1.8 pp.
+- **Interpretation:** Schedule and optimiser hyperparameters are at a plateau for this base: the airbench defaults transfer. Resolution schedules that shorten the final full-resolution phase lose accuracy, consistent with F-009.
+- **Decision consequence:** Freeze schedule hyperparameters at their defaults; stop hyperparameter climbing and converge on epochs and execution.
+- **Resolution:** Schedule dimension saturated.
+
+### F-017 — resolved, material
+
+- **Observation:** S13 (10 fresh seeds 200-209, compiled, fused SGD, 128/384/640): 75.20% at 8.5 epochs (5.52 s), 75.42% at 9.0 (5.84 s), 75.47% at 9.5 (6.17 s); per-cell sd 0.19-0.32 pp; interpolated 75.3% crossing at 8.74 epochs and 5.67 s compiled proxy.
+- **Interpretation:** The D-005 base holds on fresh seeds and, compiled, reaches the climbing target about 39% faster than the P1 best cell (9.3 s eager). The accuracy curve flattens above 9 epochs, so the R-001 margin is cheapest to buy between 8.75 and 9 epochs.
+- **Decision consequence:** Confirm the final recipe with 40 fresh seeds at 8.75 and 9.0 epochs; select the shortest budget whose 40-seed mean is at least 75.2%.
+- **Resolution:** Final confirmation follows (S15).
+
+### F-018 — resolved, contextual
+
+- **Observation:** S14 (5 seeds, 128/384/640, 9 epochs): pool_impl amax matches indexed max-pool accuracy in eager mode (75.47% vs 75.52%) but is 62% slower (10.71 s vs 6.62 s); compiled amax produced non-finite logits and failed; compiled indexed max-pool reaches 75.33% in 5.81 s. Competitor run codex c7 also failed with non-finite logits when its max+mean head (amax) was compiled.
+- **Interpretation:** The reshape-plus-amax pooling is exact on CPU but eager CUDA reductions over channels_last tensors are slow, and compiled amax diverges on this stack, plausibly an Inductor lowering problem at training shapes. The pooling profile cost cannot be removed this way.
+- **Decision consequence:** Keep indexed max-pool (pool_impl torch); do not compile amax-based pooling or heads.
+- **Resolution:** amax pooling rejected.
+
+### F-019 — resolved, material
+
+- **Observation:** S15 (10 fresh seeds 300-309, compiled 128/384/640): logit scale 1/6 reaches 75.28% at 8.5 and 75.61% at 9.0 epochs versus 75.00% and 75.27% at the default 1/9; scale 2/9 reaches 75.07% and 75.15%; time is unchanged; the 75.3% crossing moves to 8.53 epochs and 5.53 s. The competitor's independent 10-seed run (codex c7) found the same 1.5x gain worth +0.38 and +0.19 pp at 9 and 10 epochs.
+- **Interpretation:** A sharper softmax (1.5x logits) speeds short-run convergence with label smoothing 0.2; the effect replicates across two codebases and seed sets. Seed-set means differ by about 0.15 pp (S13 control 75.42% vs S15 control 75.27% at 9 epochs), so the final budget must be set from many fresh seeds.
+- **Decision consequence:** Adopt scaling_factor 1/6 (D-006) and confirm with 40 fresh seeds at 8.75 and 9.0 epochs (S16).
+- **Resolution:** Logit scale adopted.
+
 ### B-001 — external, open
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -189,6 +224,13 @@
 - **Decision:** 128/384/640, three convs per block, translate 2, 20 px then 32 px at half-way, about 8.7 epochs.
 - **Rationale:** Lowest proxy time to 75.3% in S12 (6.29 s, about 6% under the 128/384/512 base) and more accuracy margin per epoch.
 - **Alternatives:** 128/384/768: 6.52 s, rejected.; 128/320/768: 6.45 s, within noise but more total width; kept as runner-up.; 128/384/512: does not reach 75.3% by 9 epochs on fresh seeds; superseded.
+
+### D-006 — provisional
+
+- **Question:** What logit scale should the head use?
+- **Decision:** scaling_factor 1/6 (1.5x the airbench 1/9).
+- **Rationale:** +0.29-0.34 pp at fixed epochs at zero cost over 10 fresh seeds, replicated by the competitor's independent run.
+- **Alternatives:** 1/9 (airbench default): superseded.; 2/9: worse than 1/6.
 
 ## Deferred or rejected work
 

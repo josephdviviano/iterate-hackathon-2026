@@ -1,0 +1,33 @@
+# Saturation check (X-002): at the climbed recipe, re-test the levers most likely to interact
+# with the sharper logits (D-006): label smoothing and the resolution switch point.
+# 10 fresh seeds, 8.75 epochs, in-sweep control. No arm beating control => converged.
+name = "s17-saturation"
+python = ".venv-blackwell/bin/python"
+seeds = [500, 501, 502, 503, 504, 505, 506, 507, 508, 509]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+compile = true
+fused_sgd = true
+epochs = 8.75
+
+[[configs]]
+label_smoothing = 0.2
+
+[[configs]]
+label_smoothing = 0.1
+
+[[configs]]
+label_smoothing = 0.3
+
+[[configs]]
+res_schedule = [[0.0, 20], [0.4, 32]]
+
+[[configs]]
+res_schedule = [[0.0, 20], [0.6, 32]]

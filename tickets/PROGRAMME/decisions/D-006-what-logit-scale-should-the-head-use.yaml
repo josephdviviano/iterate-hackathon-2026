@@ -1,0 +1,22 @@
+schema_version: '1.0'
+decision_id: D-006
+task_id: T-013
+question: What logit scale should the head use?
+decision: scaling_factor 1/6 (1.5x the airbench 1/9).
+rationale: +0.29-0.34 pp at fixed epochs at zero cost over 10 fresh seeds, replicated by the competitor's
+  independent run.
+alternatives:
+- '1/9 (airbench default): superseded.'
+- '2/9: worse than 1/6.'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s15-logit-scale-table.csv
+  locator: research/evidence/T-013/s15-logit-scale-table.csv
+  sha256: 56d41cab13d0921d426efe846947a4a6954d0a68041a93c40d748cd6af4681e5
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: provisional

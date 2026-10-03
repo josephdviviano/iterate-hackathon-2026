@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-018
+task_id: T-013
+result_kind: negative
+importance: contextual
+observation: 'S14 (5 seeds, 128/384/640, 9 epochs): pool_impl amax matches indexed max-pool accuracy in
+  eager mode (75.47% vs 75.52%) but is 62% slower (10.71 s vs 6.62 s); compiled amax produced non-finite
+  logits and failed; compiled indexed max-pool reaches 75.33% in 5.81 s. Competitor run codex c7 also
+  failed with non-finite logits when its max+mean head (amax) was compiled.'
+interpretation: The reshape-plus-amax pooling is exact on CPU but eager CUDA reductions over channels_last
+  tensors are slow, and compiled amax diverges on this stack, plausibly an Inductor lowering problem at
+  training shapes. The pooling profile cost cannot be removed this way.
+decision_implication: Keep indexed max-pool (pool_impl torch); do not compile amax-based pooling or heads.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: supported
+  rationale: identical CPU outputs and gradients, but compiled training diverges in two independent codebases
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s14-pool-impl-table.csv
+  locator: research/evidence/T-013/s14-pool-impl-table.csv
+  sha256: e06a85837716a9f5fd6a1853859593a8518b7963366007aafe9e1fc42806ca6d
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: amax pooling rejected.

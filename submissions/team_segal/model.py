@@ -16,6 +16,22 @@ NUM_CLASSES = 100
 WHITEN_KERNEL = 2
 
 
+def max_pool2(x: torch.Tensor, impl: str) -> torch.Tensor:
+    """2x2 max-pool (floor mode). ``amax`` reshapes and reduces instead of saving indices, so
+    its backward is a fusable elementwise mask rather than an atomic scatter."""
+    if impl == "torch":
+        return F.max_pool2d(x, 2)
+    b, c, h, w = x.shape
+    x = x[:, :, : h - h % 2, : w - w % 2]
+    return x.view(b, c, h // 2, 2, w // 2, 2).amax(dim=(3, 5))
+
+
+def global_max(x: torch.Tensor, impl: str) -> torch.Tensor:
+    if impl == "torch":
+        return F.adaptive_max_pool2d(x, 1).flatten(1)
+    return x.amax(dim=(2, 3))
+
+
 class Normalize(nn.Module):
     """Per-channel normalisation whose statistics are computed from training data in prepare."""
 
@@ -55,9 +71,16 @@ class ConvGroup(nn.Module):
     """conv-pool-BN-GELU then one or two conv-BN-GELU; depth 3 adds a residual (airbench96)."""
 
     def __init__(
-        self, cin: int, cout: int, depth: int, bn_momentum: float, pool_first: bool = False
+        self,
+        cin: int,
+        cout: int,
+        depth: int,
+        bn_momentum: float,
+        pool_first: bool = False,
+        pool_impl: str = "torch",
     ) -> None:
         super().__init__()
+        self.pool_impl = pool_impl
         # pool_first max-pools before the widening conv, cutting its cost 4x.
         self.pool_first = pool_first
         self.conv1 = Conv(cin, cout)
@@ -70,9 +93,9 @@ class ConvGroup(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.pool_first:
-            x = F.gelu(self.norm1(self.conv1(F.max_pool2d(x, 2))))
+            x = F.gelu(self.norm1(self.conv1(max_pool2(x, self.pool_impl))))
         else:
-            x = F.gelu(self.norm1(F.max_pool2d(self.conv1(x), 2)))
+            x = F.gelu(self.norm1(max_pool2(self.conv1(x), self.pool_impl)))
         y = F.gelu(self.norm2(self.conv2(x)))
         if self.residual is None:
             return y
@@ -95,11 +118,12 @@ class AirbenchNet(nn.Module):
         widths = (whiten_width, w1, w2, w3)
         self.groups = nn.Sequential(
             *(
-                ConvGroup(widths[i], widths[i + 1], depths[i], momentum, pools[i])
+                ConvGroup(widths[i], widths[i + 1], depths[i], momentum, pools[i], config.pool_impl)
                 for i in range(3)
             )
         )
         self.head = nn.Linear(w3, NUM_CLASSES, bias=False)
+        self.pool_impl = config.pool_impl
         self.head_norm = config.head_norm
         self.scale = 1 / w3 if config.head_norm else config.scaling_factor
         # Progressive freezing (FreezeOut-style): the first ``frozen_groups`` stages run
@@ -115,7 +139,7 @@ class AirbenchNet(nn.Module):
             x = self.groups[frozen:](x)
         else:
             x = self.groups(F.gelu(self.whiten(x)))
-        x = F.adaptive_max_pool2d(x, 1).flatten(1)
+        x = global_max(x, self.pool_impl)
         return (self.head(x) * self.scale).float()
 
 

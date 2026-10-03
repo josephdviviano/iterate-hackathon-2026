@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-017
+task_id: T-013
+result_kind: positive
+importance: material
+observation: 'S13 (10 fresh seeds 200-209, compiled, fused SGD, 128/384/640): 75.20% at 8.5 epochs (5.52
+  s), 75.42% at 9.0 (5.84 s), 75.47% at 9.5 (6.17 s); per-cell sd 0.19-0.32 pp; interpolated 75.3% crossing
+  at 8.74 epochs and 5.67 s compiled proxy.'
+interpretation: The D-005 base holds on fresh seeds and, compiled, reaches the climbing target about 39%
+  faster than the P1 best cell (9.3 s eager). The accuracy curve flattens above 9 epochs, so the R-001
+  margin is cheapest to buy between 8.75 and 9 epochs.
+decision_implication: Confirm the final recipe with 40 fresh seeds at 8.75 and 9.0 epochs; select the
+  shortest budget whose 40-seed mean is at least 75.2%.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s13-base640-epochs-table.csv
+  locator: research/evidence/T-013/s13-base640-epochs-table.csv
+  sha256: de798712fc194729937940676cd183c671aaabb71a98964fb8d5b18e9aa6aa7a
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: s13-base640-epochs-frontier.csv
+  locator: research/evidence/T-013/s13-base640-epochs-frontier.csv
+  sha256: 3eae3f82673ec8949fad3073ac42256dfb92c17f93b747aff3a61b8c7dc38553
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Final confirmation follows (S15).

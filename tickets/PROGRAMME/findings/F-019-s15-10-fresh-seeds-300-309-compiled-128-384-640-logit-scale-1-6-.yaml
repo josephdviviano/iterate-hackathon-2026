@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-019
+task_id: T-013
+result_kind: positive
+importance: material
+observation: 'S15 (10 fresh seeds 300-309, compiled 128/384/640): logit scale 1/6 reaches 75.28% at 8.5
+  and 75.61% at 9.0 epochs versus 75.00% and 75.27% at the default 1/9; scale 2/9 reaches 75.07% and 75.15%;
+  time is unchanged; the 75.3% crossing moves to 8.53 epochs and 5.53 s. The competitor''s independent
+  10-seed run (codex c7) found the same 1.5x gain worth +0.38 and +0.19 pp at 9 and 10 epochs.'
+interpretation: A sharper softmax (1.5x logits) speeds short-run convergence with label smoothing 0.2;
+  the effect replicates across two codebases and seed sets. Seed-set means differ by about 0.15 pp (S13
+  control 75.42% vs S15 control 75.27% at 9 epochs), so the final budget must be set from many fresh seeds.
+decision_implication: Adopt scaling_factor 1/6 (D-006) and confirm with 40 fresh seeds at 8.75 and 9.0
+  epochs (S16).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s15-logit-scale-table.csv
+  locator: research/evidence/T-013/s15-logit-scale-table.csv
+  sha256: 56d41cab13d0921d426efe846947a4a6954d0a68041a93c40d748cd6af4681e5
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: codex-c7-pooling-confirm.csv
+  locator: research/evidence/T-013/codex-c7-pooling-confirm.csv
+  sha256: 64350f0dc22e70fd8bf066d8b357b2bbf98532957516c962a09fe7aad3adcbfd
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Logit scale adopted.

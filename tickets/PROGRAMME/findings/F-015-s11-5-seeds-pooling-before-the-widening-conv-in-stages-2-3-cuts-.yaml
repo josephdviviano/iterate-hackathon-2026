@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-015
+task_id: T-013
+result_kind: negative
+importance: material
+observation: 'S11 (5 seeds): pooling before the widening conv in stages 2-3 cuts time 22% but drops accuracy
+  to 73.13% and 73.52% at 10 and 12 epochs (control 75.33%, 75.62%); pooling first in all stages drops
+  to 70.3-70.8%; reinvesting in 128/512/768 with pool-first reaches only 74.05% and 74.36%; a depth-2
+  first stage reaches 75.02% at 10 epochs for 7% less time (12-epoch cell pending).'
+interpretation: The widening convs need full spatial resolution before pooling; their FLOPs are productive,
+  so FLOP reallocation through pool-first is rejected. The depth-2 first stage is within noise of a time-neutral
+  trade and does not change the base.
+decision_implication: Keep conv-then-pool in every stage and three convs per stage; spend remaining effort
+  on low-level execution (pooling implementation, compile) and epoch tuning.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: accuracy falls monotonically with the number of stages pooled before their widening conv
+  discriminating_test: null
+- kind: data_measurement
+  disposition: unresolved
+  rationale: the depth-2 first-stage trade is within 5-seed noise
+  discriminating_test: 10-seed comparison only if the climb plateaus
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s11-arch-table.csv
+  locator: research/evidence/T-013/s11-arch-table.csv
+  sha256: 4813f35cbaa6a9110239565ac9ad671cc3ee657a8d10f4da80c330ca00283cd2
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Pool-first rejected; stage depths unchanged.

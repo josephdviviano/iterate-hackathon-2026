@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-016
+task_id: T-013
+result_kind: 'null'
+importance: material
+observation: 'S10 at the 128/384/512 base (5 seeds, 9 and 10 epochs): control 74.68% and 75.33%; lr peak
+  0.1 or 0.35, final lr 0 or 0.15, and whitening-bias epochs 1 or 6 all fall within 0.3 pp of control
+  (best: whitening-bias 6 epochs, 6.61 s vs 6.69 s to target); a short final 32 px phase (20/28/32) and
+  a 16 px start lose 1.2-1.8 pp.'
+interpretation: 'Schedule and optimiser hyperparameters are at a plateau for this base: the airbench defaults
+  transfer. Resolution schedules that shorten the final full-resolution phase lose accuracy, consistent
+  with F-009.'
+decision_implication: Freeze schedule hyperparameters at their defaults; stop hyperparameter climbing
+  and converge on epochs and execution.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: supported
+  rationale: all non-resolution arms lie within about two standard errors of control
+  discriminating_test: null
+- kind: mechanism
+  disposition: supported
+  rationale: the final 32 px phase needs at least half of training
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s10-schedule-table.csv
+  locator: research/evidence/T-013/s10-schedule-table.csv
+  sha256: 81466ba815f45ba7c53a64412fcf9e18ff11c7d4e3c4e72449777a246226a4dd
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Schedule dimension saturated.

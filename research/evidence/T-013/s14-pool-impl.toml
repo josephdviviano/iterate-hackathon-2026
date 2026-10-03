@@ -1,0 +1,20 @@
+# Hill climb step 14 (X-002): low-level pooling. Competitor profile (codex T-002 F-004) puts
+# max-pool forward+backward near 14% and adaptive max-pool near 6.5% of device time.
+# pool_impl = "amax" computes identical values without saved indices or atomic scatter.
+name = "s14-pool-impl"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1, 2, 3, 4]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+fused_sgd = true
+epochs = 9
+
+[[grid]]
+pool_impl = ["torch", "amax"]
+compile = [false, true]

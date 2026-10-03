@@ -45,6 +45,8 @@ class RecipeConfig:
     cutout: int = 0
     compile: bool = False
     compile_mode: str = "default"
+    # Pooling implementation: "torch" (indexed max-pool) or "amax" (reshape + amax).
+    pool_impl: str = "torch"
     fused_sgd: bool = False
     # Muon mode (airbench94_muon): Muon on conv filters, SGD on biases and the head, linear
     # decay to zero, whitening-bias lr decaying over ``whiten_bias_epochs``.
@@ -160,6 +162,8 @@ class RecipeConfig:
             raise ValueError("freeze_schedule must be ascending (start_fraction, 0|1|2) pairs")
         if not 0 < self.select_fraction <= 1 or self.selector_update_every < 1:
             raise ValueError("select_fraction must be in (0, 1] and selector_update_every >= 1")
+        if self.pool_impl not in ("torch", "amax"):
+            raise ValueError("pool_impl must be torch or amax")
         modes = ("default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs")
         if self.compile_mode not in modes:
             raise ValueError(f"compile_mode must be one of {modes}")

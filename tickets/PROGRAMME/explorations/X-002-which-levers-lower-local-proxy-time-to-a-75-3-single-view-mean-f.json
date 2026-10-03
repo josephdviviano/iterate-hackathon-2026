@@ -110,7 +110,7 @@
       "evidence_needed": [
         "S4 lever sweep"
       ],
-      "status": "tested"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "H5",
@@ -170,7 +170,7 @@
       "evidence_needed": [
         "S5 compile check"
       ],
-      "status": "candidate"
+      "status": "tested"
     },
     {
       "hypothesis_id": "H11",
@@ -185,7 +185,7 @@
       "evidence_needed": [
         "S6"
       ],
-      "status": "selected"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "H12",
@@ -200,7 +200,7 @@
       "evidence_needed": [
         "S6"
       ],
-      "status": "selected"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "H13",
@@ -215,7 +215,7 @@
       "evidence_needed": [
         "S7"
       ],
-      "status": "selected"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "H14",
@@ -231,7 +231,7 @@
         "S6",
         "S7"
       ],
-      "status": "selected"
+      "status": "tested"
     },
     {
       "hypothesis_id": "H15",
@@ -246,7 +246,68 @@
       "evidence_needed": [
         "S7"
       ],
-      "status": "selected"
+      "status": "rejected"
+    },
+    {
+      "hypothesis_id": "H16",
+      "proposition": "Pooling before the widening conv in stages 2-3 frees FLOPs that buy more accuracy as width.",
+      "mechanism": "The widening conv at pre-pool resolution is about 40% of FLOPs.",
+      "changed_dimensions": [
+        "capacity-shape"
+      ],
+      "prediction": "Equal accuracy at lower proxy time.",
+      "disconfirming_result": "Accuracy falls by more than the FLOP saving.",
+      "decision_changed": "Stage layout.",
+      "evidence_needed": [
+        "S11"
+      ],
+      "status": "rejected"
+    },
+    {
+      "hypothesis_id": "H17",
+      "proposition": "Last-stage width beyond 512 is the cheapest capacity.",
+      "mechanism": "Late stages run at 4-8 px, so channels are cheap there and carry the 100-way discrimination.",
+      "changed_dimensions": [
+        "capacity-shape"
+      ],
+      "prediction": "Lower proxy time to target at 640-768 last-stage channels.",
+      "disconfirming_result": "No width beats 512.",
+      "decision_changed": "Base widths.",
+      "evidence_needed": [
+        "S9",
+        "S12"
+      ],
+      "status": "tested"
+    },
+    {
+      "hypothesis_id": "H18",
+      "proposition": "Index-free amax pooling removes the pooling backward cost.",
+      "mechanism": "Reshape plus amax yields a fusable elementwise backward without atomics.",
+      "changed_dimensions": [
+        "systems"
+      ],
+      "prediction": "Lower time at identical accuracy.",
+      "disconfirming_result": "Slower or numerically unstable.",
+      "decision_changed": "Pooling implementation.",
+      "evidence_needed": [
+        "S14"
+      ],
+      "status": "rejected"
+    },
+    {
+      "hypothesis_id": "H19",
+      "proposition": "A sharper softmax (logit scale 1/6) speeds short-run convergence.",
+      "mechanism": "With label smoothing 0.2 and a 1/9 scale the logits are too soft early; competitor evidence shows a 1.5x gain.",
+      "changed_dimensions": [
+        "optimiser"
+      ],
+      "prediction": "Accuracy at fixed epochs rises at least 0.2 pp.",
+      "disconfirming_result": "No change or loss.",
+      "decision_changed": "Head logit scale.",
+      "evidence_needed": [
+        "S15"
+      ],
+      "status": "tested"
     }
   ],
   "interpretation_forks": [],
@@ -343,7 +404,10 @@
       "decision_rule": "Adopt a lever if proxy time to 75.3% is at least 5% lower than the in-sweep control.",
       "information_gain": "Tests one systems and two novel compute-allocation levers in one pass.",
       "resource_bound": "12 configurations.",
-      "status": "ready"
+      "status": "run",
+      "result_finding_ids": [
+        "F-009"
+      ]
     },
     {
       "probe_id": "S7",
@@ -356,17 +420,131 @@
       "decision_rule": "Adopt a lever if proxy time to 75.3% is at least 5% lower than the in-sweep control.",
       "information_gain": "Tests example selection, CUDA-graph compilation and the learning rate together.",
       "resource_bound": "13 configurations.",
-      "status": "ready"
+      "status": "run",
+      "result_finding_ids": [
+        "F-010",
+        "F-011"
+      ]
+    },
+    {
+      "probe_id": "S8",
+      "hypothesis_ids": [
+        "H14"
+      ],
+      "method": "Compile and fused SGD separated, 10 fresh seeds, 9-10 epochs.",
+      "decision_rule": "Adopt compile if faster at unchanged accuracy.",
+      "information_gain": "Decides the listed hypotheses at the current base.",
+      "resource_bound": "8 configurations",
+      "status": "run",
+      "result_finding_ids": [
+        "F-013"
+      ]
+    },
+    {
+      "probe_id": "S9",
+      "hypothesis_ids": [
+        "H4",
+        "H8",
+        "H17"
+      ],
+      "method": "Batch 512-1024, width allocation, Muon retune at 9-10 epochs.",
+      "decision_rule": "Adopt levers beating control by 5%.",
+      "information_gain": "Decides the listed hypotheses at the current base.",
+      "resource_bound": "18 configurations",
+      "status": "run",
+      "result_finding_ids": [
+        "F-012"
+      ]
+    },
+    {
+      "probe_id": "S10",
+      "hypothesis_ids": [
+        "H15"
+      ],
+      "method": "Schedule hyperparameters and short final 32 px phases.",
+      "decision_rule": "Adopt if beyond noise.",
+      "information_gain": "Decides the listed hypotheses at the current base.",
+      "resource_bound": "18 configurations",
+      "status": "run",
+      "result_finding_ids": [
+        "F-016"
+      ]
+    },
+    {
+      "probe_id": "S11",
+      "hypothesis_ids": [
+        "H16"
+      ],
+      "method": "Pool-first layouts and depth-2 first stage.",
+      "decision_rule": "Adopt if faster at matched accuracy.",
+      "information_gain": "Decides the listed hypotheses at the current base.",
+      "resource_bound": "10 configurations",
+      "status": "run",
+      "result_finding_ids": [
+        "F-015"
+      ]
+    },
+    {
+      "probe_id": "S12",
+      "hypothesis_ids": [
+        "H17"
+      ],
+      "method": "Last-stage width 512-1024 at 8-9 epochs.",
+      "decision_rule": "Lowest proxy time.",
+      "information_gain": "Decides the listed hypotheses at the current base.",
+      "resource_bound": "10 configurations",
+      "status": "run",
+      "result_finding_ids": [
+        "F-014"
+      ]
+    },
+    {
+      "probe_id": "S13",
+      "hypothesis_ids": [
+        "H17"
+      ],
+      "method": "Fractional epochs 8.5-9.5 at the 640 base, compiled, 10 fresh seeds.",
+      "decision_rule": "Locate the crossing on fresh seeds.",
+      "information_gain": "Decides the listed hypotheses at the current base.",
+      "resource_bound": "3 configurations",
+      "status": "run",
+      "result_finding_ids": [
+        "F-017"
+      ]
+    },
+    {
+      "probe_id": "S14",
+      "hypothesis_ids": [
+        "H18"
+      ],
+      "method": "Indexed versus amax pooling, eager and compiled.",
+      "decision_rule": "Adopt amax if faster at equal accuracy.",
+      "information_gain": "Decides the listed hypotheses at the current base.",
+      "resource_bound": "4 configurations",
+      "status": "run",
+      "result_finding_ids": [
+        "F-018"
+      ]
+    },
+    {
+      "probe_id": "S15",
+      "hypothesis_ids": [
+        "H19"
+      ],
+      "method": "Logit scale 1/9, 1/6, 2/9 at 8.5 and 9 epochs, 10 fresh seeds.",
+      "decision_rule": "Adopt if consistent gain beyond noise.",
+      "information_gain": "Decides the listed hypotheses at the current base.",
+      "resource_bound": "6 configurations",
+      "status": "run",
+      "result_finding_ids": [
+        "F-019"
+      ]
     }
   ],
   "question": "Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate?",
   "schema_version": "1.0",
   "selected_hypothesis_ids": [
-    "H11",
-    "H12",
-    "H13",
-    "H14",
-    "H15"
+    "H19"
   ],
   "synthesis": "Climb coordinate-wise from the P1 best cell: settle shape and budget first (S3), then levers at that shape (S4), then systems (S5), repeating S4 at the new optimum until no lever beats noise.",
   "task_id": "T-013",
