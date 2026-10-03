@@ -29,7 +29,7 @@ HYP = {
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
     "compile": True,
-    "res_schedule": ((24, 5), (28, 2)),  # (resolution, epochs) stages before full 32 px
+    "res_schedule": ((20, 2), (24, 3), (28, 2)),  # (resolution, epochs) stages before full 32 px
     "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
     "muon_lr": 0.205,
     "muon_momentum": 0.655,
@@ -291,8 +291,13 @@ def build(context: BuildContext):
         )
         y = torch.randint(0, context.num_classes, (bs,), device=device)
         net.train()
-        shapes = [x] + [downscale(x, r) for r, _ in hyp["res_schedule"]]
-        for xs, detach in [(xs, d) for xs in shapes for d in (False, True)]:
+        # Warm exactly the (resolution, detach) variants that train() will use.
+        variants = {(32, False)}
+        for e in range(math.ceil(hyp["epochs"])):
+            res = resolution_at(hyp["res_schedule"], e) or 32
+            variants.add((res, e >= hyp["whiten_bias_epochs"]))
+        for res, detach in sorted(variants):
+            xs = x if res == 32 else downscale(x, res)
             for _ in range(3):
                 out = train_net(xs, detach)
                 loss = F.cross_entropy(
