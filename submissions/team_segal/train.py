@@ -118,11 +118,26 @@ def make_optimisation(
         lr_bias = lr * config.bias_scaler
         groups = [
             {"params": norms, "lr": lr_bias, "weight_decay": wd / lr_bias},
-            {"params": whiten + others, "lr": lr, "weight_decay": wd / lr},
+            {"params": others, "lr": lr, "weight_decay": wd / lr},
+            {"params": whiten, "lr": lr, "weight_decay": wd / lr},
         ]
-        sgd = torch.optim.SGD(groups, momentum=config.momentum, nesterov=True)
+        groups = [g for g in groups if g["params"]]
+        sgd = torch.optim.SGD(
+            groups, momentum=config.momentum, nesterov=True, fused=config.fused_sgd or None
+        )
         schedule = triangle(total_steps, config.lr_start, config.lr_peak_frac, config.lr_end)
-        return Optimisation([sgd], [(g, g["lr"], schedule) for g in sgd.param_groups])
+        whiten_steps = ceil(config.whiten_bias_epochs * steps_per_epoch)
+
+        def whiten_schedule(i: int) -> float:
+            # Freeze the whitening bias with a zero lr rather than requires_grad, so the
+            # autograd graph (and any compiled graph) stays fixed for the whole run.
+            return schedule(i) if i < whiten_steps else 0.0
+
+        schedules = [
+            (g, g["lr"], whiten_schedule if whiten and g["params"][0] is whiten[0] else schedule)
+            for g in sgd.param_groups
+        ]
+        return Optimisation([sgd], schedules)
 
     # Muon for conv filters; SGD for biases and the head (airbench94_muon).
     filters = [p for p in others if p.ndim == 4]
@@ -150,44 +165,87 @@ class Lookahead:
     """airbench lookahead: every few steps, pull weights toward a slow EMA and copy it back."""
 
     def __init__(self, model: nn.Module) -> None:
-        self.slow = [v.detach().clone() for v in model.state_dict().values()]
+        floating = (torch.half, torch.float)
+        self.current = [v for v in model.state_dict().values() if v.dtype in floating]
+        self.slow = [v.detach().clone() for v in self.current]
 
     @torch.no_grad()
-    def update(self, model: nn.Module, decay: float) -> None:
-        for slow, current in zip(self.slow, model.state_dict().values(), strict=True):
-            if current.dtype in (torch.half, torch.float):
-                slow.lerp_(current, 1 - decay)
-                current.copy_(slow)
+    def update(self, decay: float) -> None:
+        torch._foreach_lerp_(self.slow, self.current, 1 - decay)
+        torch._foreach_copy_(self.current, self.slow)
 
 
-def resolution(config: RecipeConfig, step: int, total_steps: int) -> int | None:
-    """Training resolution at ``step`` from ``res_schedule`` [(start_fraction, size), ...]."""
-    size = None
-    for start, value in config.res_schedule:
+def scheduled(entries: tuple, step: int, total_steps: int, default: int | None) -> int | None:
+    """Value in force at ``step`` from ((start_fraction, value), ...) entries."""
+    value = default
+    for start, entry in entries:
         if step >= start * total_steps:
-            size = value
-    return size
+            value = entry
+    return value
+
+
+class Selector:
+    """Scores each batch with a small net and keeps the highest-loss fraction (online form of
+    airbench96_faster's proxy masks, which never depend on the main net)."""
+
+    def __init__(
+        self, net: nn.Module, config: RecipeConfig, total_steps: int, steps_per_epoch: int
+    ) -> None:
+        self.net = net
+        self.config = config
+        self.keep = int(config.batch_size * config.select_fraction)
+        selector_config = config.selector_config()
+        self.plan = make_optimisation(net, selector_config, total_steps, steps_per_epoch)
+        net.train()
+
+    def select(
+        self, inputs: torch.Tensor, labels: torch.Tensor, step: int
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        update = step % self.config.selector_update_every == 0
+        with torch.set_grad_enabled(update):
+            losses = F.cross_entropy(
+                self.net(inputs), labels, label_smoothing=self.config.label_smoothing,
+                reduction="none",
+            )
+        keep = losses.detach().topk(self.keep).indices
+        if update:
+            self.plan.set_lr(step)
+            losses[keep].sum().backward()
+            self.plan.step()
+            self.plan.zero_grad()
+        return inputs[keep], labels[keep]
 
 
 def fit(
-    model: nn.Module, step_model: nn.Module, stream: TrainingStream, config: RecipeConfig
+    model: nn.Module,
+    step_model: nn.Module,
+    stream: TrainingStream,
+    config: RecipeConfig,
+    selector_net: nn.Module | None = None,
 ) -> None:
     """Train for ``config.epochs`` epochs (fractional epochs stop mid-epoch)."""
     total_steps = ceil(stream.steps_per_epoch * config.epochs)
     plan = make_optimisation(model, config, total_steps, stream.steps_per_epoch)
+    selector = (
+        Selector(selector_net, config, total_steps, stream.steps_per_epoch)
+        if selector_net is not None and config.select_fraction < 1
+        else None
+    )
     lookahead = Lookahead(model) if config.lookahead else None
-    whiten_bias = model.whiten.bias if isinstance(model, AirbenchNet) else None
+    freezable = isinstance(model, AirbenchNet)
     model.train()
     step = 0
     for epoch in range(ceil(config.epochs)):
-        if whiten_bias is not None and config.optimizer == "sgd":
-            whiten_bias.requires_grad = epoch < config.whiten_bias_epochs
         for inputs, labels in stream.epoch(epoch):
-            size = resolution(config, step, total_steps)
+            if freezable:
+                model.frozen_groups = scheduled(config.freeze_schedule, step, total_steps, 0)
+            size = scheduled(config.res_schedule, step, total_steps, None)
             if size is not None and size != inputs.size(-1):
                 inputs = F.interpolate(
                     inputs, size=(size, size), mode="bilinear", align_corners=False, antialias=True
                 )
+            if selector is not None:
+                inputs, labels = selector.select(inputs, labels, step)
             plan.set_lr(step)
             outputs = step_model(inputs)
             loss = F.cross_entropy(
@@ -198,8 +256,10 @@ def fit(
             plan.zero_grad()
             step += 1
             if lookahead is not None and step % 5 == 0:
-                lookahead.update(model, decay=0.95**5 * (step / total_steps) ** 3)
+                lookahead.update(decay=0.95**5 * (step / total_steps) ** 3)
             if step >= total_steps:
                 break
+    if freezable:
+        model.frozen_groups = 0
     if lookahead is not None:
-        lookahead.update(model, decay=1.0)
+        lookahead.update(decay=1.0)

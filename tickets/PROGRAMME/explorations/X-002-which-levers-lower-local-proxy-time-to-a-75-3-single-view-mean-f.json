@@ -66,6 +66,16 @@
         "torch.compile in build"
       ],
       "why_material": "Compile cut CIFAR-10 time 14% at unchanged accuracy; it changes time, not accuracy."
+    },
+    {
+      "dimension": "compute-allocation",
+      "current_assumption": "Every example and every layer receives a full forward and backward pass every step.",
+      "alternatives": [
+        "freeze early stages late in training",
+        "train the main net only on the hardest examples of each batch",
+        "end training below the evaluation resolution"
+      ],
+      "why_material": "Backward passes through early high-resolution stages and easy examples consume much of the step cost while contributing little late in training."
     }
   ],
   "disposition": "test_ready",
@@ -85,7 +95,7 @@
       "evidence_needed": [
         "S3 sweep"
       ],
-      "status": "selected"
+      "status": "tested"
     },
     {
       "hypothesis_id": "H4",
@@ -100,7 +110,7 @@
       "evidence_needed": [
         "S4 lever sweep"
       ],
-      "status": "candidate"
+      "status": "tested"
     },
     {
       "hypothesis_id": "H5",
@@ -115,7 +125,7 @@
       "evidence_needed": [
         "S4 lever sweep"
       ],
-      "status": "candidate"
+      "status": "tested"
     },
     {
       "hypothesis_id": "H8",
@@ -130,7 +140,7 @@
       "evidence_needed": [
         "S4 lever sweep"
       ],
-      "status": "candidate"
+      "status": "rejected"
     },
     {
       "hypothesis_id": "H9",
@@ -145,7 +155,7 @@
       "evidence_needed": [
         "S4 lever sweep"
       ],
-      "status": "candidate"
+      "status": "tested"
     },
     {
       "hypothesis_id": "H10",
@@ -161,6 +171,82 @@
         "S5 compile check"
       ],
       "status": "candidate"
+    },
+    {
+      "hypothesis_id": "H11",
+      "proposition": "Freezing the whitening layer and first stage (then the second) late in training lowers proxy time at matched accuracy.",
+      "mechanism": "Early filters converge first, so dropping their backward pass late in training saves compute at little accuracy cost (FreezeOut).",
+      "changed_dimensions": [
+        "compute-allocation"
+      ],
+      "prediction": "Proxy time to 75.3% at least 5% lower.",
+      "disconfirming_result": "Accuracy loss costs more epochs than the saved backward compute.",
+      "decision_changed": "Whether the recipe uses a freeze schedule.",
+      "evidence_needed": [
+        "S6"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "H12",
+      "proposition": "Ending training at 28 px and evaluating single-view at 32 px matches full-resolution endings at lower cost.",
+      "mechanism": "Train-test resolution discrepancy: random-crop training makes objects look larger than at test, so a lower final training resolution can be neutral or helpful (FixRes).",
+      "changed_dimensions": [
+        "resolution"
+      ],
+      "prediction": "Equal or higher accuracy at fixed epochs with cheaper late epochs.",
+      "disconfirming_result": "Accuracy at fixed epochs falls by more than 0.3 pp.",
+      "decision_changed": "Final training resolution.",
+      "evidence_needed": [
+        "S6"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "H13",
+      "proposition": "Training the main net on the highest-loss half of each batch, scored by a small selector net, lowers proxy time.",
+      "mechanism": "Easy examples contribute little gradient late in training; halving the main batch halves its cost while the selector is cheap.",
+      "changed_dimensions": [
+        "compute-allocation"
+      ],
+      "prediction": "Proxy time to 75.3% at least 5% lower despite more epochs.",
+      "disconfirming_result": "Extra epochs needed exceed the per-epoch saving.",
+      "decision_changed": "Whether the recipe uses in-run selection.",
+      "evidence_needed": [
+        "S7"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "H14",
+      "proposition": "Compilation (fused kernels; CUDA graphs in max-autotune) with fused SGD lowers seconds per epoch at unchanged accuracy.",
+      "mechanism": "Kernel fusion and graph replay remove elementwise and launch overhead that dominates small-batch steps.",
+      "changed_dimensions": [
+        "systems"
+      ],
+      "prediction": "At least 10% lower proxy time with accuracy within noise.",
+      "disconfirming_result": "Gain under 5%.",
+      "decision_changed": "Whether timing runs compile and which mode.",
+      "evidence_needed": [
+        "S6",
+        "S7"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "H15",
+      "proposition": "A learning rate of 0.8x or 1.25x the airbench default suits the wide depth-3 resized base better.",
+      "mechanism": "The default was tuned for airbench94 on CIFAR-10.",
+      "changed_dimensions": [
+        "optimiser"
+      ],
+      "prediction": "Accuracy at fixed epochs changes by more than 0.3 pp.",
+      "disconfirming_result": "Both directions within noise or worse.",
+      "decision_changed": "Learning rate.",
+      "evidence_needed": [
+        "S7"
+      ],
+      "status": "selected"
     }
   ],
   "interpretation_forks": [],
@@ -171,7 +257,8 @@
     "batch-size",
     "resolution",
     "regularisation",
-    "systems"
+    "systems",
+    "compute-allocation"
   ],
   "observations": [
     {
@@ -209,7 +296,10 @@
       "decision_rule": "Select the shape and translate setting with the lowest interpolated proxy time to 75.3%.",
       "information_gain": "Fixes the base before lever comparisons, which are only meaningful at the right shape.",
       "resource_bound": "13 configurations, about 15-20 minutes on GPU 1.",
-      "status": "ready"
+      "status": "run",
+      "result_finding_ids": [
+        "F-006"
+      ]
     },
     {
       "probe_id": "S4",
@@ -223,24 +313,60 @@
       "decision_rule": "Adopt a lever if its interpolated proxy time is at least 3% lower than the base and its accuracy gain at fixed epochs exceeds two standard errors.",
       "information_gain": "One pass decides four levers at the regime that matters.",
       "resource_bound": "About 10-16 configurations per pass.",
-      "status": "proposed"
+      "status": "run",
+      "result_finding_ids": [
+        "F-007"
+      ]
     },
     {
       "probe_id": "S5",
       "hypothesis_ids": [
-        "H10"
+        "H5"
       ],
-      "method": "Run the climbed recipe eager and compiled, 5 seeds each.",
-      "decision_rule": "Use compile for final timing if it saves at least 5% with accuracy within noise.",
-      "information_gain": "Separates a systems gain from recipe gains.",
-      "resource_bound": "2 configurations.",
-      "status": "proposed"
+      "method": "Tune the resize schedule (fraction and stages) at the base and test the wide shape with resizing; 5 seeds per cell.",
+      "decision_rule": "Keep the lowest interpolated proxy time unless within the 5% noise band, then prefer the simplest schedule.",
+      "information_gain": "Settles the resolution lever before stacking other levers.",
+      "resource_bound": "14 configurations.",
+      "status": "run",
+      "result_finding_ids": [
+        "F-008"
+      ]
+    },
+    {
+      "probe_id": "S6",
+      "hypothesis_ids": [
+        "H11",
+        "H12",
+        "H14"
+      ],
+      "method": "At the S5 base, compare control, compile with fused SGD, two freeze schedules and two FixRes-style endings at 10 and 12 epochs, 5 seeds each.",
+      "decision_rule": "Adopt a lever if proxy time to 75.3% is at least 5% lower than the in-sweep control.",
+      "information_gain": "Tests one systems and two novel compute-allocation levers in one pass.",
+      "resource_bound": "12 configurations.",
+      "status": "ready"
+    },
+    {
+      "probe_id": "S7",
+      "hypothesis_ids": [
+        "H13",
+        "H14",
+        "H15"
+      ],
+      "method": "At the S5 base, compare control, in-run selection (keep 50% or 70%), max-autotune compilation with fused SGD, and lr 9.2 or 14.4, at 10-14 epochs, 5 seeds each.",
+      "decision_rule": "Adopt a lever if proxy time to 75.3% is at least 5% lower than the in-sweep control.",
+      "information_gain": "Tests example selection, CUDA-graph compilation and the learning rate together.",
+      "resource_bound": "13 configurations.",
+      "status": "ready"
     }
   ],
   "question": "Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate?",
   "schema_version": "1.0",
   "selected_hypothesis_ids": [
-    "H7"
+    "H11",
+    "H12",
+    "H13",
+    "H14",
+    "H15"
   ],
   "synthesis": "Climb coordinate-wise from the P1 best cell: settle shape and budget first (S3), then levers at that shape (S4), then systems (S5), repeating S4 at the new optimum until no lever beats noise.",
   "task_id": "T-013",

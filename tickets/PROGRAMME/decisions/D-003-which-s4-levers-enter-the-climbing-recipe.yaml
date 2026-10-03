@@ -1,0 +1,24 @@
+schema_version: '1.0'
+decision_id: D-003
+task_id: T-013
+question: Which S4 levers enter the climbing recipe?
+decision: Adopt progressive resizing (24 px then 32 px); keep SGD with lookahead, batch 1024, label smoothing
+  0.2 and translate 2.
+rationale: Only resizing lowers proxy time beyond noise (-15%); other levers tie or lose accuracy at fixed
+  epochs.
+alternatives:
+- 'Muon (as ported): rejected, -0.8 to -1.4 pp and slower steps.'
+- 'Batch 1536/2048: rejected, slower to target.'
+- 'Translate 1 / label smoothing 0.1: equivalent; keep defaults to limit changes.'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s4-levers-frontier.csv
+  locator: research/evidence/T-013/s4-levers-frontier.csv
+  sha256: 82ade38b418f39f030db079a801910907650f4da2d247dce138e7cca96094cae
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: provisional

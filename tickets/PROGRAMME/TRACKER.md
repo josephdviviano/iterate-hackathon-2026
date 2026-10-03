@@ -80,6 +80,27 @@
 - **Decision consequence:** Use 75.3% as the conservative climbing target and 75.2% over at least 40 seeds as the final development criterion.
 - **Resolution:** Margin set; reconfirm sd at the final recipe.
 
+### F-006 — resolved, material
+
+- **Observation:** S3 (5 seeds per cell, GPU 1): the airbench96 shape with translate 4 reaches 75.3% at 9.68 epochs (9.02 s proxy); with translate 2 it reaches it at 8.89 epochs (8.28 s), +0.41 pp at 8 and +0.48 pp at 10 epochs; 128/512/768 reaches it at 7.13 epochs but 9.43 s; 96/256/384 tops out at 73.9% by 10 epochs.
+- **Interpretation:** H7 is supported through the budget and augmentation dimensions rather than a new shape: lighter translation helps short CIFAR-100 runs (an H9-style regularisation effect), and the wider 128/512/768 shape saves epochs but not time. The 128/384/512 depth-3 shape remains the efficient capacity point.
+- **Decision consequence:** Climb levers at 128/384/512, three convs, translate 2, bracketing the target at 8 and 10 epochs (S4); test translate 0-1 and the wider shape again at translate 2.
+- **Resolution:** Base updated for S4.
+
+### F-007 — resolved, material
+
+- **Observation:** S4 at the D-002 base (5 seeds per arm, 8 and 10 epochs): resizing 24 then 32 px at half-way reaches 75.3% at 9.66 epochs and 7.05 s proxy versus 8.25 s for control (-15%); translate 1 (8.28 s) and label smoothing 0.1 (8.30 s) tie with control; translate 0 (-1.3 pp), lookahead off (-0.8 to -0.9 pp), batch 2048 (-0.6 pp) and Muon at batch 1024 or 2000 (-0.8 to -1.4 pp, about 10% slower per step) lose; batch 1536 is slightly slower (8.47 s); 128/512/768 at translate 2 reaches 76.42% at 8 epochs. The control arms reproduce S3 exactly (74.858%, 75.854%).
+- **Interpretation:** H5 is supported (resolution); H4 is disconfirmed for Muon as ported with airbench94_muon hyperparameters; H8 is disconfirmed; H9 is partly supported (light translation helps, label smoothing is flat, lookahead is necessary). Identical control means across sweeps confirm that results reproduce bit-for-bit for fixed code and seeds on this stack.
+- **Decision consequence:** Adopt progressive resizing and tune its schedule; keep SGD with lookahead, batch 1024, label smoothing 0.2, translate 2; retest the wide shape with resizing (S5).
+- **Resolution:** Resizing adopted provisionally (D-003); Muon parked as dormant pending a retune if the climb plateaus.
+
+### F-008 — resolved, material
+
+- **Observation:** S5 (5 seeds per cell): resize schedules at the base shape reach 75.3% in 6.89 s (20 px then 32 at half-way), 7.20 s (16/24/32), 7.32 s (24/32 at half-way; S4 estimate 7.05 s), 7.39 s (24/28/32); 24 px for 70% never reaches 75.3% by 12 epochs; 128/512/768 reaches it in 8.56 s at full resolution and 7.34 s with 24/32 resizing.
+- **Interpretation:** Within the resizing family proxy time has plateaued: differences are within the about 5% resolution of 5-seed cells (0.1 pp accuracy SE is about 0.4 epochs). Long low-resolution phases cost too much accuracy, and the wider shape does not beat the base once epochs are cheap.
+- **Decision consequence:** Fix the base at 20 px then 32 px at half-way, about 10.6 epochs; treat future gains under about 5% as noise unless confirmed with 10 or more seeds.
+- **Resolution:** Base updated in S6 (20/32 schedule).
+
 ### B-001 — external, open
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -98,6 +119,20 @@
 - **Decision:** Per the team lead's directive, explore on one local GPU (GPU 1, one slot) and rank configurations by a local proxy: eager harness prepare+train time on the otherwise idle GPU, alongside single-view dev-stack accuracy. Every proxy-based selection is provisional and reopens when A100 per-epoch timings exist.
 - **Rationale:** The A100 is blocked on an external approval; local accuracy is the dominant uncertainty and is hardware-independent to first order, while relative per-epoch cost on an idle Blackwell GPU is the best available ordering of candidate shapes.
 - **Alternatives:** Wait for the A100 before any selection: rejected because it stalls the accuracy frontier, which does not need the A100.; Rank by analytic FLOPs only: rejected as the primary proxy because the airbench paper reports FLOP cuts that did not cut A100 wall time; FLOPs are recorded as a secondary check.
+
+### D-002 — provisional
+
+- **Question:** Which shape, augmentation and budget is the base for lever comparisons?
+- **Decision:** 128/384/512 with three convs per block and a residual, translate 2, about 9 epochs (8.28 s proxy to 75.3%).
+- **Rationale:** Lowest interpolated proxy time in S3; translate 2 beats 4 by about 0.4-0.5 pp at fixed epochs.
+- **Alternatives:** Translate 4 (P1 default for the shape): 9.02 s, rejected.; 128/512/768: fewer epochs (7.1) but 9.43 s, rejected for now and retested at translate 2 in S4.; Two-conv 2x width: 12.0 s in P1, rejected.
+
+### D-003 — provisional
+
+- **Question:** Which S4 levers enter the climbing recipe?
+- **Decision:** Adopt progressive resizing (24 px then 32 px); keep SGD with lookahead, batch 1024, label smoothing 0.2 and translate 2.
+- **Rationale:** Only resizing lowers proxy time beyond noise (-15%); other levers tie or lose accuracy at fixed epochs.
+- **Alternatives:** Muon (as ported): rejected, -0.8 to -1.4 pp and slower steps.; Batch 1536/2048: rejected, slower to target.; Translate 1 / label smoothing 0.1: equivalent; keep defaults to limit changes.
 
 ## Deferred or rejected work
 

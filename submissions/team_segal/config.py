@@ -41,6 +41,8 @@ class RecipeConfig:
     translate: int = 2
     cutout: int = 0
     compile: bool = False
+    compile_mode: str = "default"
+    fused_sgd: bool = False
     # Muon mode (airbench94_muon): Muon on conv filters, SGD on biases and the head, linear
     # decay to zero, whitening-bias lr decaying over ``whiten_bias_epochs``.
     optimizer: Optimizer = "sgd"
@@ -54,6 +56,20 @@ class RecipeConfig:
     head_norm: bool = False
     # Progressive resizing: ((start_fraction, size), ...); empty trains at full resolution.
     res_schedule: tuple[tuple[float, int], ...] = ()
+    # In-run example selection (airbench96_faster): a small selector net scores each batch and
+    # the main net trains only on the highest-loss ``select_fraction`` of it. The selector
+    # trains on its own selected losses every ``selector_update_every`` steps.
+    select_fraction: float = 1.0
+    selector_widths: tuple[int, int, int] = (32, 64, 64)
+    selector_update_every: int = 4
+    # Progressive freezing: ((start_fraction, frozen_stages), ...) for airbench nets.
+    freeze_schedule: tuple[tuple[float, int], ...] = ()
+
+    def selector_config(self) -> RecipeConfig:
+        """The small airbench94-shaped selector used for in-run example selection."""
+        return RecipeConfig(
+            widths=self.selector_widths, epochs=self.epochs, batch_size=self.batch_size
+        )
 
     @property
     def scaled_widths(self) -> tuple[int, int, int]:
@@ -77,8 +93,11 @@ class RecipeConfig:
             if len(widths) != 3 or not all(isinstance(w, int) and w > 0 for w in widths):
                 raise ValueError("widths must be three positive integers")
             values["widths"] = tuple(widths)
-        if "res_schedule" in values:
-            values["res_schedule"] = tuple(tuple(entry) for entry in values["res_schedule"])
+        if "selector_widths" in values:
+            values["selector_widths"] = tuple(values["selector_widths"])
+        for key in ("res_schedule", "freeze_schedule"):
+            if key in values:
+                values[key] = tuple(tuple(entry) for entry in values[key])
         config = cls(**values)
         config.validate()
         return config
@@ -120,3 +139,13 @@ class RecipeConfig:
             raise ValueError("res_schedule must be ascending (start_fraction, size) pairs")
         if any(not 0 <= f < 1 or not 8 <= size <= 32 for f, size in self.res_schedule):
             raise ValueError("res_schedule fractions must be in [0, 1) and sizes in [8, 32]")
+        freeze_starts = [entry[0] for entry in self.freeze_schedule]
+        if freeze_starts != sorted(freeze_starts) or any(
+            len(e) != 2 or not 0 <= e[0] < 1 or e[1] not in (0, 1, 2) for e in self.freeze_schedule
+        ):
+            raise ValueError("freeze_schedule must be ascending (start_fraction, 0|1|2) pairs")
+        if not 0 < self.select_fraction <= 1 or self.selector_update_every < 1:
+            raise ValueError("select_fraction must be in (0, 1] and selector_update_every >= 1")
+        modes = ("default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs")
+        if self.compile_mode not in modes:
+            raise ValueError(f"compile_mode must be one of {modes}")

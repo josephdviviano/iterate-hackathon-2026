@@ -1,0 +1,47 @@
+schema_version: '2.0'
+finding_id: F-008
+task_id: T-013
+result_kind: 'null'
+importance: material
+observation: 'S5 (5 seeds per cell): resize schedules at the base shape reach 75.3% in 6.89 s (20 px then
+  32 at half-way), 7.20 s (16/24/32), 7.32 s (24/32 at half-way; S4 estimate 7.05 s), 7.39 s (24/28/32);
+  24 px for 70% never reaches 75.3% by 12 epochs; 128/512/768 reaches it in 8.56 s at full resolution
+  and 7.34 s with 24/32 resizing.'
+interpretation: 'Within the resizing family proxy time has plateaued: differences are within the about
+  5% resolution of 5-seed cells (0.1 pp accuracy SE is about 0.4 epochs). Long low-resolution phases cost
+  too much accuracy, and the wider shape does not beat the base once epochs are cheap.'
+decision_implication: Fix the base at 20 px then 32 px at half-way, about 10.6 epochs; treat future gains
+  under about 5% as noise unless confirmed with 10 or more seeds.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: heterogeneity
+  disposition: not_applicable
+  rationale: all schedules share shape, seeds and stack
+  discriminating_test: null
+- kind: data_measurement
+  disposition: supported
+  rationale: differences between schedules are within the 5-seed proxy-time resolution of about 5%
+  discriminating_test: confirm the chosen schedule with 10 or more seeds at the final step
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s5-resize-table.csv
+  locator: research/evidence/T-013/s5-resize-table.csv
+  sha256: 17e9472e8611d33c5df75467f6a176eaa33af3dcb208596e095ab2deffce596a
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: s5-resize-frontier.csv
+  locator: research/evidence/T-013/s5-resize-frontier.csv
+  sha256: ac2d29073cc20571ad877692efbcdc44ef74cdee8bce5eabacfda9772eee063d
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Base updated in S6 (20/32 schedule).

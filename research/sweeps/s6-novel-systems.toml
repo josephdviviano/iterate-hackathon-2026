@@ -1,0 +1,32 @@
+# Hill climb step 6 (X-002): systems and novel levers at the S5 base
+# (128/384/512, three convs, translate 2, 20 px then 32 px at half-way, ~10.6 epochs).
+#  - compile + fused SGD: time only (warm-up in build compiles every phase).
+#  - progressive freezing (FreezeOut-style): drop backward cost of early stages late in training.
+#  - FixRes-style end: finish training at 28 px and evaluate at 32 px (single view, legal).
+name = "s6-novel-systems"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1, 2, 3, 4]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 512]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+
+[[grid]]
+epochs = [10, 12]
+
+[[grid]]
+epochs = [10, 12]
+compile = [true]
+fused_sgd = [true]
+
+[[grid]]
+epochs = [10, 12]
+freeze_schedule = [[[0.6, 1]], [[0.5, 1], [0.8, 2]]]
+
+[[grid]]
+epochs = [10, 12]
+res_schedule = [[[0.0, 20], [0.5, 28]], [[0.0, 20], [0.4, 28]]]

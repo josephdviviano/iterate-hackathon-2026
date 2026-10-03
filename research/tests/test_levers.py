@@ -13,6 +13,8 @@ from benchmark.worker import load_submission
 LEVERS = {
     "muon": SMALL | {"optimizer": "muon", "head_norm": True, "lookahead": False},
     "resize": SMALL | {"res_schedule": [[0.0, 16], [0.5, 24], [0.75, 32]]},
+    "select": SMALL | {"select_fraction": 0.5, "selector_widths": [16, 32, 32]},
+    "freeze": SMALL | {"freeze_schedule": [[0.5, 1], [0.75, 2]], "res_schedule": [[0.6, 24]]},
     "muon-resnet9": SMALL
     | {"arch": "resnet9", "width_mult": 0.25, "optimizer": "muon", "lookahead": False},
 }
@@ -47,6 +49,9 @@ def test_invalid_lever_parameters_fail_loudly():
         {"optimizer": "adam"},
         {"res_schedule": [[0.5, 16], [0.0, 32]]},
         {"res_schedule": [[0.0, 40]]},
+        {"freeze_schedule": [[0.5, 3]]},
+        {"compile_mode": "fast"},
+        {"select_fraction": 0.0},
     ]
     for bad in bad_parameters:
         with pytest.raises(ValueError):

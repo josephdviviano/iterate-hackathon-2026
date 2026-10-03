@@ -1,0 +1,23 @@
+schema_version: '1.0'
+decision_id: D-002
+task_id: T-013
+question: Which shape, augmentation and budget is the base for lever comparisons?
+decision: 128/384/512 with three convs per block and a residual, translate 2, about 9 epochs (8.28 s proxy
+  to 75.3%).
+rationale: Lowest interpolated proxy time in S3; translate 2 beats 4 by about 0.4-0.5 pp at fixed epochs.
+alternatives:
+- 'Translate 4 (P1 default for the shape): 9.02 s, rejected.'
+- '128/512/768: fewer epochs (7.1) but 9.43 s, rejected for now and retested at translate 2 in S4.'
+- 'Two-conv 2x width: 12.0 s in P1, rejected.'
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s3-deep-frontier.csv
+  locator: research/evidence/T-013/s3-deep-frontier.csv
+  sha256: 83871d8a126df7bea97876e009919efca9385fc0faf8c1787c9afac326d69f75
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: provisional

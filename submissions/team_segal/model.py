@@ -91,10 +91,19 @@ class AirbenchNet(nn.Module):
         self.head = nn.Linear(w3, NUM_CLASSES, bias=False)
         self.head_norm = config.head_norm
         self.scale = 1 / w3 if config.head_norm else config.scaling_factor
+        # Progressive freezing (FreezeOut-style): the first ``frozen_groups`` stages run
+        # without autograd during training, removing their backward cost.
+        self.frozen_groups = 0
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.normalize(x, self.whiten.weight.dtype)
-        x = self.groups(F.gelu(self.whiten(x)))
+        frozen = self.frozen_groups if self.training else 0
+        if frozen:
+            with torch.no_grad():
+                x = self.groups[:frozen](F.gelu(self.whiten(x)))
+            x = self.groups[frozen:](x)
+        else:
+            x = self.groups(F.gelu(self.whiten(x)))
         x = F.adaptive_max_pool2d(x, 1).flatten(1)
         return (self.head(x) * self.scale).float()
 

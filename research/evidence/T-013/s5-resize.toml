@@ -1,0 +1,30 @@
+# Hill climb step 5 (X-002): progressive resizing cut proxy time 15% in S4 (24 px for the first
+# half). Tune the schedule at the base shape and test it on the wider 128/512/768 shape, which
+# crosses the target below 8 epochs at full resolution.
+name = "s5-resize"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1, 2, 3, 4]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 512]
+block_depth = 3
+translate = 2
+
+[[grid]]
+res_schedule = [[[0.0, 24], [0.5, 32]]]
+epochs = [9, 11]
+
+[[grid]]
+res_schedule = [[[0.0, 24], [0.7, 32]], [[0.0, 16], [0.3, 24], [0.6, 32]], [[0.0, 24], [0.35, 28], [0.7, 32]], [[0.0, 20], [0.5, 32]]]
+epochs = [10, 12]
+
+[[grid]]
+widths = [[128, 512, 768]]
+epochs = [6, 7]
+
+[[grid]]
+widths = [[128, 512, 768]]
+res_schedule = [[[0.0, 24], [0.5, 32]]]
+epochs = [6, 8]

@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-006
+task_id: T-013
+result_kind: positive
+importance: material
+observation: 'S3 (5 seeds per cell, GPU 1): the airbench96 shape with translate 4 reaches 75.3% at 9.68
+  epochs (9.02 s proxy); with translate 2 it reaches it at 8.89 epochs (8.28 s), +0.41 pp at 8 and +0.48
+  pp at 10 epochs; 128/512/768 reaches it at 7.13 epochs but 9.43 s; 96/256/384 tops out at 73.9% by 10
+  epochs.'
+interpretation: 'H7 is supported through the budget and augmentation dimensions rather than a new shape:
+  lighter translation helps short CIFAR-100 runs (an H9-style regularisation effect), and the wider 128/512/768
+  shape saves epochs but not time. The 128/384/512 depth-3 shape remains the efficient capacity point.'
+decision_implication: Climb levers at 128/384/512, three convs, translate 2, bracketing the target at
+  8 and 10 epochs (S4); test translate 0-1 and the wider shape again at translate 2.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s3-deep-table.csv
+  locator: research/evidence/T-013/s3-deep-table.csv
+  sha256: 87387c49e109466773eb047da1fa64d7d3dc9dccc8019cc96c67ae75e95c6674
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: s3-deep-frontier.csv
+  locator: research/evidence/T-013/s3-deep-frontier.csv
+  sha256: 83871d8a126df7bea97876e009919efca9385fc0faf8c1787c9afac326d69f75
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Base updated for S4.
