@@ -1,0 +1,33 @@
+probes [2] (steps [268]); train 45, held out 64
+artifacts: /Users/jdv/code/iterate/artifacts/ar25/L7_f40_probe1/cegis_devin
+
+Objects of type `wall` under action ACTION1 with touching neighbours [counter,player,reflection,target] show mixed outcomes: h,pixels x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample. The last transition in transitions.md (step 268, action 1) refuted every program of an earlier committee of 8 programs. Each replayed all the other transitions exactly and predicted this one wrong:
+
+3 program(s) predicted:
+  observed but not predicted: {"name": "reflection_2", "type": "reflection", "x": 30, "y": 27, "w": 3, "h": 3, "layer": 3}
+  observed but not predicted: {"name": "reflection_3", "type": "reflection", "x": 33, "y": 30, "w": 12, "h": 6, "layer": 3}
+  predicted but not observed: {"name": "reflection_4", "type": "reflection", "x": 30, "y": 27, "w": 3, "h": 3, "layer": 3}
+  predicted but not observed: {"name": "reflection_2", "type": "reflection", "x": 21, "y": 39, "w": 9, "h": 6, "layer": 3}
+  predicted but not observed: {"name": "reflection_3", "type": "reflection", "x": 21, "y": 48, "w": 12, "h": 6, "layer": 3}
+
+3 program(s) predicted:
+  predicted but not observed: {"name": "reflection_1", "type": "reflection", "x": 21, "y": 39, "w": 12, "h": 15, "layer": 3}
+
+1 program(s) predicted:
+  predicted but not observed: {"name": "reflection_1", "type": "reflection", "x": 0, "y": 39, "w": 33, "h": 15, "layer": 3}
+
+1 program(s) predicted:
+  predicted but not observed: {"name": "reflection_1", "type": "reflection", "x": 0, "y": 39, "w": 33, "h": 15, "layer": 3}
+
+Find the mechanic those programs missed. It must explain this transition and every earlier one, and it must not be a special case keyed to this step.
+
+ar25 L7 cegis_devin run1: consistent=True train=45/45 test_acc=0.4375 turns=None wall=412.7s err=None
+ar25 L7 cegis_devin run2: consistent=True train=45/45 test_acc=0.4375 turns=None wall=268.5s err=None
+ar25 L7 cegis_devin run0: consistent=False train=1/45 test_acc=0.0 turns=None wall=906.5s err=None
+ar25 L7 cegis_devin run3: consistent=True train=45/45 test_acc=0.4375 turns=None wall=331.1s err=None
+ar25 L7 cegis_devin run4: consistent=True train=45/45 test_acc=0.4375 turns=None wall=311.0s err=None
+ar25 L7 cegis_devin run5: consistent=True train=45/45 test_acc=0.4375 turns=None wall=290.1s err=None
+ar25 L7 cegis_devin run6: consistent=True train=45/45 test_acc=0.4375 turns=None wall=228.9s err=None
+ar25 L7 cegis_devin run7: consistent=True train=45/45 test_acc=0.4375 turns=None wall=332.2s err=None
