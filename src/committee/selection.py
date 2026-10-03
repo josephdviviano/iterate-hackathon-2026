@@ -16,8 +16,9 @@ import random
 from pathlib import Path
 
 from .calibrate import LEVELS
-from .committee import Committee, Member, description_length
-from .evaluate import load_runs
+from .committee import Committee, Member
+from .env import observed
+from .evaluate import members_from
 from .experiment import condition_dir
 from .explore import Trace, simulate
 from .loader import Transition, build_buffer, temporal_split
@@ -28,15 +29,12 @@ def load_members(game: str, level: int, train_frac: float = 0.4, condition: str 
                  ) -> tuple[list[Member], list[Transition], list[Transition]]:
     train, test = temporal_split(build_buffer(game), level, train_frac)
     cond = condition_dir(game, level, train_frac, condition)
-    members = [Member(n, s, p, description_length(s))
-               for n, m, s, p in load_runs(cond, train, test) if m["consistent"] and p]
-    return members, train, test
+    return members_from(cond, train, test, game), train, test
 
 
 def member_hits(members: list[Member], test: list[Transition]) -> list[list[bool]]:
-    truth = [json.dumps(canonical(t.after_objs)) for t in test]
-    return [[p is not None and json.dumps(canonical(p)) == t for p, t in zip(m.test_preds, truth)]
-            for m in members]
+    truth = [json.dumps(canonical(observed(t, members[0].mode))) for t in test]
+    return [[k == t for k, t in zip(m.keys, truth)] for m in members]
 
 
 def headroom(members: list[Member], test: list[Transition]) -> dict:
@@ -48,7 +46,7 @@ def headroom(members: list[Member], test: list[Transition]) -> dict:
         "n_test": n,
         "mean_member": sum(accs) / len(accs),
         "best_member": max(accs),
-        "vote": Committee(members).evaluate([t.after_objs for t in test])["vote_accuracy"],
+        "vote": Committee(members).evaluate_on(test)["vote_accuracy"],
         "oracle": sum(any(col) for col in zip(*hits)) / n,
     }
 
@@ -73,10 +71,10 @@ def random_curve(members: list[Member], test: list[Transition], n_random: int = 
     return out
 
 
-def run(levels=LEVELS, n_random: int = 20) -> dict:
+def run(levels=LEVELS, n_random: int = 20, condition: str = "committee_devin") -> dict:
     out = {}
     for game, level in levels:
-        members, train, test = load_members(game, level)
+        members, train, test = load_members(game, level, condition=condition)
         tr = simulate(members, test, "disagreement", 0.0, train)
         out[f"{game} L{level}"] = {"headroom": headroom(members, test),
                                    "disagreement": _curve(tr), "falsified_at": tr.falsified_at,
@@ -89,9 +87,13 @@ def main(argv: list[str] | None = None) -> None:
 
     parser = argparse.ArgumentParser(description="Oracle headroom and probes as selection, from stored runs.")
     parser.add_argument("--n-random", type=int, default=20)
+    parser.add_argument("--levels", default=None, help="game:level pairs, comma separated; default is the R22 set")
+    parser.add_argument("--condition", default="committee_devin", help="the round 1 committee condition on every level")
+    parser.add_argument("--out", default="artifacts/selection.json")
     args = parser.parse_args(argv)
-    out = run(n_random=args.n_random)
-    Path("artifacts/selection.json").write_text(json.dumps(out, indent=1))
+    levels = tuple((g, int(l)) for g, l in (p.split(":") for p in args.levels.split(","))) if args.levels else LEVELS
+    out = run(levels, args.n_random, args.condition)
+    Path(args.out).write_text(json.dumps(out, indent=1))
     print("| Level | K | n test | mean member | best member | vote | oracle any-right |")
     print("|---|---|---|---|---|---|---|")
     for lv, r in out.items():

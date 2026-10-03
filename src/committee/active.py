@@ -17,7 +17,7 @@ import shutil
 from collections import Counter
 
 from .evaluate import load_runs
-from .experiment import condition_dir, describe, pack_run, write_run
+from .experiment import check_mode, condition_dir, describe, pack_run, require_objects, write_run
 from .loader import CLICK, RESET, Transition, build_buffer, temporal_split
 from .matrix import effect_signature, pair_objects
 from .synth_api import synthesize_any
@@ -143,6 +143,8 @@ def run_active(game: str, level: int, train_frac: float, condition: str, init_fr
     probes = probe_set(train, action_set([t for t in transitions if t.level == level]), max_probes)
     base = condition_dir(game, level, train_frac, condition, test_level)
     src_dir = condition_dir(game, level, train_frac, init_from, test_level)
+    require_objects(src_dir, "targeted growth")
+    check_mode(base, "objects")
     base.mkdir(parents=True, exist_ok=True)
     for k in range(init_runs):
         if not (base / f"run{k}").exists():

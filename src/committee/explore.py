@@ -16,6 +16,7 @@ import random
 from dataclasses import dataclass, field
 
 from .committee import Committee, Member
+from .env import observed
 from .loader import Transition
 from .matrix import EffectMatrix, RowKey, context_signature, object_type
 from .verify import canonical
@@ -41,8 +42,8 @@ class Trace:
         return None
 
 
-def _truth(test: list[Transition]) -> list[str]:
-    return [json.dumps(canonical(t.after_objs)) for t in test]
+def _truth(test: list[Transition], mode: str = "objects") -> list[str]:
+    return [json.dumps(canonical(observed(t, mode))) for t in test]
 
 
 def count_priority(train: list[Transition], test: list[Transition]) -> list[float]:
@@ -61,7 +62,7 @@ def count_priority(train: list[Transition], test: list[Transition]) -> list[floa
 
 def simulate(members: list[Member], test: list[Transition], strategy: str, lam: float,
              train: list[Transition] | None = None, rng: random.Random | None = None) -> Trace:
-    truth = _truth(test)
+    truth = _truth(test, members[0].mode)
     alive = list(members)
     unobserved = list(range(len(test)))
     probes: list[int] = []

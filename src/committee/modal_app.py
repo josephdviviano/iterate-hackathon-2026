@@ -37,11 +37,12 @@ image = (
 )
 
 
-def _light(t) -> dict:
-    """A transition without its grids; the synthesizer and verifier use objects only."""
+def _light(t, keep_grids: bool = False) -> dict:
+    """A transition without its grids unless the mode uses them."""
     d = asdict(t)
-    d["before_grid"] = []
-    d["after_grid"] = []
+    if not keep_grids:
+        d["before_grid"] = []
+        d["after_grid"] = []
     return d
 
 
@@ -66,7 +67,8 @@ def synth_remote(payload: dict) -> dict:
 
     train, test = restore(payload["train"]), restore(payload["test"])
     result = synthesize_any(train, payload["seed"], payload["cfg"])
-    verdict = run_program(result.source, train, test)
+    verdict = run_program(result.source, train, test, mode=payload["cfg"].get("mode", "objects"),
+                          engine_src=payload.get("engine_src"))
     record = pack_run(result, verdict)
     record["meta"]["synth"]["host"] = "modal"
     return record
@@ -76,19 +78,25 @@ def synth_remote(payload: dict) -> dict:
 def main(game: str, level: int, train_frac: float = 0.6, test_level: int | None = None,
          condition: str = "baseline", runs: int = 1, seeded: bool = False, backend: str = "api",
          model: str | None = None, base_url: str | None = None, max_turns: int = 40, max_rounds: int = 8,
-         timeout: int = 900, start: int = 0, reasoning_effort: str | None = None):
-    from committee.experiment import condition_dir, describe, write_run
+         timeout: int = 900, start: int = 0, reasoning_effort: str | None = None,
+         frame: bool = False, frame_out: bool = False):
+    from committee.env import engine_source, mode_name, takes_frame
+    from committee.experiment import check_mode, condition_dir, describe, write_run
     from committee.loader import build_buffer, temporal_split
     from committee.seeds import make_seeds
 
+    mode = mode_name(frame, frame_out)
     train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
     seeds = make_seeds(train, runs) if seeded else [None] * runs
     base = condition_dir(game, level, train_frac, condition, test_level)
-    light_train, light_test = [_light(t) for t in train], [_light(t) for t in test]
+    check_mode(base, mode)
+    light_train = [_light(t, takes_frame(mode)) for t in train]
+    light_test = [_light(t, takes_frame(mode)) for t in test]
     cfg = {"backend": backend, "model": model or ("opus" if backend == "claude" else "llm"),
            "base_url": base_url, "max_turns": max_turns, "max_rounds": max_rounds, "timeout_s": timeout,
-           "reasoning_effort": reasoning_effort}
-    payloads = [{"train": light_train, "test": light_test, "seed": s, "cfg": cfg} for s in seeds]
+           "reasoning_effort": reasoning_effort, "mode": mode}
+    engine = engine_source(game, mode)
+    payloads = [{"train": light_train, "test": light_test, "seed": s, "cfg": cfg, "engine_src": engine} for s in seeds]
     print(f"{game} L{level} f{train_frac}" + (f" test=L{test_level}" if test_level else "")
           + f" {condition}: {len(train)} train, {len(test)} test, {runs} runs on Modal", flush=True)
     k = start

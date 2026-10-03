@@ -24,8 +24,9 @@ import json
 import math
 from collections import Counter
 
-from .committee import Committee, Member, auroc, description_length, row_uncertainty
-from .evaluate import load_runs
+from .committee import Committee, auroc, row_uncertainty
+from .env import observed
+from .evaluate import members_from
 from .experiment import condition_dir
 from .loader import build_buffer, temporal_split
 from .matrix import RowKey, context_signature, object_type
@@ -38,15 +39,15 @@ def level_steps(game: str, level: int, train_frac: float = 0.4, condition: str =
     """Per held-out step: vote shares over candidate outcomes, truth, disagreement, max row entropy."""
     train, test = temporal_split(build_buffer(game), level, train_frac)
     cond = condition_dir(game, level, train_frac, condition)
-    members = [Member(n, s, p, description_length(s)) for n, m, s, p in load_runs(cond, train, test) if m["consistent"] and p]
+    members = members_from(cond, train, test, game)
     com = Committee(members)
     rows = {r["row"]: r["eta_committee"] for r in row_uncertainty(com, train, test)}
     k = len(members)
     out = []
     for i, t in enumerate(test):
-        keys = [json.dumps(canonical(m.test_preds[i])) if m.test_preds[i] is not None else "<error>" for m in members]
+        keys = [m.keys[i] for m in members]
         counts = Counter(keys)
-        truth = json.dumps(canonical(t.after_objs))
+        truth = json.dumps(canonical(observed(t, com.mode)))
         shares = {key: c / k for key, c in counts.items()}
         plural = max(shares, key=lambda x: shares[x])
         row_etas = [rows.get(str(RowKey(object_type(bo), t.action_key, context_signature(t.before_objs, bo, t.click))), 0.0)
@@ -188,8 +189,8 @@ def agreed_but_wrong(steps: list[dict]) -> dict:
     return {"n_unanimous": len(un), "n_wrong": sum(errs), "auroc_row_eta": round(auroc([s["max_row_eta"] for s in un], errs), 3)}
 
 
-def run(alpha: float = 0.1, gamma: float = 0.05, levels=LEVELS) -> dict:
-    by_level = {f"{g} L{l}": level_steps(g, l) for g, l in levels}
+def run(alpha: float = 0.1, gamma: float = 0.05, levels=LEVELS, condition: str = "committee_devin") -> dict:
+    by_level = {f"{g} L{l}": level_steps(g, l, condition=condition) for g, l in levels}
     pooled = [s for ss in by_level.values() for s in ss]
     out = {
         "pooled": {"n": len(pooled), "ece_vote_share": ece([s["plural_share"] for s in pooled], [s["correct"] for s in pooled]),
@@ -224,9 +225,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--gamma", type=float, default=0.05)
     parser.add_argument("--levels", default=None, help="game:level pairs, comma separated; default is the R22 set")
     parser.add_argument("--out", default="artifacts/calibration.json")
+    parser.add_argument("--condition", default="committee_devin", help="the round 1 committee condition on every level")
     args = parser.parse_args(argv)
     levels = tuple((g, int(l)) for g, l in (p.split(":") for p in args.levels.split(","))) if args.levels else LEVELS
-    out = run(args.alpha, args.gamma, levels)
+    out = run(args.alpha, args.gamma, levels, args.condition)
     Path(args.out).write_text(json.dumps(out, indent=1))
     p = out["pooled"]
     print(f"pooled n={p['n']}: vote-share ECE {p['ece_vote_share']}, Brier {p['brier_vote_share']}; "

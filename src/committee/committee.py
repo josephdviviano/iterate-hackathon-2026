@@ -18,6 +18,7 @@ import math
 from dataclasses import dataclass
 from functools import cached_property
 
+from .env import observed
 from .verify import canonical
 
 
@@ -45,13 +46,24 @@ def description_length(source: str) -> int:
 class Member:
     name: str
     source: str
-    test_preds: list[list[dict] | None]
+    test_preds: list[list | None]
     length: int
+    mode: str = "objects"
+    test_objs: list[list[dict] | None] | None = None  # frame_out: the extractor's view of each predicted frame
 
     @cached_property
     def keys(self) -> list[str]:
         """Canonical JSON of each prediction, computed once per member."""
         return [json.dumps(canonical(p)) if p is not None else "<error>" for p in self.test_preds]
+
+    def objects(self, index: int) -> list[dict] | None:
+        """The object view of one prediction, for the effect-row analyses."""
+        if self.mode != "frame_out":
+            return self.test_preds[index]
+        if self.test_objs is None:
+            raise ValueError(f"{self.name}: no object view of its predicted frames; load it with the game given "
+                             "(evaluate.members_from(..., game))")
+        return self.test_objs[index]
 
 
 @dataclass
@@ -69,6 +81,9 @@ class Committee:
     def __init__(self, members: list[Member], lam: float = 0.0):
         if not members:
             raise ValueError("a committee needs at least one member")
+        modes = {m.mode for m in members}
+        if len(modes) > 1:
+            raise ValueError(f"members of different modes cannot vote together: {sorted(modes)}")
         self.members = members
         self.lam = lam
         lengths = [m.length for m in members]
@@ -76,6 +91,17 @@ class Committee:
         raw = [math.exp(-lam * (l - base)) for l in lengths]
         z = sum(raw)
         self.weights = [r / z for r in raw]
+
+    @property
+    def mode(self) -> str:
+        return self.members[0].mode
+
+    def truth(self, test) -> list[list]:
+        """What the members' predictions are compared with, in the members' mode."""
+        return [observed(t, self.mode) for t in test]
+
+    def evaluate_on(self, test) -> dict:
+        return self.evaluate(self.truth(test))
 
     def vote(self, index: int) -> Vote:
         dist: dict[str, float] = {}
@@ -106,7 +132,7 @@ class Committee:
         n = len(self.members)
         return -sum(c / n * math.log(c / n) for c in counts.values()) / math.log(n)
 
-    def evaluate(self, test_after: list[list[dict]]) -> dict:
+    def evaluate(self, test_after: list[list]) -> dict:
         votes = self.votes()
         truth = [json.dumps(canonical(a)) for a in test_after]
         correct = [v.prediction == t for v, t in zip(votes, truth)]
@@ -168,7 +194,7 @@ def row_uncertainty(committee: Committee, train, test) -> list[dict]:
     actual: dict[RowKey, dict[str, int]] = {}
     for i, t in enumerate(test):
         preds = [(m, w) for m, w in zip(committee.members, committee.weights)]
-        pred_pairs = {id(m): pair_objects(t.before_objs, m.test_preds[i]) if m.test_preds[i] is not None else None
+        pred_pairs = {id(m): pair_objects(t.before_objs, m.objects(i)) if m.objects(i) is not None else None
                       for m, _ in preds}
         true_pairs = pair_objects(t.before_objs, t.after_objs)
         for bo, ao in true_pairs:
@@ -218,7 +244,7 @@ def row_calibration(committee: Committee, train, test) -> dict:
         true_pairs = {id(bo): ao for bo, ao in pair_objects(t.before_objs, t.after_objs) if bo is not None}
         votes: dict[int, dict[str, float]] = {}
         for m, w in zip(committee.members, committee.weights):
-            pred = m.test_preds[i]
+            pred = m.objects(i)
             if pred is None:
                 continue
             for bo, ao in pair_objects(t.before_objs, pred):

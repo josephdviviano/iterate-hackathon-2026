@@ -12,8 +12,9 @@ import json
 import os
 import time
 
+from .env import buffer_rows, check_script, contract, render, stub
 from .loader import Transition
-from .synth import CHECK_SCRIPT, CONTRACT, SynthResult, render_transitions
+from .synth import SynthResult
 from .verify import train_report
 
 API = "https://api.devin.ai/v1"
@@ -45,8 +46,9 @@ def _upload(client, name: str, text: str) -> str | None:
         return None
 
 
-def devin_prompt(train: list[Transition], seed: str | None, attachments: dict[str, str | None]) -> str:
-    task = CONTRACT.replace(
+def devin_prompt(train: list[Transition], seed: str | None, attachments: dict[str, str | None],
+                 mode: str = "objects") -> str:
+    task = contract(mode).replace(
         "Files: `transitions.md` (readable diffs), `buffer.json` (full states),\n"
         "`program.py` (your code), `check.py` (the checker).\n", "")
     if seed:
@@ -61,12 +63,11 @@ def devin_prompt(train: list[Transition], seed: str | None, attachments: dict[st
     setup = ("\n# Workspace\n\nDownload these files into one directory and work there:\n" + "\n".join(files) + "\n"
              if files else "")
     if "transitions.md" in inline:
-        setup += "\n# transitions.md\n\n" + render_transitions(train) + "\n"
+        setup += "\n# transitions.md\n\n" + render(train, mode) + "\n"
     if "check.py" in inline:
-        setup += "\n# check.py\n\n```python\n" + CHECK_SCRIPT + "\n```\n"
+        setup += "\n# check.py\n\n```python\n" + check_script(mode) + "\n```\n"
     if "buffer.json" in inline:
-        rows = [{"step": t.step, "action": t.action, "before": t.before_objs, "after": t.after_objs} for t in train]
-        setup += "\n# buffer.json\n\n```json\n" + json.dumps(rows) + "\n```\n"
+        setup += "\n# buffer.json\n\n```json\n" + json.dumps(buffer_rows(train, mode)) + "\n```\n"
     finish = ("\n# Finish\n\nWhen `python3 check.py` prints ALL PASS, or you cannot progress without new "
               "observations, return the structured output: the full program.py source, the checker's first "
               "line, and your notes. Do not ask questions; decide and proceed.\n")
@@ -74,19 +75,19 @@ def devin_prompt(train: list[Transition], seed: str | None, attachments: dict[st
 
 
 def synthesize_devin(train: list[Transition], seed: str | None = None, *, timeout_s: float = 1800,
-                     poll_s: float = 20, max_acu: int = 4, tags: list[str] | None = None) -> SynthResult:
+                     poll_s: float = 20, max_acu: int = 4, tags: list[str] | None = None,
+                     mode: str = "objects") -> SynthResult:
     import httpx
 
     client = httpx.Client(timeout=60)
-    rows = [{"step": t.step, "action": t.action, "before": t.before_objs, "after": t.after_objs} for t in train]
     attachments = {
-        "transitions.md": _upload(client, "transitions.md", render_transitions(train)),
-        "buffer.json": _upload(client, "buffer.json", json.dumps(rows)),
-        "check.py": _upload(client, "check.py", CHECK_SCRIPT),
+        "transitions.md": _upload(client, "transitions.md", render(train, mode)),
+        "buffer.json": _upload(client, "buffer.json", json.dumps(buffer_rows(train, mode))),
+        "check.py": _upload(client, "check.py", check_script(mode)),
     }
-    prompt = devin_prompt(train, seed, attachments)
+    prompt = devin_prompt(train, seed, attachments, mode)
     t0 = time.time()
-    meta: dict = {"backend": "devin", "attachments_uploaded": sum(v is not None for v in attachments.values()),
+    meta: dict = {"backend": "devin", "mode": mode, "attachments_uploaded": sum(v is not None for v in attachments.values()),
                   "prompt_chars": len(prompt)}
     body = {"prompt": prompt, "structured_output_schema": SCHEMA, "max_acu_limit": max_acu, "unlisted": True,
             "tags": tags or ["committee"], "title": f"committee synth {time.strftime('%H:%M:%S')}"}
@@ -120,7 +121,7 @@ def synthesize_devin(train: list[Transition], seed: str | None = None, *, timeou
             nudged, last_nudge = nudged + 1, time.time()
     meta.update({"status": status, "wall_s": round(time.time() - t0, 1), "nudges": nudged,
                  "devin_train_pass": out.get("train_pass"), "notes": (out.get("notes") or "")[:1000]})
-    source = out.get("program") or "def transition_function(state, action):\n    return state\n"
-    passed, report = train_report(source, train)
+    source = out.get("program") or stub(mode)
+    passed, report = train_report(source, train, mode=mode)
     meta["passed"] = passed
     return SynthResult(source=source, seed=seed, meta=meta, check_output=report[-2000:])

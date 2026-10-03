@@ -6,15 +6,17 @@ import json
 from pathlib import Path
 
 from .committee import Committee, Member, description_length
+from .env import engine_source, extract_objects, returns_frame
 from .experiment import condition_dir
 from .loader import build_buffer, temporal_split
 from .verify import run_program
 
 
-def load_runs(cond: Path, train: list | None = None, test: list | None = None
+def load_runs(cond: Path, train: list | None = None, test: list | None = None, game: str | None = None
               ) -> list[tuple[str, dict, str, list]]:
     """Stored runs of a condition. test_preds.json is not tracked in git; when it is missing
-    and the split is given, the program is replayed to rebuild it."""
+    and the split is given, the program is replayed in the run's mode to rebuild it, and in
+    frame_out the object view too when the game is given."""
     runs = []
     for d in sorted(cond.glob("run*")):
         if not (d / "meta.json").exists():
@@ -25,12 +27,36 @@ def load_runs(cond: Path, train: list | None = None, test: list | None = None
         if preds_path.exists():
             preds = json.loads(preds_path.read_text())
         elif train is not None and test is not None:
-            preds = run_program(source, train, test).test_preds
+            mode = meta.get("mode", "objects")
+            if returns_frame(mode) and game is None:
+                raise ValueError(f"{d}: rebuilding frame_out predictions needs the game, for the object view")
+            verdict = run_program(source, train, test, mode=mode, engine_src=engine_source(game, mode))
+            preds = verdict.test_preds
             preds_path.write_text(json.dumps(preds))
+            if verdict.test_objs is not None:
+                (d / "test_objs.json").write_text(json.dumps(verdict.test_objs))
         else:
             preds = []
         runs.append((d.name, meta, source, preds))
     return runs
+
+
+def members_from(cond: Path, train: list | None = None, test: list | None = None, game: str | None = None,
+                 include_inconsistent: bool = False, need_preds: bool = True) -> list[Member]:
+    """The stored runs as committee members, each with its mode and, in frame_out, the extractor's
+    view of its predicted frames."""
+    out = []
+    for name, m, src, preds in load_runs(cond, train, test, game):
+        if not (m["consistent"] or include_inconsistent) or (need_preds and not preds):
+            continue
+        mode = m.get("mode", "objects")
+        objs_path = cond / name / "test_objs.json"
+        objs = json.loads(objs_path.read_text()) if objs_path.exists() else None
+        if objs is None and returns_frame(mode) and game is not None:
+            objs = extract_objects(engine_source(game, mode), preds)
+            objs_path.write_text(json.dumps(objs))
+        out.append(Member(name, src, preds, description_length(src), mode=mode, test_objs=objs))
+    return out
 
 
 def summarize_single(runs) -> dict:
@@ -52,13 +78,13 @@ def evaluate_condition(game: str, level: int, train_frac: float, condition: str,
                        train_n: int | None = None, test_n: int | None = None) -> dict:
     cond = condition_dir(game, level, train_frac, condition, test_level, train_n, test_n)
     train, test = temporal_split(build_buffer(game), level, train_frac, test_level, train_n, test_n)
-    runs = load_runs(cond, train, test)
+    runs = load_runs(cond, train, test, game)
     out = {"game": game, "level": level, "train_frac": train_frac, "test_level": test_level, "condition": condition,
            "n_test": len(test), "single": summarize_single(runs)}
-    members = [Member(name, src, preds, length=description_length(src))
-               for name, m, src, preds in runs if (m["consistent"] or include_inconsistent) and preds]
+    members = members_from(cond, train, test, game, include_inconsistent)
     if members:
-        after = [t.after_objs for t in test]
+        out["mode"] = members[0].mode
+        after = Committee(members).truth(test)
         out["committee"] = Committee(members, lam=lam).evaluate(after)
         out["lambda_sweep"] = [
             {"lam": l, "vote_accuracy": round(e["vote_accuracy"], 4), "auroc": e["auroc_disagreement_vs_error"],
@@ -74,10 +100,8 @@ def member_curve(game: str, level: int, train_frac: float, condition: str, lam: 
     gains accuracy and calibration per synthesized program."""
     cond = condition_dir(game, level, train_frac, condition, test_level)
     train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
-    runs = load_runs(cond, train, test)
-    after = [t.after_objs for t in test]
-    members = [Member(name, src, preds, description_length(src))
-               for name, m, src, preds in runs if m["consistent"] and preds]
+    members = members_from(cond, train, test, game)
+    after = Committee(members).truth(test)
     curve = []
     for k in range(start, len(members) + 1):
         e = Committee(members[:k], lam=lam).evaluate(after)
@@ -159,10 +183,8 @@ def k_sweep(game: str, level: int, train_frac: float, condition: str, lam: float
 
     cond = condition_dir(game, level, train_frac, condition, test_level)
     train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
-    runs = load_runs(cond, train, test)
-    after = [t.after_objs for t in test]
-    members = [Member(name, src, preds, description_length(src))
-               for name, m, src, preds in runs if m["consistent"] and preds]
+    members = members_from(cond, train, test, game)
+    after = Committee(members).truth(test)
     rng = random.Random(seed)
     out: dict = {"n_members": len(members), "by_k": []}
     for k in ks:

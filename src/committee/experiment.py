@@ -12,11 +12,20 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from .env import engine_source, mode_name
 from .loader import ROOT, Transition, build_buffer, temporal_split
 from .seeds import make_seeds
 from .synth import SynthResult
 from .synth_api import synthesize_any
 from .verify import Verdict, run_program
+
+
+def add_mode_args(parser) -> None:
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--frame", action="store_true",
+                       help="the program also gets the 64x64 before frame, as OPINE-World's rule does")
+    group.add_argument("--frame-out", action="store_true",
+                       help="the program returns the next frame, as OPINE-World's rule does; admission is frame equality")
 
 
 def add_backend_args(parser) -> None:
@@ -32,7 +41,8 @@ def add_backend_args(parser) -> None:
 def backend_cfg(args) -> dict:
     return {"backend": args.backend, "model": args.model or ("opus" if args.backend == "claude" else "llm"),
             "base_url": args.base_url, "max_turns": args.max_turns, "max_rounds": args.max_rounds,
-            "timeout_s": args.timeout, "reasoning_effort": args.reasoning_effort}
+            "timeout_s": args.timeout, "reasoning_effort": args.reasoning_effort,
+            "mode": mode_name(getattr(args, "frame", False), getattr(args, "frame_out", False))}
 
 ARTIFACTS = ROOT / "artifacts"
 
@@ -50,8 +60,10 @@ def pack_run(result: SynthResult, verdict: Verdict) -> dict:
     return {
         "source": result.source,
         "test_preds": verdict.test_preds,
+        "test_objs": verdict.test_objs,
         "meta": {
             "seed": result.seed,
+            "mode": verdict.mode,
             "synth": result.meta,
             "check_output": result.check_output,
             "train_pass": verdict.train_pass,
@@ -70,7 +82,30 @@ def write_run(out: Path, record: dict) -> dict:
     (out / "program.py").write_text(record["source"])
     (out / "meta.json").write_text(json.dumps(record["meta"], indent=1))
     (out / "test_preds.json").write_text(json.dumps(record["test_preds"]))
+    if record.get("test_objs") is not None:
+        (out / "test_objs.json").write_text(json.dumps(record["test_objs"]))
     return record["meta"]
+
+
+def run_mode(cond: Path) -> str | None:
+    """The mode of the runs stored under a condition; None when there are none."""
+    modes = {json.loads(p.read_text()).get("mode", "objects") for p in cond.glob("run*/meta.json")}
+    if len(modes) > 1:
+        raise ValueError(f"{cond} mixes modes {sorted(modes)}")
+    return next(iter(modes), None)
+
+
+def require_objects(cond: Path, what: str) -> None:
+    """The studies that build hypothetical object states have no frame to go with them."""
+    stored = run_mode(cond)
+    if stored not in (None, "objects"):
+        raise SystemExit(f"{what} is defined for the objects mode; {cond} holds {stored} runs")
+
+
+def check_mode(cond: Path, mode: str) -> None:
+    stored = run_mode(cond)
+    if stored is not None and stored != mode:
+        raise SystemExit(f"{cond} holds {stored} runs; a {mode} run needs another --condition")
 
 
 def describe(meta: dict, label: str) -> str:
@@ -82,9 +117,9 @@ def describe(meta: dict, label: str) -> str:
 
 
 def run_one(train: list[Transition], test: list[Transition], out: Path, seed: str | None,
-            cfg: dict) -> dict:
+            cfg: dict, engine_src: str | None = None) -> dict:
     result = synthesize_any(train, seed, cfg)
-    verdict = run_program(result.source, train, test)
+    verdict = run_program(result.source, train, test, mode=cfg.get("mode", "objects"), engine_src=engine_src)
     return write_run(out, pack_run(result, verdict))
 
 
@@ -94,13 +129,17 @@ def run_condition(game: str, level: int, train_frac: float, condition: str, seed
     transitions = build_buffer(game)
     train, test = temporal_split(transitions, level, train_frac, test_level, train_n, test_n)
     base = condition_dir(game, level, train_frac, condition, test_level, train_n, test_n)
-    return run_split(train, test, base, seeds, cfg, f"{game} L{level} {condition}", start_index, parallel)
+    return run_split(train, test, base, seeds, cfg, f"{game} L{level} {condition}", start_index, parallel,
+                     engine_source(game, cfg.get("mode", "objects")))
 
 
 def run_split(train: list[Transition], test: list[Transition], base: Path, seeds: list[str | None],
-              cfg: dict, label: str, start_index: int = 0, parallel: int = 1) -> list[dict]:
+              cfg: dict, label: str, start_index: int = 0, parallel: int = 1,
+              engine_src: str | None = None) -> list[dict]:
+    check_mode(base, cfg.get("mode", "objects"))
+
     def job(k: int, seed: str | None) -> dict:
-        meta = run_one(train, test, base / f"run{k}", seed, cfg)
+        meta = run_one(train, test, base / f"run{k}", seed, cfg, engine_src)
         print(describe(meta, f"{label} run{k}"), flush=True)
         return meta
 
@@ -122,6 +161,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--start", type=int, default=0, help="first run index, to add runs later")
     add_backend_args(parser)
+    add_mode_args(parser)
     parser.add_argument("--seeded", action="store_true", help="one data-driven seed hypothesis per run")
     parser.add_argument("--parallel", type=int, default=1)
     parser.add_argument("--test-level", type=int, default=None, help="test on all of another level")

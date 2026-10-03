@@ -16,8 +16,9 @@ import os
 import re
 import time
 
-from .committee import Committee, Member, auroc, description_length
-from .evaluate import load_runs
+from .committee import Committee, auroc
+from .env import observed
+from .evaluate import members_from
 from .experiment import condition_dir
 from .loader import build_buffer, temporal_split
 from .synth_api import load_env_file
@@ -52,11 +53,10 @@ def judge(game: str, level: int, train_frac: float, condition: str, model: str =
                     api_key=os.environ.get("VLLM_API_KEY") or os.environ.get("OPENAI_API_KEY"), timeout=600)
     train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
     cond = condition_dir(game, level, train_frac, condition, test_level)
-    runs = load_runs(cond, train, test)
-    members = [Member(n, s, p, description_length(s)) for n, m, s, p in runs if m["consistent"] and p]
+    members = members_from(cond, train, test, game)
     com = Committee(members)
     top = members[com.weights.index(max(com.weights))]
-    truth = [json.dumps(canonical(t.after_objs)) for t in test]
+    truth = [json.dumps(canonical(observed(t, com.mode))) for t in test]
     rows = []
     t0 = time.time()
     for attempt in range(30):  # a scaled-to-zero server answers 503 until its container is up

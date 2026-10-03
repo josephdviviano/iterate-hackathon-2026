@@ -14,9 +14,10 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from .committee import Committee, Member, description_length
-from .evaluate import load_runs
-from .experiment import ARTIFACTS, add_backend_args, backend_cfg, condition_dir, run_split
+from .committee import Committee, Member
+from .env import engine_source, frame_diff, observed, returns_frame
+from .evaluate import load_runs, members_from
+from .experiment import ARTIFACTS, add_backend_args, backend_cfg, check_mode, condition_dir, run_split
 from .explore import simulate
 from .loader import Transition, build_buffer, temporal_split
 from .matrix import RowKey, context_signature, effect_signature, object_type, pair_objects
@@ -24,13 +25,12 @@ from .seeds import CONDITION_KINDS, make_seeds
 from .verify import canonical
 
 
-def _key(pred: list[dict] | None) -> str:
+def _key(pred: list | None) -> str:
     return json.dumps(canonical(pred)) if pred is not None else "<error>"
 
 
-def members_of(cond: Path, train: list[Transition], test: list[Transition]) -> list[Member]:
-    return [Member(name, src, preds, description_length(src))
-            for name, m, src, preds in load_runs(cond, train, test) if m["consistent"] and preds]
+def members_of(cond: Path, train: list[Transition], test: list[Transition], game: str | None = None) -> list[Member]:
+    return members_from(cond, train, test, game)
 
 
 def admission(cond: Path) -> tuple[int, int]:
@@ -66,22 +66,39 @@ def _diff(pred: list[dict] | None, actual: list[dict], limit: int = 3) -> str:
     return "\n".join(lines)
 
 
+def _diff_in_mode(pred: list | None, objs: list[dict] | None, t: Transition, mode: str) -> str:
+    """In frame_out the cells that differ, then the object view when the extractor gave one."""
+    if not returns_frame(mode):
+        return _diff(pred, t.after_objs)
+    if pred is None:
+        return "  no prediction (exception)"
+    return frame_diff(pred, t.after_grid, limit=6) + (f"\n{_diff(objs, t.after_objs)}" if objs is not None else "")
+
+
+def _alive(members: list[Member], test: list[Transition], probes: list[int]) -> list[Member]:
+    """The members that survived every probe before the last one."""
+    mode = members[0].mode
+    truth = [_key(observed(test[i], mode)) for i in probes[:-1]]
+    return [m for m in members if all(m.keys[i] == t for i, t in zip(probes[:-1], truth))]
+
+
 def counterexample_text(members: list[Member], test: list[Transition], probes: list[int]) -> str:
     """What the refuted programs predicted on the falsifying probe, grouped by prediction."""
     last = probes[-1]
-    truth = [_key(test[i].after_objs) for i in probes[:-1]]
-    alive = [m for m in members if all(_key(m.test_preds[i]) == t for i, t in zip(probes[:-1], truth))]
-    groups: dict[str, tuple[int, list[dict] | None]] = {}
+    alive = _alive(members, test, probes)
+    mode = members[0].mode
+    groups: dict[str, tuple[int, list | None, list | None]] = {}
     for m in alive:
         pred = m.test_preds[last]
-        n, _ = groups.get(_key(pred), (0, pred))
-        groups[_key(pred)] = (n + 1, pred)
+        objs = m.test_objs[last] if m.test_objs is not None else None
+        n, _, _ = groups.get(_key(pred), (0, pred, objs))
+        groups[_key(pred)] = (n + 1, pred, objs)
     t = test[last]
     lines = [f"Counterexample. The last transition in transitions.md (step {t.step}, action "
              f"{json.dumps(t.action)}) refuted every program of an earlier committee of {len(alive)} "
              f"programs. Each replayed all the other transitions exactly and predicted this one wrong:"]
-    for n, pred in sorted(groups.values(), key=lambda g: -g[0]):
-        lines.append(f"\n{n} program(s) predicted:\n{_diff(pred, t.after_objs)}")
+    for n, pred, objs in sorted(groups.values(), key=lambda g: -g[0]):
+        lines.append(f"\n{n} program(s) predicted:\n{_diff_in_mode(pred, objs, t, mode)}")
     lines.append("\nFind the mechanic those programs missed. It must explain this transition and every "
                  "earlier one, and it must not be a special case keyed to this step.")
     return "\n".join(lines)
@@ -108,18 +125,17 @@ def mechanism_text(members: list[Member], test: list[Transition], probes: list[i
     and each predicted effect with its count, split into the rows every program got wrong (the
     mechanic to repair) and the rows every program got right (the mechanics to keep)."""
     last = probes[-1]
-    truth = [_key(test[i].after_objs) for i in probes[:-1]]
-    alive = [m for m in members if all(_key(m.test_preds[i]) == t for i, t in zip(probes[:-1], truth))]
+    alive = _alive(members, test, probes)
     t = test[last]
-    observed = {id(bo): ao for bo, ao in pair_objects(t.before_objs, t.after_objs) if bo is not None}
+    seen = {id(bo): ao for bo, ao in pair_objects(t.before_objs, t.after_objs) if bo is not None}
     predicted = []
     for m in alive:
-        pred = m.test_preds[last]
+        pred = m.objects(last)
         predicted.append(None if pred is None else {id(bo): ao for bo, ao in pair_objects(t.before_objs, pred) if bo is not None})
     wrong, right = [], []
     for bo in t.before_objs:
         row = RowKey(object_type(bo), t.action_key, context_signature(t.before_objs, bo, t.click))
-        obs = _field_changes(bo, observed.get(id(bo)))
+        obs = _field_changes(bo, seen.get(id(bo)))
         counts = Counter("<error>" if pr is None else _field_changes(bo, pr.get(id(bo))) for pr in predicted)
         if set(counts) == {obs}:
             right.append(f"{row}: {obs}")
@@ -128,7 +144,7 @@ def mechanism_text(members: list[Member], test: list[Transition], probes: list[i
                          + "; ".join(f"{e} ({n} program{'s' if n > 1 else ''})" for e, n in counts.most_common()))
     born = [ao for bo, ao in pair_objects(t.before_objs, t.after_objs) if bo is None]
     for ao in born:
-        n = sum(1 for m in alive if m.test_preds[last] is not None and any(canonical([o]) == canonical([ao]) for o in m.test_preds[last]))
+        n = sum(1 for m in alive if m.objects(last) is not None and any(canonical([o]) == canonical([ao]) for o in m.objects(last)))
         wrong.append(f"new object {_brief(json.dumps(ao, sort_keys=True))}: observed; predicted by {n} of {len(alive)} programs")
     lines = [f"Counterexample at the mechanism level. Step {t.step}, action {json.dumps(t.action)}, refuted every program "
              f"of a committee of {len(alive)}. Rows where every program was wrong; this is the mechanic to repair:"]
@@ -172,10 +188,12 @@ def run_round(game: str, level: int, train_frac: float, source_condition: str, c
     train, test = temporal_split(build_buffer(game), level, train_frac)
     probes, cond = stored_round(game, level, train_frac, source_condition, condition, from_probe)
     train_r, test_r = split_after_probes(train, test, probes)
-    members = members_of(cond, train_r, test_r)
+    members = members_of(cond, train_r, test_r, game)
     new = observed_probes(members, test_r)
     if not new:
         raise SystemExit(f"no probe refutes every member of {cond}")
+    mode = members[0].mode  # the new round plays the stored committee's game
+    cfg = {**cfg, "mode": mode}
     text = mechanism_text(members, test_r, new) if mechanism else counterexample_text(members, test_r, new)
     remaining = [i for i in range(len(test)) if i not in set(probes)]
     probes = probes + [remaining[j] for j in new]
@@ -183,6 +201,7 @@ def run_round(game: str, level: int, train_frac: float, source_condition: str, c
     seeds = [f"{s}\n\n{text}" + (f"\n\n{repair_hypothesis(k)}" if mechanism else "") + (f"\n\n{GEOMETRY_RULE}" if geometry_rule else "")
              for k, s in enumerate(make_seeds(train2, runs))]
     base = probe_split_dir(game, level, train_frac, len(probes), condition)
+    check_mode(base, mode)
     print(f"probes {probes} (steps {[test[i].step for i in probes]}); train {len(train2)}, held out {len(test2)}")
     print(f"artifacts: {base}\n\n{seeds[0]}\n")
     if dry_run:
@@ -191,16 +210,18 @@ def run_round(game: str, level: int, train_frac: float, source_condition: str, c
     (base.parent / "split.json").write_text(json.dumps(
         {"source": str(cond.relative_to(ARTIFACTS)), "probes": probes,
          "steps": [test[i].step for i in probes]}, indent=1))
-    run_split(train2, test2, base, seeds, cfg, f"{game} L{level} {condition}", start, parallel)
+    run_split(train2, test2, base, seeds, cfg, f"{game} L{level} {condition}", start, parallel,
+              engine_source(game, mode))
 
 
 def restrict(members: list[Member], test: list[Transition], steps: set[int]) -> list[Member]:
     idx = [i for i, t in enumerate(test) if t.step in steps]
-    return [Member(m.name, m.source, [m.test_preds[i] for i in idx], m.length) for m in members]
+    return [Member(m.name, m.source, [m.test_preds[i] for i in idx], m.length, m.mode,
+                   None if m.test_objs is None else [m.test_objs[i] for i in idx]) for m in members]
 
 
 def score(members: list[Member], test: list[Transition]) -> dict:
-    e = Committee(members).evaluate([t.after_objs for t in test])
+    e = Committee(members).evaluate_on(test)
     un = next(r for r in e["reliability_uniform"] if r["bin"] == "unanimous")
     split = [p for p in e["per_transition"] if p["uniform_disagreement"] > 0]
     return {"members": len(members), "vote": round(e["vote_accuracy"], 3),
@@ -220,7 +241,7 @@ def report(game: str, level: int, train_frac: float, source_condition: str, cond
     train, test = temporal_split(transitions, level, train_frac)
     base0 = condition_dir(game, level, train_frac, source_condition)
     arms: dict[str, tuple[list[Member], list[Transition], Path, int]] = {
-        "round1": (members_of(base0, train, test), test, base0, 0)}
+        "round1": (members_of(base0, train, test, game), test, base0, 0)}
     rounds = sorted((p for p in base0.parent.parent.glob(f"{base0.parent.name}_probe*")
                      if p.name.rsplit("probe", 1)[1].isdigit()),
                     key=lambda p: int(p.name.rsplit("probe", 1)[1]))
@@ -232,13 +253,13 @@ def report(game: str, level: int, train_frac: float, source_condition: str, cond
         for c in conditions:
             if (d / c).exists():
                 label = f"round{k}" if len(conditions) == 1 else f"round{k} {c}"
-                arms[label] = (members_of(d / c, train_r, test_r), test_r, d / c, len(probes))
+                arms[label] = (members_of(d / c, train_r, test_r, game), test_r, d / c, len(probes))
     for n_extra in sorted({a[3] for a in arms.values() if a[3]}):
         n = len(train) + n_extra
         pcond = condition_dir(game, level, train_frac, passive_condition, train_n=n)
         if pcond.exists():
             ptrain, ptest = temporal_split(transitions, level, train_frac, train_n=n)
-            arms[f"passive{n_extra}"] = (members_of(pcond, ptrain, ptest), ptest, pcond, n_extra)
+            arms[f"passive{n_extra}"] = (members_of(pcond, ptrain, ptest, game), ptest, pcond, n_extra)
     arms = {k: v for k, v in arms.items() if v[0]}
     common = set.intersection(*({t.step for t in ts} for _, ts, _, _ in arms.values()))
     out = {"game": game, "level": level, "train_frac": train_frac, "probes": probes,

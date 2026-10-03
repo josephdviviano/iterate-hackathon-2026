@@ -35,9 +35,12 @@ spec = importlib.util.spec_from_file_location("ge", sys.argv[1])
 ge = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ge)
 grids = json.load(open(sys.argv[2]))
+fresh = len(sys.argv) > 4 and sys.argv[4] == "fresh"
 out = []
 for g in grids:
     try:
+        if fresh:
+            spec.loader.exec_module(ge)
         out.append(ge.extract_objects(g))
     except Exception as e:
         out.append({"error": repr(e)[:200]})
@@ -129,14 +132,16 @@ def completion_steps(bundle: dict) -> set[int]:
     return {frame_step[f] for f in bundle["level_steps"]}
 
 
-def run_extractor(engine_src: str, grids: list[list[list[int]]], timeout_s: float = 600) -> list:
+def run_extractor(engine_src: str, grids: list[list[list[int]]], timeout_s: float = 600, fresh: bool = False) -> list:
+    """Objects of each grid, in one process and in order, as the recording was extracted. With
+    fresh, the engine module is reloaded before every grid so no extractor state carries over."""
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         (tmp_path / "engine.py").write_text(engine_src)
         (tmp_path / "run.py").write_text(_EXTRACT_RUNNER)
         (tmp_path / "grids.json").write_text(json.dumps(grids))
         proc = subprocess.run(
-            [sys.executable, "run.py", "engine.py", "grids.json", "out.json"],
+            [sys.executable, "run.py", "engine.py", "grids.json", "out.json"] + (["fresh"] if fresh else []),
             cwd=tmp, capture_output=True, text=True, timeout=timeout_s,
         )
         if proc.returncode != 0:

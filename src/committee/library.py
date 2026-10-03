@@ -17,7 +17,7 @@ import json
 import time
 
 from .evaluate import load_runs
-from .experiment import condition_dir
+from .experiment import condition_dir, require_objects
 from .loader import build_buffer, temporal_split
 from .synth import CHECK_SCRIPT
 from .synth_devin import API, _headers, _upload
@@ -78,6 +78,7 @@ def extract(game: str, level: int, train_frac: float, condition: str, test_level
     transitions = build_buffer(game)
     train, test = temporal_split(transitions, level, train_frac, test_level)
     cond = condition_dir(game, level, train_frac, condition, test_level)
+    require_objects(cond, "the mechanism library")
     runs = [(n, s, m) for n, m, s, _ in load_runs(cond, train, test) if m["consistent"]]
     client = httpx.Client(timeout=60)
     urls = []

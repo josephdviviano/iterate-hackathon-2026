@@ -29,7 +29,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 
 from .evaluate import load_runs
-from .experiment import condition_dir
+from .experiment import condition_dir, require_objects
 from .loader import CLICK, Transition, build_buffer, temporal_split
 from .matrix import EffectMatrix, RowKey, context_signature, effect_signature, object_type, pair_objects
 from .verify import run_program
@@ -249,6 +249,7 @@ def analyse(game: str, level: int, train_frac: float, condition: str, test_level
     transitions = build_buffer(game)
     train, test = temporal_split(transitions, level, train_frac, test_level)
     cond = condition_dir(game, level, train_frac, condition, test_level)
+    require_objects(cond, "perturbation attribution")
     members = [(name, src) for name, m, src, _ in load_runs(cond, train, test) if m["consistent"]]
     matrix = EffectMatrix.from_transitions(train)
     alphabet = len(matrix.alphabet)

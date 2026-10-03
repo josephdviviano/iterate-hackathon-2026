@@ -18,6 +18,8 @@ PRESETS = {
     "qwen": {"model": "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8", "gpu": "H100", "max_len": 131072, "extra": []},
     "gptoss": {"model": "openai/gpt-oss-120b", "gpu": "H100", "max_len": 65536,
                "extra": ["--reasoning-parser", "openai_gptoss", "--async-scheduling"]},
+    "mistral": {"model": "mistralai/Mistral-Small-24B-Instruct-2501", "gpu": "H100", "max_len": 32768,
+                "extra": ["--tokenizer-mode", "mistral", "--config-format", "mistral", "--load-format", "mistral"]},
 }
 PRESET = os.environ.get("COMMITTEE_LLM", "qwen")
 MODEL_NAME = PRESETS[PRESET]["model"]
@@ -26,13 +28,13 @@ GPU = PRESETS[PRESET]["gpu"]
 PORT = 8000
 MINUTES = 60
 MAX_MODEL_LEN = PRESETS[PRESET]["max_len"]
-APP_NAME = "committee-llm" if PRESET == "qwen" else f"committee-llm-{PRESET}"
+APP_NAME = os.environ.get("COMMITTEE_LLM_APP") or ("committee-llm" if PRESET == "qwen" else f"committee-llm-{PRESET}")
 
 image = (
     modal.Image.from_registry("nvidia/cuda:12.9.0-devel-ubuntu22.04", add_python="3.12")
     .entrypoint([])
     .uv_pip_install("vllm==0.21.0")
-    .env({"HF_XET_HIGH_PERFORMANCE": "1", "VLLM_LOG_STATS_INTERVAL": "30"})
+    .env({"HF_XET_HIGH_PERFORMANCE": "1", "VLLM_LOG_STATS_INTERVAL": "30", "COMMITTEE_LLM": PRESET})
 )
 
 hf_cache = modal.Volume.from_name("huggingface-cache", create_if_missing=True)

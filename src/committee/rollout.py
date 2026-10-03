@@ -16,7 +16,7 @@ import json
 from collections import Counter
 
 from .evaluate import load_runs
-from .experiment import condition_dir
+from .experiment import condition_dir, require_objects
 from .loader import RESET, Transition, build_buffer, temporal_split
 from .verify import canonical, run_program
 
@@ -45,6 +45,7 @@ def rollout(game: str, level: int, train_frac: float, condition: str, test_level
     if test_levels:
         test = multi_level_test(transitions, test_levels)
     cond = condition_dir(game, level, train_frac, condition, test_level)
+    require_objects(cond, "the open-loop rollout")
     runs = load_runs(cond, train, test if not test_levels else None)
     sources = [(name, src) for name, m, src, _ in runs if m["consistent"]]
     truth = [json.dumps(canonical(t.after_objs)) for t in test]

@@ -26,8 +26,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from .cegis import counterexample_text, probe_split_dir, split_after_probes, stored_round
-from .committee import Member, auroc, description_length
-from .evaluate import load_runs
+from .committee import Member, auroc
+from .env import call_expr, engine_source, extract_objects, is_frame, returns_frame, takes_frame
+from .evaluate import members_from
 from .experiment import ARTIFACTS, add_backend_args, backend_cfg, condition_dir, run_split
 from .loader import CLICK, ROOT, Transition, build_buffer, final_engine_source, load_bundle, run_extractor, temporal_split
 from .seeds import make_seeds
@@ -62,15 +63,16 @@ def _entropy(keys: list[str]) -> float:
     return -sum(c / n * math.log(c / n) for c in counts) / math.log(n)
 
 
-def predict(source: str, before: list[dict], actions: list[int]) -> list[list[dict] | None]:
+def predict(source: str, before: list[dict], actions: list[int], grid: list[list[int]] | None = None,
+            mode: str = "objects") -> list[list | None]:
     """One member's prediction for each candidate action, each from the same observed state."""
-    rows = [Transition(i, 0, a, None, False, [], [], before, []) for i, a in enumerate(actions)]
-    verdict = run_program(source, [], rows, timeout_s=60)
+    rows = [Transition(i, 0, a, None, False, grid or [], [], before, []) for i, a in enumerate(actions)]
+    verdict = run_program(source, [], rows, timeout_s=60, mode=mode)
     return verdict.test_preds if len(verdict.test_preds) == len(actions) else [None] * len(actions)
 
 
 def members_for(cond: Path) -> list[Member]:
-    return [Member(name, src, [], description_length(src)) for name, m, src, _ in load_runs(cond) if m["consistent"]]
+    return members_from(cond, need_preds=False)
 
 
 def start(env, level: int):
@@ -95,7 +97,7 @@ except Exception:
 for line in sys.stdin:
     r = json.loads(line)
     try:
-        pred = json.loads(json.dumps(mod.transition_function(copy.deepcopy(r["before"]), r["action"])))
+        pred = json.loads(json.dumps(CALL))
         print(json.dumps({"pred": pred}), flush=True)
     except Exception:
         print(json.dumps({"error": traceback.format_exc()[-400:]}), flush=True)
@@ -106,19 +108,23 @@ class MemberProcess:
     """One long-lived process per member, so a program keeps hidden state along the trajectory as it
     does under verify.run_program. Every call gets the observed before state (teacher forcing)."""
 
-    def __init__(self, source: str, timeout_s: float = 30):
+    def __init__(self, source: str, timeout_s: float = 30, mode: str = "objects"):
         self.dir = Path(tempfile.mkdtemp(prefix="live_member_"))
         (self.dir / "program.py").write_text(source)
-        (self.dir / "run.py").write_text(_STEP_RUNNER)
+        (self.dir / "run.py").write_text(_STEP_RUNNER.replace("CALL", call_expr(mode)))
+        self.mode = mode
         self.timeout_s = timeout_s
         self.proc = subprocess.Popen([sys.executable, "-I", "run.py", "program.py"], cwd=self.dir,
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
 
-    def step(self, before: list[dict], action) -> list[dict] | None:
+    def step(self, before: list[dict], action, frame: list[list[int]] | None = None) -> list | None:
         if self.proc.poll() is not None:
             return None
+        row = {"before": before, "action": action}
+        if takes_frame(self.mode):
+            row["frame"] = frame
         try:
-            self.proc.stdin.write(json.dumps({"before": before, "action": action}) + "\n")
+            self.proc.stdin.write(json.dumps(row) + "\n")
             self.proc.stdin.flush()
         except (BrokenPipeError, ValueError):
             return None
@@ -127,7 +133,10 @@ class MemberProcess:
             self.proc.kill()
             return None
         line = self.proc.stdout.readline()
-        return json.loads(line).get("pred") if line else None
+        pred = json.loads(line).get("pred") if line else None
+        if returns_frame(self.mode) and not is_frame(pred, frame):
+            return None
+        return pred
 
     def close(self) -> None:
         self.proc.kill()
@@ -142,24 +151,26 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
 
     env = open_game(game)
     engine_src = final_engine_source(load_bundle(game))
+    mode = members[0].mode
+    frames = returns_frame(mode)
     frame, grid = start(env, level)
     state = run_extractor(engine_src, [grid])[0]
     rng = random.Random(seed)
     alive = set(range(len(members)))
-    seen = {_key(state)}
+    seen = {_key(grid if frames else state)}
     tried: set[tuple[str, int]] = set()
     levels_done = frame.levels_completed
     log: list[dict] = []
     t0 = time.time()
-    procs = [MemberProcess(m.source) for m in members]
+    procs = [MemberProcess(m.source, mode=mode) for m in members]
     with ThreadPoolExecutor(max_workers=len(members)) as pool:
         for t in range(steps):
             actions = [a for a in frame.available_actions if a not in (0, CLICK)]
             if not actions:
                 break
-            preds = list(pool.map(lambda m: predict(m.source, state, actions), members))
+            preds = list(pool.map(lambda m: predict(m.source, state, actions, grid, mode), members))
             dis = [_entropy([_key(p[j]) for p in preds]) for j in range(len(actions))]
-            here = _key(state)
+            here = _key(grid if frames else state)
             untried = [j for j, a in enumerate(actions) if (here, a) not in tried] or list(range(len(actions)))
             top = max(dis[j] for j in untried)
             choices = [j for j in untried if dis[j] == top]
@@ -167,17 +178,18 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
                 # unanimous everywhere: prefer an action whose predicted state is new, then one
                 # that changes the state at all
                 novel = [j for j in choices if _key(preds[0][j]) not in seen]
-                moving = [j for j in choices if _key(preds[0][j]) != _key(state)]
+                moving = [j for j in choices if _key(preds[0][j]) != here]
                 choices = novel or moving or choices
             j = rng.choice(choices)
             action = actions[j]
             tried.add((here, action))
-            scored = [p.step(state, action) for p in procs]
+            scored = [p.step(state, action, grid) for p in procs]
             frame = env.step(GameAction[f"ACTION{action}"])
-            new_state = run_extractor(engine_src, [frame.frame[-1].tolist()])[0]
+            new_grid = frame.frame[-1].tolist()
+            new_state = run_extractor(engine_src, [new_grid])[0]
             advanced = frame.levels_completed > levels_done or frame.full_reset
             levels_done = frame.levels_completed
-            truth = _key(new_state)
+            truth = _key(new_grid if frames else new_state)
             seen.add(truth)
             keys = [_key(p) for p in scored]
             vote = Counter(keys).most_common(1)[0][0]
@@ -195,7 +207,7 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
                 print(f"  step {t:3d}  action {action}  disagreement {dis[j]:.2f} ({len(set(keys))} outcomes)  "
                       f"vote {'right' if row['vote_correct'] else 'WRONG'}  members right {sum(correct)}/{len(members)}"
                       f"  never wrong {len(alive)}" + ("  level advanced" if advanced else ""), flush=True)
-            state = new_state
+            state, grid = new_state, new_grid
             if frame.state in (GameState.WIN, GameState.GAME_OVER):
                 break
     for p in procs:
@@ -208,7 +220,7 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
     def err(rows):
         return round(sum(not r["vote_correct"] for r in rows) / len(rows), 3) if rows else None
 
-    return {"game": game, "level": level, "members": len(members), "steps": len(log), "scored": len(scored),
+    return {"game": game, "level": level, "mode": mode, "members": len(members), "steps": len(log), "scored": len(scored),
             "vote_accuracy": round(1 - err(scored), 3) if scored else None,
             "auroc_disagreement_vs_error": auroc([r["disagreement"] for r in scored], errors) if scored else None,
             "unanimous_n": len(unanimous), "unanimous_error": err(unanimous),
@@ -230,11 +242,12 @@ def trajectory(game: str, level: int, actions: list[int]) -> list[Transition]:
     for i, a in enumerate(actions):
         from arcengine import GameAction
         frame = env.step(GameAction[f"ACTION{a}"])
-        after = run_extractor(engine_src, [frame.frame[-1].tolist()])[0]
+        after_grid = frame.frame[-1].tolist()
+        after = run_extractor(engine_src, [after_grid])[0]
         advanced = frame.levels_completed > levels_done or frame.full_reset
         levels_done = frame.levels_completed
-        out.append(Transition(i, level, a, None, advanced, [], [], before, after))
-        before = after
+        out.append(Transition(i, level, a, None, advanced, grid, after_grid, before, after))
+        before, grid = after, after_grid
     return out
 
 
@@ -246,12 +259,17 @@ def live_round(game: str, level: int, train_frac: float, probe: int, log_path: P
     probes, cond = stored_round(game, level, train_frac, "committee_devin", "cegis_devin", probe)
     train_r, _ = split_after_probes(train, test, probes)
     members = members_for(cond)
+    mode = members[0].mode
+    engine_src = engine_source(game, mode)
     log = json.loads(log_path.read_text())["log"]
     live = [t for t in trajectory(game, level, [r["action"] for r in log[:through + 1]]) if not t.level_advance]
     refuting = next(r["step"] for r in log if r["members_correct"] == 0)
     t = live[refuting]
-    preds = [predict(m.source, t.before_objs, [t.action_id])[0] for m in members]
-    witnesses = [Member(m.name, m.source, [p], m.length) for m, p in zip(members, preds)]
+    preds = [predict(m.source, t.before_objs, [t.action_id], t.before_grid, mode)[0] for m in members]
+    objs = extract_objects(engine_src, preds) if engine_src else [None] * len(preds)
+    witnesses = [Member(m.name, m.source, [p], m.length, mode, [o] if engine_src else None)
+                 for m, p, o in zip(members, preds, objs)]
+    cfg = {**cfg, "mode": mode}
     text = counterexample_text(witnesses, [t], [0]).replace("The last transition in transitions.md",
                                                             f"Transition {len(train_r) + refuting} in transitions.md")
     train_all = train_r + live
@@ -264,7 +282,7 @@ def live_round(game: str, level: int, train_frac: float, probe: int, log_path: P
     (base.parent / "split.json").write_text(json.dumps(
         {"source": str(cond.relative_to(ARTIFACTS)), "live_log": str(log_path.resolve().relative_to(ARTIFACTS)),
          "through": through, "refuting_move": refuting, "actions": [r["action"] for r in log[:through + 1]]}, indent=1))
-    run_split(train_all, [], base, seeds, cfg, f"{game} L{level} {condition}", 0, parallel)
+    run_split(train_all, [], base, seeds, cfg, f"{game} L{level} {condition}", 0, parallel, engine_src)
 
 
 def main(argv: list[str] | None = None) -> None:

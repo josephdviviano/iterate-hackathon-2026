@@ -13,17 +13,13 @@ from collections import Counter
 from pathlib import Path
 
 from .calibrate import aci
-from .committee import Committee, Member, description_length, row_uncertainty
-from .evaluate import load_runs, summarize_single
+from .committee import Committee, Member, row_uncertainty
+from .env import observed
+from .evaluate import load_runs, members_from, summarize_single
 from .experiment import condition_dir
 from .explore import compare_strategies
 from .loader import build_buffer, temporal_split
 from .verify import canonical
-
-
-def _members(cond: Path, train, test) -> list[Member]:
-    return [Member(name, src, preds, description_length(src))
-            for name, m, src, preds in load_runs(cond, train, test) if m["consistent"] and preds]
 
 
 def _vote_steps(members: list[Member], test) -> list[dict]:
@@ -31,11 +27,10 @@ def _vote_steps(members: list[Member], test) -> list[dict]:
     k = len(members)
     out = []
     for i, t in enumerate(test):
-        counts = Counter(json.dumps(canonical(m.test_preds[i])) if m.test_preds[i] is not None else "<error>"
-                         for m in members)
+        counts = Counter(m.keys[i] for m in members)
         shares = {key: c / k for key, c in counts.items()}
         out.append({"step": t.step, "shares": shares,
-                    "truth_share": shares.get(json.dumps(canonical(t.after_objs)), 0.0)})
+                    "truth_share": shares.get(json.dumps(canonical(observed(t, members[0].mode))), 0.0)})
     return out
 
 
@@ -56,12 +51,12 @@ def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
     print(f"    exact replay on train: {s['n_consistent']}/{s['n_runs']}    held-out accuracy: "
           f"{', '.join(f'{a:.2f}' for a in s['test_accuracy_all'])}")
 
-    members = _members(condition_dir(game, level, train_frac, committee, test_level), train, test)
+    members = members_from(condition_dir(game, level, train_frac, committee, test_level), train, test, game)
     if not members:
         print("    (no consistent committee members cached for this split)")
         return
     com = Committee(members, lam=lam)
-    ev = com.evaluate([t.after_objs for t in test])
+    ev = com.evaluate_on(test)
     if lam > 0:
         print(f"\n[2] Committee of {ev['n_members']} programs that all replay train exactly, "
               f"weighted by description length {ev['lengths']}:")
