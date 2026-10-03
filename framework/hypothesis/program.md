@@ -133,7 +133,8 @@ not touch the editable files or git):
    predicted, what happened, the root cause, what the world model got wrong, the lesson.
 3. **Meta-steps that are due** (`status` says when): revise, then ideate. See below.
 4. **Prepare the next experiment**: draft the most likely next change and its pre-registration in
-   `drafts/`, so the next launch is quick.
+   `drafts/` (`drafts/I0xx.prereg.md`, with the `## Pre-registration` and `## Contingencies`
+   sections exactly as in a notebook page), so the next launch is quick.
 5. **Wait**: `python ar.py wait` (repeat while it says the run is still going).
 
 **After** (keep this short too):

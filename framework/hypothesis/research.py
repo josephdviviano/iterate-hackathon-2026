@@ -538,6 +538,9 @@ def cmd_launch(args):
             die(f"{idea['id']} is {idea['status']}; pop it with `idea next` first")
         hid = idea["hypothesis"]
     draft = read_text(args.prereg) if args.prereg else ""
+    if args.prereg and not (block(draft, "Pre-registration") and block(draft, "Contingencies")):
+        die(f"{args.prereg} needs the '## Pre-registration' and '## Contingencies' sections, "
+            "formatted as in a notebook page")  # fmt: skip
     if args.prereg and prereg_problems(draft):
         die(f"{args.prereg}: " + "; ".join(prereg_problems(draft)))
     desc = args.description or idea["description"]
