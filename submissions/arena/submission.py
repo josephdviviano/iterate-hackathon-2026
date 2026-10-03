@@ -42,6 +42,7 @@ DEFAULTS = {
     "muon_lr": 0.24,  # Muon for the 3x3 conv filters; 0 keeps them on SGD
     "muon_momentum": 0.6,
     "muon_ns_steps": 3,
+    "muon_head": True,  # also train the linear head with Muon (without renormalization)
     # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
     "res_schedule": [[0.25, 16], [0.5, 24]],
 }
@@ -213,7 +214,7 @@ class Muon(torch.optim.Optimizer):
                 group["lr_tensor"],
                 group["momentum"],
                 group["ns_steps"],
-                renorm,
+                renorm and group.get("renorm", True),
             )
 
 
@@ -358,9 +359,13 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     state.optimizers = []
     if hyp["muon_lr"]:
         filters = [p for p in others if p.ndim == 4]
-        others = [p for p in others if p.ndim != 4]
+        muon_groups = [dict(params=filters)]
+        if hyp["muon_head"]:
+            muon_groups.append(dict(params=[net.head.weight], renorm=False))
+        muon_params = {id(p) for g in muon_groups for p in g["params"]}
+        others = [p for p in others if id(p) not in muon_params]
         muon = Muon(
-            filters, hyp["muon_lr"], hyp["muon_momentum"], hyp["muon_ns_steps"], state.muon_update
+            muon_groups, hyp["muon_lr"], hyp["muon_momentum"], hyp["muon_ns_steps"], state.muon_update
         )
         state.optimizers.append(muon)
     state.optimizer = torch.optim.SGD(
