@@ -15,7 +15,7 @@ STD = (0.2673, 0.2564, 0.2762)
 DEFAULTS = dict(
     # [resolution, epochs, frozen leading blocks] in training order. Frozen blocks run
     # without gradients (FreezeOut-style), which makes the full-resolution stage cheap.
-    stages=[[16, 4, 0], [24, 1, 1], [24, 2, 2], [32, 1, 2], [32, 3, 3]],
+    stages=[[16, 4, 0], [24, 3, 1], [32, 1, 2], [32, 3, 3]],
     batch_size=768,
     lr=0.5,
     momentum=0.9,
