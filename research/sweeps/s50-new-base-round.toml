@@ -1,0 +1,53 @@
+# Hill-climb round on the D-012 base (stage-1 freeze + depth-2 stage 2, 8.5 epochs): progressive
+# freezing of stage 2 (exact, after its own lr cooldown), depth-2 stage 3, and re-tuning of the
+# knobs most likely to shift with the new structure (BN-bias scaler, lr, warm-up peak, resolution
+# switch). 20 seeds, both GPUs.
+name = "s50-new-base-round"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [5300, 5301, 5302, 5303, 5304, 5305, 5306, 5307, 5308, 5309,
+         5310, 5311, 5312, 5313, 5314, 5315, 5316, 5317, 5318, 5319]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]                                   # also freeze stage 2 from 90%
+stage2_cooldown = [0.75, 0.9]
+freeze_schedule = [[0.8, 1], [0.9, 2]]
+[[configs]]                                   # also freeze stage 2 from 85%
+stage2_cooldown = [0.7, 0.85]
+freeze_schedule = [[0.8, 1], [0.85, 2]]
+[[configs]]                                   # depth-2 stage 3 too, +0.25 epoch
+stage_depths = [3, 2, 2]
+epochs = 8.75
+[[configs]]
+bias_scaler = 8.0
+[[configs]]
+bias_scaler = 32.0
+[[configs]]
+lr = 10.0
+[[configs]]
+lr = 13.0
+[[configs]]
+lr_peak_frac = 0.15
+[[configs]]
+res_schedule = [[0.0, 20], [0.45, 32]]
+[[configs]]
+res_schedule = [[0.0, 20], [0.55, 32]]

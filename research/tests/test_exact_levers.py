@@ -102,3 +102,17 @@ def test_freezing_a_cooled_stage_is_bit_identical(module):
     control = _trained(module, cooled)
     candidate = _trained(module, cooled | {"freeze_schedule": [[0.6, 1]]})
     assert all(torch.equal(control[k], candidate[k]) for k in control)
+
+
+def test_freezing_two_cooled_stages_is_bit_identical(module):
+    cooled = BASE | {
+        "res_schedule": [[0.0, 24], [0.5, 32]],
+        "stage1_cooldown": [0.3, 0.5],
+        "stage2_cooldown": [0.4, 0.7],
+        # The freeze also takes the whitening conv out of autograd, so (as in the recipe, which
+        # freezes the whitening bias at 3 epochs) it must already be frozen.
+        "whiten_bias_epochs": 0.5,
+    }
+    control = _trained(module, cooled)
+    candidate = _trained(module, cooled | {"freeze_schedule": [[0.5, 1], [0.7, 2]]})
+    assert all(torch.equal(control[k], candidate[k]) for k in control)

@@ -1,0 +1,34 @@
+schema_version: '2.0'
+finding_id: F-055
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S53 (20 seeds 5600-5619, D-012 base, control 75.15% at 4.29 s local on GPU 1): native-scale
+  28 px window crops over 50-75% / 50-65% of training: 74.73 / 74.96% (the latter 4.17 s on the same GPU,
+  -2.7%); 26 px over 50-75%: 74.48%; 28 px over 50-75% at 8.75 epochs: 74.86%.'
+interpretation: 'Window crops cost 0.2-0.7 pp and save far less time than their 22% MAC cut (about 2.7%
+  for the 50-65% window): the 27/13/6 maps tile poorly, as with the skipped-rows conv. Below the exchange
+  rate in every arm.'
+decision_implication: Reject window crops; the D-012 submission is converged against all round-3 agent
+  hypotheses.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: supported
+  rationale: odd intermediate map sizes run cuDNN kernels inefficiently, so MAC savings do not become
+    time savings (also seen for H1)
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s53-window-crops-table.csv
+  locator: research/evidence/T-019/s53-window-crops-table.csv
+  sha256: a18f67d04fd1a7ab95d8dc0e77b1567feadc6765b0f643d662f0bcf7bdb24ab8
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Rejected.

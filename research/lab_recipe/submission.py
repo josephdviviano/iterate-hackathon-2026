@@ -29,6 +29,9 @@ def build(context: BuildContext) -> SimpleNamespace:
     device = context.device
     if device.type == "cuda":
         torch.backends.cudnn.benchmark = True
+        # Schedules with many phases (resolution, freeze, crop) need more cached graphs than
+        # the default 8 per code object; a silent eager fallback would wreck timing.
+        torch._dynamo.config.cache_size_limit = max(torch._dynamo.config.cache_size_limit, 32)
         if config.cudnn_benchmark_limit is not None:
             torch.backends.cudnn.benchmark_limit = config.cudnn_benchmark_limit
         # Set explicitly either way: Inductor config is process-global.
@@ -85,9 +88,7 @@ def train(state: SimpleNamespace) -> nn.Module:
     return state.model
 
 
-def _prepare(
-    state: SimpleNamespace, data: TrainingData, seed: int, config: RecipeConfig
-) -> None:
+def _prepare(state: SimpleNamespace, data: TrainingData, seed: int, config: RecipeConfig) -> None:
     model, device = state.model, state.device
     nets = list(model.members) if isinstance(model, EnsembleNet) else [model]
     if state.selector is not None:
@@ -102,7 +103,7 @@ def _prepare(
         net.normalize.mean.copy_(mean.view(1, 3, 1, 1))
         net.normalize.std.copy_(std.view(1, 3, 1, 1))
         if isinstance(net, AirbenchNet):
-            init_whitening(net, images[: config.whiten_samples])
+            init_whitening(net, images[: config.whiten_samples], eps=config.whiten_eps)
     if config.head_mean_init and isinstance(model, AirbenchNet):
         init_head_from_class_means(model, images, labels, config)
     generator = torch.Generator(device=device).manual_seed(seed)

@@ -1,0 +1,42 @@
+schema_version: '2.0'
+finding_id: F-053
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S51 (20 seeds 5400-5419, D-012 base, control 75.28%): BN-bias weight-decay multiplier 0.25
+  / 4 / 0: 74.96 / 75.19 / 74.84%; scaler 64 with bias decay x4: 75.16%; stage-1 cooldown+freeze 0.65-0.75
+  / 0.6-0.7 / 0.6-0.7 with stage-1 lr x1.3: 75.13 / 75.04 / 75.02%; identity + DCT perturbation of the
+  square convs beta 0.25 / 0.5: 75.13 / 75.12%; identity + random perturbation beta 0.5: 75.25%; head-feature
+  centring 74.41%; whitening eps 5e-3 / 5e-2: 75.23 / 75.19%.'
+interpretation: 'No learning-per-step lever improves the D-012 base. The bias decay arms separate size
+  from noise: matching scaler 64''s equilibrium bias size with less noise loses 0.32 pp while matching
+  scaler 16''s size with more noise loses only 0.12 pp, so the scaler-16 gain works mainly by keeping
+  BN biases small; stronger decay adds nothing. Earlier stage-1 freezes lose 0.15-0.24 pp for 1.7-3.4%
+  time (worse than the exchange rate). Square-conv perturbations, head centring and whitening eps are
+  null or harmful.'
+decision_implication: Reject all S51 arms; keep D-012.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: equilibrium BN-bias size (scaler/decay ratio) drives the scaler effect; noise is secondary
+  discriminating_test: R1 vs R2 contrast
+- kind: data_measurement
+  disposition: unresolved
+  rationale: 20-seed arms; the control (75.28%) sits high in its range, so small negative deltas partly
+    reflect control luck
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s51-learning-round3-table.csv
+  locator: research/evidence/T-019/s51-learning-round3-table.csv
+  sha256: 4d11d3abd50c335559220b50d5dfeb46e47a57bd38e549ab9dc3fc10b11a6259
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: All rejected.

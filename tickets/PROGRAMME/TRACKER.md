@@ -400,6 +400,34 @@
 - **Decision consequence:** Keep D-012; an official-equivalent A100 PCIe run would confirm absolute time and margin if the user wants Modal used.
 - **Resolution:** Submission defaults verified locally.
 
+### F-052 — resolved, material
+
+- **Observation:** S50 (20 seeds 5300-5319, D-012 base, control 75.18%): stage-2 freeze from 90% / 85% 74.98 / 74.87%; depth-2 stage 3 at 8.75 epochs 74.52%; BN-bias scaler 8 / 32 75.16 / 74.99%; lr 10 / 13 75.16 / 75.25%; warm-up peak 0.15 75.10%; switch at 45% / 55% 75.34 / 74.90%.
+- **Interpretation:** The D-012 base is at a local optimum for these knobs; the switch point trades about 0.03-0.05 pp per 1% time, at or below the exchange rate; the stage-2 freeze and depth-2 stage 3 cost more accuracy than they save.
+- **Decision consequence:** Keep the D-012 defaults; continue with S51 and S52.
+- **Resolution:** No change.
+
+### F-053 — resolved, material
+
+- **Observation:** S51 (20 seeds 5400-5419, D-012 base, control 75.28%): BN-bias weight-decay multiplier 0.25 / 4 / 0: 74.96 / 75.19 / 74.84%; scaler 64 with bias decay x4: 75.16%; stage-1 cooldown+freeze 0.65-0.75 / 0.6-0.7 / 0.6-0.7 with stage-1 lr x1.3: 75.13 / 75.04 / 75.02%; identity + DCT perturbation of the square convs beta 0.25 / 0.5: 75.13 / 75.12%; identity + random perturbation beta 0.5: 75.25%; head-feature centring 74.41%; whitening eps 5e-3 / 5e-2: 75.23 / 75.19%.
+- **Interpretation:** No learning-per-step lever improves the D-012 base. The bias decay arms separate size from noise: matching scaler 64's equilibrium bias size with less noise loses 0.32 pp while matching scaler 16's size with more noise loses only 0.12 pp, so the scaler-16 gain works mainly by keeping BN biases small; stronger decay adds nothing. Earlier stage-1 freezes lose 0.15-0.24 pp for 1.7-3.4% time (worse than the exchange rate). Square-conv perturbations, head centring and whitening eps are null or harmful.
+- **Decision consequence:** Reject all S51 arms; keep D-012.
+- **Resolution:** All rejected.
+
+### F-054 — resolved, material
+
+- **Observation:** S52 (20 seeds 5500-5519, D-012 base, control 75.22% at 4.53 s local on GPU 0): stage-1 update thinning every 2nd step over 0.6-0.8 / 0.5-0.8: 74.90 / 74.84%; every 3rd step over 0.5-0.8: 74.48%; stages 1+2 thinned over 0.6-0.8: 74.59%; weight-only freezes: stage-1 weights from 60% 74.84%, stage-3 weights from 90% 74.99%, both widening convs from 70% 74.26%, stages 2-3 weights from 90% 74.56%. Thinned arms ran 4.0-4.2 s (GPU 1, about 4% faster than GPU 0).
+- **Interpretation:** Removing further gradient work beyond the exact stage-1 freeze costs more than it saves: thinning stage 1 trades about 0.07 pp per 1% time (worse than the 0.054 exchange rate), and freezing conv weights while BN biases train loses 0.2-1.0 pp. Unlike the exact freeze (which follows an lr cooldown to zero), these remove updates the network still uses.
+- **Decision consequence:** Reject thinning and weight-only freezes; the D-012 structure stays.
+- **Resolution:** All rejected.
+
+### F-055 — resolved, material
+
+- **Observation:** S53 (20 seeds 5600-5619, D-012 base, control 75.15% at 4.29 s local on GPU 1): native-scale 28 px window crops over 50-75% / 50-65% of training: 74.73 / 74.96% (the latter 4.17 s on the same GPU, -2.7%); 26 px over 50-75%: 74.48%; 28 px over 50-75% at 8.75 epochs: 74.86%.
+- **Interpretation:** Window crops cost 0.2-0.7 pp and save far less time than their 22% MAC cut (about 2.7% for the 50-65% window): the 27/13/6 maps tile poorly, as with the skipped-rows conv. Below the exchange rate in every arm.
+- **Decision consequence:** Reject window crops; the D-012 submission is converged against all round-3 agent hypotheses.
+- **Resolution:** Rejected.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.

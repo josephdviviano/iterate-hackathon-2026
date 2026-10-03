@@ -229,6 +229,13 @@ class AirbenchNet(nn.Module):
             self.head.weight.requires_grad = False
         self.init_gain = config.init_gain
         self.conv_init = config.conv_init
+        self.square_init, self.square_beta = config.square_init, config.square_beta
+        # Head-feature centring: BatchNorm1d (no affine) on the pooled features, fp32.
+        self.center = (
+            nn.BatchNorm1d(head_in, affine=False, momentum=1 - config.bn_momentum)
+            if config.head_center
+            else None
+        )
         self.residual_gate_init = config.residual_gate_init
         # Annealed log-sum-exp global pool below the final resolution (``soft_pool`` is set by
         # fit; ``pool_tau`` is a non-persistent buffer so annealing never recompiles).
@@ -296,6 +303,8 @@ class AirbenchNet(nn.Module):
             x = pooled.to(self.head.weight.dtype)
         else:
             x = global_max(x, self.global_pool or self.pool_impl)
+        if self.center is not None:
+            x = self.center(x.float()).to(self.head.weight.dtype)
         return (self.head(x) * self.scale).float()
 
 
@@ -405,7 +414,7 @@ def make_model(config: RecipeConfig, device: torch.device) -> nn.Module:
     if device.type == "cuda":
         model = model.half().to(memory_format=torch.channels_last)
         for module in model.modules():
-            if isinstance(module, nn.BatchNorm2d | Normalize):
+            if isinstance(module, nn.modules.batchnorm._BatchNorm | Normalize):
                 module.float()
     return model
 
@@ -461,6 +470,26 @@ def structured_init_(weight: torch.Tensor, kind: str) -> None:
     rest.copy_(new.to(rest))
 
 
+@torch.no_grad()
+def square_perturb_(weight: torch.Tensor, kind: str, beta: float) -> None:
+    """Add ``beta`` times a structured (DCT bank) or random perturbation to the identity rows of
+    a dirac-initialised conv, at the default Kaiming row norm (1/sqrt(3)); the rows keep their
+    identity path."""
+    cout, cin, kh, kw = weight.shape
+    rows = min(cout, cin)
+    device = weight.device
+    if kind == "dirac+dct":
+        basis = dct_basis(kh).to(device)
+        mix = torch.empty(rows, cin, device=device)
+        nn.init.orthogonal_(mix)
+        pattern = basis[torch.arange(rows, device=device) % len(basis)]
+        new = mix[:, :, None, None] * pattern[:, None]
+    else:
+        new = torch.randn(rows, cin, kh, kw, device=device)
+    new = new / new.flatten(1).norm(dim=1).clamp_min(1e-12).view(-1, 1, 1, 1) / math.sqrt(3)
+    weight[:rows] += (beta * new).to(weight.dtype)
+
+
 def simplex_etf(features: int, classes: int) -> torch.Tensor:
     """[classes, features] simplex equiangular tight frame with unit-norm rows, from a fixed
     constant seed (a mathematical constant, identical in every trial)."""
@@ -487,6 +516,10 @@ def reset_model(model: nn.Module) -> None:
             for module in model.modules():
                 if isinstance(module, Conv) and module.dirac:
                     structured_init_(module.weight, model.conv_init)
+        if model.square_init != "dirac" and model.square_beta:
+            for module in model.modules():
+                if isinstance(module, Conv) and module.dirac:
+                    square_perturb_(module.weight, model.square_init, model.square_beta)
         if model.residual_gate_init is not None:
             for group in model.groups:
                 if group.skip_gate is not None:

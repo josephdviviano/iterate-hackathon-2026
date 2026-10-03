@@ -1,0 +1,36 @@
+schema_version: '2.0'
+finding_id: F-054
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S52 (20 seeds 5500-5519, D-012 base, control 75.22% at 4.53 s local on GPU 0): stage-1 update
+  thinning every 2nd step over 0.6-0.8 / 0.5-0.8: 74.90 / 74.84%; every 3rd step over 0.5-0.8: 74.48%;
+  stages 1+2 thinned over 0.6-0.8: 74.59%; weight-only freezes: stage-1 weights from 60% 74.84%, stage-3
+  weights from 90% 74.99%, both widening convs from 70% 74.26%, stages 2-3 weights from 90% 74.56%. Thinned
+  arms ran 4.0-4.2 s (GPU 1, about 4% faster than GPU 0).'
+interpretation: 'Removing further gradient work beyond the exact stage-1 freeze costs more than it saves:
+  thinning stage 1 trades about 0.07 pp per 1% time (worse than the 0.054 exchange rate), and freezing
+  conv weights while BN biases train loses 0.2-1.0 pp. Unlike the exact freeze (which follows an lr cooldown
+  to zero), these remove updates the network still uses.'
+decision_implication: Reject thinning and weight-only freezes; the D-012 structure stays.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: late-phase conv weight updates in stages 2-3 and mid-phase stage-1 updates still carry signal;
+    only lr-zero work is free to remove
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s52-compute-round3-table.csv
+  locator: research/evidence/T-019/s52-compute-round3-table.csv
+  sha256: 92f9f57bd0baf27461cb04f62266ecedc0dd7b763ea4c136f0e20e6f138b913c
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: All rejected.

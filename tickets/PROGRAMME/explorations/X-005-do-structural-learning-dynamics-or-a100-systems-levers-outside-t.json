@@ -89,7 +89,7 @@
    "why_material": "Every exact time saving converts directly into score."
   }
  ],
- "disposition": "test_ready",
+ "disposition": "saturated",
  "exploration_id": "X-005",
  "hypotheses": [
   {
@@ -167,7 +167,7 @@
     "S30",
     "S33"
    ],
-   "status": "selected"
+   "status": "tested"
   },
   {
    "hypothesis_id": "N6",
@@ -198,7 +198,7 @@
     "S30",
     "S33"
    ],
-   "status": "selected"
+   "status": "tested"
   },
   {
    "hypothesis_id": "R1",
@@ -213,7 +213,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "R2",
@@ -228,7 +228,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "R3",
@@ -243,7 +243,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "R4",
@@ -258,7 +258,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "R5",
@@ -273,7 +273,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "R6",
@@ -288,7 +288,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "R7",
@@ -303,7 +303,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "R8",
@@ -333,7 +333,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "O2",
@@ -348,7 +348,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "O4",
@@ -363,7 +363,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "tested"
   },
   {
    "hypothesis_id": "O5",
@@ -378,7 +378,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "O6",
@@ -393,7 +393,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "O7",
@@ -408,7 +408,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "O8",
@@ -424,7 +424,7 @@
    "evidence_needed": [
     "S31"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "H1",
@@ -440,7 +440,7 @@
     "S32",
     "M5"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "H2",
@@ -456,7 +456,7 @@
     "S32",
     "M5"
    ],
-   "status": "selected"
+   "status": "tested"
   },
   {
    "hypothesis_id": "H3",
@@ -471,7 +471,7 @@
    "evidence_needed": [
     "M5"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "H4",
@@ -486,7 +486,7 @@
    "evidence_needed": [
     "M5"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "H5",
@@ -501,7 +501,7 @@
    "evidence_needed": [
     "M5"
    ],
-   "status": "selected"
+   "status": "rejected"
   },
   {
    "hypothesis_id": "H6",
@@ -592,6 +592,95 @@
     "analysis"
    ],
    "status": "rejected"
+  },
+  {
+   "hypothesis_id": "B1",
+   "proposition": "A FreezeOut-style stage-1 cooldown then exact freeze saves time at little cost.",
+   "mechanism": "Stage 1 converges first; with its lr at zero, skipping its backward is exact.",
+   "changed_dimensions": [
+    "schedule",
+    "execution"
+   ],
+   "prediction": "6-10% time for about -0.1 pp.",
+   "disconfirming_result": "Accuracy loss above the exchange rate.",
+   "decision_changed": "Stage-1 schedule.",
+   "evidence_needed": [
+    "S44",
+    "S45",
+    "S46",
+    "S47",
+    "S48"
+   ],
+   "status": "tested"
+  },
+  {
+   "hypothesis_id": "B2",
+   "proposition": "Cutting stage 2's residual conv buys time net of extra epochs.",
+   "mechanism": "Stage 2 holds 46% of MACs at 32 px and was never cut alone.",
+   "changed_dimensions": [
+    "compute-allocation"
+   ],
+   "prediction": "Net 1-4% time.",
+   "disconfirming_result": "Matched-accuracy time not lower.",
+   "decision_changed": "Stage depths.",
+   "evidence_needed": [
+    "S44",
+    "S45",
+    "S46",
+    "S47"
+   ],
+   "status": "tested"
+  },
+  {
+   "hypothesis_id": "B3",
+   "proposition": "A structured DCT filter-bank start helps the widening convs (legal stand-in for build-time pre-training).",
+   "mechanism": "Frequency-selective filters from step 0.",
+   "changed_dimensions": [
+    "initialisation"
+   ],
+   "prediction": "+0.1 pp.",
+   "disconfirming_result": "At or below control.",
+   "decision_changed": "Init.",
+   "evidence_needed": [
+    "S42",
+    "S43"
+   ],
+   "status": "tested"
+  },
+  {
+   "hypothesis_id": "B4",
+   "proposition": "Further compute removal (stage-2 freeze, thinning, weight-only freezes, window crops) saves more.",
+   "mechanism": "Late work in stages 2-3 is low-yield.",
+   "changed_dimensions": [
+    "execution",
+    "schedule"
+   ],
+   "prediction": "Net time saving.",
+   "disconfirming_result": "Accuracy loss above the exchange rate.",
+   "decision_changed": "Freeze and crop schedules.",
+   "evidence_needed": [
+    "S50",
+    "S52",
+    "S53"
+   ],
+   "status": "rejected"
+  },
+  {
+   "hypothesis_id": "B5",
+   "proposition": "Bias decay, square-conv perturbations, head centring or whitening eps add accuracy per step.",
+   "mechanism": "Size vs noise of BN biases; spatial filtering at init; head curvature.",
+   "changed_dimensions": [
+    "optimiser-numerics",
+    "head",
+    "initialisation"
+   ],
+   "prediction": "+0.1 pp.",
+   "disconfirming_result": "At or below control.",
+   "decision_changed": "Optimiser and init settings.",
+   "evidence_needed": [
+    "S51"
+   ],
+   "status": "rejected"
   }
  ],
  "interpretation_forks": [],
@@ -661,6 +750,28 @@
      "locator": "research/evidence/T-019/ideation-r1-systems.md",
      "state": "verified",
      "sha256": "98beb9c6ffbf482d73d8f49410c8636d19e42692924bf64f1f7ed432d7d3cec9"
+    }
+   ]
+  },
+  {
+   "observation_id": "OBS-ideation-r2-r3",
+   "statement": "Ideation round 3 (learning per step, compute removal) proposed further hypotheses after the round-1 and round-2 adoptions; the round-2 budget report is summarised in the conversation record and its hypotheses B1-B2 are listed here.",
+   "evidence": [
+    {
+     "evidence_id": "E-006",
+     "kind": "file",
+     "label": "ideation round 3: learning per step",
+     "locator": "research/evidence/T-019/ideation-r3-learning.md",
+     "state": "verified",
+     "sha256": "7d104bd26ab74fa5231db7dfb93325eff341efd3b7545d29ca6f8f5c626f3c29"
+    },
+    {
+     "evidence_id": "E-007",
+     "kind": "file",
+     "label": "ideation round 3: compute removal",
+     "locator": "research/evidence/T-019/ideation-r3-compute.md",
+     "state": "verified",
+     "sha256": "b1302880382b1bc44a6ed2177ffb0ee444a0cabfd505bb1eacd21a095dc69ff5"
     }
    ]
   }
@@ -758,34 +869,65 @@
    "resource_bound": "About 2 GPU-hours on Modal.",
    "status": "proposed",
    "result_finding_ids": []
+  },
+  {
+   "probe_id": "S39-S43",
+   "hypothesis_ids": [
+    "O4",
+    "B3"
+   ],
+   "method": "BN-bias scaler scan and epoch ladder; structured-init screen and 40-seed confirmation.",
+   "information_gain": "Turns accuracy levers into epoch cuts.",
+   "decision_rule": "Adopt if 40 fresh seeds hold control accuracy at a shorter budget.",
+   "resource_bound": "About 700 trials.",
+   "status": "run",
+   "result_finding_ids": [
+    "F-039",
+    "F-043",
+    "F-046"
+   ]
+  },
+  {
+   "probe_id": "S44-S49",
+   "hypothesis_ids": [
+    "B1",
+    "B2"
+   ],
+   "method": "Freeze and depth screen, 40-seed confirmations, local paired timing in opposite arm order on two GPUs, submission check.",
+   "information_gain": "Prices structural cuts in time and accuracy.",
+   "decision_rule": "Adopt at control accuracy if the paired saving exceeds 5%.",
+   "resource_bound": "About 900 trials.",
+   "status": "run",
+   "result_finding_ids": [
+    "F-048",
+    "F-049",
+    "F-050",
+    "F-051"
+   ]
+  },
+  {
+   "probe_id": "S50-S53",
+   "hypothesis_ids": [
+    "B4",
+    "B5"
+   ],
+   "method": "Round-3 agent hypotheses and re-tuning on the D-012 base, 20 seeds each.",
+   "information_gain": "Tests whether the converged entry has headroom.",
+   "decision_rule": "Promote at a net gain above the exchange rate.",
+   "resource_bound": "About 800 trials.",
+   "status": "run",
+   "result_finding_ids": [
+    "F-052",
+    "F-053",
+    "F-054",
+    "F-055"
+   ]
   }
  ],
  "question": "Do structural, learning-dynamics or A100 systems levers outside the climbed parameter space lower A100 PCIe time to a 75.2% single-view mean beyond seed and host noise?",
  "schema_version": "1.0",
- "selected_hypothesis_ids": [
-  "N5",
-  "N7",
-  "R1",
-  "R2",
-  "R3",
-  "R4",
-  "R5",
-  "R6",
-  "R7",
-  "O1",
-  "O2",
-  "O4",
-  "O5",
-  "O6",
-  "O7",
-  "O8",
-  "H1",
-  "H2",
-  "H3",
-  "H4",
-  "H5"
- ],
- "synthesis": "Round 1 (test-ready): S30 rejected the evaluation-budget ensembles, multi-exit and head refit and left WSD and balanced order as candidates (S33 confirms). S31 screens 14 representation and optimisation-dynamics hypotheses at 20 seeds; S32 then M5 measure the exact systems levers H1-H5 by same-host paired timing on A100. A second ideation round runs when these probes converge.",
+ "selected_hypothesis_ids": [],
+ "synthesis": "Converged. Adopted: whitening-bias autograd removal (-2.96% PCIe), BN-bias scaler 16 (buys 0.25 epoch), DCT init of the widening convs (buys 0.25 epoch), and the exact stage-1 freeze with stage 2 at depth 2 (-10.7% local paired time) at 8.5 epochs. The entry qualified at 5.526 s on A100 PCIe before the last change and holds about 75.17% over 100 seeds. Rejected: ensembles, refits, soft targets, head geometry, data pruning, saliency narrowing, Muon (teammates' port slower on the same hosts), further freezes, thinning, weight-only freezes, window crops, bias-decay and init variants. Remaining work is confirmation, not exploration.",
  "task_id": "T-019",
  "trigger": "plateau"
 }

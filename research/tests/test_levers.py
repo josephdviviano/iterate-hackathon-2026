@@ -120,6 +120,28 @@ LEVERS = {
     "init-dct": SMALL | {"block_depth": 3, "conv_init": "dct", "residual_gate_init": 0.0},
     "init-zero": SMALL | {"widths": [24, 40, 64], "conv_init": "zero"},
     "init-orthogonal": SMALL | {"conv_init": "orthogonal", "residual_gate_init": 0.25},
+    "round3": SMALL
+    | {
+        "block_depth": 3,
+        "bias_wd_mult": 0.25,
+        "square_init": "dirac+dct",
+        "square_beta": 0.5,
+        "head_center": True,
+        "whiten_eps": 5e-3,
+        "stage1_cooldown": [0.4, 0.7],
+        "stage1_lr_mult": 1.3,
+    },
+    "thin-weightfreeze": SMALL
+    | {
+        "block_depth": 3,
+        "res_schedule": [[0.0, 24], [0.5, 32]],
+        "whiten_bias_epochs": 0.5,
+        "thin_window": [0.4, 0.8],
+        "thin_groups": 2,
+        "weight_freeze": [[0, 0.3, 0.6, "all"], [2, 0.5, 0.8, "conv1"]],
+    },
+    "crop": SMALL | {"crop_schedule": [[0.3, 28], [0.7, 0]], "block_depth": 3},
+    "square-kaiming": SMALL | {"square_init": "dirac+kaiming", "square_beta": 0.25},
     "celu": SMALL | {"activation": "celu", "epochs": 2.3},
     "select": SMALL | {"select_fraction": 0.5, "selector_widths": [16, 32, 32]},
     "freeze": SMALL | {"freeze_schedule": [[0.5, 1], [0.75, 2]], "res_schedule": [[0.6, 24]]},

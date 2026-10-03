@@ -80,9 +80,7 @@ class Saliency:
                     squared = p.float().square()
                     scores[group] += squared.sum(others) if others else squared
         elif self.mode == "random":
-            scores = [
-                torch.rand(len(s), device=s.device, generator=generator) for s in self.scores
-            ]
+            scores = [torch.rand(len(s), device=s.device, generator=generator) for s in self.scores]
         return [torch.topk(s, w).indices.sort().values for s, w in zip(scores, widths, strict=True)]
 
 

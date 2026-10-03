@@ -1,0 +1,63 @@
+# Agent round 3, learning per step, on the D-012 base (X-005): BN-bias decay multiplier (size vs
+# noise of the biases), steeper/earlier stage-1 cooldown + freeze, identity + structured
+# perturbation of the square convs, head-feature centring, whitening eps. 20 seeds, both GPUs.
+name = "s51-learning-round3"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [5400, 5401, 5402, 5403, 5404, 5405, 5406, 5407, 5408, 5409,
+         5410, 5411, 5412, 5413, 5414, 5415, 5416, 5417, 5418, 5419]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+bias_wd_mult = 0.25                           # R1: bias size like scaler 64, low noise
+[[configs]]
+bias_scaler = 64.0                            # R2: bias size like scaler 16, high noise
+bias_wd_mult = 4.0
+[[configs]]
+bias_wd_mult = 4.0                            # R3
+[[configs]]
+bias_wd_mult = 0.0                            # R4
+[[configs]]
+stage1_cooldown = [0.65, 0.75]                # steeper, earlier freeze
+freeze_schedule = [[0.75, 1]]
+[[configs]]
+stage1_cooldown = [0.6, 0.7]
+freeze_schedule = [[0.7, 1]]
+[[configs]]
+stage1_cooldown = [0.6, 0.7]
+freeze_schedule = [[0.7, 1]]
+stage1_lr_mult = 1.3
+[[configs]]
+square_init = "dirac+dct"
+square_beta = 0.25
+[[configs]]
+square_init = "dirac+dct"
+square_beta = 0.5
+[[configs]]
+square_init = "dirac+kaiming"
+square_beta = 0.5
+[[configs]]
+head_center = true
+[[configs]]
+whiten_eps = 5e-3
+[[configs]]
+whiten_eps = 5e-2

@@ -158,3 +158,25 @@ and 19→9→4→2 at 20 px. Stage 3's conv2 and residual conv run on a **3×3 g
 | Smaller model, shorter run, retune hyperparameters left from the longer run | PR #380 | done (frontier, S10, S21, S27 at the converged budget) | F-014, F-028, F-029 |
 | CPU-parallel index building during GPU training | PR #380 | N/A: no CPU-side work on the critical path (augmentation is on GPU); 4 CPUs | — |
 | Reorder on-clock work, unmapped memory, false sharing | PR #380 | partially open: `prepare` is about 70 ms (H10, ≤0.5%) | ideation r1 systems |
+
+### Rounds 2-3 and the converged entry (T-019, X-005), 2026-10-03
+
+| Strategy | Source | Status | Evidence |
+| --- | --- | --- | --- |
+| Whitening-bias autograd off after freeze | agent r1 H2 | **adopted** (-2.96% on A100 PCIe, exact) | M5, M6 (F-034, F-035) |
+| BN-bias lr scaler 16 (from 64) | agent r1 O4 | **adopted** (+0.24 to +0.40 pp; buys 0.25 epoch) | S31, S37, S39, S40, S41 (F-039, F-043) |
+| DCT filter-bank init of widening conv rows | lead (structured init) | **adopted** (+0.11 to +0.17 pp; buys 0.25 epoch) | S42, S43 (F-046) |
+| Stage-1 lr cooldown 60-80% + exact stage-1 freeze; stage 2 without residual conv; 8.5 epochs | agent r2 H1-H3 | **adopted** (-10.7% local paired time at equal accuracy) | S44-S49 (F-048 to F-051) |
+| WSD + class-balanced order | lead | not adopted (+0.15 pp alone; nothing on top of scaler 16) | S33, S34, S39 (F-037) |
+| Wide-early (768 then 640) transplant | lead | candidate, not pursued (+0.15 pp for about +1.4% local time) | S36b (F-040) |
+| Saliency channel narrowing at the switch | user idea | rejected (random selection equals Taylor; break-even) | S36b (F-040) |
+| Score-bank data pruning (easy/hard/split/soft) | user idea | rejected (-0.05 to -1.83 pp at equal steps) | S35 (F-038) |
+| Muon (teammates' working port) | hypothesis-branch | not better: +3.1% (I049) / +8.4% (I044) time vs ours on the same hosts | C2 (F-045) |
+| Post-add residual activation | hypothesis-branch | rejected (-0.13 pp) | S40 (F-042) |
+| Synthetic pre-training in build | user idea | N/A (RULES §3: no pretrained weights; build state must be reset) | — |
+| Orthogonal / ZerO inits; SkipInit gates | lead | rejected (neutral; gates -0.6 to -1.0 pp) | S42 (F-046) |
+| Stage-2 freeze; depth-2 stage 3; scaler/lr/peak/switch retune on the new base | agent r2, lead | rejected | S50 (F-052) |
+| Bias decay multipliers; earlier freezes; square-conv perturbation; head centring; whitening eps | agent r3 (learning) | rejected (scaler-16 effect is bias size, not noise) | S51 (F-053) |
+| Stage update thinning; weight-only freezes | agent r3 (compute) | rejected | S52 (F-054) |
+| Native-scale window crops mid-run | agent r3 (compute) | rejected (time saving far below MAC saving) | S53 |
+| Fused pool+BN Triton kernel | user idea | not built (Inductor kernels at 1.2-1.56 TB/s; ceiling 1-2%) | profiles |

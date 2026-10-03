@@ -1,0 +1,38 @@
+# Agent round 3 compute idea #2 on the D-012 base: native-scale window crops in the middle of the
+# 32 px phase (28 px crop: maps 27->13->6->3, same final 3x3 grid; 21.7% fewer MACs per step),
+# returning to full 32 px for the last 25%. 20 seeds, both GPUs; survivors get paired timing.
+name = "s53-window-crops"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [5600, 5601, 5602, 5603, 5604, 5605, 5606, 5607, 5608, 5609,
+         5610, 5611, 5612, 5613, 5614, 5615, 5616, 5617, 5618, 5619]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+crop_schedule = [[0.5, 28], [0.75, 0]]
+[[configs]]
+crop_schedule = [[0.5, 28], [0.65, 0]]
+[[configs]]
+crop_schedule = [[0.5, 26], [0.75, 0]]
+[[configs]]
+crop_schedule = [[0.5, 28], [0.75, 0]]
+epochs = 8.75

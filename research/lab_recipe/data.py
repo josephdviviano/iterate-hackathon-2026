@@ -99,9 +99,7 @@ class TrainingStream:
         self.size = images.size(-1)
         self.steps_per_epoch = len(images) // config.batch_size
         # Per-image scores (loss or gradient-norm proxy) from each image's latest visit.
-        self.scores = (
-            torch.zeros(len(images), device=images.device) if config.prune_frac else None
-        )
+        self.scores = torch.zeros(len(images), device=images.device) if config.prune_frac else None
 
     def _balanced_order(self) -> torch.Tensor:
         """Class-interleaved order: every run of C consecutive examples holds one per class,
@@ -170,9 +168,7 @@ class TrainingStream:
                     images, config.brightness, config.contrast, self.stats, self.generator
                 )
             else:
-                images = colour_jitter(
-                    images, config.brightness, config.contrast, self.generator
-                )
+                images = colour_jitter(images, config.brightness, config.contrast, self.generator)
         if config.order == "balanced":
             order = self._balanced_order()
         else:

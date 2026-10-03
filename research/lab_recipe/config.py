@@ -148,11 +148,26 @@ class RecipeConfig:
     saliency_steps: int = 24
     # Agent round 2 (budget reallocation).
     stage1_cooldown: tuple[float, float] | None = None
+    stage2_cooldown: tuple[float, float] | None = None
+    # Agent round 3 (compute removal): update thinning and weight-only freezes.
+    thin_window: tuple[float, float] | None = None
+    thin_period: int = 2
+    thin_groups: int = 1
+    weight_freeze: tuple[tuple[int, float, float, str], ...] = ()
+    # Window crops ((start_fraction, size), ...; size 0 = off) at native pixel scale.
+    crop_schedule: tuple[tuple[float, int], ...] = ()
     bias_scaler_final: float | None = None
     # Teammates' hypothesis-branch block: activation after the residual add.
     post_add_activation: bool = False
     # Structured (unlearned) initialisation of the non-identity conv rows, and SkipInit gates.
     conv_init: str = "kaiming"
+    # Agent round 3 (learning per step).
+    bias_wd_mult: float = 1.0
+    stage1_lr_mult: float = 1.0
+    square_init: str = "dirac"
+    square_beta: float = 0.0
+    head_center: bool = False
+    whiten_eps: float = 5e-4
     residual_gate_init: float | None = None
 
     def _validate_narrowing(self) -> None:
@@ -215,8 +230,15 @@ class RecipeConfig:
                 values[key] = tuple(values[key])
         if "selector_widths" in values:
             values["selector_widths"] = tuple(values["selector_widths"])
-        if values.get("stage1_cooldown") is not None:
-            values["stage1_cooldown"] = tuple(values["stage1_cooldown"])
+        if values.get("thin_window") is not None:
+            values["thin_window"] = tuple(values["thin_window"])
+        if "crop_schedule" in values:
+            values["crop_schedule"] = tuple(tuple(e) for e in values["crop_schedule"])
+        if "weight_freeze" in values:
+            values["weight_freeze"] = tuple(tuple(e) for e in values["weight_freeze"])
+        for key in ("stage1_cooldown", "stage2_cooldown"):
+            if values.get(key) is not None:
+                values[key] = tuple(values[key])
         if values.get("switch_widths") is not None:
             values["switch_widths"] = tuple(values["switch_widths"])
         if "snapshot_fracs" in values:
@@ -235,12 +257,42 @@ class RecipeConfig:
             raise ValueError("members, lookahead_every and refit_samples must be >= 1")
         if any(not 0 < f < 1 for f in self.snapshot_fracs):
             raise ValueError("snapshot_fracs must lie in (0, 1)")
-        if self.stage1_cooldown is not None and (
-            len(self.stage1_cooldown) != 2
-            or not 0 <= self.stage1_cooldown[0] < self.stage1_cooldown[1] <= 1
-            or self.optimizer != "sgd"
+        for cooldown in (self.stage1_cooldown, self.stage2_cooldown):
+            if cooldown is not None and (
+                len(cooldown) != 2
+                or not 0 <= cooldown[0] < cooldown[1] <= 1
+                or self.optimizer != "sgd"
+            ):
+                raise ValueError("stage cooldowns must be (start, end) with 0 <= start < end <= 1")
+        if self.thin_window is not None and (
+            len(self.thin_window) != 2
+            or not 0 <= self.thin_window[0] < self.thin_window[1] <= 1
+            or self.thin_period < 2
+            or self.thin_groups not in (1, 2)
         ):
-            raise ValueError("stage1_cooldown must be (start, end) with 0 <= start < end <= 1")
+            raise ValueError("thin_window must be (start, end) in [0, 1]; period >= 2; groups 1-2")
+        for entry in self.weight_freeze:
+            if (
+                len(entry) != 4
+                or entry[0] not in (0, 1, 2)
+                or not 0 <= entry[1] < entry[2] < 1
+                or entry[3] not in ("all", "conv1")
+            ):
+                raise ValueError("weight_freeze entries are (stage 0-2, start, end, all|conv1)")
+        starts = [e[0] for e in self.crop_schedule]
+        if starts != sorted(starts) or any(
+            len(e) != 2 or not 0 <= e[0] < 1 or not (e[1] == 0 or 16 <= e[1] <= 32)
+            for e in self.crop_schedule
+        ):
+            raise ValueError("crop_schedule must be ascending (start, size) with size 0 or 16-32")
+        if self.weight_freeze and self.master_fp32:
+            raise ValueError("weight_freeze does not support master_fp32")
+        if self.square_init not in ("dirac", "dirac+dct", "dirac+kaiming"):
+            raise ValueError("square_init must be dirac, dirac+dct or dirac+kaiming")
+        if min(self.bias_wd_mult, self.square_beta) < 0:
+            raise ValueError("bias_wd_mult and square_beta must be >= 0")
+        if min(self.stage1_lr_mult, self.whiten_eps) <= 0:
+            raise ValueError("stage1_lr_mult and whiten_eps must be > 0")
         if self.conv_init not in ("kaiming", "orthogonal", "dct", "zero"):
             raise ValueError("conv_init must be kaiming, orthogonal, dct or zero")
         if self.bias_scaler_final is not None and self.bias_scaler_final <= 0:

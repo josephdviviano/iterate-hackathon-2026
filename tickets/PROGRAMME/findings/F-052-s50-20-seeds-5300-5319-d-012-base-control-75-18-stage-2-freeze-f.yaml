@@ -1,0 +1,37 @@
+schema_version: '2.0'
+finding_id: F-052
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S50 (20 seeds 5300-5319, D-012 base, control 75.18%): stage-2 freeze from 90% / 85% 74.98
+  / 74.87%; depth-2 stage 3 at 8.75 epochs 74.52%; BN-bias scaler 8 / 32 75.16 / 74.99%; lr 10 / 13 75.16
+  / 75.25%; warm-up peak 0.15 75.10%; switch at 45% / 55% 75.34 / 74.90%.'
+interpretation: The D-012 base is at a local optimum for these knobs; the switch point trades about 0.03-0.05
+  pp per 1% time, at or below the exchange rate; the stage-2 freeze and depth-2 stage 3 cost more accuracy
+  than they save.
+decision_implication: Keep the D-012 defaults; continue with S51 and S52.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: stage 2 still learns usefully after 85-90% and stage 3's residual carries capacity the short
+    run needs
+  discriminating_test: none
+- kind: data_measurement
+  disposition: unresolved
+  rationale: 20-seed arms at about 0.05 pp SE; the lr 13 and switch-45% gains are within best-of-10 noise
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s50-new-base-round-table.csv
+  locator: research/evidence/T-019/s50-new-base-round-table.csv
+  sha256: c73f68be12b032043db1bca679f6084cda5dbb10812c98008e540bc62f307ac1
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: No change.

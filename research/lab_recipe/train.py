@@ -14,7 +14,7 @@ from torch import nn
 
 from . import narrowing
 from .config import RecipeConfig
-from .data import TrainingStream
+from .data import TrainingStream, batch_crop
 from .model import AirbenchNet
 
 Schedule = Callable[[int], float]
@@ -212,10 +212,28 @@ def make_optimisation(
         others1 = [p for p in others if id(p) in stage1]
         norms = [p for p in norms if id(p) not in stage1]
         others = [p for p in others if id(p) not in stage1]
+    norms2: list = []
+    others2: list = []
+    if config.stage2_cooldown and isinstance(model, AirbenchNet):
+        stage2 = {id(p) for p in model.groups[1].parameters()}
+        norms2 = [p for p in norms if id(p) in stage2]
+        others2 = [p for p in others if id(p) in stage2]
+        norms = [p for p in norms if id(p) not in stage2]
+        others = [p for p in others if id(p) not in stage2]
+    # Weight-only freezes: chosen conv weights get their own cooldown, then leave autograd in
+    # ``fit``; the stage's BN biases keep training.
+    frozen_weights = []
+    for entry in config.weight_freeze if isinstance(model, AirbenchNet) else ():
+        params = weight_freeze_params(model, entry)
+        ids = {id(p) for p in params}
+        others, others1, others2 = (
+            [p for p in g if id(p) not in ids] for g in (others, others1, others2)
+        )
+        frozen_weights.append((entry, params))
     if masters is not None:
-        norms, whiten, others, head, norms1, others1 = (
+        norms, whiten, others, head, norms1, others1, norms2, others2 = (
             [masters.of(p) for p in group]
-            for group in (norms, whiten, others, head, norms1, others1)
+            for group in (norms, whiten, others, head, norms1, others1, norms2, others2)
         )
     if config.optimizer == "sgd":
         # airbench parametrisation: lr and wd per 1024 examples, decoupled from momentum.
@@ -224,6 +242,9 @@ def make_optimisation(
         wd = config.weight_decay * config.batch_size / kilostep
         lr_bias = lr * config.bias_scaler
         lr_head = lr * config.head_lr_mult
+        # BN-bias decay strength (decoupled from the scaler) and stage-1 lr multiplier.
+        wd_bias = wd * config.bias_wd_mult
+        lr1, lr_bias1 = lr * config.stage1_lr_mult, lr_bias * config.stage1_lr_mult
         schedule = lr_schedule(config, total_steps)
         whiten_steps = ceil(config.whiten_bias_epochs * steps_per_epoch)
 
@@ -231,17 +252,19 @@ def make_optimisation(
             # Freeze the whitening bias with a zero lr (``fit`` may also drop it from autograd).
             return schedule(i) if i < whiten_steps else 0.0
 
-        cooled = schedule
-        if config.stage1_cooldown:
-            # FreezeOut-style: stage 1's lr ramps linearly to 0 between the two fractions.
-            start, end = (f * total_steps for f in config.stage1_cooldown)
+        def cooldown(fractions: tuple[float, float] | None) -> Schedule:
+            # FreezeOut-style: a stage's lr ramps linearly to 0 between the two fractions.
+            if not fractions:
+                return schedule
+            start, end = (f * total_steps for f in fractions)
+            return lambda i: schedule(i) * min(1.0, max(0.0, (end - i) / max(1.0, end - start)))
 
-            def cooled(i: int) -> float:
-                return schedule(i) * min(1.0, max(0.0, (end - i) / max(1.0, end - start)))
+        cooled = cooldown(config.stage1_cooldown)
+        cooled2 = cooldown(config.stage2_cooldown)
 
         groups = [
             (
-                {"params": norms, "lr": lr_bias, "weight_decay": wd / lr_bias, "kind": "norm"},
+                {"params": norms, "lr": lr_bias, "weight_decay": wd_bias / lr_bias, "kind": "norm"},
                 schedule,
             ),
             ({"params": others, "lr": lr, "weight_decay": wd * config.conv_wd_mult / lr}, schedule),
@@ -251,10 +274,35 @@ def make_optimisation(
                 schedule,
             ),
             (
-                {"params": norms1, "lr": lr_bias, "weight_decay": wd / lr_bias, "kind": "norm"},
+                {
+                    "params": norms1,
+                    "lr": lr_bias1,
+                    "weight_decay": wd_bias / lr_bias1,
+                    "kind": "norm",
+                },
                 cooled,
             ),
-            ({"params": others1, "lr": lr, "weight_decay": wd * config.conv_wd_mult / lr}, cooled),
+            (
+                {"params": others1, "lr": lr1, "weight_decay": wd * config.conv_wd_mult / lr1},
+                cooled,
+            ),
+            (
+                {
+                    "params": norms2,
+                    "lr": lr_bias,
+                    "weight_decay": wd_bias / lr_bias,
+                    "kind": "norm",
+                },
+                cooled2,
+            ),
+            ({"params": others2, "lr": lr, "weight_decay": wd * config.conv_wd_mult / lr}, cooled2),
+            *(
+                (
+                    {"params": params, "lr": lr, "weight_decay": wd * config.conv_wd_mult / lr},
+                    cooldown((entry[1], entry[2])),
+                )
+                for entry, params in frozen_weights
+            ),
         ]
         groups = [(g, s) for g, s in groups if g["params"]]
         sgd = torch.optim.SGD(
@@ -393,6 +441,12 @@ def fit(
     deepening = freezable and config.residual_start > 0
     model.train()
     step = 0
+    crop_generator = None
+    if config.crop_schedule:
+        # A separate generator (seeded from the harness-seeded global RNG) keeps the data order
+        # identical to the uncropped control.
+        seed = int(torch.randint(2**31 - 1, (1,)).item())
+        crop_generator = torch.Generator(device=stream.labels.device).manual_seed(seed)
     epoch, epoch_start = 0, -1
     # Pruned epochs are shorter, so run epochs until the step budget is spent.
     while step < total_steps:
@@ -404,6 +458,16 @@ def fit(
         for inputs, labels in stream.epoch(epoch - 1):
             if freezable:
                 model.frozen_groups = scheduled(config.freeze_schedule, step, total_steps, 0)
+                if config.thin_window:
+                    # Update thinning: inside the window the chosen stages update only every
+                    # ``thin_period`` steps and otherwise run in the frozen (no-autograd) graph.
+                    a, b = (f * total_steps for f in config.thin_window)
+                    if a <= step < b and step % config.thin_period:
+                        model.frozen_groups = max(model.frozen_groups, config.thin_groups)
+                for entry in config.weight_freeze:
+                    if step == ceil(entry[2] * total_steps):
+                        for p in weight_freeze_params(model, entry):
+                            p.requires_grad_(False)
             size = scheduled(config.res_schedule, step, total_steps, None)
             size = blended_size(config, step, switch_step, size)
             if size == final_size and not switched:
@@ -430,6 +494,11 @@ def fit(
                 inputs = F.interpolate(
                     inputs, size=(size, size), mode="bilinear", align_corners=False, antialias=True
                 )
+            crop = scheduled(config.crop_schedule, step, total_steps, 0)
+            if crop and crop < inputs.size(-1):
+                # Window crops keep pixel scale (unlike downsampling); the final maps still end
+                # on the 3x3 grid of 32 px input, so global-max statistics match test time.
+                inputs = batch_crop(inputs, crop, crop_generator)
             if selector is not None:
                 inputs, labels = selector.select(inputs, labels, step)
             plan.set_lr(step)
@@ -484,6 +553,9 @@ def fit(
             net.train_size = None
             net.soft_pool = False
             net.whiten.bias.requires_grad_(True)
+            for module in net.modules():
+                if isinstance(module, nn.Conv2d) and module is not net.whiten:
+                    module.weight.requires_grad_(True)
     if deepening:
         set_deepening(model, config, total_steps, total_steps)
     if lookahead is not None:
@@ -585,6 +657,18 @@ class SoftTargets:
             idx = stream.last_idx
             self.bank[idx] = probs.half()
             self.seen[idx] = True
+
+
+def weight_freeze_params(model: AirbenchNet, entry: tuple) -> list[torch.nn.Parameter]:
+    """Conv weights selected by a ``weight_freeze`` entry (stage, start, end, which)."""
+    stage, _, _, which = entry
+    group = model.groups[stage]
+    convs = (
+        [group.conv1]
+        if which == "conv1"
+        else [m for m in group.modules() if isinstance(m, nn.Conv2d)]
+    )
+    return [m.weight for m in convs if m.weight.requires_grad]
 
 
 def blended_size(

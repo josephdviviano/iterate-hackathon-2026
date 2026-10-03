@@ -1,0 +1,48 @@
+# Agent round 3, compute removal, on the D-012 base (X-005): stage update thinning inside the
+# cooldown window (skipped steps reuse the frozen no-autograd graph) and weight-only freezes
+# (conv weights cool then leave autograd while the stage's BN biases keep training). Accuracy
+# screen, 20 seeds, both GPUs; survivors get local paired timing.
+name = "s52-compute-round3"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [5500, 5501, 5502, 5503, 5504, 5505, 5506, 5507, 5508, 5509,
+         5510, 5511, 5512, 5513, 5514, 5515, 5516, 5517, 5518, 5519]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+epochs = 8.5
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+thin_window = [0.6, 0.8]                      # stage 1 updates every 2nd step
+[[configs]]
+thin_window = [0.5, 0.8]
+[[configs]]
+thin_window = [0.5, 0.8]
+thin_period = 3
+[[configs]]
+thin_window = [0.6, 0.8]                      # stages 1+2 thinned
+thin_groups = 2
+[[configs]]
+weight_freeze = [[0, 0.45, 0.6, "all"]]       # stage-1 conv weights frozen from 60%
+[[configs]]
+weight_freeze = [[2, 0.8, 0.9, "all"]]        # stage-3 conv weights frozen from 90%
+[[configs]]
+weight_freeze = [[1, 0.5, 0.7, "conv1"], [2, 0.5, 0.7, "conv1"]]   # widening convs from 70%
+[[configs]]
+weight_freeze = [[1, 0.8, 0.9, "all"], [2, 0.8, 0.9, "all"]]       # stages 2-3 weights from 90%
