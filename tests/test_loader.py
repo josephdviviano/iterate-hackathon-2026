@@ -51,3 +51,29 @@ def test_temporal_split_within_level_and_across_levels():
     assert [t.step for t in train] == [1] and [t.step for t in test] == [2, 3]
     train, test = temporal_split(ts, 1, 1.0, test_level=2)
     assert [t.step for t in train] == [1, 2, 3] and [t.step for t in test] == [6]
+
+
+def test_static_terrain_keeps_unchanging_cells_outside_objects_and_drops_moving_ones():
+    from committee.loader import Transition
+    from committee.terrain import add_terrain, static_terrain
+
+    def grid(player_x, door):
+        g = [[1] * 8 for _ in range(6)]
+        for x in range(8):
+            g[0][x] = 7                      # a wall row that never changes
+        g[3][player_x] = 5                   # the player, extracted as an object
+        if door:
+            for x in range(4):
+                g[5][x] = 8                  # a door that is open later: not static
+        return g
+
+    def tr(step, x0, x1, door0, door1):
+        before = [{"name": "p", "type": "player", "x": x0, "y": 3, "w": 1, "h": 1}]
+        after = [{"name": "p", "type": "player", "x": x1, "y": 3, "w": 1, "h": 1}]
+        return Transition(step, 1, 1, None, False, grid(x0, door0), grid(x1, door1), before, after)
+
+    train = [tr(1, 2, 3, True, False), tr(2, 3, 4, False, False)]
+    terrain = static_terrain(train)
+    assert [(o["x"], o["y"], o["w"], o["h"], o["colour"]) for o in terrain] == [(0, 0, 8, 1, 7)]
+    out = add_terrain(train, terrain)
+    assert [o["type"] for o in out[0].before_objs] == ["player", "terrain"] and out[0].after_objs[-1] == terrain[0]
