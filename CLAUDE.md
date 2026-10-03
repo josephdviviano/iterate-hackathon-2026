@@ -2,11 +2,31 @@
 
 Do only work that increases the score or decreases the risk of disqualification.
 
+
+## Project Tracking
+NOTES.md should contain log entries with the following structure:
+
+- [USERNAME] - SHORT TITLE - HASH
+  A one line description of the conversation content:
+  DONE:
+    - Work item A
+    - Work item B
+  DEFERRED:
+    - Work not done, and WHY.
+  ABANDONED:
+    - Work decisions we've decided to do previously but were abandoned, with reasoning (including evidence).
+
+
 ## Status
 
-- Track: not selected. After selection, delete the other tracks below.
+- Track: 2.3 Epistemological agents, selected 2026-10-03. See DESIGN_DOC.md.
 - Deadline: approximately 2026-10-04 11:00 BST. Replace with the official time.
 - Repository: private. The papers in research/pdfs are open access. Do not raise licence or privacy caveats about them.
+
+## External Resources
+
+- `external/opine-world` - programmatic world modelling for ARC
+- `conceptualizer` - half-finished research project on a distributional version of the tiny reasoning network architecture, which is based on GRAM.
 
 ## Rules
 
@@ -54,16 +74,8 @@ Submit these items before the deadline. Late teams are not eligible.
 
 The organizers call finalists one at a time. Keep the demo prepared to start immediately.
 
-## Tracks (select one)
+## Track
 
-- **1 AI Automated Discovery of Algorithms.**
-  - 1.1 Autoresearch framework: build your own. Show it on a problem from Tao et al.'s repository or another suitable benchmark. Judged on novelty and inventiveness, performance, interpretability and ease of use. Progress on an open maths problem is welcome but optional.
-  - 1.2 Neural Network Speedrun: the fastest training time on the specified dataset and hardware wins. The system must meet the quality threshold on hidden test data.
-- **2 Originator.** Agents that do science and know when they are incorrect or reward hacking. Also environments, rewards and benchmarks for bio agents.
-  - 2.1 Benchmark science agents: evals that catch research agents that reward hack.
-  - 2.2 Lab hardware, automation and safety: safe, standard control of lab equipment, with testable results.
+- **2 Originator.** Agents that do science and know when they are incorrect or reward hacking.
   - 2.3 Epistemological agents: agents that flag what they do not know, with calibrated uncertainty, falsification and reward design.
-- **3 Drug and protein design, by Serova.** Predict peptide-HLA complex stability with existing protein foundation models. Do better than NetMHCstabpan, a sequence-based, domain-specific, supervised model trained on peptide-HLA sequence pairs.
-- **4 Materials manufacturing, by Polaron.** Compare electron microscopy images of a supplier's battery electrode batches against an approved baseline batch. Detect a meaningful change and quantify which material KPIs cause it. Give a verdict (accept, investigate or reject) with its uncertainty, and explain it to a materials expert. The supplied batches mix acceptable and defective variation. An unseen batch arrives approximately 8 hours into day one. Judged on KPI quality, accuracy on the new batch, interpretability, honest handling of uncertainty and real-world usability for a QC decision.
-- **Modal challenge.** Best use of Modal, in any part of the project.
-- **Devin challenge.** Devin reproduces a key result of a published scientific paper. Then go further than that result.
+- **Modal challenge (optional).** Best use of Modal, in any part of the project. Deferred, see NOTES.md.
