@@ -15,8 +15,8 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 9.5,
-    "batch_size": 1024,
+    "epochs": 9.0,
+    "batch_size": 2000,
     "lr": 9.0,
     "momentum": 0.85,
     "weight_decay": 0.012,
@@ -29,6 +29,10 @@ HYP = {
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
     "compile": True,
+    "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
+    "muon_lr": 0.24,
+    "muon_momentum": 0.6,
+    "ns_steps": 3,
     "compile_mode": "max-autotune",
 }
 
@@ -108,6 +112,50 @@ class Classifier(nn.Module):
     def forward(self, x):
         x = ((x - self.mean) / self.std).half().contiguous(memory_format=torch.channels_last)
         return self.net(x).float()
+
+
+# ----------------------------------------------------------------------------- muon
+
+
+def zeropower_via_newtonschulz5(G, steps):
+    a, b, c = (3.4445, -4.7750, 2.0315)
+    X = G.bfloat16()
+    X = X / (X.norm() + 1e-7)
+    transposed = G.size(0) > G.size(1)
+    if transposed:
+        X = X.T
+    for _ in range(steps):
+        A = X @ X.T
+        B = b * A + c * A @ A
+        X = a * X + B @ X
+    if transposed:
+        X = X.T
+    return X
+
+
+class Muon(torch.optim.Optimizer):
+    """Orthogonalized Nesterov momentum on conv filters, with per-step weight normalization."""
+
+    def __init__(self, params, lr, momentum, nesterov=True, ns_steps=3):
+        super().__init__(params, dict(lr=lr, momentum=momentum, nesterov=nesterov, ns_steps=ns_steps))
+
+    @torch.no_grad()
+    def step(self):
+        for group in self.param_groups:
+            lr, momentum = group["lr"], group["momentum"]
+            for p in group["params"]:
+                g = p.grad
+                if g is None:
+                    continue
+                state = self.state[p]
+                if "momentum_buffer" not in state:
+                    state["momentum_buffer"] = torch.zeros_like(g)
+                buf = state["momentum_buffer"]
+                buf.mul_(momentum).add_(g)
+                g = g.add(buf, alpha=momentum) if group["nesterov"] else buf
+                p.mul_(len(p) ** 0.5 / p.norm())
+                update = zeropower_via_newtonschulz5(g.reshape(len(g), -1), group["ns_steps"])
+                p.add_(update.view(g.shape).to(p.dtype), alpha=-lr)
 
 
 # ----------------------------------------------------------------------------- whitening
@@ -230,14 +278,23 @@ def prepare(state, data: TrainingData, seed: int) -> None:
         for k, p in net.named_parameters()
         if "norms" not in k and p.requires_grad and p is not net.whiten.bias
     ]
+    filters = []
+    if hyp["optimizer"] == "muon":
+        filters = [p for p in other if p.ndim == 4]
+        other = [p for p in other if p.ndim != 4]
     groups = [
         dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=other, lr=lr, weight_decay=wd / lr),
     ]
-    state.optimizer = torch.optim.SGD(groups, momentum=momentum, nesterov=True)
-    for g in state.optimizer.param_groups:
-        g["base_lr"] = g["lr"]
+    state.optimizers = [torch.optim.SGD(groups, momentum=momentum, nesterov=True)]
+    if filters:
+        state.optimizers.append(
+            Muon(filters, hyp["muon_lr"], hyp["muon_momentum"], ns_steps=hyp["ns_steps"])
+        )
+    for opt in state.optimizers:
+        for g in opt.param_groups:
+            g["base_lr"] = g["lr"]
 
 
 def lr_factor(step, total):
@@ -251,7 +308,7 @@ def lr_factor(step, total):
 
 def train(state) -> nn.Module:
     hyp = state.hyp
-    net, train_net, opt = state.net, state.train_net, state.optimizer
+    net, train_net, opts = state.net, state.train_net, state.optimizers
     bs = hyp["batch_size"]
     n = len(state.labels)
     steps_per_epoch = n // bs
@@ -270,7 +327,7 @@ def train(state) -> nn.Module:
         )
         perm = torch.randperm(n, device=inputs_all.device)
         if epoch >= hyp["whiten_bias_epochs"]:
-            opt.param_groups[0]["base_lr"] = 0.0
+            opts[0].param_groups[0]["base_lr"] = 0.0
         for b in range(steps_per_epoch):
             if step >= total:
                 break
@@ -279,10 +336,11 @@ def train(state) -> nn.Module:
             loss = F.cross_entropy(out, state.labels[idx], label_smoothing=ls, reduction="none").sum()
             loss.backward()
             f = lr_factor(step, total)
-            for g in opt.param_groups:
-                g["lr"] = g["base_lr"] * f
-            opt.step()
-            opt.zero_grad(set_to_none=True)
+            for opt in opts:
+                for g in opt.param_groups:
+                    g["lr"] = g["base_lr"] * f
+                opt.step()
+            net.zero_grad(set_to_none=True)
             step += 1
             if step % 5 == 0:
                 decay = alpha[step]
