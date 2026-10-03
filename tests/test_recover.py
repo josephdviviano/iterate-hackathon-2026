@@ -25,3 +25,11 @@ def test_orphans_land_on_the_run_their_seed_names():
     got = [(t.condition, i) for _, t, i in assign(orphans, [base, com])]
     assert got == [("committee", 2), ("baseline", 0)]
     assert orphans[2]["unassigned"] is True
+
+
+def test_split_error_pools_the_non_unanimous_bins_by_count():
+    from committee.summary import split_stats
+
+    rel = [{"bin": "unanimous", "n": 36, "error_rate": 0.1}, {"bin": "low", "n": 3, "error_rate": 0.0},
+           {"bin": "medium", "n": 1, "error_rate": 1.0}, {"bin": "high", "n": 0, "error_rate": None}]
+    assert split_stats(rel) == (36, 4, 0.1, 0.25)
