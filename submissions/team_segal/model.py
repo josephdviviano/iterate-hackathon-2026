@@ -88,7 +88,9 @@ class Net(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.normalize(x, self.whiten.weight.dtype)
         x = self.groups(F.gelu(self.whiten(x)))
-        x = F.adaptive_max_pool2d(x, 1).flatten(1)
+        # Global max over the flattened map; its backward is an index gather, avoiding the
+        # slower atomic-scatter backward of adaptive_max_pool2d.
+        x = x.flatten(2).max(2).values
         return (self.head(x) * self.scale).float()
 
 

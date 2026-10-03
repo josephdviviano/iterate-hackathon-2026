@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-026
+task_id: T-018
+result_kind: negative
+importance: material
+observation: 'S24 (10 seeds 1300-1309; control 75.14% at 5.39 s): RepVGG-style 1x1 branches 75.19% at
+  6.51 s; PolyLoss-1 75.10%; squentropy 74.77%; superclass auxiliary loss 75.14% (weight 0.3, +5% time)
+  and 73.25% with sd 1.2 pp (weight 1.0); ConvMixer-512/8 (k5, patch 2) 25.6% in 19.9 s. Progressive deepening
+  crashed in fused SGD and is rerun in S25.'
+interpretation: 'R3, R4 and R5 are disconfirmed: train-time over-parameterisation buys nothing for its
+  21% cost, alternative losses do not beat smoothed cross-entropy, and ConvMixer''s depthwise mixing neither
+  learns in 8 epochs nor runs fast. R2 shows no gain at a mild weight and destabilises training at weight
+  1.0, so the hierarchy route is rejected and its rule question is moot.'
+decision_implication: Keep the airbench convnet, plain 3x3 convs and smoothed cross-entropy; finish R1
+  in S25.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: no representation arm exceeds control by more than its standard error, and costs rise
+  discriminating_test: null
+- kind: implementation
+  disposition: unresolved
+  rationale: progressive deepening failed for an optimiser reason, not a mechanism one
+  discriminating_test: S25 with foreach SGD
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s24-representation-table.csv
+  locator: research/evidence/T-018/s24-representation-table.csv
+  sha256: bc7d2385d671f04feb4f57bed4b41c1dcb52b165125e6245a4dc1820ce3a3a90
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: R2-R5 rejected; R1 rerun.

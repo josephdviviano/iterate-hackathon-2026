@@ -1,0 +1,40 @@
+schema_version: '2.0'
+finding_id: F-028
+task_id: T-018
+result_kind: mixed
+importance: material
+observation: 'S21 (10 seeds 1000-1009; control 75.22%): momentum 0.8 +0.23 pp; colour jitter +0.05 (+4.5%
+  time); lookahead flush +0.03; BN recalibration +0.01; whitening from 960 images +0.00; bn_momentum 0.8
+  -0.04; random flip -0.09; momentum 0.9 -0.11; mixup -0.11; max+mean pool -0.15; SiLU -0.17; weight decay
+  x2 -0.17; whitening bias 0.2 epochs -0.21; 3x3 whitening -0.28 (+11% time); CELU -0.43; cutout 8 -0.52;
+  lookahead off -0.77; weight decay x0.5 -1.15. Combined SE is about 0.09 pp.'
+interpretation: No lineage or competitor lever beats the converged recipe except possibly momentum 0.8
+  (about 2.5 combined SE, one of 18 comparisons, so it needs fresh-seed confirmation). The lineage's augmentation
+  additions (jitter, cutout, mixup), activations and whitening variants transfer negatively or neutrally
+  to short single-view CIFAR-100 runs; lookahead remains essential.
+decision_implication: Confirm and climb momentum on fresh seeds (S27); record every other S21 lever as
+  tested and rejected or neutral.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: the momentum 0.8 gain may be a multiple-comparison artefact
+  discriminating_test: S27 with 20 fresh seeds
+- kind: mechanism
+  disposition: supported
+  rationale: regularising additions lower accuracy in an underfitting short-budget regime
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s21-coverage-table.csv
+  locator: research/evidence/T-018/s21-coverage-table.csv
+  sha256: fa501d2ab0381a513e8d3274d48b5db0f16d8bbdc16a54252c983103ea1b70c6
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Momentum candidate sent to S27.

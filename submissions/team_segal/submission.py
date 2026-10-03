@@ -34,7 +34,9 @@ def build(context: BuildContext) -> SimpleNamespace:
     model = make_model(config, device)
     # One specialised graph per training resolution (dynamic=False avoids a slower
     # dynamic-shape recompile when the resolution changes).
-    step_model = torch.compile(model, dynamic=False) if config.compile else model
+    step_model = (
+        torch.compile(model, mode=config.compile_mode, dynamic=False) if config.compile else model
+    )
     state = SimpleNamespace(config=config, device=device, model=model, step_model=step_model)
     if device.type == "cuda":
         _warm_up(state, context.eval_batch_size)

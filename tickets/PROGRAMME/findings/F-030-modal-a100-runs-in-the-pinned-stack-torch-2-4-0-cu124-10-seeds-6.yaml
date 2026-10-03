@@ -1,0 +1,42 @@
+schema_version: '2.0'
+finding_id: F-030
+task_id: T-004
+result_kind: positive
+importance: material
+observation: 'Modal A100 runs in the pinned stack (torch 2.4.0+cu124), 10 seeds 600-609, 8.25 epochs:
+  on A100 80GB PCIe the converged recipe takes 6.169 s (m1) and 6.261 s (m2) per trial with default compile,
+  6.173 s with reduce-overhead and 6.115 s with max-autotune (181 s untimed build); 128/384/512 takes
+  5.76 s; prepare is 0.07 s; evaluation 0.10-0.12 s. Accuracy 75.15-75.20%. Paired with the local dev
+  stack on the same seeds, A100 accuracy is -0.157 pp (SE 0.114).'
+interpretation: On the judging GPU the recipe trains about 9.6x faster than the organisers' 59.3 s baseline
+  before the flatten-max pool and CUDA graphs. Compile-mode gains match the local proxy (-1.4% / -2.3%).
+  Identical configs differ by about 1.5% between PCIe hosts, so timing comparisons must be paired on one
+  host. The cross-stack accuracy gap is not significant at 10 seeds but would erase most of the 8.25-epoch
+  margin if real.
+decision_implication: Measure the current submission at 8.25/8.5/8.75 epochs on A100 with 40 fresh seeds
+  plus a local twin (m3, s29) before fixing the budget.
+requirement_ids:
+- R-005
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: m1-a100-details.txt
+  locator: research/evidence/T-004/m1-a100-details.txt
+  sha256: f149a85da8d3680660102c8febeaf42c41afa3f8a18fdc5ac5c4c485733a02c0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: m2-a100-cudagraphs-table.csv
+  locator: research/evidence/T-004/m2-a100-cudagraphs-table.csv
+  sha256: 1b4fcdf600a229d6ab6ce9c76c15e4bc5fe3bdff0c3beca3fbeffc52b80955aa
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Budget decision deferred to m3/s29.

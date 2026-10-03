@@ -21,6 +21,7 @@ LAB_EQUIVALENT = SMALL | {
     "translate": 2,
     "res_schedule": [[0.0, 20], [0.5, 32]],
     "scaling_factor": 1 / 6,
+    "global_pool": "flatmax",
 }
 
 
@@ -46,7 +47,7 @@ def test_defaults_are_the_converged_recipe():
     assert config.widths == (128, 384, 640) and config.epochs == 8.25
     assert config.res_schedule == ((0.0, 20), (0.5, 32)) and config.translate == 2
     assert config.scaling_factor == pytest.approx(1 / 6)
-    assert config.compile and config.fused_sgd
+    assert config.compile and config.fused_sgd and config.compile_mode == "max-autotune"
 
 
 def test_training_is_bit_identical_to_the_lab_substrate():

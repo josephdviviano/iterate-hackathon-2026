@@ -34,6 +34,8 @@ class RecipeConfig:
     # Progressive resizing: ((start_fraction, size), ...), ending at the 32 px test resolution.
     res_schedule: tuple[tuple[float, int], ...] = ((0.0, 20), (0.5, 32))
     compile: bool = True
+    # max-autotune adds Inductor autotuning and CUDA graphs (about 2 min of untimed build).
+    compile_mode: str = "max-autotune"
     fused_sgd: bool = True
 
     @classmethod
@@ -73,6 +75,9 @@ class RecipeConfig:
             raise ValueError("lr_peak_frac must be in (0, 1)")
         if self.translate < 0 or self.weight_decay < 0:
             raise ValueError("translate and weight_decay must be non-negative")
+        modes = ("default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs")
+        if self.compile_mode not in modes:
+            raise ValueError(f"compile_mode must be one of {modes}")
         starts = [entry[0] for entry in self.res_schedule]
         if any(len(entry) != 2 for entry in self.res_schedule) or starts != sorted(starts):
             raise ValueError("res_schedule must be ascending (start_fraction, size) pairs")

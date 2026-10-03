@@ -41,6 +41,17 @@ LEVERS = {
         "res_schedule": [[0.0, 24], [0.5, 32]],
         "resize_in_model": True,
     },
+    "representation": SMALL
+    | {
+        "rep_branch": True,
+        "residual_start": 0.3,
+        "residual_ramp": 0.2,
+        "loss": "poly1",
+        "coarse_aux_weight": 0.5,
+    },
+    "squentropy": SMALL | {"loss": "squentropy", "block_depth": 3},
+    "convmixer": SMALL
+    | {"arch": "convmixer", "convmixer_dim": 32, "convmixer_depth": 2, "translate": 2},
     "celu": SMALL | {"activation": "celu", "epochs": 2.3},
     "select": SMALL | {"select_fraction": 0.5, "selector_widths": [16, 32, 32]},
     "freeze": SMALL | {"freeze_schedule": [[0.5, 1], [0.75, 2]], "res_schedule": [[0.6, 24]]},
@@ -87,6 +98,8 @@ def test_invalid_lever_parameters_fail_loudly():
         {"activation": "relu6"},
         {"whiten_kernel": 4},
         {"mixup_until": 1.5},
+        {"loss": "focal"},
+        {"residual_start": 1.0},
     ]
     for bad in bad_parameters:
         with pytest.raises(ValueError):

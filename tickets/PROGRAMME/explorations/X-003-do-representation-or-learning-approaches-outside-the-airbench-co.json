@@ -1,0 +1,244 @@
+{
+  "connections": [],
+  "design_space": [
+    {
+      "dimension": "architecture-family",
+      "current_assumption": "Whitened 3-stage residual convnet with max-pooling.",
+      "alternatives": [
+        "ConvMixer (patch embedding, depthwise and pointwise mixing)",
+        "ViT or MLP-Mixer",
+        "ResNet-9 (rejected on FLOPs)"
+      ],
+      "why_material": "A different inductive bias could change accuracy per FLOP."
+    },
+    {
+      "dimension": "label-representation",
+      "current_assumption": "Flat 100-way labels with label smoothing.",
+      "alternatives": [
+        "auxiliary superclass loss from the CIFAR-100 taxonomy",
+        "superclass-aware smoothing"
+      ],
+      "why_material": "Fine classes share superclass structure that short runs may learn faster through coarse supervision."
+    },
+    {
+      "dimension": "loss",
+      "current_assumption": "Smoothed cross-entropy.",
+      "alternatives": [
+        "PolyLoss-1",
+        "squentropy (CE plus square loss on wrong classes)",
+        "MSE"
+      ],
+      "why_material": "The loss shapes gradient magnitude on easy versus hard examples in short runs."
+    },
+    {
+      "dimension": "optimisation-geometry",
+      "current_assumption": "Plain 3x3 convs.",
+      "alternatives": [
+        "RepVGG-style parallel 1x1 branches during training",
+        "Muon (hiverge stack, S22)"
+      ],
+      "why_material": "Over-parameterised training-time branches can accelerate convergence at no evaluation cost."
+    },
+    {
+      "dimension": "compute-allocation",
+      "current_assumption": "Full depth from step 0.",
+      "alternatives": [
+        "progressive deepening: residual branches off early, ramped in later"
+      ],
+      "why_material": "Early steps may not need full depth, and cheaper early steps cut time."
+    },
+    {
+      "dimension": "input-representation",
+      "current_assumption": "RGB with 2x2 patch whitening.",
+      "alternatives": [
+        "YUV or Lab colour space",
+        "DCT or frequency-domain input"
+      ],
+      "why_material": "Considered and subsumed: both are linear transforms of 2x2 patches, which PCA whitening already absorbs."
+    }
+  ],
+  "disposition": "test_ready",
+  "exploration_id": "X-003",
+  "hypotheses": [
+    {
+      "hypothesis_id": "R1",
+      "proposition": "Progressive deepening lowers time at matched accuracy.",
+      "mechanism": "Residual branches skipped during the first 30-50% of training and blended in, so early steps cost about a third less per stage.",
+      "changed_dimensions": [
+        "compute-allocation"
+      ],
+      "prediction": "Accuracy within 0.1 pp of control at 3-8% lower time.",
+      "disconfirming_result": "Accuracy drops more than the time saved is worth (about 0.1 pp per 2% time).",
+      "decision_changed": "Whether the recipe deepens progressively.",
+      "evidence_needed": [
+        "S24"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "R2",
+      "proposition": "An auxiliary superclass loss raises accuracy at fixed epochs.",
+      "mechanism": "Coarse labels supply shared gradient signal across related fine classes, speeding representation learning in short runs.",
+      "changed_dimensions": [
+        "label-representation"
+      ],
+      "prediction": "+0.2 pp or more at 8.25 epochs.",
+      "disconfirming_result": "No gain or loss.",
+      "decision_changed": "Label representation; adoption is rule-gated pending organiser confirmation that the dataset taxonomy may be hard-coded.",
+      "evidence_needed": [
+        "S24"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "R3",
+      "proposition": "Training-time 1x1 branches (RepVGG-style) speed convergence.",
+      "mechanism": "Re-parameterised multi-branch convs improve optimisation conditioning.",
+      "changed_dimensions": [
+        "optimisation-geometry"
+      ],
+      "prediction": "Accuracy gain exceeding the ~11% FLOP cost (about +0.5 pp at fixed epochs).",
+      "disconfirming_result": "Gain under the cost.",
+      "decision_changed": "Conv parameterisation.",
+      "evidence_needed": [
+        "S24"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "R4",
+      "proposition": "A ConvMixer family matches the convnet at equal time.",
+      "mechanism": "Large-kernel depthwise mixing on patches gives global context cheaply.",
+      "changed_dimensions": [
+        "architecture-family"
+      ],
+      "prediction": "Accuracy within 1 pp of control at similar time.",
+      "disconfirming_result": "Far below control at equal time.",
+      "decision_changed": "Architecture family.",
+      "evidence_needed": [
+        "S24"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "R5",
+      "proposition": "PolyLoss or squentropy beats smoothed cross-entropy in short runs.",
+      "mechanism": "Different easy and hard-example weighting of gradients.",
+      "changed_dimensions": [
+        "loss"
+      ],
+      "prediction": "+0.2 pp at fixed epochs.",
+      "disconfirming_result": "No gain.",
+      "decision_changed": "Loss function.",
+      "evidence_needed": [
+        "S24"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "R6",
+      "proposition": "Colour-space or DCT input transforms change accuracy.",
+      "mechanism": "Decorrelating input channels.",
+      "changed_dimensions": [
+        "input-representation"
+      ],
+      "prediction": "Accuracy change at fixed epochs.",
+      "disconfirming_result": "None: 2x2 PCA whitening already applies an equivalent linear transform to patches.",
+      "decision_changed": "None.",
+      "evidence_needed": [
+        "Mathematical equivalence"
+      ],
+      "status": "rejected"
+    },
+    {
+      "hypothesis_id": "R7",
+      "proposition": "Vision transformers or MLP-Mixers suit 8-epoch CIFAR-100.",
+      "mechanism": "Global attention or token mixing.",
+      "changed_dimensions": [
+        "architecture-family"
+      ],
+      "prediction": "Competitive accuracy at short budgets.",
+      "disconfirming_result": "Known data hunger: ViTs need far more epochs or pretraining on CIFAR-sized data.",
+      "decision_changed": "Architecture family.",
+      "evidence_needed": [
+        "Only if R4 suggests token-mixing families are competitive"
+      ],
+      "status": "dormant"
+    },
+    {
+      "hypothesis_id": "R8",
+      "proposition": "In-run self-distillation from the lookahead slow weights improves accuracy per time.",
+      "mechanism": "Soft targets from an averaged teacher.",
+      "changed_dimensions": [
+        "loss"
+      ],
+      "prediction": "Gain exceeding the extra teacher forward cost (about 30%).",
+      "disconfirming_result": "Gain below cost.",
+      "decision_changed": "Loss.",
+      "evidence_needed": [
+        "Only if R2 or R5 show label-softness gains"
+      ],
+      "status": "dormant"
+    }
+  ],
+  "interpretation_forks": [],
+  "material_dimensions": [
+    "architecture-family",
+    "label-representation",
+    "loss",
+    "optimisation-geometry",
+    "compute-allocation",
+    "input-representation"
+  ],
+  "observations": [
+    {
+      "observation_id": "OBS-converged",
+      "statement": "The T-013 climb converged within one family (airbench-style convnet, Nesterov SGD with lookahead, smoothed cross-entropy): 75.26% over 40 seeds at 8.25 epochs and 5.38 s local proxy; earlier levers varied hyperparameters, schedules and execution rather than representation.",
+      "evidence": [
+        {
+          "evidence_id": "E-001",
+          "kind": "file",
+          "label": "S18 40-seed table",
+          "locator": "research/evidence/T-013/s18-shorter40-table.csv",
+          "state": "verified",
+          "sha256": "6ccf8ad97026fcfcc842a2ef3017173536b24d9cbe640cf6fe89fcbdd777088d"
+        }
+      ]
+    }
+  ],
+  "omitted_dimensions": [
+    {
+      "dimension": "evaluation",
+      "rationale": "Single view is fixed by the rules; test-time augmentation and test-time adaptation are banned."
+    }
+  ],
+  "probes": [
+    {
+      "probe_id": "S24",
+      "hypothesis_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "method": "One sweep at the converged recipe (8.25 epochs, 10 seeds 1300-1309) with in-sweep control: rep_branch, residual_start 0.3/0.5, PolyLoss-1, squentropy, superclass aux 0.3/1.0, ConvMixer-512/8 k5 p2.",
+      "decision_rule": "Promote any arm beating control by more than 2 combined SE at equal or lower time (or with time saving exceeding accuracy cost) to a fresh-seed confirmation.",
+      "information_gain": "Covers five distinct representation mechanisms in one pass.",
+      "resource_bound": "9 configurations, 90 trials on GPU 1.",
+      "status": "ready"
+    }
+  ],
+  "question": "Do representation or learning approaches outside the airbench convnet-SGD-CE family lower time to a 75% single-view CIFAR-100 mean?",
+  "schema_version": "1.0",
+  "selected_hypothesis_ids": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5"
+  ],
+  "synthesis": "One pass (S24) tests five distinct representation mechanisms at the converged recipe; colour-space and DCT inputs are subsumed by patch whitening; transformers, MLP-Mixers and self-distillation stay dormant unless S24 shows the related mechanism helps.",
+  "task_id": "T-018",
+  "trigger": "explicit_request"
+}

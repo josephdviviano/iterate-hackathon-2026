@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-025
+task_id: T-018
+result_kind: negative
+importance: material
+observation: 'S22 (10 seeds): the hiverge CIFAR-10 record''s optimiser stack (Muon with hiverge NS coefficients,
+  renormalisation every 2 to 17 steps, decoupled weight decay, lr 0.205, momentum 0.655 and 0.825, head_norm,
+  label smoothing 0.09, whitening bias 0.2 epochs) on the converged architecture reaches 73.07% / 73.77%
+  at 8.25 / 10 epochs with batch 1024, 72.49% / 73.56% with batch 1536, and 72.01% / 72.54% with Muon
+  lr 0.15 / 0.30, versus 75.33% for the SGD control at 8.25 epochs.'
+interpretation: 'Muon is rejected for single-view CIFAR-100 in both ports (airbench94_muon, F-007 and
+  F-012; hiverge here): it trails SGD with lookahead by 1.5-3.3 pp at every batch size, budget and lr
+  tried. The hiverge stack was tuned for 10-way, TTA-scored, 64/256/256 training.'
+decision_implication: Close the optimiser dimension on SGD with lookahead.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: rejected
+  rationale: the port reproduces hiverge's optimiser semantics (NS coefficients, cadence, decoupled wd,
+    fp16 momentum) as unit-tested options
+  discriminating_test: null
+- kind: mechanism
+  disposition: supported
+  rationale: the deficit holds across batch size, budget and Muon lr
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s22-hiverge-muon-table.csv
+  locator: research/evidence/T-018/s22-hiverge-muon-table.csv
+  sha256: b88c13c4583dd92b87b9fa0c6d106d0f40bb8c621c4cfa4a03ef81c63b794900
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Muon rejected.

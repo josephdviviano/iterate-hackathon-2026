@@ -1,0 +1,31 @@
+schema_version: '2.0'
+finding_id: F-029
+task_id: T-018
+result_kind: 'null'
+importance: contextual
+observation: 'S27 (20 fresh seeds 1500-1519, 8.25 epochs): momentum 0.85 gives 75.16%, 0.8 gives 75.22%,
+  0.75 gives 75.22% (SE about 0.06 pp each).'
+interpretation: 'The S21 momentum-0.8 gain (+0.23 pp, 10 seeds, one of 18 comparisons) does not replicate:
+  the fresh-seed difference is +0.06 pp, within one combined SE. It was a multiple-comparison artefact.'
+decision_implication: Keep momentum 0.85; no S21 lever enters the recipe.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: supported
+  rationale: selection of the best of 18 arms inflates its estimate; fresh seeds regress it to within
+    noise
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s27-momentum-table.csv
+  locator: research/evidence/T-018/s27-momentum-table.csv
+  sha256: ac876d918100535ffe0ca4e6613575fa1a462281594db3b6210dfbe2f11bc99d
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Momentum unchanged.

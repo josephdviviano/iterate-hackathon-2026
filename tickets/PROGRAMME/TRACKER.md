@@ -22,7 +22,7 @@
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
 - **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
-- **Next:** Continue T-018 (Coverage pass: every lineage, competitor and novel strategy (X-003)).
+- **Next:** Continue T-004 (A100 PCIe timing calibration and cross-stack accuracy agreement), T-018 (Coverage pass: every lineage, competitor and novel strategy (X-003)).
 - **Open human feedback:** none
 
 ## Work completed and underway
@@ -32,7 +32,7 @@
 | [T-001](tasks/T-001-local-accuracy-stack-on-the-blackwell-gpus.md) — Local accuracy stack on the Blackwell GPUs | delivery | completed | Dev stack torch 2.7.1+cu128 runs the official harness on real data on both local GPUs; setup script and freeze reproduce it from a fresh worktree. |
 | [T-002](tasks/T-002-parametrised-airbench-lineage-recipe-substrate-in-the-team-folde.md) — Parametrised airbench-lineage recipe substrate in the team folder | delivery | completed | Parametrised recipe passes CPU contract tests (reset, invalid params, defaults, harness smoke for three variants) on the pinned stack and trains on real data (default 69.5% single-view, eager evaluation). |
 | [T-003](tasks/T-003-declarative-multi-gpu-sweep-runner-collation-and-runbook.md) — Declarative multi-GPU sweep runner, collation and runbook | delivery | completed | Sweep runner dispatches across both GPUs through the harness, resumes only interrupted configs, records failures, and collates reproducibly; runbook replayed from a fresh worktree. |
-| [T-004](tasks/T-004-a100-pcie-timing-calibration-and-cross-stack-accuracy-agreement.md) — A100 PCIe timing calibration and cross-stack accuracy agreement | exploration | blocked | On a rented A100 80GB PCIe in the pinned container, measure per-epoch and fixed preparation time for each frontier width with telemetry, re-time a ResNet-9 reimplementation against the 59.3 s baseline, and compare a reference configuration's 10-seed accuracy with the dev stack. |
+| [T-004](tasks/T-004-a100-pcie-timing-calibration-and-cross-stack-accuracy-agreement.md) — A100 PCIe timing calibration and cross-stack accuracy agreement | exploration | in_progress | On a rented A100 80GB PCIe in the pinned container, measure per-epoch and fixed preparation time for each frontier width with telemetry, re-time a ResNet-9 reimplementation against the 59.3 s baseline, and compare a reference configuration's 10-seed accuracy with the dev stack. |
 | [T-005](tasks/T-005-single-view-width-by-epochs-frontier-p1.md) — Single-view width by epochs frontier (P1) | exploration | completed | Frontier measured over 4 shapes x 4 epoch counts x 5 seeds plus a ResNet-9 arm; airbench96 shape reaches 75.37% at 10 epochs, 2x crosses at 13.7 epochs; capacity-bound (F-003). |
 | [T-006](tasks/T-006-select-the-base-regime.md) — Select the base regime | decision | proposed | Choose architecture, width, depth, batch size and epoch count by minimum interpolated A100 PCIe time at a 75.3% single-view mean, steelmanning the runner-up regime. |
 | [T-007](tasks/T-007-add-on-levers-at-the-selected-base-p2.md) — Add-on levers at the selected base (P2) | exploration | cancelled | Superseded by T-013: probes S4-S15 tested Muon, resizing, selection, batch size, regularisation, compile and further levers at the climbed base (F-007 to F-019); its premise of a separate add-on pass after an A100 regime decision no longer holds because the climb ran on the local proxy under D-001. |
@@ -218,15 +218,59 @@
 - **Decision consequence:** Use the plan's red-team list as the T-016 compliance checklist; test CUDA-graph compile modes on the A100 (m2).
 - **Resolution:** Checklist adopted for T-016.
 
-### B-001 — external, open
+### F-025 — resolved, material
+
+- **Observation:** S22 (10 seeds): the hiverge CIFAR-10 record's optimiser stack (Muon with hiverge NS coefficients, renormalisation every 2 to 17 steps, decoupled weight decay, lr 0.205, momentum 0.655 and 0.825, head_norm, label smoothing 0.09, whitening bias 0.2 epochs) on the converged architecture reaches 73.07% / 73.77% at 8.25 / 10 epochs with batch 1024, 72.49% / 73.56% with batch 1536, and 72.01% / 72.54% with Muon lr 0.15 / 0.30, versus 75.33% for the SGD control at 8.25 epochs.
+- **Interpretation:** Muon is rejected for single-view CIFAR-100 in both ports (airbench94_muon, F-007 and F-012; hiverge here): it trails SGD with lookahead by 1.5-3.3 pp at every batch size, budget and lr tried. The hiverge stack was tuned for 10-way, TTA-scored, 64/256/256 training.
+- **Decision consequence:** Close the optimiser dimension on SGD with lookahead.
+- **Resolution:** Muon rejected.
+
+### F-026 — resolved, material
+
+- **Observation:** S24 (10 seeds 1300-1309; control 75.14% at 5.39 s): RepVGG-style 1x1 branches 75.19% at 6.51 s; PolyLoss-1 75.10%; squentropy 74.77%; superclass auxiliary loss 75.14% (weight 0.3, +5% time) and 73.25% with sd 1.2 pp (weight 1.0); ConvMixer-512/8 (k5, patch 2) 25.6% in 19.9 s. Progressive deepening crashed in fused SGD and is rerun in S25.
+- **Interpretation:** R3, R4 and R5 are disconfirmed: train-time over-parameterisation buys nothing for its 21% cost, alternative losses do not beat smoothed cross-entropy, and ConvMixer's depthwise mixing neither learns in 8 epochs nor runs fast. R2 shows no gain at a mild weight and destabilises training at weight 1.0, so the hierarchy route is rejected and its rule question is moot.
+- **Decision consequence:** Keep the airbench convnet, plain 3x3 convs and smoothed cross-entropy; finish R1 in S25.
+- **Resolution:** R2-R5 rejected; R1 rerun.
+
+### F-027 — resolved, material
+
+- **Observation:** S25 (10 seeds 1300-1309, foreach SGD): control 75.06% in 5.30 s; residual branches off until 30% then ramped over 10%: 74.64% in 5.08 s (-0.43 pp, -4.1% time); off until 50%: 74.14% in 4.93 s (-0.92 pp, -6.9% time).
+- **Interpretation:** R1 is disconfirmed: the recipe's own accuracy-time exchange rate (about 0.08 pp per 1% time, from S18's epoch steps) values the savings at -0.33 and -0.55 pp, less than the accuracy lost. As with freezing (F-009), short CIFAR-100 runs need full capacity throughout.
+- **Decision consequence:** Reject progressive deepening; the representation portfolio X-003 is closed apart from dormant R7/R8, which their trigger conditions did not activate.
+- **Resolution:** R1 rejected.
+
+### F-028 — resolved, material
+
+- **Observation:** S21 (10 seeds 1000-1009; control 75.22%): momentum 0.8 +0.23 pp; colour jitter +0.05 (+4.5% time); lookahead flush +0.03; BN recalibration +0.01; whitening from 960 images +0.00; bn_momentum 0.8 -0.04; random flip -0.09; momentum 0.9 -0.11; mixup -0.11; max+mean pool -0.15; SiLU -0.17; weight decay x2 -0.17; whitening bias 0.2 epochs -0.21; 3x3 whitening -0.28 (+11% time); CELU -0.43; cutout 8 -0.52; lookahead off -0.77; weight decay x0.5 -1.15. Combined SE is about 0.09 pp.
+- **Interpretation:** No lineage or competitor lever beats the converged recipe except possibly momentum 0.8 (about 2.5 combined SE, one of 18 comparisons, so it needs fresh-seed confirmation). The lineage's augmentation additions (jitter, cutout, mixup), activations and whitening variants transfer negatively or neutrally to short single-view CIFAR-100 runs; lookahead remains essential.
+- **Decision consequence:** Confirm and climb momentum on fresh seeds (S27); record every other S21 lever as tested and rejected or neutral.
+- **Resolution:** Momentum candidate sent to S27.
+
+### F-029 — resolved, contextual
+
+- **Observation:** S27 (20 fresh seeds 1500-1519, 8.25 epochs): momentum 0.85 gives 75.16%, 0.8 gives 75.22%, 0.75 gives 75.22% (SE about 0.06 pp each).
+- **Interpretation:** The S21 momentum-0.8 gain (+0.23 pp, 10 seeds, one of 18 comparisons) does not replicate: the fresh-seed difference is +0.06 pp, within one combined SE. It was a multiple-comparison artefact.
+- **Decision consequence:** Keep momentum 0.85; no S21 lever enters the recipe.
+- **Resolution:** Momentum unchanged.
+
+### F-030 — resolved, material
+
+- **Observation:** Modal A100 runs in the pinned stack (torch 2.4.0+cu124), 10 seeds 600-609, 8.25 epochs: on A100 80GB PCIe the converged recipe takes 6.169 s (m1) and 6.261 s (m2) per trial with default compile, 6.173 s with reduce-overhead and 6.115 s with max-autotune (181 s untimed build); 128/384/512 takes 5.76 s; prepare is 0.07 s; evaluation 0.10-0.12 s. Accuracy 75.15-75.20%. Paired with the local dev stack on the same seeds, A100 accuracy is -0.157 pp (SE 0.114).
+- **Interpretation:** On the judging GPU the recipe trains about 9.6x faster than the organisers' 59.3 s baseline before the flatten-max pool and CUDA graphs. Compile-mode gains match the local proxy (-1.4% / -2.3%). Identical configs differ by about 1.5% between PCIe hosts, so timing comparisons must be paired on one host. The cross-stack accuracy gap is not significant at 10 seeds but would erase most of the 8.25-epoch margin if real.
+- **Decision consequence:** Measure the current submission at 8.25/8.5/8.75 epochs on A100 with 40 fresh seeds plus a local twin (m3, s29) before fixing the budget.
+- **Resolution:** Budget decision deferred to m3/s29.
+
+### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
 - **Consequence:** A100 timing (R-005) and cross-stack accuracy agreement (R-007) cannot be measured; the regime decision T-006 waits on them, while the local frontier probe T-005 can proceed.
+- **Resolution:** A100 access via Modal (workspace gereonelvers99, team-lead supplied token): m1 ran the pinned torch 2.4.0 stack on A100 80GB PCIe and A100-SXM4-80GB GPUs.
 
-### B-002 — external, open
+### B-002 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
 - **Consequence:** A100 timing (R-005) and cross-stack accuracy agreement (R-007) cannot be measured; the regime decision T-006 waits on them, while the local frontier probe T-005 can proceed.
+- **Resolution:** A100 access via Modal (workspace gereonelvers99, team-lead supplied token): m1 ran the pinned torch 2.4.0 stack on A100 80GB PCIe and A100-SXM4-80GB GPUs.
 
 ## Decisions and changes
 
@@ -311,9 +355,9 @@
 | R-002 | core | The entry satisfies RULES.md sections 1 to 3: no real data, seeds or data-derived constants in import or build; no learned state carried across trials; single-view evaluation without state change; no test-set use; no measurement interference; only pinned dependencies. | pending_evidence |
 | R-003 | core | The base regime (architecture, width, depth, batch size, epochs) is selected as the minimum interpolated A100 PCIe time at which the single-view 5-seed mean reaches 75.3%, over a measured frontier of at least four widths and four epoch counts. | pending_evidence |
 | R-004 | core | Each add-on lever (optimiser, resolution schedule, example selection, regularisation) is adopted only if it lowers time at matched accuracy beyond seed noise over at least 10 seeds at the selected base; every rejected lever has a recorded reason. | supported |
-| R-005 | core | A100 80GB PCIe per-epoch and fixed preparation times are measured in the pinned container for every frontier candidate, and the final recipe's 40-trial mean time is recorded with its standard deviation and GPU telemetry. | blocked |
+| R-005 | core | A100 80GB PCIe per-epoch and fixed preparation times are measured in the pinned container for every frontier candidate, and the final recipe's 40-trial mean time is recorded with its standard deviation and GPU telemetry. | pending_evidence |
 | R-006 | supporting | Any configuration in the exploration space runs from a declarative sweep file on any free local GPU through the official harness, resumes after interruption without repeating completed runs, and its collated tables are reproducible from raw results. | supported |
-| R-007 | supporting | Single-view accuracy measured on the local development stack agrees with the pinned A100 stack within two standard errors for a reference configuration, or the discrepancy is quantified and applied as a correction. | blocked |
+| R-007 | supporting | Single-view accuracy measured on the local development stack agrees with the pinned A100 stack within two standard errors for a reference configuration, or the discrepancy is quantified and applied as a correction. | pending_evidence |
 | R-008 | core | The pull request to the upstream repository adds only submissions/<team>/ with its source and README, runs its final recipe from default settings, contains no weights, data or results, and was approved by the team lead before opening. | pending_evidence |
 
 ### Worksets
@@ -331,11 +375,12 @@
 
 - **X-001:** Where does the single-view width by epochs frontier cross 75% on CIFAR-100, and is the minimum-time regime capacity-bound or throughput-bound? (closed; test-ready=true)
 - **X-002:** Which levers lower local proxy time to a 75.3% single-view mean from the airbench96-shape base, and when does the climb saturate? (saturated; test-ready=true)
+- **X-003:** Do representation or learning approaches outside the airbench convnet-SGD-CE family lower time to a 75% single-view CIFAR-100 mean? (test_ready; test-ready=true)
 
 ### Exact frontier
 
 - State: **continue**
-- Active: T-018
+- Active: T-004, T-018
 - Eligible: none
 - Unresolved outcomes: O-001, O-002, O-003, O-004
 - Unresolved requirements: R-001, R-002, R-003, R-005, R-007, R-008

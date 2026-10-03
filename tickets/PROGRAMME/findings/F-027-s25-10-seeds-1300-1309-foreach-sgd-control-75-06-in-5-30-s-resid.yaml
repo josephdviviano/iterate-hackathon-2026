@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-027
+task_id: T-018
+result_kind: negative
+importance: material
+observation: 'S25 (10 seeds 1300-1309, foreach SGD): control 75.06% in 5.30 s; residual branches off until
+  30% then ramped over 10%: 74.64% in 5.08 s (-0.43 pp, -4.1% time); off until 50%: 74.14% in 4.93 s (-0.92
+  pp, -6.9% time).'
+interpretation: 'R1 is disconfirmed: the recipe''s own accuracy-time exchange rate (about 0.08 pp per
+  1% time, from S18''s epoch steps) values the savings at -0.33 and -0.55 pp, less than the accuracy lost.
+  As with freezing (F-009), short CIFAR-100 runs need full capacity throughout.'
+decision_implication: Reject progressive deepening; the representation portfolio X-003 is closed apart
+  from dormant R7/R8, which their trigger conditions did not activate.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: accuracy loss grows faster than time savings as the shallow phase lengthens
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s25-deepening-table.csv
+  locator: research/evidence/T-018/s25-deepening-table.csv
+  sha256: a0895beb1260a0bf6e6ea791e2abb71b53d156a0ff5ea382d55fd94879d42571
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: R1 rejected.

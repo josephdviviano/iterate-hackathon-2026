@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, fields
 from typing import Any, Literal
 
-Arch = Literal["airbench", "resnet9"]
+Arch = Literal["airbench", "resnet9", "convmixer"]
 Flip = Literal["alternating", "random", "none"]
 Optimizer = Literal["sgd", "muon"]
 
@@ -85,6 +85,17 @@ class RecipeConfig:
     muon_coefficients: str = "airbench"
     muon_renorm: str = "every"
     muon_decoupled_wd: float = 0.0
+    # Representation alternatives (X-004).
+    rep_branch: bool = False
+    residual_start: float = 0.0
+    residual_ramp: float = 0.1
+    loss: str = "ce"
+    poly_eps: float = 1.0
+    coarse_aux_weight: float = 0.0
+    convmixer_dim: int = 512
+    convmixer_depth: int = 8
+    convmixer_kernel: int = 5
+    convmixer_patch: int = 2
 
     def selector_config(self) -> RecipeConfig:
         """The small airbench94-shaped selector used for in-run example selection."""
@@ -127,8 +138,14 @@ class RecipeConfig:
         return config
 
     def validate(self) -> None:
-        if self.arch not in ("airbench", "resnet9"):
-            raise ValueError(f"arch must be airbench or resnet9, not {self.arch!r}")
+        if self.arch not in ("airbench", "resnet9", "convmixer"):
+            raise ValueError(f"arch must be airbench, resnet9 or convmixer, not {self.arch!r}")
+        if self.loss not in ("ce", "poly1", "squentropy"):
+            raise ValueError("loss must be ce, poly1 or squentropy")
+        if not 0 <= self.residual_start < 1 or not 0 < self.residual_ramp <= 1:
+            raise ValueError("residual_start must be in [0, 1) and residual_ramp in (0, 1]")
+        if self.coarse_aux_weight < 0:
+            raise ValueError("coarse_aux_weight must be non-negative")
         if self.block_depth not in (2, 3):
             raise ValueError("block_depth must be 2 or 3")
         if self.stage_depths and (

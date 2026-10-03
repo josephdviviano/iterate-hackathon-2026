@@ -1,0 +1,27 @@
+# R1 progressive deepening rerun (S24 arms crashed in fused SGD: residual-branch params have no
+# grad while inactive, so fused SGD meets missing momentum buffers). foreach SGD skips them;
+# S8 showed fused vs foreach is speed-neutral. Same seeds as S24, in-sweep control.
+name = "s25-deepening"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [1300, 1301, 1302, 1303, 1304, 1305, 1306, 1307, 1308, 1309]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+compile = true
+fused_sgd = false
+epochs = 8.25
+
+[[configs]]
+[[configs]]
+residual_start = 0.3
+residual_ramp = 0.1
+[[configs]]
+residual_start = 0.5
+residual_ramp = 0.1

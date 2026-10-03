@@ -277,6 +277,7 @@ def fit(
     )
     lookahead = Lookahead(model) if config.lookahead else None
     freezable = isinstance(model, AirbenchNet)
+    deepening = freezable and config.residual_start > 0
     model.train()
     step = 0
     for epoch in range(ceil(config.epochs)):
@@ -293,15 +294,12 @@ def fit(
             if selector is not None:
                 inputs, labels = selector.select(inputs, labels, step)
             plan.set_lr(step)
+            if deepening:
+                set_deepening(model, config, step, total_steps)
             if config.mixup_alpha and step < config.mixup_until * total_steps:
                 loss = mixup_loss(step_model, inputs, labels, config, stream.generator)
             else:
-                loss = F.cross_entropy(
-                    step_model(inputs),
-                    labels,
-                    label_smoothing=config.label_smoothing,
-                    reduction="sum",
-                )
+                loss = training_loss(step_model(inputs), labels, config)
             loss.backward()
             plan.step()
             plan.zero_grad()
@@ -313,12 +311,62 @@ def fit(
     if freezable:
         model.frozen_groups = 0
         model.train_size = None
+    if deepening:
+        set_deepening(model, config, total_steps, total_steps)
     if lookahead is not None:
         if config.lookahead_flush and step % 5:
             lookahead.update(decay=0.95**5 * (step / total_steps) ** 3)
         lookahead.update(decay=1.0)
     if config.bn_recal_batches:
         recalibrate_batchnorm(model, stream, config.bn_recal_batches)
+
+
+# CIFAR-100 fine label -> superclass (the dataset's published 20-superclass taxonomy).
+COARSE = (
+    4, 1, 14, 8, 0, 6, 7, 7, 18, 3, 3, 14, 9, 18, 7, 11, 3, 9, 7, 11, 6, 11, 5, 10, 7, 6, 13,
+    15, 3, 15, 0, 11, 1, 10, 12, 14, 16, 9, 11, 5, 5, 19, 8, 8, 15, 13, 14, 17, 18, 10, 16, 4,
+    17, 4, 2, 0, 17, 4, 18, 17, 10, 3, 2, 12, 12, 16, 12, 1, 9, 19, 2, 10, 0, 1, 16, 12, 9, 13,
+    15, 13, 16, 19, 2, 4, 6, 19, 5, 5, 8, 19, 18, 1, 2, 15, 6, 0, 17, 8, 14, 13,
+)  # fmt: skip
+
+
+def training_loss(
+    outputs: torch.Tensor, labels: torch.Tensor, config: RecipeConfig
+) -> torch.Tensor:
+    """Cross-entropy (default), PolyLoss-1 or squentropy, plus an optional superclass loss."""
+    ls = config.label_smoothing
+    loss = F.cross_entropy(outputs, labels, label_smoothing=ls, reduction="sum")
+    if config.loss == "poly1":
+        p_true = outputs.softmax(-1).gather(1, labels[:, None]).squeeze(1)
+        loss = loss + config.poly_eps * (1 - p_true).sum()
+    elif config.loss == "squentropy":
+        wrong = torch.ones_like(outputs).scatter_(1, labels[:, None], 0.0)
+        loss = loss + ((outputs * wrong) ** 2).sum() / (outputs.size(1) - 1)
+    if config.coarse_aux_weight:
+        groups = torch.tensor(COARSE, device=outputs.device)
+        coarse_logits = torch.full(
+            (len(outputs), 20), float("-inf"), device=outputs.device
+        ).scatter_reduce(1, groups.expand(len(outputs), -1), outputs, reduce="amax")
+        # log-sum-exp within each superclass, computed stably around the per-group max
+        shifted = (outputs - coarse_logits.gather(1, groups.expand(len(outputs), -1))).exp()
+        sums = torch.zeros(len(outputs), 20, device=outputs.device).index_add_(1, groups, shifted)
+        coarse = coarse_logits + sums.log()
+        loss = loss + config.coarse_aux_weight * F.cross_entropy(
+            coarse, groups[labels], reduction="sum"
+        )
+    return loss
+
+
+def set_deepening(model: nn.Module, config: RecipeConfig, step: int, total_steps: int) -> None:
+    """Progressive deepening: residual branches off until ``residual_start``, then ramped in."""
+    start = config.residual_start * total_steps
+    ramp = max(1.0, config.residual_ramp * total_steps)
+    gate = min(1.0, max(0.0, (step - start) / ramp))
+    for module in model.modules():
+        if hasattr(module, "residual_active"):
+            module.residual_active = step >= start
+            module.residual_ramping = 0.0 < gate < 1.0
+            module.residual_gate.fill_(gate)
 
 
 def mixup_loss(
