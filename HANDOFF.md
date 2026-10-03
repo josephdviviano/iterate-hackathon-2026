@@ -8,7 +8,46 @@ version 19; every number on it points to a RESULTS entry).
 
 ## State
 
-Update 2026-10-03 23:50 BST (session iterate-62). Everything below this
+Update 2026-10-04 00:05 BST (session iterate-62, stopped at its usage limit).
+Runners still alive as background processes on this machine (nohup); if one
+dies, `committee.recover` collects its Devin sessions. What is done and left:
+
+- DONE: P1 on all seven levels, R34 (comparison) and R35 (calibration)
+  written and committed (`97e1258`). `committee.summary` and
+  `committee.calibrate --condition committee_opine_devin` regenerate every
+  number. Live play with the frame_out committees: ar25 L3 vote 0.84 over
+  75 moves, AUROC 0.92, first all-wrong move 63 (one HUD cell); ka59 0.973;
+  sk48 0.627 with every error unanimous (shared blind spot).
+- DONE, not yet written up (R36): the counterexample rounds in frame_out.
+  Held-out rows are the ones no arm trained on. m0r0 L3 (11 rows): round 1
+  0.273, round 2 with the mechanism counterexample 0.909 (8 of 8, one
+  behaviour), passive control with the same 33 rows and no counterexample
+  1.000 (8 of 8). ka59 L2 (42 rows): round 1 0.833, round 2 0.857, best
+  member 0.881, no passive arm run. sk48 L2 (43 rows): round 1 0.558,
+  round 2 0.977 (6 of 8 landed, 0.93 to 0.977). Reading so far: the lift
+  comes from the probed data; the mechanism text did not add to it on
+  m0r0 and may have narrowed the committee to one behaviour.
+  `uv run python -m committee.cegis GAME --level L --train-frac 0.4 --report
+  --conditions cegis_opine_devin,cegisobj_opine_devin --passive-condition
+  passive_opine_devin` prints each table.
+- RUNNING at 00:05: sk48 passive (`L2_n70/passive_opine_devin`, first
+  members 1.0, 0.93, 0.93), sk48 object-diff arm
+  (`L2_f40_probe25/cegisobj_opine_devin`, first members 0.93, 0.977, 0.93),
+  ar25 L3 live round (`L3_f40_probe0_live70/live_opine_devin`, 4 of 8
+  members admitted on 100 transitions). When the live round lands, replay:
+  `uv run python -m committee.live ar25 --level 3 --steps 75 --brief
+  --members-dir ar25/L3_f40_probe0_live70/live_opine_devin` and compare
+  with `artifacts/ar25/live/ar25_L3_f40_committee_opine_devin_seed0.json`.
+- LEFT: write R36 (rounds, passive, object-diff, live round) and the NOTES.md
+  entry for this session; update README results and the CLAUDE.md track
+  table to R34 to R36; rewrite the report by the five questions in the
+  Claude Doc https://claude.ai/code/artifact/84ea4a4a-2162-4457-9525-1702a9026886
+  (read it first; the HTML page is superseded); commit the round artifacts
+  (run directories, not the logs, which hold absolute paths); the user
+  merges jdv into main. Budget used: 141 Devin sessions of 133 plus 32.
+  Not run: ka59 passive, P4 batch variance, Q reward hacking.
+
+Earlier update, 2026-10-03 23:50 BST (session iterate-62). Everything below this
 paragraph is the 22:00 state; these are the changes since.
 
 - Every build is committed and pushed on `jdv` (head `6b881e6`): the
