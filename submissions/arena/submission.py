@@ -83,7 +83,8 @@ def build(context: BuildContext):
     # Warm up compilation on synthetic data (fwd + bwd); state is reset in prepare.
     if device.type == "cuda":
         bs = cfg["batch_size"]
-        x = torch.randn(bs, 3, 32, 32, device=device).to(memory_format=torch.channels_last)
+        x = torch.randn(bs, 3, 32, 32, device=device, dtype=torch.bfloat16)
+        x = x.contiguous(memory_format=torch.channels_last)
         y = torch.randint(0, context.num_classes, (bs,), device=device)
         model.train()
         for _ in range(3):
