@@ -66,7 +66,8 @@ def conv_bn(c_in, c_out, act, pool=False):
 
 class GlobalMaxPool(nn.Module):
     def forward(self, x):
-        return x.amax(dim=(2, 3))
+        # max with indices: amax's tie-splitting backward goes NaN under inductor here.
+        return x.flatten(2).max(dim=2).values
 
 
 class Residual(nn.Module):
@@ -97,12 +98,10 @@ class Net(nn.Module):
         self.fc = nn.Linear(w[3], num_classes, bias=False)
         self.scale = scale
 
-    def head(self, x):
-        return self.fc(self.body[-2:](x)) * self.scale
-
     def segments(self):
         # Compiled separately so the head's gradients arrive before the stem's.
-        return [self.body[:-2], self.head]
+        stem, tail = self.body[:-2], self.body[-2:]
+        return [stem, lambda x: self.fc(tail(x)) * self.scale]
 
     def features(self, x):
         for f in self.segments():
@@ -195,7 +194,7 @@ def build(context: BuildContext):
         x = torch.zeros(bs, 3, res, res, device=device, dtype=torch.bfloat16)
         x = x.contiguous(memory_format=torch.channels_last)
         state.xs[res] = x
-        if cuda:
+        if cuda and cfg.get("graph", True):
             # Warm up on a side stream, then capture the whole step as one CUDA graph.
             x.normal_()
             state.y.random_(0, context.num_classes)
@@ -211,7 +210,7 @@ def build(context: BuildContext):
             state.steps[res] = graph.replay
         else:
             state.steps[res] = lambda x=x: step(x)
-    if cuda:
+    if cuda and cfg.get("graph", True):
         # Warm up the remaining kernels and the allocator with a short synthetic trial.
         n = 50_000
         fake = TrainingData(
