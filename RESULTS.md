@@ -205,6 +205,48 @@ and showing the vote counts anchored the synthesizer on the majority. Rounds
 are sequential, so wall time is about three times that of independent runs.
 Decision: keep independent seeded synthesis.
 
+## R9. Dynamics-ensemble baselines at the effect level
+
+Baselines from the learned-dynamics literature on the same splits, with
+per-object features (type, action, tags, position, size, touching neighbour
+types, click offset) and a per-object effect class as the target. The
+program committee's predicted states are reduced to the same classes.
+`accuracy` = every object's class right; `object accuracy` = share of
+objects right. Members of the ensembles are not filtered by exact replay.
+Command: `uv run python -m committee.baselines ar25 --level 3 --train-frac 0.4`.
+
+| ar25 L3, 44 held-out | accuracy | object accuracy | AUROC | unanimous n, error | split n, error | survivors after probes 1..5, disagreement order | random order, mean |
+|---|---|---|---|---|---|---|---|
+| nearest neighbour copy | 0.00 | 0.60 | | | | | |
+| bagged trees, QBC, 8 | 0.00 | 0.41 | none | 0 | 44, 1.00 | 0,0,0,0,0 | 0,0,0,0,0 |
+| MLP deep ensemble, 8 | 0.00 | 0.53 | none | 1, 1.00 | 43, 1.00 | 0,0,0,0,0 | 0.05,0,0,0,0 |
+| program committee, 8 | 0.48 | 0.89 | 0.77 | 27, 0.30 | 17, 0.88 | 2,1,1,1,1 | 2.95,1.0,0.7,0.7,0.2 |
+
+| m0r0 L3, 44 held-out | accuracy | object accuracy | AUROC | unanimous n, error | split n, error | survivors, disagreement | random, mean |
+|---|---|---|---|---|---|---|---|
+| nearest neighbour copy | 0.14 | 0.66 | | | | | |
+| bagged trees, QBC, 8 | 0.32 | 0.81 | 0.48 | 0 | 44, 0.68 | 0,0,0,0,0 | 0.55,0.1,0,0,0 |
+| MLP deep ensemble, 8 | 0.23 | 0.79 | 0.47 | 25, 0.76 | 19, 0.79 | 0,0,0,0,0 | 0.85,0.4,0,0,0 |
+| program committee, 8 | 0.77 | 0.96 | 0.68 | 38, 0.16 | 6, 0.67 | 0,0,0,0,0 | 6.0,3.9,3.9,3.9,3.1 |
+
+| Item | Value |
+|---|---|
+| Runs | 1 per method, seed 0; the learned baselines train in seconds |
+| Split | As R3 and R6 |
+| Commit | a20f4e1 |
+
+Reading: with 25 to 30 training transitions the learned ensembles cannot
+model the mechanics; their disagreement is not informative (AUROC 0.47 to
+0.48 or undefined) and their members are falsified by almost any probe, so
+their survivor curves say nothing. The program committee is the only method
+whose agreement is informative. One wrinkle: at the effect level on ar25 the
+disagreement order falsifies the last member after 10 probes against 3.0 for
+random, because effect classes merge predicted states that differ only in
+amounts, so the transition where every member is wrong no longer ranks
+first. At the state level (R4) the disagreement order falsifies all members
+in one probe. The exploration claim is therefore at the granularity the
+agent predicts, the exact next state.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a
