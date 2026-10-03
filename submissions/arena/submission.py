@@ -13,7 +13,7 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    stages=[[32, 14]],  # [resolution, epochs] in training order
+    stages=[[32, 10]],  # [resolution, epochs] in training order
     batch_size=512,
     lr=0.4,
     momentum=0.9,
@@ -22,10 +22,34 @@ DEFAULTS = dict(
     warmup=0.25,
     widths=[32, 128, 256, 512],
     act="relu",
+    muon=True,  # orthogonalized (Newton-Schulz) momentum updates for conv filters
+    muon_lr=0.12,
+    muon_momentum=0.6,
     alt_flip=True,
 )
 
 ACTS = dict(relu=lambda: nn.ReLU(inplace=True), gelu=nn.GELU, silu=lambda: nn.SiLU(inplace=True))
+
+
+def newton_schulz(g, steps=3, eps=1e-7):
+    # Approximately orthogonalize g (Muon); quintic iteration coefficients from Keller Jordan.
+    a, b, c = 3.4445, -4.7750, 2.0315
+    x = g.bfloat16()
+    x = x / (x.norm() + eps)
+    tall = g.size(0) > g.size(1)
+    if tall:
+        x = x.T
+    for _ in range(steps):
+        m = x @ x.T
+        x = a * x + (b * m + c * m @ m) @ x
+    return x.T if tall else x
+
+
+def muon_update(p, g, buf, lr, momentum):
+    buf.mul_(momentum).add_(g)
+    g = g.add(buf, alpha=momentum)
+    p.mul_(len(p) ** 0.5 / p.norm())  # fixed filter norm instead of weight decay
+    p.sub_(newton_schulz(g.reshape(len(g), -1)).view(p.shape) * lr)
 
 
 def conv_bn(c_in, c_out, act, pool=False):
@@ -91,9 +115,13 @@ def build(context: BuildContext):
     state.y = torch.zeros(bs, dtype=torch.long, device=device)
     state.lr = torch.zeros((), device=device)
     params = list(model.parameters())
-    decay = [i for i, p in enumerate(params) if p.ndim > 1]
+    conv = [i for i, p in enumerate(params) if p.ndim == 4] if cfg["muon"] else []
+    sgd = [i for i in range(len(params)) if i not in conv]
+    decay = [i for i in sgd if params[i].ndim > 1]
     state.bufs = [torch.zeros_like(p) for p in params]
     mom, wd, ls = cfg["momentum"], cfg["weight_decay"], cfg["label_smoothing"]
+    muon_scale, muon_mom = cfg["muon_lr"] / cfg["lr"], cfg["muon_momentum"]
+    muon_fn = torch.compile(muon_update, dynamic=False) if cuda else muon_update
 
     def step(x):
         # Forward, backward and nesterov SGD (coupled weight decay) on static buffers.
@@ -102,11 +130,16 @@ def build(context: BuildContext):
         grads = list(torch.autograd.grad(loss, params))
         with torch.no_grad():
             torch._foreach_add_([grads[i] for i in decay], [params[i] for i in decay], alpha=wd)
-            torch._foreach_mul_(state.bufs, mom)
-            torch._foreach_add_(state.bufs, grads)
-            torch._foreach_add_(grads, state.bufs, alpha=mom)
-            torch._foreach_mul_(grads, state.lr)
-            torch._foreach_sub_(params, grads)
+            p_sgd = [params[i] for i in sgd]
+            g_sgd = [grads[i] for i in sgd]
+            b_sgd = [state.bufs[i] for i in sgd]
+            torch._foreach_mul_(b_sgd, mom)
+            torch._foreach_add_(b_sgd, g_sgd)
+            torch._foreach_add_(g_sgd, b_sgd, alpha=mom)
+            torch._foreach_mul_(g_sgd, state.lr)
+            torch._foreach_sub_(p_sgd, g_sgd)
+            for i in conv:
+                muon_fn(params[i], grads[i], state.bufs[i], state.lr * muon_scale, muon_mom)
 
     model.train()
     state.xs, state.steps = {}, {}
