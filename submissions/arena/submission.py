@@ -97,8 +97,17 @@ class Net(nn.Module):
         self.fc = nn.Linear(w[3], num_classes, bias=False)
         self.scale = scale
 
+    def head(self, x):
+        return self.fc(self.body[-2:](x)) * self.scale
+
+    def segments(self):
+        # Compiled separately so the head's gradients arrive before the stem's.
+        return [self.body[:-2], self.head]
+
     def features(self, x):
-        return self.fc(self.body(x)) * self.scale
+        for f in self.segments():
+            x = f(x)
+        return x
 
     def forward(self, x):
         # Evaluation input: float32 in [0, 1]. Training feeds pre-normalized bf16.
@@ -114,7 +123,16 @@ def build(context: BuildContext):
     cuda = device.type == "cuda"
     model = Net(context.num_classes, cfg["widths"], cfg["act"], cfg["logit_scale"]).to(device).to(memory_format=torch.channels_last)
     state = SimpleNamespace(model=model, context=context, cfg=cfg, device=device)
-    features = torch.compile(model.features, dynamic=False) if cuda else model.features
+    if cuda:
+        segs = [torch.compile(f, dynamic=False) for f in model.segments()]
+    else:
+        segs = model.segments()
+
+    def features(x):
+        for f in segs:
+            x = f(x)
+        return x
+
     bs = cfg["batch_size"]
     state.y = torch.zeros(bs, dtype=torch.long, device=device)
     state.lr = torch.zeros((), device=device)
@@ -131,12 +149,35 @@ def build(context: BuildContext):
     muon_scale, muon_mom = cfg["muon_lr"] / cfg["lr"], cfg["muon_momentum"]
     ns = cfg["ns_steps"]
     muon_fn = torch.compile(muon_update, dynamic=False) if cuda else muon_update
+    side = torch.cuda.Stream() if cuda else None
 
     def step(x):
         # Forward, backward and nesterov SGD (coupled weight decay) on static buffers.
+        # Muon updates run on a side stream as soon as each filter gradient is ready,
+        # overlapping with the rest of the backward pass.
+        muon_lr = state.lr * muon_scale
+        main = torch.cuda.current_stream() if cuda else None
+
+        def hook(i):
+            def run(g):
+                if cuda:
+                    side.wait_stream(main)
+                    with torch.cuda.stream(side), torch.no_grad():
+                        muon_fn(params[i], g, state.bufs[i], muon_lr, muon_mom, ns)
+                else:
+                    with torch.no_grad():
+                        muon_fn(params[i], g, state.bufs[i], muon_lr, muon_mom, ns)
+
+            return run
+
+        handles = [params[i].register_hook(hook(i)) for i in conv]
         with torch.autocast(device.type, dtype=torch.bfloat16):
             loss = F.cross_entropy(features(x), state.y, label_smoothing=ls)
         grads = list(torch.autograd.grad(loss, params))
+        for h in handles:
+            h.remove()
+        if cuda:
+            main.wait_stream(side)
         with torch.no_grad():
             torch._foreach_add_([grads[i] for i in decay], [params[i] for i in decay], alpha=wd)
             p_sgd = [params[i] for i in sgd]
@@ -147,8 +188,6 @@ def build(context: BuildContext):
             torch._foreach_add_(g_sgd, b_sgd, alpha=mom)
             torch._foreach_mul_(g_sgd, state.lr)
             torch._foreach_sub_(p_sgd, g_sgd)
-            for i in conv:
-                muon_fn(params[i], grads[i], state.bufs[i], state.lr * muon_scale, muon_mom, ns)
 
     model.train()
     state.xs, state.steps = {}, {}
@@ -160,12 +199,12 @@ def build(context: BuildContext):
             # Warm up on a side stream, then capture the whole step as one CUDA graph.
             x.normal_()
             state.y.random_(0, context.num_classes)
-            side = torch.cuda.Stream()
-            side.wait_stream(torch.cuda.current_stream())
-            with torch.cuda.stream(side):
+            warm = torch.cuda.Stream()
+            warm.wait_stream(torch.cuda.current_stream())
+            with torch.cuda.stream(warm):
                 for _ in range(3):
                     step(x)
-            torch.cuda.current_stream().wait_stream(side)
+            torch.cuda.current_stream().wait_stream(warm)
             graph = torch.cuda.CUDAGraph()
             with torch.cuda.graph(graph):
                 step(x)
