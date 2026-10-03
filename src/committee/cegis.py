@@ -221,7 +221,8 @@ def report(game: str, level: int, train_frac: float, source_condition: str, cond
     base0 = condition_dir(game, level, train_frac, source_condition)
     arms: dict[str, tuple[list[Member], list[Transition], Path, int]] = {
         "round1": (members_of(base0, train, test), test, base0, 0)}
-    rounds = sorted(base0.parent.parent.glob(f"{base0.parent.name}_probe*"),
+    rounds = sorted((p for p in base0.parent.parent.glob(f"{base0.parent.name}_probe*")
+                     if p.name.rsplit("probe", 1)[1].isdigit()),
                     key=lambda p: int(p.name.rsplit("probe", 1)[1]))
     probes: list[int] = []
     conditions = conditions or [condition]
