@@ -75,6 +75,13 @@ uv run python -m committee.experiment tr87 --level 1 --runs 8 --seeded \
 uv run python -m committee.evaluate tr87 --level 1 --condition committee
 uv run python -m committee.active ar25 --level 3 --backend devin   # grow a committee where it disagrees
 uv run python -m committee.evaluate ar25 --level 3 --train-frac 0.4 --condition active_devin --curve
+uv run python -m committee.calibrate                          # ECE, Brier, conformal sets (R22)
+uv run python -m committee.selection                          # oracle headroom, probes as selection (R23)
+uv run python -m committee.cegis ar25 --level 3 --dry-run     # the first falsifying probe and the round 2 seed
+uv run python -m committee.cegis ar25 --level 3 --runs 8 --backend devin --parallel 4   # round 2 committee
+uv run python -m committee.experiment ar25 --level 3 --train-n 30 --runs 8 --seeded \
+    --backend devin --condition passive_devin                 # passive control: next transition in time
+uv run python -m committee.cegis ar25 --level 3 --report      # round 1 vs round 2 vs passive
 uv run pytest
 ```
 

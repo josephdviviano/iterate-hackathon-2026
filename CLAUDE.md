@@ -76,6 +76,32 @@ The organizers call finalists one at a time. Keep the demo prepared to start imm
 
 ## Track
 
-- **2 Originator.** Agents that do science and know when they are incorrect or reward hacking.
-  - 2.3 Epistemological agents: agents that flag what they do not know, with calibrated uncertainty, falsification and reward design.
+**Track 2, Originator.** Agents that do science and know when they are wrong or
+reward hacking. The track also asks for environments, rewards and benchmarks
+for bio agents. Sub-tracks, in the organizers' words:
+
+1. Benchmark science agents: evals that catch research agents reward hacking.
+2. Lab hardware, automation and safety: safe, standard control of lab equipment, with testable results.
+3. Epistemological agents: agents that flag what they do not know, with calibrated uncertainty, falsification and reward design.
+
+We enter 2.3. The goal in one sentence: an agent that proposes hypotheses,
+says where it does not know, tests there, accepts refutation, and cannot game
+its own reward. Each work item names the requirement it serves. Each claim
+points to an entry in RESULTS.md.
+
+| Requirement | What we show | Evidence |
+|---|---|---|
+| Does science | A committee of programs: hypothesize (K seeded programs), predict, probe where they disagree, accept refutation, resynthesize on the counterexample. Hoeffding's problem is the second science task, certified in exact arithmetic. | R4, R23, R24 (CEGIS, in progress), H2 |
+| Flags what it does not know | Disagreement on effect rows never seen in train, where count-based ontology error is undefined. Conformal sets that abstain. | R4, R13, R22 |
+| Calibrated uncertainty | AUROC of vote entropy against error. Vote share is not a probability (ECE 0.22). Adaptive conformal sets hold 0.90 coverage on four levels. Self-reported confidence on Hoeffding scored by Brier. | R10, R22, H3 |
+| Falsification | Exact replay admits members. The first disagreement probe refutes every member on every level. Round 2 resynthesizes on the counterexample and is scored against a passive control. | R4, R23, R24 |
+| Reward design | The reward is exact replay with anti-tabulation checks (`committee.verify`). Disagreement is the exploration signal. An abstain channel in the task text. Exact certification, not float scores, on Hoeffding. | RH1, H2, H12 |
+| Knows when it reward hacks (track header) | Injected-contradiction 2x2 across Claude and open-weight synthesizers. Held-out gap, literal-mass and MDL-ratio detectors. One hack found in our own artifacts. | RH1 to RH5 |
+| Sub-track 1, evidence only | The 2x2 is a small eval that catches synthesizer reward hacking. We do not enter 2.1. | RH1, RH3, RH5 |
+| Sub-track 2 | Not addressed. Out of scope. | |
+| Bio agents | No bio domain. ARC-AGI-3 games and Hoeffding's problem stand in. The conformal route was chosen so the calibration transfers to any predictor. | R22 |
+
+Known gaps, to state in the pitch and not hide: reward design is spread over
+three builds and must be told as one design; no live play; no bio domain.
+
 - **Modal challenge (optional).** Best use of Modal, in any part of the project. Deferred, see NOTES.md.

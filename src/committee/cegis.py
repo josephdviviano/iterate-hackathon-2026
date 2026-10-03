@@ -165,7 +165,7 @@ def print_report(out: dict) -> None:
             "split_n", "split_error", "distinct", "next_falsified_at"]
     print("arm      | " + " | ".join(cols))
     for name, row in out["arms"].items():
-        print(f"{name:8s} | " + " | ".join(str(row[c]) for c in cols))
+        print(f"{name:8s} | " + " | ".join(f"{row[c]:.3f}" if isinstance(row[c], float) else str(row[c]) for c in cols))
 
 
 def main(argv: list[str] | None = None) -> None:

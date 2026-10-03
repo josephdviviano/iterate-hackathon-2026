@@ -111,6 +111,10 @@ NOTES.md         log of done, deferred and abandoned work
 | Reward design | Disagreement is the exploration reward. MDL weight is the prior |
 | Know when reward hacking (Track 2 header) | `src/rewardhack`: held-out gap, literal-mass and MDL-ratio detectors on every program, abstain output under an injected contradiction. See research/reward_hacking_review.md §6 |
 
+Superseded on 2026-10-03 (evening) by the requirement table in CLAUDE.md, which
+carries the full track text, the evidence per requirement across all three
+builds, and the known gaps. MDL weighting is an ablation, not the prior (R14).
+
 ## Parallel builds
 
 Three builds run in parallel in this repository and must not edit each other's files:
