@@ -175,19 +175,19 @@ object); members predict all probes; the most disputed probes with the
 competing outcomes and vote counts seed the next member; rounds of 2 up to
 8 members. Held-out data never enters the probe set. Backend Devin.
 
-| 8 members (ar25 targeted: 6, see note) | ar25 L3 seeded | ar25 L3 targeted | m0r0 L3 seeded | m0r0 L3 targeted |
+| 8 members (ar25 targeted: 7 admitted of 8, one session timed out) | ar25 L3 seeded | ar25 L3 targeted | m0r0 L3 seeded | m0r0 L3 targeted |
 |---|---|---|---|---|
 | Vote accuracy | 0.48 | 0.48 | 0.77 | 0.75 |
-| AUROC, disagreement vs error | 0.77 | 0.61 | 0.68 | 0.72 |
-| Split transitions, error | 17, 0.88 | 9, 0.78 | 6, 0.67 | 6, 0.83 |
-| Unanimous transitions, error | 27, 0.30 | 35, 0.46 | 38, 0.16 | 38, 0.16 |
-| Distinct held-out behaviours | 7 | 5 | 4 | 3 |
+| AUROC, disagreement vs error | 0.77 | 0.74 (0.61 until the 7th member) | 0.68 | 0.72 |
+| Split transitions, error | 17, 0.88 | 16, 0.88 | 6, 0.67 | 6, 0.83 |
+| Unanimous transitions, error | 27, 0.30 | 28, 0.32 | 38, 0.16 | 38, 0.16 |
+| Distinct held-out behaviours | 7 | 6 | 4 | 3 |
 | Mean disagreement on own probes, first to last round | | 0.027 to 0.014 | | 0.225 to 0.070 |
 
 | Item | Value |
 |---|---|
 | Metric | As R4, plus mean disagreement on the hypothetical probe set per round |
-| Runs | m0r0: 5 targeted syntheses, 125 to 207 s. ar25: 3 finished (145 to 289 s), one session stalled past 20 min at the time of writing |
+| Runs | m0r0: 5 targeted syntheses, 125 to 207 s. ar25: 5 targeted syntheses, 145 to 298 s, one timed out at 30 min and was not admitted |
 | Evidence of anchoring | Every targeted member adopted the majority stance. Devin's own summaries: "I sided with the majority: nothing changes", "I went with the 6-program majority" |
 | Command | `uv run python -m committee.active ar25 --level 3 --backend devin`; `uv run python -m committee.evaluate ar25 --level 3 --train-frac 0.4 --condition active_devin --curve` |
 | Commit | 0a8a623 (code); artifacts in the following commit |
@@ -195,8 +195,9 @@ competing outcomes and vote counts seed the next member; rounds of 2 up to
 Reading: targeted growth lowered the committee's uncertainty about its own
 hypothetical moves by two thirds on m0r0 while the held-out transitions it
 gets wrong stayed the same six. The independent order found, on each level,
-one program with a different held-out behaviour that the targeted order did
-not find; on ar25 that program is what lifts AUROC from 0.61 to 0.77. Three
+one program with a different held-out behaviour earlier than the targeted
+order did: on ar25 at its 6th member against the targeted order's 7th, and on
+m0r0 not at all in the targeted order. Three
 causes: the probes are training states, so disputes concern mechanics the
 data already half-pins down, while held-out errors come from unseen states;
 each dispute was one mechanic touching at most four held-out transitions;
@@ -598,3 +599,37 @@ climb was still improving on every round. The same policy now runs inside
 the child's checker, where a child re-certifies on every iteration; the
 per-run counts of certified versus estimated evaluations are logged from
 the next round on.
+
+## H10. Hoeffding's problem, exhaustive support search on the arithmetic grid
+
+Method. For each instance, the grid G = {0, 1} U {(t - l)/k : 1 <= k <= n,
+0 <= l <= t, 0 < (t - l)/k < 1}, the positions Meester's necessary
+conditions point to. Every support of 2, 3 or 4 atoms from G with
+min < m < max is enumerated. With atoms fixed the objective is a polynomial in
+the weights, so the weights are optimized by a grid (2001 points for 3 atoms,
+41 x 41 for 4 atoms) plus shrinking random refinement around the top 3 grid
+points. The float winner is rationalized and certified exactly, then compared
+with the family best.
+
+| Item | Value |
+|---|---|
+| Instances | 63 (all with n <= 8: train n in {3, 4, 6}, test n in {1, 2, 5, 8}) |
+| Supports enumerated | 32,906 (max grid size 26 points) |
+| Certified grid best above the family best | 0 of 63 |
+| Certified grid best equal to the family best, within 1e-7 | 63 of 63 (max difference 2.6e-13) |
+| Float winner above the family before certification | 0 of 63 |
+| Runs | 1 |
+| Command | inline script, `artifacts/hoeffding/grid_exhaustive.{log,json}` |
+| Commit | uncommitted, base a718512 |
+
+Limits of the earlier searches (H6 and the search baseline). The objective
+is discontinuous in atom positions because ties count, so a float local
+search cannot land on the arithmetic positions and sat just below the family
+on nearly every instance. Those negatives were weak. H10 fixes the atoms on
+the grid, where the search recovers the family optimum exactly on every
+instance, which is the check that it can find what is known.
+
+What H10 does not cover: supports of 5 or more atoms, atoms off the grid, and
+n > 8. Within its scope it is exhaustive over supports and reliable in the
+weights. Together with Meester's n = 2 theorem it is the evidence that the
+family is the ceiling, not a proof.
