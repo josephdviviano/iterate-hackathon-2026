@@ -9,18 +9,38 @@ transition it would probe next.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 
+from .calibrate import aci
 from .committee import Committee, Member, description_length, row_uncertainty
 from .evaluate import load_runs, summarize_single
 from .experiment import condition_dir
 from .explore import compare_strategies
 from .loader import build_buffer, temporal_split
+from .verify import canonical
 
 
 def _members(cond: Path, train, test) -> list[Member]:
     return [Member(name, src, preds, description_length(src))
             for name, m, src, preds in load_runs(cond, train, test) if m["consistent"] and preds]
+
+
+def _vote_steps(members: list[Member], test) -> list[dict]:
+    """The per-step inputs of `calibrate.aci`, from members already in memory."""
+    k = len(members)
+    out = []
+    for i, t in enumerate(test):
+        counts = Counter(json.dumps(canonical(m.test_preds[i])) if m.test_preds[i] is not None else "<error>"
+                         for m in members)
+        shares = {key: c / k for key, c in counts.items()}
+        out.append({"step": t.step, "shares": shares,
+                    "truth_share": shares.get(json.dumps(canonical(t.after_objs)), 0.0)})
+    return out
+
+
+def _set_shares(step: dict, q: float) -> list[float]:
+    return sorted((sh for sh in step["shares"].values() if 1 - sh <= q), reverse=True)
 
 
 def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
@@ -42,10 +62,13 @@ def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
         return
     com = Committee(members, lam=lam)
     ev = com.evaluate([t.after_objs for t in test])
-    print(f"\n[2] Committee of {ev['n_members']} programs that all replay train exactly, "
-          f"weighted by description length {ev['lengths']}:")
-    print(f"    weights {ev['weights']}")
-    print(f"    held-out accuracy: weighted vote {ev['vote_accuracy']:.2f}, simplest member "
+    if lam > 0:
+        print(f"\n[2] Committee of {ev['n_members']} programs that all replay train exactly, "
+              f"weighted by description length {ev['lengths']}:")
+        print(f"    weights {ev['weights']}")
+    else:
+        print(f"\n[2] Committee of {ev['n_members']} programs that all replay train exactly, equal weights:")
+    print(f"    held-out accuracy: {'weighted ' if lam > 0 else ''}vote {ev['vote_accuracy']:.2f}, simplest member "
           f"{ev['simplest_accuracy']:.2f}, mean member {ev['mean_member_accuracy']:.2f}")
     print(f"    distinct behaviours on held-out: {ev['n_distinct_behaviours']}")
     print(f"    does disagreement predict error?  AUROC = {ev['auroc_disagreement_vs_error']}")
@@ -81,6 +104,39 @@ def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
     print(f"    random        mean probes to collapse: {r['mean_probes_to_collapse']} ({r['n_collapsed']} of "
           f"{r['n_runs']} orders collapsed, {r['n_falsified']} falsified, mean probes to falsify "
           f"{r['mean_probes_to_falsify']})")
+
+    steps = _vote_steps(members, test)
+    cal = aci(steps, alpha=0.1, gamma=0.05)
+    trace = cal["trace"]
+    n_abstain = sum(t["abstain"] for t in trace)
+    n_single = sum(t["size"] == 1 and not t["abstain"] for t in trace)
+    print(f"\n[6] Calibrated statement: adaptive conformal sets of next states along the held-out trajectory "
+          f"(target coverage {cal['target_coverage']:.2f}, gamma {cal['gamma']}).")
+    acc_single = f"{cal['singleton_accuracy']:.2f}" if cal["singleton_accuracy"] is not None else "n/a"
+    print(f"    coverage {cal['coverage']:.2f} on {cal['n']} steps   mean set size {cal['mean_set_size']:.2f}   "
+          f"abstentions {n_abstain} (the set must include 'anything else')   "
+          f"singleton sets {n_single}, accuracy {acc_single}")
+    # The first step always abstains (no past scores), so examples come from later steps.
+    picks: list[int] = []
+    for slot in ((lambda t: t["size"] == 1 and not t["abstain"] and t["hit"],),
+                 (lambda t: t["size"] > 1, lambda t: t["abstain"]),
+                 (lambda t: not t["hit"] and t["size"] >= 1, lambda t: not t["hit"])):
+        for want in slot:
+            i = next((i for i, t in enumerate(trace) if i > 0 and want(t) and i not in picks), None)
+            if i is not None:
+                picks.append(i)
+                break
+    for i in picks:
+        t = trace[i]
+        cand = f"{t['size']} candidate" + ("s" if t["size"] != 1 else "")
+        if t["abstain"]:
+            what = f"{cand} + anything else, abstain"
+        elif t["size"] == 0:
+            what = "empty set"
+        else:
+            what = f"{cand}, shares [{', '.join(f'{sh:.2f}' for sh in _set_shares(steps[i], t['q']))}]"
+        inside = "yes, by abstention" if t["abstain"] else ("yes" if t["hit"] else "no")
+        print(f"    step {t['step']:4d}  set: {what:<44}  truth inside: {inside}")
 
 
 def main(argv: list[str] | None = None) -> None:
