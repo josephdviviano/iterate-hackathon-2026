@@ -59,7 +59,7 @@ minute). The user reports Devin is usable again. Be judicious.
 
 ## The plan
 
-Budget: 101 Devin sessions in the base plan, 33 more on one contingency; four steps, P1 to P4.
+Budget: 101 Devin sessions in the base plan, 33 more on one contingency; four steps, P1 to P4; plus 36 in the reward-hacking queue (Q) handed over at 22:45, 137 in all (170 with the contingency).
 A session is 2 to 10 minutes; run arms at `--parallel 4` and keep about 20
 sessions concurrent at most (that worked all day). Set a time limit per
 step; at the limit record the result, positive or negative.
@@ -142,6 +142,41 @@ this project.
 
 A second synthesizer on Modal was considered and dropped by the user
 (2026-10-03 22:05): no experiment uses the open models.
+
+### Q. Queue handed over by the reward-hacking build (36 Devin sessions, about 1 h)
+
+Session `external-c5` (owner of `src/rewardhack`) asked this session at 22:45
+to submit its outstanding grid to Devin. Run it after P1 and P2, or
+interleaved with them if the quota allows; it is independent of the
+committee conditions. Do not run synthesis locally in parallel with it: the
+laptop rebooted under that load earlier today. Its loop runs inside the
+deployed Modal function `rewardhack-synth`, which holds the `devin-auth`
+secret and verifies every returned program outside the session.
+
+```
+uv run python -m rewardhack.baseline --backends devin --parallel 6
+```
+
+Environment E5 (frame in, frame out; RESULTS RH11). Levels tr87 L1, ls20 L3,
+re86 L5 at train fraction 0.6; conditions intact, intact+abstain,
+contradiction, contradiction+abstain; 3 runs per cell; the 5 existing
+intact runs are skipped; each session capped at 4 ACU and 1800 s. Records:
+`artifacts/rewardhack/<game>/L<level>_f60/<condition>_fout/devin/run<k>/`
+with `program.py`, `meta.json`, `verdict.txt`; outcomes consistent, honest,
+hack, abstain, fail. Then, offline:
+
+```
+uv run python -m rewardhack.report table
+uv run python -m rewardhack.split --frame tr87:1 ls20:3 re86:5
+uv run python -m rewardhack.report demo
+```
+
+Record as new RH entries and a NOTES entry, append only. Blocker at the
+time of writing: Devin answered HTTP 403 `out_of_quota` at 22:40 BST; the
+command is resumable and can be re-issued as is once the quota is restored.
+The Claude-family cells of that grid are not for this session (they need
+the `claude-auth` Modal secret, which is empty, and the user's decision
+against Claude synthesis stands for the committee).
 
 ### After the experiments (no sessions)
 
