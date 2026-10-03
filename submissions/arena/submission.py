@@ -22,7 +22,7 @@ HYP = {
     "weight_decay": 0.012,
     "bias_scaler": 64.0,
     "label_smoothing": 0.3,
-    "whiten_bias_epochs": 3,
+    "whiten_bias_epochs": 5,  # afterwards the whitening output is detached
     "translate": 2,
     "widths": (128, 384, 576),
     "convs_per_group": (2, 3, 3),
@@ -97,9 +97,13 @@ class Net(nn.Module):
         self.head = nn.Linear(w3, num_classes, bias=False)
         self.scale = hyp["scaling_factor"]
 
-    def forward(self, x):
-        # x: normalized fp16 channels_last images
-        return self.head(self.layers(self.whiten(x))) * self.scale
+    def forward(self, x, detach_whiten: bool = False):
+        # x: normalized fp16 channels_last images. Once the whitening bias is frozen,
+        # detaching its output skips the backward into it at full resolution.
+        x = self.whiten(x)
+        if detach_whiten:
+            x = x.detach()
+        return self.head(self.layers(x)) * self.scale
 
 
 class Classifier(nn.Module):
@@ -288,9 +292,9 @@ def build(context: BuildContext):
         y = torch.randint(0, context.num_classes, (bs,), device=device)
         net.train()
         shapes = [x] + [downscale(x, r) for r, _ in hyp["res_schedule"]]
-        for xs in shapes:
+        for xs, detach in [(xs, d) for xs in shapes for d in (False, True)]:
             for _ in range(3):
-                out = train_net(xs)
+                out = train_net(xs, detach)
                 loss = F.cross_entropy(
                     out, y, label_smoothing=hyp["label_smoothing"], reduction="none"
                 ).sum()
@@ -408,7 +412,7 @@ def train(state) -> nn.Module:
             if step >= total:
                 break
             idx = perm[b * bs : (b + 1) * bs]
-            out = train_net(inputs_all[idx])
+            out = train_net(inputs_all[idx], epoch >= hyp["whiten_bias_epochs"])
             loss = F.cross_entropy(out, state.labels[idx], label_smoothing=ls, reduction="none").sum()
             loss.backward()
             f = lr_factor(step, total)
