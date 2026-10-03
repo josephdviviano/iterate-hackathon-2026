@@ -114,8 +114,12 @@ class ConvGroup(nn.Module):
         pool_ceil: bool = False,
         skip_discarded: bool = False,
         post_add_activation: bool = False,
+        skip_gate: bool = False,
     ) -> None:
         super().__init__()
+        # SkipInit (De & Smith 2020): a learnable scalar on the residual branch, reset in
+        # ``reset_model`` to ``residual_gate_init`` so each block starts near identity.
+        self.skip_gate = nn.Parameter(torch.ones(())) if skip_gate else None
         # ResNet-style GELU(residual + x) instead of airbench96's x + GELU(residual).
         self.post_add_activation = post_add_activation
         # Floor-mode 2x2 pooling of an odd map drops the conv's last row and column; pad the
@@ -158,6 +162,8 @@ class ConvGroup(nn.Module):
             return y
         if self.post_add_activation:
             deep = activate(self.residual(y) + x, self.activation)
+        elif self.skip_gate is not None:
+            deep = x + self.skip_gate * activate(self.residual(y), self.activation)
         else:
             deep = x + activate(self.residual(y), self.activation)
         if not self.residual_ramping:
@@ -199,6 +205,7 @@ class AirbenchNet(nn.Module):
                     config.stage3_ceil and i == 2,
                     config.skip_discarded,
                     config.post_add_activation,
+                    config.residual_gate_init is not None,
                 )
                 for i in range(3)
             )
@@ -221,6 +228,8 @@ class AirbenchNet(nn.Module):
         if config.etf_head:
             self.head.weight.requires_grad = False
         self.init_gain = config.init_gain
+        self.conv_init = config.conv_init
+        self.residual_gate_init = config.residual_gate_init
         # Annealed log-sum-exp global pool below the final resolution (``soft_pool`` is set by
         # fit; ``pool_tau`` is a non-persistent buffer so annealing never recompiles).
         self.soft_pool = False
@@ -401,6 +410,57 @@ def make_model(config: RecipeConfig, device: torch.device) -> nn.Module:
     return model
 
 
+def dct_basis(size: int) -> torch.Tensor:
+    """[size*size, size, size] orthonormal 2-D DCT-II basis patterns."""
+    n = torch.arange(size, dtype=torch.float64)
+    c = torch.cos(math.pi * (n[None, :] + 0.5) * n[:, None] / size)
+    c[0] /= math.sqrt(2)
+    c *= math.sqrt(2 / size)
+    return torch.einsum("ui,vj->uvij", c, c).reshape(size * size, size, size).float()
+
+
+def hadamard(n: int) -> torch.Tensor:
+    """Sylvester Hadamard matrix of the next power-of-two order >= n."""
+    h = torch.ones(1, 1)
+    while h.size(0) < n:
+        h = torch.cat((torch.cat((h, h), 1), torch.cat((h, -h), 1)), 0)
+    return h
+
+
+@torch.no_grad()
+def structured_init_(weight: torch.Tensor, kind: str) -> None:
+    """Re-initialise the conv rows after the identity (dirac) block with a structured but
+    unlearned construction, matching the default (Kaiming) row norm:
+
+    * ``orthogonal``: orthonormal rows over (in-channel, tap).
+    * ``dct``: each filter is a 2-D DCT pattern (cycling through the 9 frequencies) times an
+      orthonormal in-channel mixing vector, a Gabor-like frequency filter bank.
+    * ``zero``: deterministic ZerO-style (Zhao et al. 2022): Hadamard rows on the centre tap.
+    The random draws use the global generator, seeded per trial by the harness."""
+    cout, cin, kh, kw = weight.shape
+    rest = weight[cin:]
+    n = rest.size(0)
+    if n == 0:
+        return
+    device = weight.device
+    target = rest.float().flatten(1).norm(dim=1).mean()
+    if kind == "orthogonal":
+        new = torch.empty(n, cin * kh * kw, device=device)
+        nn.init.orthogonal_(new)
+        new = new.view(n, cin, kh, kw)
+    elif kind == "dct":
+        basis = dct_basis(kh).to(device)
+        mix = torch.empty(n, cin, device=device)
+        nn.init.orthogonal_(mix)
+        pattern = basis[torch.arange(n, device=device) % len(basis)]
+        new = mix[:, :, None, None] * pattern[:, None]
+    else:
+        new = torch.zeros(n, cin, kh, kw, device=device)
+        new[:, :, kh // 2, kw // 2] = hadamard(max(n, cin))[:n, :cin].to(device)
+    new = new / new.flatten(1).norm(dim=1).clamp_min(1e-12).view(-1, 1, 1, 1) * target
+    rest.copy_(new.to(rest))
+
+
 def simplex_etf(features: int, classes: int) -> torch.Tensor:
     """[classes, features] simplex equiangular tight frame with unit-norm rows, from a fixed
     constant seed (a mathematical constant, identical in every trial)."""
@@ -423,6 +483,14 @@ def reset_model(model: nn.Module) -> None:
             module.reset_parameters()
     if isinstance(model, AirbenchNet):
         model.whiten.bias.zero_()
+        if model.conv_init != "kaiming":
+            for module in model.modules():
+                if isinstance(module, Conv) and module.dirac:
+                    structured_init_(module.weight, model.conv_init)
+        if model.residual_gate_init is not None:
+            for group in model.groups:
+                if group.skip_gate is not None:
+                    group.skip_gate.fill_(model.residual_gate_init)
         if model.init_gain != 1:
             for module in model.modules():
                 if isinstance(module, Conv):

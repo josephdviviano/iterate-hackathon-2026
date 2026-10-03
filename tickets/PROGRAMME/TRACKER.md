@@ -353,6 +353,13 @@
 - **Decision consequence:** The updated defaults are the current entry; any further adoption needs a fresh official-equivalent run.
 - **Resolution:** Updated submission qualifies at 5.640 s on A100 PCIe.
 
+### F-045 — resolved, material
+
+- **Observation:** C2 (Modal, four A100-SXM4 hosts at 400/500 W, torch 2.4, 10 seeds per arm per host, arm order alternating between hosts): our submission 75.35% (SE 0.04) at 5.132 s; teammates' hypothesis-branch I001 (SGD, 8.5 epochs) 75.27% at +41.9% paired time (SE 0.22); I049 (Muon, 16/20/32 px, branch tip) 75.40% (SE 0.05) at +3.1% (0.41); I044 (Muon, 16/24/32 px) 75.66% (0.06) at +8.4% (0.31). The harness build timeout (600 s) failed 3 of 8 Muon runs (I044 on two hosts, I049 on one); all 4 runs of our submission and of I001 built.
+- **Interpretation:** Our submission remains the fastest at matched accuracy on the same hosts. Their working Muon port is a credible alternative (I049 within about 3%, equal accuracy) but not better; I044's +0.31 pp costs 8.4% time, below our exchange rate (8.4% is worth about 0.45 pp). Their heavy build warm-up (50k synthetic images at every resolution, twice, plus a compiled Muon update) exceeds the 600 s build limit in about 40% of runs, which would fail an official evaluation.
+- **Decision consequence:** Keep our submission as the team entry; if Muon is pursued, port their optimiser into the lab on our base and cap build time; tell the teammates their builds risk the 600 s timeout.
+- **Resolution:** Our submission leads; Muon port optional.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.

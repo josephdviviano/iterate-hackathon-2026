@@ -151,6 +151,9 @@ class RecipeConfig:
     bias_scaler_final: float | None = None
     # Teammates' hypothesis-branch block: activation after the residual add.
     post_add_activation: bool = False
+    # Structured (unlearned) initialisation of the non-identity conv rows, and SkipInit gates.
+    conv_init: str = "kaiming"
+    residual_gate_init: float | None = None
 
     def _validate_narrowing(self) -> None:
         widths = self.switch_widths
@@ -173,6 +176,7 @@ class RecipeConfig:
             "res_blend_steps": bool(self.res_blend_steps),
             "residual_start": bool(self.residual_start),
             "select_fraction": self.select_fraction < 1,
+            "residual_gate_init": self.residual_gate_init is not None,
         }
         clashes = sorted(k for k, v in unsupported.items() if v)
         if clashes:
@@ -237,6 +241,8 @@ class RecipeConfig:
             or self.optimizer != "sgd"
         ):
             raise ValueError("stage1_cooldown must be (start, end) with 0 <= start < end <= 1")
+        if self.conv_init not in ("kaiming", "orthogonal", "dct", "zero"):
+            raise ValueError("conv_init must be kaiming, orthogonal, dct or zero")
         if self.bias_scaler_final is not None and self.bias_scaler_final <= 0:
             raise ValueError("bias_scaler_final must be positive")
         if self.lr_shape not in ("triangle", "wsd", "wsd_sqrt", "cosine") or self.order not in (

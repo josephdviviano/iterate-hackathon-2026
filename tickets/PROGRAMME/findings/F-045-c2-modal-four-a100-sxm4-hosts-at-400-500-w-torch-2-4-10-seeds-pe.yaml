@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-045
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'C2 (Modal, four A100-SXM4 hosts at 400/500 W, torch 2.4, 10 seeds per arm per host, arm
+  order alternating between hosts): our submission 75.35% (SE 0.04) at 5.132 s; teammates'' hypothesis-branch
+  I001 (SGD, 8.5 epochs) 75.27% at +41.9% paired time (SE 0.22); I049 (Muon, 16/20/32 px, branch tip)
+  75.40% (SE 0.05) at +3.1% (0.41); I044 (Muon, 16/24/32 px) 75.66% (0.06) at +8.4% (0.31). The harness
+  build timeout (600 s) failed 3 of 8 Muon runs (I044 on two hosts, I049 on one); all 4 runs of our submission
+  and of I001 built.'
+interpretation: Our submission remains the fastest at matched accuracy on the same hosts. Their working
+  Muon port is a credible alternative (I049 within about 3%, equal accuracy) but not better; I044's +0.31
+  pp costs 8.4% time, below our exchange rate (8.4% is worth about 0.45 pp). Their heavy build warm-up
+  (50k synthetic images at every resolution, twice, plus a compiled Muon update) exceeds the 600 s build
+  limit in about 40% of runs, which would fail an official evaluation.
+decision_implication: Keep our submission as the team entry; if Muon is pursued, port their optimiser
+  into the lab on our base and cap build time; tell the teammates their builds risk the 600 s timeout.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: no PCIe host this round; SXM paired differences have matched PCIe ones in sign (M6) but magnitudes
+    can shrink on the 300 W card
+  discriminating_test: PCIe pair if needed
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: c2-arena-vs-segal-report.md
+  locator: research/evidence/T-019/c2-arena-vs-segal-report.md
+  sha256: 92fa60400798c4bc45510368c6fa5a81cf11109b5cd98830a1de0bd57a0b3e94
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Our submission leads; Muon port optional.
