@@ -17,8 +17,8 @@ MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
-    epochs=12,
-    batch_size=1024,
+    epochs=7.5,
+    batch_size=512,
     lr=11.5,  # per 1024 examples (summed loss)
     momentum=0.85,
     weight_decay=0.0153,
@@ -29,6 +29,7 @@ DEFAULTS = dict(
     scaling_factor=1 / 9,
     translate=2,
     whiten_bias_epochs=3,
+    compile_mode=None,
 )
 
 
@@ -137,7 +138,7 @@ def build(context: BuildContext):
     model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes)
     model = model.to(device).to(memory_format=torch.channels_last)
     use_cuda = device.type == "cuda"
-    step_fn = torch.compile(model.features) if use_cuda else model.features
+    step_fn = torch.compile(model.features, mode=hyp["compile_mode"]) if use_cuda else model.features
     state = SimpleNamespace(model=model, context=context, hyp=hyp, step_fn=step_fn, device=device)
     # Warm up compilation and lazy CUDA init by running the real prepare/train path
     # on synthetic data for a few steps. prepare() resets everything afterwards.
