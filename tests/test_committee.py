@@ -49,3 +49,24 @@ def test_extract_code_takes_the_longest_python_block_or_bare_source():
     assert extract_code(text).startswith("def transition_function")
     assert extract_code("def transition_function(s, a):\n    return s") is not None
     assert extract_code("no code here") is None
+
+
+def test_cegis_moves_the_falsifying_probe_into_train_and_names_the_refuted_predictions():
+    from committee.cegis import counterexample_text, observed_probes, split_after_probes
+    from committee.loader import Transition
+
+    A = [{"name": "p", "type": "player", "x": 1, "y": 0}]
+    B = [{"name": "p", "type": "player", "x": 2, "y": 0}]
+    C = [{"name": "p", "type": "player", "x": 3, "y": 0}]
+    before = [{"name": "p", "type": "player", "x": 0, "y": 0}]
+    test = [Transition(10 + i, 1, 1, None, False, [], [], before, after) for i, after in enumerate([A, A, B])]
+    train = [Transition(1, 1, 1, None, False, [], [], before, A)]
+    # members agree on transitions 0 and 1 and split on 2, where none of them is right
+    members = [Member(f"m{i}", "def transition_function(s,a): return s", preds, length=10)
+               for i, preds in enumerate([[A, A, C], [A, A, C], [A, A, A]])]
+    probes = observed_probes(members, test)
+    assert probes == [2]
+    train2, test2 = split_after_probes(train, test, probes)
+    assert [t.step for t in train2] == [1, 12] and [t.step for t in test2] == [10, 11]
+    text = counterexample_text(members, test, probes)
+    assert "step 12" in text and "2 program(s) predicted" in text and "1 program(s) predicted" in text

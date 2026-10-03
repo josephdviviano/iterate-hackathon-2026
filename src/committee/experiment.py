@@ -94,10 +94,14 @@ def run_condition(game: str, level: int, train_frac: float, condition: str, seed
     transitions = build_buffer(game)
     train, test = temporal_split(transitions, level, train_frac, test_level, train_n, test_n)
     base = condition_dir(game, level, train_frac, condition, test_level, train_n, test_n)
+    return run_split(train, test, base, seeds, cfg, f"{game} L{level} {condition}", start_index, parallel)
 
+
+def run_split(train: list[Transition], test: list[Transition], base: Path, seeds: list[str | None],
+              cfg: dict, label: str, start_index: int = 0, parallel: int = 1) -> list[dict]:
     def job(k: int, seed: str | None) -> dict:
         meta = run_one(train, test, base / f"run{k}", seed, cfg)
-        print(describe(meta, f"{game} L{level} {condition} run{k}"), flush=True)
+        print(describe(meta, f"{label} run{k}"), flush=True)
         return meta
 
     jobs = list(enumerate(seeds, start=start_index))
