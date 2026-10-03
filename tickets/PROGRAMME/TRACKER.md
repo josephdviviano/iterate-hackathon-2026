@@ -22,7 +22,7 @@
 - **Mission:** Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can demonstrate, with recorded evidence for every adopted and rejected technique.
 - **Root question:** Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official 40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
 - **Why:** Executable work remains. Select among eligible tasks by consequence and decision value, never by identifier.
-- **Next:** Continue T-015 (Official-equivalent 40-seed qualification on the A100 PCIe).
+- **Next:** Select among T-016 (Fresh-context compliance review and independence checks) by consequence and decision leverage.
 - **Open human feedback:** none
 
 ## Work completed and underway
@@ -43,7 +43,7 @@
 | [T-012](tasks/T-012-open-the-upstream-pull-request-after-approval.md) — Open the upstream pull request after approval | delivery | cancelled | Dependency chain through cancelled T-008 no longer reflects the programme; reissued against T-013 as a successor task with the same objective and acceptance. |
 | [T-013](tasks/T-013-local-proxy-hill-climb-to-convergence-x-002.md) — Local-proxy hill climb to convergence (X-002) | exploration | completed | Converged after S3-S19: 128/384/640 depth-3, translate 2, logit scale 1/6, 20/32 px resizing, compiled; 40-seed fresh means 75.33% at 8.5 and 75.43% at 8.75 epochs (AC-03), budget 8.25 epochs (75.26%) selected under F-005 (D-007); local compiled proxy 5.38 s vs 9.3 s for the P1 best cell. |
 | [T-014](tasks/T-014-converge-the-climbed-recipe-into-submission-defaults.md) — Converge the climbed recipe into submission defaults | delivery | completed | Team folder converged and simplified: defaults are the T-013 recipe (75.21% over 10 fresh seeds at 5.18 s local), exploration paths moved to research/lab_recipe, training bit-identical to the lab substrate, compile and fused SGD CUDA-only, README written; 23 contract tests pass on the pinned stack. |
-| [T-015](tasks/T-015-official-equivalent-40-seed-qualification-on-the-a100-pcie.md) — Official-equivalent 40-seed qualification on the A100 PCIe | assurance | in_progress | Run the frozen converged candidate in the pinned container on an A100 80GB PCIe with a private 40-seed file, cpus 4 and network none; record results, telemetry, the R-001 risk calculation and the dev-stack versus A100 accuracy comparison; fall back to 8.5 or 8.75 epochs (D-007) if the mean is below 75.2%. |
+| [T-015](tasks/T-015-official-equivalent-40-seed-qualification-on-the-a100-pcie.md) — Official-equivalent 40-seed qualification on the A100 PCIe | assurance | completed | Qualifies on A100 80GB PCIe: 75.272% over 40 fresh seeds at 6.027 s per trial, risk about 2e-7; telemetry recorded. |
 | [T-016](tasks/T-016-fresh-context-compliance-review-and-independence-checks.md) — Fresh-context compliance review and independence checks | assurance | ready | Review the frozen converged candidate against every RULES.md section 3 bullet without implementation narrative, and run repeat-seed, reordered-seed and fresh-process independence checks. |
 | [T-017](tasks/T-017-open-the-upstream-pull-request-after-approval.md) — Open the upstream pull request after approval | delivery | proposed | After a recorded team-lead approval, create a clean branch from upstream main containing only the team folder and open the pull request. |
 | [T-018](tasks/T-018-coverage-pass-every-lineage-competitor-and-novel-strategy-x-003.md) — Coverage pass: every lineage, competitor and novel strategy (X-003) | exploration | completed | Every lineage, competitor and representation strategy has a disposition; only flatten-max pooling and max-autotune CUDA graphs survived (about 3% faster at equal accuracy) and are now defaults; the momentum candidate failed fresh-seed confirmation. |
@@ -267,6 +267,13 @@
 - **Decision consequence:** Keep 8.25 epochs (D-007 confirmed); run the official-equivalent 40-seed check on an A100 80GB PCIe host (T-015).
 - **Resolution:** Cross-stack agreement established; budget confirmed.
 
+### F-032 — resolved, material
+
+- **Observation:** Official-equivalent runs of the submission defaults (40 fresh random uint32 seeds each, Modal, pinned torch 2.4.0 stack, 4 CPUs, network blocked): on an A100 80GB PCIe, 40/40 trials complete, mean 75.272% (sd 0.24 pp, worst 74.71%), prepare+train 6.027 s (sd 0.049 s), slowest evaluation 0.13 s, untimed build 192 s, 300 W limit; on an A100-SXM4-80GB, 75.253% in 5.545 s.
+- **Interpretation:** The entry qualifies under official-equivalent conditions with an estimated probability of about 2e-7 that the official 40-trial mean falls below 75%; on the judging GPU model it trains 9.8x faster than the organisers' 59.3 s baseline. Runs used development mode (--submission-path) rather than --official; host-to-host timing varies by a few percent.
+- **Decision consequence:** R-001 and R-005 have qualifying evidence; remaining work is the compliance review (T-016) and the team-lead-approved submission (T-017).
+- **Resolution:** Qualification established.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -365,7 +372,7 @@
 
 | ID | Criticality | Requirement | Derived state |
 | --- | --- | --- | --- |
-| R-001 | core | In the pinned container on an A100 80GB PCIe with the official launch flags, the entry completes 40 fresh trials, every trial succeeds within the 600 s training and 5 s evaluation limits, and the mean top-1 exceeds 75% by a margin that keeps the estimated official qualification risk at or below 1% given the measured per-trial standard deviation (75.2% when that deviation is at most 0.30 pp). | pending_evidence |
+| R-001 | core | In the pinned container on an A100 80GB PCIe with the official launch flags, the entry completes 40 fresh trials, every trial succeeds within the 600 s training and 5 s evaluation limits, and the mean top-1 exceeds 75% by a margin that keeps the estimated official qualification risk at or below 1% given the measured per-trial standard deviation (75.2% when that deviation is at most 0.30 pp). | supported |
 | R-002 | core | The entry satisfies RULES.md sections 1 to 3: no real data, seeds or data-derived constants in import or build; no learned state carried across trials; single-view evaluation without state change; no test-set use; no measurement interference; only pinned dependencies. | pending_evidence |
 | R-003 | core | The base regime (architecture, width, depth, batch size, epochs) is selected as the minimum interpolated A100 PCIe time at which the single-view 5-seed mean reaches 75.3%, over a measured frontier of at least four widths and four epoch counts. | supported |
 | R-004 | core | Each add-on lever (optimiser, resolution schedule, example selection, regularisation) is adopted only if it lowers time at matched accuracy beyond seed noise over at least 10 seeds at the selected base; every rejected lever has a recorded reason. | supported |
@@ -395,10 +402,10 @@
 ### Exact frontier
 
 - State: **continue**
-- Active: T-015
+- Active: none
 - Eligible: T-016
 - Unresolved outcomes: O-001, O-004
-- Unresolved requirements: R-001, R-002, R-008
+- Unresolved requirements: R-002, R-008
 - Pending assessments: none
 - Human engagement: none
 <!-- writing-tools:generated:end -->

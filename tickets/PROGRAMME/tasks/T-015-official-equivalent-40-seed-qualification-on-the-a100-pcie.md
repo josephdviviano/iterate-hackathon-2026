@@ -27,26 +27,49 @@ uncertainty: null
 dependencies:
 - T-014
 - T-004
-status: in_progress
+status: completed
 acceptance:
 - criterion_id: AC-01
   statement: summary.json reports complete with no evaluation timeout and a margin meeting the R-001 risk
     bound
   expected_evidence: summary.json and risk calculation
-  status: pending
-  evidence_ids: []
+  status: verified
+  evidence_ids:
+  - E-001
+  - E-002
   rationale: null
 - criterion_id: AC-02
   statement: Mean prepare+train time and its sd are recorded with per-trial telemetry
   expected_evidence: trials.jsonl and telemetry table
-  status: pending
-  evidence_ids: []
+  status: verified
+  evidence_ids:
+  - E-001
+  - E-002
   rationale: null
 evidence_requirements: []
 out_of_scope: []
 risks: []
-evidence: []
-completion_summary: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: official-equivalent.txt
+  locator: research/evidence/T-015/official-equivalent.txt
+  sha256: 56bdfb5d21f03166cf0e929baee179e9b5f33f166e9171fecdf7b07f2af27838
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: m4a-table.csv
+  locator: research/evidence/T-015/m4a-table.csv
+  sha256: cef3a57d5919063529d967f25976b5e6c258c2bdf83c86f3040b77829ffec735
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+completion_summary: 'Qualifies on A100 80GB PCIe: 75.272% over 40 fresh seeds at 6.027 s per trial, risk
+  about 2e-7; telemetry recorded.'
 blocker_ids: []
 ---
 
@@ -68,7 +91,16 @@ Decides whether the candidate can be submitted and at which budget.
 
 ## Acceptance
 
-- [ ] AC-01: summary.json reports complete with no evaluation timeout and a margin meeting the R-001 risk bound
+- [x] AC-01: summary.json reports complete with no evaluation timeout and a margin meeting the R-001 risk bound
   Evidence: summary.json and risk calculation
-- [ ] AC-02: Mean prepare+train time and its sd are recorded with per-trial telemetry
+- [x] AC-02: Mean prepare+train time and its sd are recorded with per-trial telemetry
   Evidence: trials.jsonl and telemetry table
+
+## Evidence
+
+- E-001: official-equivalent.txt — `research/evidence/T-015/official-equivalent.txt` (verified)
+- E-002: m4a-table.csv — `research/evidence/T-015/m4a-table.csv` (verified)
+
+## Resolution
+
+Qualifies on A100 80GB PCIe: 75.272% over 40 fresh seeds at 6.027 s per trial, risk about 2e-7; telemetry recorded.

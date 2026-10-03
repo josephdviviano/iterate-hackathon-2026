@@ -1,0 +1,40 @@
+schema_version: '2.0'
+finding_id: F-032
+task_id: T-015
+result_kind: positive
+importance: material
+observation: 'Official-equivalent runs of the submission defaults (40 fresh random uint32 seeds each,
+  Modal, pinned torch 2.4.0 stack, 4 CPUs, network blocked): on an A100 80GB PCIe, 40/40 trials complete,
+  mean 75.272% (sd 0.24 pp, worst 74.71%), prepare+train 6.027 s (sd 0.049 s), slowest evaluation 0.13
+  s, untimed build 192 s, 300 W limit; on an A100-SXM4-80GB, 75.253% in 5.545 s.'
+interpretation: The entry qualifies under official-equivalent conditions with an estimated probability
+  of about 2e-7 that the official 40-trial mean falls below 75%; on the judging GPU model it trains 9.8x
+  faster than the organisers' 59.3 s baseline. Runs used development mode (--submission-path) rather than
+  --official; host-to-host timing varies by a few percent.
+decision_implication: R-001 and R-005 have qualifying evidence; remaining work is the compliance review
+  (T-016) and the team-lead-approved submission (T-017).
+requirement_ids:
+- R-001
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: official-equivalent.txt
+  locator: research/evidence/T-015/official-equivalent.txt
+  sha256: 56bdfb5d21f03166cf0e929baee179e9b5f33f166e9171fecdf7b07f2af27838
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: m4a-table.csv
+  locator: research/evidence/T-015/m4a-table.csv
+  sha256: cef3a57d5919063529d967f25976b5e6c258c2bdf83c86f3040b77829ffec735
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Qualification established.
