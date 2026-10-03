@@ -14,8 +14,8 @@ STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
     stages=[[32, 10]],  # [resolution, epochs] in training order
-    batch_size=512,
-    lr=0.4,
+    batch_size=768,
+    lr=0.5,
     momentum=0.9,
     weight_decay=1e-3,
     label_smoothing=0.2,
@@ -23,7 +23,7 @@ DEFAULTS = dict(
     widths=[32, 128, 256, 512],
     act="relu",
     muon=True,  # orthogonalized (Newton-Schulz) momentum updates for conv filters
-    muon_lr=0.12,
+    muon_lr=0.14,
     muon_momentum=0.6,
     alt_flip=True,
 )
