@@ -328,6 +328,49 @@ On ar25 the shortest unseeded program is also the best (0.64), but the
 weights are split between it and another short program, so the vote stays
 at 0.48.
 
+## R13. Mechanism-level calibration: committee entropy per effect row
+
+Each (type, action, context) row touched by the held-out transitions gets
+the committee's row entropy η_committee (R4) and the share of its held-out
+objects whose plurality effect is wrong. Compared with OPINE-World's
+count-based η on the rows that have train counts. Function:
+`committee.committee.row_calibration`; files `row_calibration.json`.
+
+| | ar25 L3 | m0r0 L3 |
+|---|---|---|
+| Rows touched by held-out transitions (unseen in train) | 90 (51) | 49 (7) |
+| AUROC, η_committee predicts "row has an error", all rows | 0.75 | 0.72 |
+| Same, unseen rows only | 0.61 | too few errors |
+| Seen rows: η_counts vs η_committee | 0.46 vs 0.96 | 0.48 vs 0.69 |
+| Zero-entropy rows: n, mean error rate | 47, 0.05 | 20, 0.00 |
+| High-entropy rows (η > 0.5): n, mean error rate | 37, 0.16 | 27, 0.05 |
+
+Reading: on the rows where OPINE-World's count-based η is defined it is at
+chance on both levels, because its counts come from train and the errors
+are on test. The committee's row entropy ranks the rows with errors well,
+and rows where the members agree are almost error-free. This is uncertainty
+over a mechanism, not only over a transition.
+
+## R14. Which simplicity measure tracks held-out accuracy?
+
+All 45 admitted programs on ar25 L3 and m0r0 L3 (seeded, unseeded and
+targeted conditions), Spearman correlation between a complexity measure
+and held-out accuracy. File: `artifacts/prior_comparison.json`.
+
+| Measure | ar25 (23 programs) | m0r0 (22 programs) | Rank of the best program by this measure, 1 = simplest |
+|---|---|---|---|
+| gzip length of stripped source (our prior) | −0.22 | −0.07 | ar25 21 of 23; m0r0 5 of 22 |
+| AST node count | −0.16 | −0.01 | 18; 5 |
+| Branch count (if, loops, boolean ops, comprehensions) | −0.02 | +0.05 | 22; 1 |
+| Literal mass | +0.03 | −0.19 | 17; 15 |
+| Lines | −0.18 | +0.01 | |
+
+Reading: no measure correlates with generalisation on this data, and on
+ar25 the best program (0.64) is among the longest by every measure. The
+"shortest consistent program" prior has no support here; the MDL weight
+should be treated as an untested choice, and the vote reported with equal
+weights unless a prior is validated.
+
 ## H1. Hoeffding's problem, baselines on all instances
 
 Task: sup P(S_n <= t) over iid X in [0, 1] with E X = m. Each number is a
@@ -756,3 +799,43 @@ What H10 does not cover: supports of 5 or more atoms, atoms off the grid, and
 n > 8. Within its scope it is exhaustive over supports and reliable in the
 weights. Together with Meester's n = 2 theorem it is the evidence that the
 family is the ceiling, not a proof.
+
+## H11. Linear-inequality family, rounds 5 and 6 with 30-minute children
+
+Resumed from H8 with timeout 1800 s, 40 turns, `confidence` requested in
+the first edit, the two-tier policy inside the child's checker, and two-tier
+scoring outside. Rounds are numbered 5 and 6 because the resume counts the
+H8 log as rounds 0 to 3.
+
+| Round | Best child | (1,1,1,-2) | (1,1,1,1,-3) | (1,2,-3) | Turns, wall, cost |
+|---|---|---|---|---|---|
+| 3 (H8) | child0 | 0.397607 | 0.472323 | 0.659631 | timed out at 900 s |
+| 5 | child1 | 0.397830 | 0.472571 | 0.659631 | 41 turns, 1073 s, $2.12; child0 28 turns, 668 s, $1.23 |
+| 6 | child1 | 0.398027 | 0.472682 | 0.659631 | 30 turns, 563 s, $0.94; child0 24 turns, 552 s, $0.95 |
+
+All four children finished inside the budget and defined `confidence`.
+Landmarks on (1,1,1,-2): 0.389 naive published agent, 0.400695 construction
+limit, 0.417 ceiling. The climb is converging to the limit from below at
+about +0.0002 per round, which is the finite-ladder loss the children's own
+headers describe.
+
+Held out, never in a workspace, round-6 child1 and the stated confidence
+that the value is within 1e-4 of the supremum:
+
+| c | Certified | Stated p | Known | Tight? |
+|---|---|---|---|---|
+| (2,-1,-1) | 0.659631 | 0.01 | 2/3 proven | no, and the member said so |
+| (1,1,-2) | 0.659631 | 0.01 | none | unknown |
+| (1,1,1,1,1,-4) | 0.531904 | 0.01 | none | unknown |
+| (2,1,1,-3) | 0.423694 | 0.01 | none | unknown |
+
+Calibration on the one proven anchor: stated 0.01 to 0.02 across the four
+finished children, hit rate 0, Brier 0.0001 to 0.0004. One anchor is not a
+calibration curve; it is one honest low-confidence report that was right.
+
+Outer two-tier scoring: 18 of 18 certifications performed, since every
+child beat or tied its parents; 0 skips. The checker-side counts were not
+captured for these rounds because the resumed process predates that
+instrumentation. Runs: 1. Command: `uv run python -m hoeffding.climb --task
+linear --rounds 2 --children 2 --top 2 --max-turns 40 --timeout 1800
+--eval-timeout 600 --resume --tiers`. Commit: uncommitted, base a718512.

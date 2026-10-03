@@ -202,3 +202,59 @@ def row_uncertainty(committee: Committee, train, test) -> list[dict]:
         })
     rows.sort(key=lambda r: (-r["eta_committee"], r["n_train"]))
     return rows
+
+
+def row_calibration(committee: Committee, train, test) -> dict:
+    """Mechanism-level check: does a row's committee entropy predict the committee's error on
+    that row? Each row touched by the held-out transitions gets eta_committee (from
+    row_uncertainty) and the share of its objects whose plurality effect is wrong."""
+    from .matrix import RowKey, context_signature, effect_signature, object_type, pair_objects
+
+    rows = {r["row"]: r for r in row_uncertainty(committee, train, test)}
+    wrong: dict[str, int] = {}
+    total: dict[str, int] = {}
+    for i, t in enumerate(test):
+        true_pairs = {id(bo): ao for bo, ao in pair_objects(t.before_objs, t.after_objs) if bo is not None}
+        votes: dict[int, dict[str, float]] = {}
+        for m, w in zip(committee.members, committee.weights):
+            pred = m.test_preds[i]
+            if pred is None:
+                continue
+            for bo, ao in pair_objects(t.before_objs, pred):
+                if bo is not None:
+                    d = votes.setdefault(id(bo), {})
+                    sig = effect_signature(bo, ao)
+                    d[sig] = d.get(sig, 0.0) + w
+        for bo in t.before_objs:
+            key = str(RowKey(object_type(bo), t.action_key, context_signature(t.before_objs, bo, t.click)))
+            if key not in rows:
+                continue
+            truth = effect_signature(bo, true_pairs.get(id(bo)))
+            v = votes.get(id(bo))
+            plural = max(v, key=lambda k: v[k]) if v else None
+            total[key] = total.get(key, 0) + 1
+            wrong[key] = wrong.get(key, 0) + (plural != truth)
+    table = []
+    for key, r in rows.items():
+        if total.get(key, 0) == 0:
+            continue
+        table.append({"row": key, "n_train": r["n_train"], "eta_counts": r["eta_counts"], "eta_committee": r["eta_committee"],
+                      "n_test_objects": total[key], "error_rate": round(wrong[key] / total[key], 4)})
+    etas = [t["eta_committee"] for t in table]
+    errs = [t["error_rate"] > 0 for t in table]
+    bins = []
+    for lo, hi, name in ((0.0, 0.0, "zero"), (0.0, 0.5, "low"), (0.5, 1.0001, "high")):
+        sel = [t for t in table if (t["eta_committee"] == 0.0 if hi == 0.0 else lo < t["eta_committee"] <= hi)]
+        bins.append({"bin": name, "n_rows": len(sel),
+                     "mean_error_rate": round(sum(t["error_rate"] for t in sel) / len(sel), 4) if sel else None,
+                     "rows_with_error": sum(t["error_rate"] > 0 for t in sel)})
+    unseen = [t for t in table if t["n_train"] == 0]
+    seen = [t for t in table if t["n_train"] > 0]
+    return {
+        "n_rows": len(table), "n_unseen_rows": len(unseen),
+        "auroc_eta_committee_vs_row_error": auroc(etas, errs),
+        "auroc_unseen_rows_only": auroc([t["eta_committee"] for t in unseen], [t["error_rate"] > 0 for t in unseen]),
+        "auroc_eta_counts_seen_rows": auroc([t["eta_counts"] for t in seen], [t["error_rate"] > 0 for t in seen]) if seen else None,
+        "auroc_eta_committee_seen_rows": auroc([t["eta_committee"] for t in seen], [t["error_rate"] > 0 for t in seen]) if seen else None,
+        "bins": bins, "rows": sorted(table, key=lambda t: -t["eta_committee"]),
+    }
