@@ -53,6 +53,8 @@ uv run python -m committee.experiment tr87 --level 1 --runs 1               # ba
 uv run python -m committee.experiment tr87 --level 1 --runs 8 --seeded \
     --condition committee --parallel 4                      # committee: seeded programs
 uv run python -m committee.evaluate tr87 --level 1 --condition committee
+uv run python -m committee.active ar25 --level 3 --backend devin   # grow a committee where it disagrees
+uv run python -m committee.evaluate ar25 --level 3 --train-frac 0.4 --condition active_devin --curve
 uv run pytest
 ```
 

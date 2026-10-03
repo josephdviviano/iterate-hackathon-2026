@@ -24,3 +24,18 @@ def test_disagreement_probe_collapses_committee_in_one_step_and_random_may_not()
     # a member set that is wrong everywhere on the probed transition gets falsified
     tr2 = simulate([m2, m3], test, "disagreement", lam=0.01)
     assert tr2.falsified_at == 1 and tr2.members_left[-1] == 0 and tr2.probes_to_collapse is None
+
+
+def test_disputed_probes_rank_by_disagreement_and_describe_outcomes():
+    from committee.active import disputed_probes, targeted_seed
+
+    before = [{"name": "p", "type": "player", "x": 0, "y": 0, "w": 1, "h": 1}]
+    probes = [Transition(10, 1, 1, None, False, [], [], before, []), Transition(11, 1, 2, None, False, [], [], before, [])]
+    moved = [{"name": "p", "type": "player", "x": 1, "y": 0, "w": 1, "h": 1}]
+    preds = [[before, before], [before, moved], [before, None]]   # probe 0 unanimous, probe 1 three-way
+    d = disputed_probes(probes, preds, top=5)
+    assert [x["step"] for x in d] == [11] and d[0]["disagreement"] == 1.0
+    texts = [t for _, t in d[0]["outcomes"]]
+    assert "nothing changes" in texts and any("x 0->1" in t for t in texts) and "error" in texts
+    seed = targeted_seed(d, ["rule A", ""], 3)
+    assert "step 11" in seed and "program 0: rule A" in seed and "program 1" not in seed

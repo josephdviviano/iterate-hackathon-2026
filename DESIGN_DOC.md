@@ -59,6 +59,7 @@ replay bundle (frames, actions, level steps, released extractor)
 | `synth_api` | Repair loop over any OpenAI-compatible model: task and transitions in, program out, checker report back in, up to N rounds. The default synthesizer. | CEGIS (Solar-Lezama et al., 2006) |
 | `synth_devin` | One Devin session per member. Attachments carry the transitions and checker; the program comes back as structured output. | Devin API v1 |
 | `experiment`, `explore` | Local orchestration with the same artifact layout; simulated exploration by disagreement against random and count-priority orders. | Query by committee (Seung, Opper and Sompolinsky, 1992) |
+| `active` | Targeted growth of the committee. Probe set = every training state with every available action, clicks on each visible object. Members predict all probes; the most disputed probes, with the competing outcomes, seed the next member. Convergence on an existing behaviour is allowed. Held-out data never enters the probe set. | Query by committee, applied to synthesis |
 
 ## Evaluation protocol
 

@@ -67,6 +67,39 @@ def evaluate_condition(game: str, level: int, train_frac: float, condition: str,
     return out
 
 
+def member_curve(game: str, level: int, train_frac: float, condition: str, lam: float = 0.01,
+                 test_level: int | None = None, start: int = 1) -> list[dict]:
+    """Committee metrics as members are added in run order: how fast each construction order
+    gains accuracy and calibration per synthesized program."""
+    cond = condition_dir(game, level, train_frac, condition, test_level)
+    train, test = temporal_split(build_buffer(game), level, train_frac, test_level)
+    runs = load_runs(cond, train, test)
+    after = [t.after_objs for t in test]
+    members = [Member(name, src, preds, description_length(src))
+               for name, m, src, preds in runs if m["consistent"] and preds]
+    curve = []
+    for k in range(start, len(members) + 1):
+        e = Committee(members[:k], lam=lam).evaluate(after)
+        unanimous = next(r for r in e["reliability_uniform"] if r["bin"] == "unanimous")
+        split_n = len(test) - unanimous["n"]
+        split_err = (sum((not p["correct"]) for p in e["per_transition"] if p["uniform_disagreement"] > 0)
+                     / split_n if split_n else None)
+        curve.append({"members": k, "vote_accuracy": round(e["vote_accuracy"], 4),
+                      "auroc": e["auroc_uniform_disagreement_vs_error"],
+                      "unanimous_n": unanimous["n"], "unanimous_error": unanimous["error_rate"],
+                      "split_n": split_n, "split_error": round(split_err, 4) if split_err is not None else None,
+                      "distinct": e["n_distinct_behaviours"], "mean_disagreement": round(e["mean_disagreement"], 4)})
+    (cond / "member_curve.json").write_text(json.dumps(curve, indent=1))
+    return curve
+
+
+def print_curve(curve: list[dict], label: str) -> None:
+    print(f"{label}: members | vote acc | AUROC | unanimous n (err) | split n (err) | distinct")
+    for c in curve:
+        print(f"  {c['members']:2d} | {c['vote_accuracy']:.3f} | {c['auroc'] if c['auroc'] is None else round(c['auroc'], 3)} "
+              f"| {c['unanimous_n']:2d} ({c['unanimous_error']}) | {c['split_n']:2d} ({c['split_error']}) | {c['distinct']}")
+
+
 def print_report(out: dict) -> None:
     s = out["single"]
     tl = f" test=L{out['test_level']}" if out.get("test_level") else ""
@@ -98,7 +131,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lam", type=float, default=0.01)
     parser.add_argument("--include-inconsistent", action="store_true")
     parser.add_argument("--test-level", type=int, default=None)
+    parser.add_argument("--curve", action="store_true", help="metrics as members are added in run order")
     args = parser.parse_args(argv)
+    if args.curve:
+        print_curve(member_curve(args.game, args.level, args.train_frac, args.condition, args.lam, args.test_level),
+                    f"{args.game} L{args.level} {args.condition}")
+        return
     print_report(evaluate_condition(args.game, args.level, args.train_frac, args.condition, args.lam,
                                     args.include_inconsistent, args.test_level))
 
