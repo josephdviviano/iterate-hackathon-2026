@@ -1,0 +1,15 @@
+# Two-GPU smoke sweep: proves dispatch, interruption, resume and collation on real data.
+# Short budgets; accuracies are not frontier evidence.
+name = "smoke-gpu"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1]
+devices = [0, 1]
+slots_per_device = 1
+
+[[grid]]
+width_mult = [0.5, 1.0]
+epochs = [2, 4]
+
+[[configs]]
+arch = "resnet9"
+epochs = 4

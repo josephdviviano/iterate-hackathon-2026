@@ -1,0 +1,17 @@
+T-001 evidence, 2026-10-03, host engs-32851
+Command per GPU g: CUDA_VISIBLE_DEVICES=g .venv-blackwell/bin/python -m benchmark.run --submission-path submission_template --n 1 --no-accuracy-target
+
+== GPU 0
+trial 1/1: accuracy=1.41% training=0.344s inference=0.119s
+  "complete": true,
+  "mean_accuracy": 0.0141,
+  "dataset": "CIFAR-100",
+Results: /tmp/t001-results/submission_template/20261003T102443Z-f1cef444
+== GPU 1
+trial 1/1: accuracy=1.41% training=0.417s inference=0.183s
+  "complete": true,
+  "mean_accuracy": 0.0141,
+  "dataset": "CIFAR-100",
+Results: /tmp/t001-results/submission_template/20261003T102449Z-e33ec55c
+
+Note: the harness telemetry queries nvidia-smi for all GPUs and records the first, so on this two-GPU host its telemetry does not identify the GPU selected by CUDA_VISIBLE_DEVICES.

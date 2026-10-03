@@ -1,0 +1,275 @@
+schema_version: '2.0'
+programme_id: c100-speedrun
+title: CIFAR-100 speedrun entry
+mission: Submit a rule-compliant CIFAR-100 speedrun entry whose official 40-seed evaluation on one NVIDIA
+  A100 80GB PCIe qualifies (mean top-1 at least 75%) at the lowest mean prepare+train time the team can
+  demonstrate, with recorded evidence for every adopted and rejected technique.
+root_question: Which compliant recipe minimises mean A100 PCIe prepare+train time while keeping the official
+  40-seed mean top-1 at or above 75% with a qualification risk of about 1% or less?
+project_root: ../..
+integration_role: integration_owner
+design_identity: sha256:f8cf2a43f13db6652b85fb3172940736adda7258e400262ccab6fac74f499b9a
+design_locator: design/product-design.yaml
+design_request_identity: null
+design_request_locator: null
+design_assessment_identity: null
+design_assessment_locator: null
+candidate_identity: null
+candidate_locator: null
+final_assessment_required: false
+assessment_registrations: []
+success_outcomes:
+- outcome_id: O-001
+  statement: A qualifying, compliant submission is demonstrated under official-equivalent conditions.
+  requirements:
+  - requirement_id: R-001
+    statement: In the pinned container on an A100 80GB PCIe with the official launch flags, the entry
+      completes 40 fresh trials, every trial succeeds within the 600 s training and 5 s evaluation limits,
+      and the mean top-1 exceeds 75% by a margin that keeps the estimated official qualification risk
+      at or below 1% given the measured per-trial standard deviation (75.2% when that deviation is at
+      most 0.30 pp).
+    criticality: core
+    obligations:
+    - obligation_id: official-equivalent-run
+      statement: benchmark.run with 40 distinct seeds from a seed file, cpus 4, network none, produces
+        summary.json with complete true and no eval_timeout, and the recorded risk calculation from mean_accuracy
+        and accuracy_std gives at most 1% probability of an official mean below 0.75.
+      mode: command
+      candidate_bound: false
+      specialist_skill: null
+    assessment_required: false
+    assessment_reason: null
+    evidence: []
+  - requirement_id: R-002
+    statement: 'The entry satisfies RULES.md sections 1 to 3: no real data, seeds or data-derived constants
+      in import or build; no learned state carried across trials; single-view evaluation without state
+      change; no test-set use; no measurement interference; only pinned dependencies.'
+    criticality: core
+    obligations:
+    - obligation_id: compliance-inspection
+      statement: A fresh-context source review of import, build, prepare, train and forward finds no rule
+        violation, recorded against each RULES.md section 3 bullet.
+      mode: inspection
+      candidate_bound: false
+      specialist_skill: null
+    - obligation_id: independence-checks
+      statement: Repeat-seed and reordered-seed runs reproduce per-seed accuracy within nondeterminism,
+        and a fresh process reproduces the first trial.
+      mode: command
+      candidate_bound: false
+      specialist_skill: null
+    assessment_required: false
+    assessment_reason: null
+    evidence: []
+- outcome_id: O-002
+  statement: The submitted recipe is the fastest qualifying configuration the evidence supports.
+  requirements:
+  - requirement_id: R-003
+    statement: The base regime (architecture, width, depth, batch size, epochs) is selected as the minimum
+      interpolated A100 PCIe time at which the single-view 5-seed mean reaches 75.3%, over a measured
+      frontier of at least four widths and four epoch counts.
+    criticality: core
+    obligations:
+    - obligation_id: frontier-table
+      statement: The collation command reproduces the width by epochs accuracy table (mean, sd, n) from
+        raw harness results.
+      mode: command
+      candidate_bound: false
+      specialist_skill: null
+    - obligation_id: regime-decision
+      statement: A decision record selects the regime from the frontier table and the A100 per-epoch timings
+        and states its reopening conditions.
+      mode: inspection
+      candidate_bound: false
+      specialist_skill: null
+    assessment_required: false
+    assessment_reason: null
+    evidence: []
+  - requirement_id: R-004
+    statement: Each add-on lever (optimiser, resolution schedule, example selection, regularisation) is
+      adopted only if it lowers time at matched accuracy beyond seed noise over at least 10 seeds at the
+      selected base; every rejected lever has a recorded reason.
+    criticality: core
+    obligations:
+    - obligation_id: addon-comparisons
+      statement: Collated matched-accuracy comparisons with confidence intervals exist for every tested
+        lever.
+      mode: command
+      candidate_bound: false
+      specialist_skill: null
+    - obligation_id: addon-decision
+      statement: A decision record lists adopted and rejected levers with their evidence.
+      mode: inspection
+      candidate_bound: false
+      specialist_skill: null
+    assessment_required: false
+    assessment_reason: null
+    evidence: []
+  - requirement_id: R-005
+    statement: A100 80GB PCIe per-epoch and fixed preparation times are measured in the pinned container
+      for every frontier candidate, and the final recipe's 40-trial mean time is recorded with its standard
+      deviation and GPU telemetry.
+    criticality: core
+    obligations:
+    - obligation_id: a100-timing-table
+      statement: Harness runs on the A100 PCIe report total_timed_time per candidate with clocks, power
+        and temperature telemetry.
+      mode: command
+      candidate_bound: false
+      specialist_skill: null
+    assessment_required: false
+    assessment_reason: null
+    evidence: []
+- outcome_id: O-003
+  statement: Exploration is reproducible, resumable and scales across available GPUs and agents.
+  requirements:
+  - requirement_id: R-006
+    statement: Any configuration in the exploration space runs from a declarative sweep file on any free
+      local GPU through the official harness, resumes after interruption without repeating completed runs,
+      and its collated tables are reproducible from raw results.
+    criticality: supporting
+    obligations:
+    - obligation_id: sweep-roundtrip
+      statement: A multi-config, multi-GPU sweep completes, an interrupted sweep resumes without rerunning
+        completed configs, and collation reproduces the same table.
+      mode: command
+      candidate_bound: false
+      specialist_skill: null
+    assessment_required: false
+    assessment_reason: null
+    evidence: []
+  - requirement_id: R-007
+    statement: Single-view accuracy measured on the local development stack agrees with the pinned A100
+      stack within two standard errors for a reference configuration, or the discrepancy is quantified
+      and applied as a correction.
+    criticality: supporting
+    obligations:
+    - obligation_id: cross-stack-agreement
+      statement: The same configuration run for 10 seeds on both stacks yields means whose difference
+        is within two combined standard errors.
+      mode: command
+      candidate_bound: false
+      specialist_skill: null
+    assessment_required: false
+    assessment_reason: null
+    evidence: []
+- outcome_id: O-004
+  statement: The submission reaches the organisers in the required form with team-lead approval.
+  requirements:
+  - requirement_id: R-008
+    statement: The pull request to the upstream repository adds only submissions/<team>/ with its source
+      and README, runs its final recipe from default settings, contains no weights, data or results, and
+      was approved by the team lead before opening.
+    criticality: core
+    obligations:
+    - obligation_id: pr-contents
+      statement: The PR diff touches only the team folder and the defaults reproduce R-001.
+      mode: inspection
+      candidate_bound: false
+      specialist_skill: null
+    - obligation_id: release-approval
+      statement: A recorded human decision approves opening the PR.
+      mode: inspection
+      candidate_bound: false
+      specialist_skill: null
+    assessment_required: false
+    assessment_reason: null
+    evidence: []
+worksets:
+- workset_id: enablement
+  title: Exploration enablement
+  purpose: Provide the development stack, the parametrised recipe substrate and the sweep tooling that
+    every probe depends on.
+  decision_boundary: Can the team run the exploration grid at scale and trust its outputs?
+  exit_conditions:
+  - A multi-GPU sweep through the official harness completes and resumes after interruption.
+  - The recipe substrate passes the harness smoke test and the repeat-seed reset test.
+  prerequisite_workset_ids: []
+  exit_requirement_ids:
+  - R-006
+  sequence: 1
+- workset_id: calibration
+  title: A100 PCIe calibration
+  purpose: Measure per-epoch time on the official hardware and check that local accuracy evidence transfers
+    to the pinned stack.
+  decision_boundary: Which time model and which accuracy correction apply to frontier decisions?
+  exit_conditions:
+  - Per-epoch A100 PCIe time is known for every frontier candidate.
+  - Cross-stack accuracy agreement is established or quantified.
+  prerequisite_workset_ids:
+  - enablement
+  exit_requirement_ids:
+  - R-005
+  - R-007
+  sequence: 3
+- workset_id: frontier
+  title: Width by epochs frontier
+  purpose: Measure where single-view accuracy crosses 75.3% across widths, depths and epochs.
+  decision_boundary: Is the competition capacity-bound or throughput-bound, and which base regime wins?
+  exit_conditions:
+  - The frontier table exists with at least five seeds per cell.
+  - A regime decision record exists.
+  prerequisite_workset_ids:
+  - enablement
+  exit_requirement_ids:
+  - R-003
+  sequence: 2
+- workset_id: addons
+  title: Add-on levers at the selected base
+  purpose: Test optimiser, resolution, example-selection and regularisation levers at matched accuracy
+    on the selected base.
+  decision_boundary: Which levers enter the final recipe?
+  exit_conditions:
+  - Every tested lever has a matched-accuracy comparison and a disposition.
+  prerequisite_workset_ids:
+  - frontier
+  - calibration
+  exit_requirement_ids:
+  - R-004
+  sequence: 4
+- workset_id: assurance
+  title: Convergence and assurance
+  purpose: Converge the final recipe into a lean submission and challenge it under official-equivalent
+    conditions and a compliance review.
+  decision_boundary: Is the exact candidate qualifying, compliant and ready to submit?
+  exit_conditions:
+  - The official-equivalent 40-seed run qualifies with margin.
+  - The compliance review finds no violation.
+  prerequisite_workset_ids:
+  - addons
+  exit_requirement_ids:
+  - R-001
+  - R-002
+  sequence: 5
+- workset_id: release
+  title: Submission
+  purpose: Open the upstream pull request with only the team folder after team-lead approval.
+  decision_boundary: Has the approved candidate been submitted in the required form?
+  exit_conditions:
+  - The pull request is open and contains only the team folder.
+  prerequisite_workset_ids:
+  - assurance
+  exit_requirement_ids:
+  - R-008
+  sequence: 6
+constraints:
+- Scored and timing evidence uses the pinned container (Python 3.12, PyTorch 2.4.0, CUDA 12.4) on an A100
+  80GB PCIe; the submission installs no packages.
+- Evaluation is single-view; no test-time augmentation, pretrained weights or external data.
+- No real data, seeds or data-derived constants in import or build; no learned or data-derived state carried
+  across trials; no offline example-index lists or pruning scores unless the organisers rule them permitted.
+- Local Blackwell GPUs produce accuracy evidence only, on the torch 2.7.1+cu128 dev stack; they never
+  produce timing claims.
+- No measurement interference, host selection or cooldowns.
+- A100 80GB PCIe access is an external resource provided by the team lead; calibration and assurance tasks
+  record an external blocker with a retry condition until it exists.
+- Cross-stack accuracy transfer (dev stack versus pinned A100 stack) is unverified until R-007 has evidence;
+  frontier cells within two standard errors of the target are re-measured on the A100 before a regime
+  decision.
+- Pushing research artefacts to the public fork, renting GPUs and opening the upstream pull request each
+  require team-lead approval.
+out_of_scope:
+- Reporting harness gaps G1 to G6 to the organisers (a separate team-lead decision).
+- Multi-GPU training and non-PyTorch frameworks.
+- Hackathon track selection.
+max_active_tasks: 3

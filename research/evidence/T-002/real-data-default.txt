@@ -1,0 +1,27 @@
+T-002 evidence, 2026-10-03, host engs-32851, dev stack torch 2.7.1+cu128 (accuracy only; local times are not A100 evidence)
+
+== CPU contract tests (pinned stack torch 2.4.0): CUDA_VISIBLE_DEVICES= uv run pytest -q research/tests/test_recipe.py
+8 passed in 9.34s
+
+== Real data, default params (airbench94-equivalent: widths 64/256/256, 10 epochs, bs 1024), eager, GPU 0
+Command: CUDA_VISIBLE_DEVICES=0 .venv-blackwell/bin/python -m benchmark.run --submission team_segal --n 2 --no-accuracy-target
+trial 1/2: accuracy=69.43% training=8.033s inference=0.097s
+trial 2/2: accuracy=69.52% training=9.013s inference=0.152s
+  "requested_trials": 2,
+  "number_of_trials": 2,
+  "successful_trials": 2,
+  "failed_trials": 0,
+  "mean_accuracy": 0.69475,
+  "accuracy_std": 0.0006363961030679012,
+
+== Same with --params '{"compile": true}', GPU 1 (TORCH_LOGS=recompiles rerun showed no recompilation)
+trial 1/2: accuracy=69.52% training=14.881s inference=0.381s
+trial 2/2: accuracy=69.68% training=14.751s inference=0.353s
+  "requested_trials": 2,
+  "number_of_trials": 2,
+  "successful_trials": 2,
+  "failed_trials": 0,
+  "mean_accuracy": 0.696,
+
+Evaluation used the eager module on both runs (inference 0.10-0.38 s, well under 5 s).
+Both local GPUs were shared with other workloads at 100% utilisation and a 300 W power cap during these runs, so the training times above are not comparable across runs.

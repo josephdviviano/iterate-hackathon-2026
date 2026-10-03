@@ -1,0 +1,25 @@
+# T-005 / probe P1 in exploration X-001: single-view width x epochs frontier (dev stack).
+# Decision rule: interpolate epochs at a 75.3% mean per width, then convert with A100 per-epoch
+# times from T-004. No Cutout (it costs accuracy below ~30 epochs without TTA).
+name = "p1-frontier"
+python = ".venv-blackwell/bin/python"
+seeds = [0, 1, 2, 3, 4]
+devices = [0, 1]
+slots_per_device = 1
+
+# airbench94 shape (64/256/256, two convs per block) at three widths.
+[[grid]]
+width_mult = [1.0, 1.5, 2.0]
+epochs = [10, 14, 18, 24]
+
+# airbench96 shape: three convs per block with a residual, translate 4.
+[[grid]]
+widths = [128, 384, 512]
+block_depth = 3
+translate = 4
+epochs = [10, 14, 18, 24]
+
+# ResNet-9 reference arm (H1), matching the organisers' 40-epoch baseline budget.
+[[configs]]
+arch = "resnet9"
+epochs = 40

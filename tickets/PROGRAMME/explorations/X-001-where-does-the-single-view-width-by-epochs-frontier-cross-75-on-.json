@@ -1,0 +1,292 @@
+{
+  "connections": [
+    {
+      "connection_id": "C-muon",
+      "source_domain": "Language-model speedruns (modded-nanogpt)",
+      "source_concept": "Muon orthogonalised momentum for matrix-shaped parameters",
+      "target_problem": "Epochs to target for conv filters on CIFAR-100",
+      "shared_structure": "Matrix-shaped weights whose raw momentum updates are dominated by a few directions",
+      "important_differences": [
+        "BN scale invariance in convnets",
+        "Four-dimensional filters reshaped to matrices",
+        "Short 10-20 epoch budgets"
+      ],
+      "proposed_mechanism": "Equalised update spectra make each step more useful early in training",
+      "testable_prediction": "At the selected base, Muon reaches the matched accuracy in at least 10% fewer epochs than SGD with lookahead",
+      "failure_condition": "No time gain beyond seed noise at matched accuracy"
+    },
+    {
+      "connection_id": "C-resize",
+      "source_domain": "ImageNet speedruns (FFCV, fast.ai DAWNBench) and the Fulcrum CIFAR-10 record",
+      "source_concept": "Progressive resizing with low resolution early",
+      "target_problem": "Per-epoch cost early in CIFAR-100 training",
+      "shared_structure": "Early epochs learn coarse features that survive downsampling",
+      "important_differences": [
+        "32 px images leave little resolution headroom",
+        "100 fine-grained classes may need detail earlier"
+      ],
+      "proposed_mechanism": "Bilinear-downsampled 24-28 px epochs cost about 44-23% fewer FLOPs",
+      "testable_prediction": "A 24 to 28 to 32 px schedule lowers time at matched accuracy by at least 5%",
+      "failure_condition": "Matched accuracy needs more extra epochs than the resizing saves"
+    }
+  ],
+  "design_space": [
+    {
+      "dimension": "capacity",
+      "current_assumption": "airbench94 widths (64/256/256) with two convs per block suffice for CIFAR-100 at 75%.",
+      "alternatives": [
+        "1.5x and 2x width multipliers",
+        "airbench96 shape (128/384/512, three convs per block with a residual)",
+        "ResNet-9 (64/128/256/512 with residual blocks)"
+      ],
+      "why_material": "With 100 classes and no TTA, 75% may be width-limited, which moves the minimum-time point to wider nets."
+    },
+    {
+      "dimension": "sample-efficiency",
+      "current_assumption": "airbench tricks (whitening, dirac init, BN-bias lr x64, lookahead, alternating flip, label smoothing 0.2) cut epochs on CIFAR-100 as on CIFAR-10.",
+      "alternatives": [
+        "Without the tricks (ResNet-9 reference arm)",
+        "Label smoothing 0.1 or 0.3",
+        "Muon for conv filters"
+      ],
+      "why_material": "Epochs to target multiply directly into time."
+    },
+    {
+      "dimension": "throughput",
+      "current_assumption": "Per-epoch time scales with FLOPs at the candidate widths.",
+      "alternatives": [
+        "Small nets launch-bound, so narrower nets save less time than FLOPs suggest",
+        "Compile or CUDA graphs change the ranking"
+      ],
+      "why_material": "The airbench paper reports that cutting FLOPs did not cut A100 wall time, so the frontier must be converted with measured A100 times."
+    },
+    {
+      "dimension": "data-volume",
+      "current_assumption": "Full 32 px images and all 50,000 examples every epoch.",
+      "alternatives": [
+        "Progressive resizing 24 to 28 to 32 px",
+        "In-run proxy-loss selection of the hardest half of each batch"
+      ],
+      "why_material": "Cheaper epochs can cut time at matched accuracy, but CIFAR-100 tolerates data removal worse than CIFAR-10."
+    },
+    {
+      "dimension": "variance-margin",
+      "current_assumption": "Per-trial sd near 75% is at most 0.30 pp, so a 75.2% development mean suffices.",
+      "alternatives": [
+        "sd 0.35 to 0.45 pp requiring 75.3% or higher"
+      ],
+      "why_material": "The margin sets the epoch count at the threshold."
+    }
+  ],
+  "disposition": "test_ready",
+  "exploration_id": "X-001",
+  "hypotheses": [
+    {
+      "hypothesis_id": "H1",
+      "proposition": "The baseline is overhead-dominated, so ResNet-9 with GPU-resident data, fp16 channels_last and compilation becomes competitive.",
+      "mechanism": "Removing data-loader, precision and launch overheads cuts per-epoch time without changing epochs to target.",
+      "changed_dimensions": [
+        "throughput"
+      ],
+      "prediction": "ResNet-9 per-epoch A100 time falls from 1.48 s to at most 0.7 s at unchanged accuracy.",
+      "disconfirming_result": "Per-epoch time stays at or above 1.1 s, consistent with roughly 114 TFLOP per epoch.",
+      "decision_changed": "Whether ResNet-9 remains a candidate base or only a calibration reference.",
+      "evidence_needed": [
+        "ResNet-9 reference arm accuracy at 40 epochs (P1)",
+        "A100 per-epoch timing (T-004)"
+      ],
+      "status": "candidate"
+    },
+    {
+      "hypothesis_id": "H2",
+      "proposition": "airbench sample-efficiency tricks transfer to single-view CIFAR-100 and reach 75.3% in at most 20 epochs at some width.",
+      "mechanism": "Whitening, identity init, BN-bias scaling, lookahead and alternating flip accelerate early optimisation independently of the label space.",
+      "changed_dimensions": [
+        "sample-efficiency"
+      ],
+      "prediction": "At least one airbench-lineage width reaches a 5-seed mean of 75.3% at 20 epochs or fewer.",
+      "disconfirming_result": "No width reaches 75.3% below about 30 epochs.",
+      "decision_changed": "Base architecture family.",
+      "evidence_needed": [
+        "P1 frontier table"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "H3",
+      "proposition": "Single-view 75% on CIFAR-100 is capacity-bound, so the minimum-time point sits at airbench95-96 width rather than airbench94 width.",
+      "mechanism": "Fine-grained 100-way discrimination needs more channels in the late stages than 10-way CIFAR-10.",
+      "changed_dimensions": [
+        "capacity"
+      ],
+      "prediction": "The minimum interpolated time at 75.3% occurs at a width multiplier of at least 1.5 or the airbench96 shape.",
+      "disconfirming_result": "The 1x airbench94 width reaches 75.3% at lower interpolated time than every wider arm.",
+      "decision_changed": "Width and depth of the base regime.",
+      "evidence_needed": [
+        "P1 frontier table",
+        "A100 per-epoch time per width (T-004)"
+      ],
+      "status": "selected"
+    },
+    {
+      "hypothesis_id": "H4",
+      "proposition": "Muon on conv filters reduces epochs at matched single-view accuracy on CIFAR-100, as it did on CIFAR-10.",
+      "mechanism": "Orthogonalised momentum updates equalise progress across filter directions, so fewer steps are needed.",
+      "changed_dimensions": [
+        "sample-efficiency"
+      ],
+      "prediction": "At least 10% fewer epochs at matched accuracy, with Newton-Schulz overhead under 5% of step time.",
+      "disconfirming_result": "The time gain at matched accuracy lies within seed noise.",
+      "decision_changed": "Optimiser of the final recipe.",
+      "evidence_needed": [
+        "P2 matched-accuracy comparison at the selected base (T-007)"
+      ],
+      "status": "dormant"
+    },
+    {
+      "hypothesis_id": "H5",
+      "proposition": "Cheaper early epochs (progressive resizing or proxy-loss selection) cut time at matched accuracy.",
+      "mechanism": "Early training extracts coarse features that low resolution or easy-example skipping preserves at lower FLOPs.",
+      "changed_dimensions": [
+        "data-volume"
+      ],
+      "prediction": "At least 5% lower time at matched accuracy.",
+      "disconfirming_result": "The accuracy loss on CIFAR-100 costs more epochs than the cheaper epochs save.",
+      "decision_changed": "Resolution and example-selection schedule.",
+      "evidence_needed": [
+        "P2 matched-accuracy comparison at the selected base (T-007)"
+      ],
+      "status": "dormant"
+    },
+    {
+      "hypothesis_id": "H6",
+      "proposition": "Per-trial sd of single-view accuracy near 75% is at most 0.30 pp for short-budget runs.",
+      "mechanism": "Short airbench-style runs have test-set sd near the binomial floor reduced by averaging (airbench94: 0.157 pp on CIFAR-10).",
+      "changed_dimensions": [
+        "variance-margin"
+      ],
+      "prediction": "Pooled within-cell sd from P1 cells near 75% is at most 0.30 pp.",
+      "disconfirming_result": "Pooled sd at least 0.40 pp.",
+      "decision_changed": "Development accuracy target (75.2% versus 75.3% or higher).",
+      "evidence_needed": [
+        "Pooled sd from P1 cells",
+        "40-seed confirmation run (T-010)"
+      ],
+      "status": "candidate"
+    }
+  ],
+  "interpretation_forks": [],
+  "material_dimensions": [
+    "capacity",
+    "sample-efficiency",
+    "throughput",
+    "data-volume",
+    "variance-margin"
+  ],
+  "observations": [
+    {
+      "observation_id": "OBS-baseline",
+      "statement": "The organisers' ResNet-9 baseline (40 epochs, width 64) reached 75.36% mean in 59.30 s on the A100 80GB PCIe over 2 trials; 50 L40 trials gave sd 0.2516 pp.",
+      "evidence": [
+        {
+          "evidence_id": "E-001",
+          "kind": "file",
+          "label": "Upstream README, Verified A100 setup",
+          "locator": "README.md",
+          "state": "verified",
+          "sha256": "050bce762c327b11e505b1db4e2211f5f494102c8d4a17a495cf421a9570c587"
+        }
+      ]
+    },
+    {
+      "observation_id": "OBS-anchor",
+      "statement": "Untuned airbench96 (40 epochs) reaches 79.27% (flip) and 79.76% (flip+Cutout) on CIFAR-100, both scored with 6-view TTA; single-view CIFAR-100 accuracy is unpublished.",
+      "evidence": [
+        {
+          "evidence_id": "E-002",
+          "kind": "citation",
+          "label": "airbench Table 5 and Appendix B",
+          "locator": "research/evidence/airbench-2404.00498v2-tables.txt",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "observation_id": "OBS-tta-cutout",
+      "statement": "On CIFAR-10 without TTA, Cutout costs 1.14 pp at 10 epochs and 0.38 pp at 20, helps only from about 40 epochs; TTA is worth 0.70-0.79 pp at 10-80 epochs.",
+      "evidence": [
+        {
+          "evidence_id": "E-003",
+          "kind": "citation",
+          "label": "airbench Table 6",
+          "locator": "research/evidence/airbench-2404.00498v2-tables.txt",
+          "state": "verified"
+        }
+      ]
+    },
+    {
+      "observation_id": "OBS-resnet-muon",
+      "statement": "A plain ResNet (64/128/256) trained with Muon reaches 70.6% single-view at 16 epochs (one seed, about 26 s on an A100-SXM-64GB).",
+      "evidence": [
+        {
+          "evidence_id": "E-004",
+          "kind": "citation",
+          "label": "MarioPaerle/Cifar100Speedrun README",
+          "locator": "research/evidence/marioPaerle-cifar100speedrun-readme.txt",
+          "state": "verified"
+        }
+      ]
+    }
+  ],
+  "omitted_dimensions": [
+    {
+      "dimension": "evaluation-protocol",
+      "rationale": "Fixed by RULES.md: single-view, batch 1024, untimed; TTA is banned, so no alternative exists."
+    },
+    {
+      "dimension": "data-sources",
+      "rationale": "Fixed by RULES.md: CIFAR-100 training split only; no external data or pretrained weights."
+    },
+    {
+      "dimension": "hardware",
+      "rationale": "Fixed by RULES.md: one A100 80GB PCIe; multi-GPU training is out of scope."
+    }
+  ],
+  "probes": [
+    {
+      "probe_id": "P1",
+      "hypothesis_ids": [
+        "H1",
+        "H2",
+        "H3",
+        "H6"
+      ],
+      "method": "Run the airbench-lineage substrate through the official harness on the dev stack at width multipliers 1, 1.5 and 2 of 64/256/256 plus the airbench96 shape, at 10, 14, 18 and 24 epochs, five seeds per cell, no Cutout; add a ResNet-9 reference arm at 40 epochs. Collate mean, sd and n per cell and interpolate E*(w) at 75.3%.",
+      "decision_rule": "Select the width minimising E*(w) times A100 per-epoch time from T-004; if no width reaches 75.3% below 30 epochs, H3 dominates and the next probe moves to wider residual nets with Cutout; if the 1x width wins, shift effort to throughput levers.",
+      "information_gain": "Separates capacity-bound from throughput-bound accounts and supplies the sd estimate for the margin, in one bounded grid.",
+      "resource_bound": "About 85 runs of 10-60 s each on two local GPUs, roughly one to two GPU-hours.",
+      "status": "ready"
+    },
+    {
+      "probe_id": "P2",
+      "hypothesis_ids": [
+        "H4",
+        "H5"
+      ],
+      "method": "At the base selected after P1, compare Muon versus SGD with lookahead, progressive resizing and proxy-loss selection at matched accuracy with at least 10 seeds per arm.",
+      "decision_rule": "Adopt a lever only if its time at matched accuracy is lower with a 95% interval excluding zero.",
+      "information_gain": "Decides each add-on lever at the regime that will be submitted.",
+      "resource_bound": "About 60-120 runs on two local GPUs plus A100 timing of adopted levers.",
+      "status": "proposed"
+    }
+  ],
+  "question": "Where does the single-view width by epochs frontier cross 75% on CIFAR-100, and is the minimum-time regime capacity-bound or throughput-bound?",
+  "schema_version": "1.0",
+  "selected_hypothesis_ids": [
+    "H2",
+    "H3"
+  ],
+  "synthesis": "P1 is the smallest probe that separates the capacity-bound (H3) and throughput-bound (H1, narrow-width H2) accounts and yields the sd estimate for H6; optimiser and data-volume levers (H4, H5) stay dormant until a base is selected.",
+  "task_id": "T-005",
+  "trigger": "programme_start"
+}
