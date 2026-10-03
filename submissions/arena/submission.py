@@ -22,7 +22,7 @@ from benchmark.api import BuildContext, TrainingData
 # Override any value with --params, e.g. '{"epochs": 9, "widths": [128, 384, 768]}'.
 DEFAULTS = {
     "epochs": 8.0,
-    "batch_size": 1536,
+    "batch_size": 1024,
     "lr": 9.0,  # per 1024 examples, decoupled from momentum (airbench convention)
     "momentum": 0.85,
     "weight_decay": 0.012,  # per 1024 examples, decoupled from the learning rate
@@ -37,13 +37,13 @@ DEFAULTS = {
     "depth": 3,  # convs per group; the third adds a residual connection
     "scaling_factor": 1 / 9,
     "bn_momentum": 0.6,
-    "ema_every": 3,  # lookahead EMA period in steps; 0 disables it
+    "ema_every": 5,  # lookahead EMA period in steps; 0 disables it
     "compile": "max-autotune",  # torch.compile mode; "" runs eagerly
     "muon_lr": 0.24,  # Muon for the 3x3 conv filters; 0 keeps them on SGD
     "muon_momentum": 0.6,
     "muon_ns_steps": 3,
     # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
-    "res_schedule": [[0.25, 16], [0.5, 24]],
+    "res_schedule": [[0.25, 16], [0.5, 20]],
 }
 
 
