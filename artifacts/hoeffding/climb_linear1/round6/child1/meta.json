@@ -1,0 +1,34 @@
+{
+ "model": "opus",
+ "max_turns": 60,
+ "checker_policy": true,
+ "num_turns": 14,
+ "duration_ms": 220843,
+ "total_cost_usd": 0.5881258,
+ "is_error": false,
+ "subtype": "success",
+ "final_message": "tays at **0.399496**, from the parent's 128-atom ladder law (round5/child2), which `strategy.py` now returns. TASK.md does not include my assigned parent, round4/child0, so I started from round5/child2, the best one shown.\n\n| Search | Value |\n|---|---|\n| Free weights on grid k/2^m, m=6 | 0.3729 |\n| Free weights on grid, m=7 | 0.3770 |\n| Free weights on grid, m=8 | 0.3762 |\n| Nested ladders (99/22/5/1) plus an atom at 0, 128 atoms | **0.399496 (certified)** |\n\n- **Structure the grid weights took:** without being told, the optimiser rebuilt a ladder. It put clusters at 1 \u2212 g, where each gap g is about 2.3 times the next one. It also put about 0.3 of the mass at 0 and a small scaled copy near 0. Grids lose because the grid size caps how deep the ladder can go.\n- **Ladder weights:** the weight optimiser on the ladder has converged. Ten times more iterations add only 2e-8.\n- **Timing risk:** the certification took 63.6 s on this machine, which is above the 20 s limit in TASK.md. The same 128-atom law was certified when the parent was scored, so I kept it. I did not add atoms, because the check time grows quickly with the number of atoms and the gain would be about 4e-5.\n- **Confidence:** `confidence` gives 0.001, and `report.json` is `{\"c1_1_1_-2\": 0.001}`. The known 0.400695 limit is about 1.2e-3 above the certified value, so the value cannot be within 1e-4 of the true supremum.\n\nNot settled: whether any law beats the 0.400695 limit. No grid or ladder law that I found reaches it.",
+ "stderr_tail": "",
+ "returncode": 0,
+ "wall_s": 221.8,
+ "check_runs": 1,
+ "check_totals": {
+  "certified": 1,
+  "estimated": 0,
+  "rejected": 0,
+  "strategy_s": 2.57,
+  "certify_s": 63.6,
+  "estimate_s": 0.0
+ },
+ "fitness": 0.8885287393684723,
+ "gaps": [
+  0.8885287393684723
+ ],
+ "lane": "grid",
+ "parents": [
+  "round5/child2",
+  "round5/child1",
+  "round5/child0"
+ ],
+ "check_output": "value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).\nkey                           value      kind       best      lower      upper  structure\nc1_1_1_-2                  0.399496 CERTIFIED   0.399496   0.259970   0.417000  128 atoms [0.0000:0.061 0.0000:0.046 0.0000:0.024 0.0000:0.019 0.0000:0.021 0.0000:0.024 0.0000:0.031 0.0000:0.014 0.0000:0.008 0.0000:0.008 0.0000:0.008 0.0000:0.008] ... (128 atoms)  strategy 2.3s certify 55.2s\n"
+}

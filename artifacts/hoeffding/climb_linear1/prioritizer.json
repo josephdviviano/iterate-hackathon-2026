@@ -1,0 +1,119 @@
+{
+ "runs": 5,
+ "successes": 2,
+ "success_rate": 0.4,
+ "by_lane": {
+  "deck": {
+   "attempts": 1,
+   "successes": 0,
+   "rate": 0.3333333333333333,
+   "mean_gain": 0.0001
+  },
+  "explore": {
+   "attempts": 1,
+   "successes": 0,
+   "rate": 0.3333333333333333,
+   "mean_gain": 0.0001
+  },
+  "grid": {
+   "attempts": 1,
+   "successes": 0,
+   "rate": 0.3333333333333333,
+   "mean_gain": 0.0001
+  },
+  "refine": {
+   "attempts": 2,
+   "successes": 2,
+   "rate": 0.75,
+   "mean_gain": 0.0006429318300505138
+  }
+ },
+ "brier": 0.22222222222222224,
+ "by_predicted_bucket": {
+  "0.50": {
+   "n": 5,
+   "successes": 2
+  }
+ },
+ "arms": {
+  "prioritized": {
+   "children": 5,
+   "successes": 2,
+   "mean_gain": 0.00025722228491679153,
+   "by_lane": {
+    "deck": 1,
+    "explore": 1,
+    "grid": 1,
+    "refine": 2
+   }
+  },
+  "random": {
+   "children": 0,
+   "successes": 0,
+   "mean_gain": null,
+   "by_lane": {}
+  }
+ },
+ "records": [
+  {
+   "round": 4,
+   "child": "round4/child0",
+   "lane": "refine",
+   "parent": "round1/child1",
+   "parent_value": 0.39826093912202215,
+   "p_success": 0.5,
+   "predicted_gain": 0.0001,
+   "gain": 0.0010624741032033147,
+   "success": true,
+   "policy": "prioritized"
+  },
+  {
+   "round": 4,
+   "child": "round4/child1",
+   "lane": "explore",
+   "parent": "round3/child0",
+   "parent_value": 0.39927244570242554,
+   "p_success": 0.5,
+   "predicted_gain": 0.0001,
+   "gain": 0.0,
+   "success": false,
+   "policy": "prioritized"
+  },
+  {
+   "round": 5,
+   "child": "round5/child2",
+   "lane": "refine",
+   "parent": "round4/child1",
+   "parent_value": 0.39927226946843264,
+   "p_success": 0.6666666666666666,
+   "predicted_gain": 0.0010624741032033147,
+   "gain": 0.0002233895568977129,
+   "success": true,
+   "policy": "prioritized"
+  },
+  {
+   "round": 5,
+   "child": "round5/child1",
+   "lane": "deck",
+   "parent": "round4/child0",
+   "parent_value": 0.399323289342984,
+   "p_success": 0.5,
+   "predicted_gain": 0.0001,
+   "gain": 1.2388224146508975e-07,
+   "success": false,
+   "policy": "prioritized"
+  },
+  {
+   "round": 5,
+   "child": "round5/child0",
+   "lane": "grid",
+   "parent": "round4/child0",
+   "parent_value": 0.399323289342984,
+   "p_success": 0.5,
+   "predicted_gain": 0.0001,
+   "gain": 1.2388224146508975e-07,
+   "success": false,
+   "policy": "prioritized"
+  }
+ ]
+}

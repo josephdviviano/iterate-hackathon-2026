@@ -1,0 +1,33 @@
+{
+ "model": "opus",
+ "max_turns": 60,
+ "checker_policy": true,
+ "num_turns": 60,
+ "duration_ms": 1561472,
+ "total_cost_usd": 1.9433338000000002,
+ "is_error": false,
+ "subtype": "success",
+ "final_message": ", plus an early stop when the weights stop changing) |\n| Certification | 27 s wall, about 19 s CPU, on this machine under load 40\u201350 |\n| `confidence` | 0.001. The value is known to be more than 1e-4 below the supremum. |\n| `report.json` | `{\"c1_1_1_-2\": 0.001}` |\n\nYour assigned parent, `round1/child1`, is not in TASK.md, so I started from `round3/child0`.\n\nWhat I found:\n- **Fewer atoms cannot do better.** At 108 atoms, random restarts give the same weights to 1e-9. Changing the ladder span, the tie offset or the scale split does not help.\n- **More atoms is the only gain**, but each atom costs time. Float values for the same structure:\n\n| Atoms | Value |\n|---|---|\n| 128 | 0.399495 |\n| 160 | 0.399734 |\n| 256 | 0.400081 |\n\n  Even 256 atoms stays below 0.400695.\n- **Certification time sets the cap.** No two partial sums are equal, so the certifier builds a dictionary of about K\u2074/6 entries. On this machine:\n\n| Atoms | Certification CPU time |\n|---|---|\n| 108 | 17 s |\n| 116 | 27 s |\n| 128 | 70 s |\n\n  Your lane note says 104 atoms certify in about 1 s. I could not reproduce that here, so I stopped at 112. If the scoring machine is that fast, setting `LADDER_ATOMS` in `strategy.py` to 128 gives about +1.7e-4.\n\n**Risk:** 112 atoms may go over the 20 s certification limit. On this loaded machine it took about 19 s of CPU time and 27 s of wall time.\n\nExtra files I made: `strategy_orig.py`, `parent1.py`, `work/` (experiment scripts) and `best.json`/`check_log.jsonl` (made by `check.py`).",
+ "stderr_tail": "",
+ "returncode": 0,
+ "wall_s": 1563.4,
+ "check_runs": 2,
+ "check_totals": {
+  "certified": 2,
+  "estimated": 0,
+  "rejected": 0,
+  "strategy_s": 6.74,
+  "certify_s": 74.11,
+  "estimate_s": 0.0
+ },
+ "fitness": 0.8874318425184874,
+ "gaps": [
+  0.8874318425184874
+ ],
+ "lane": "refine",
+ "parents": [
+  "round3/child0",
+  "round3/child1"
+ ],
+ "check_output": "value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).\nkey                           value      kind       best      lower      upper  structure\nc1_1_1_-2                  0.399323 CERTIFIED   0.399323   0.259970   0.417000  112 atoms [0.0000:0.061 0.0000:0.046 0.0000:0.024 0.0000:0.019 0.0000:0.021 0.0000:0.024 0.0000:0.031 0.0000:0.016 0.0000:0.009 0.0000:0.009 0.0000:0.009 0.0000:0.009] ... (112 atoms)  strategy 2.7s certify 35.8s\n"
+}

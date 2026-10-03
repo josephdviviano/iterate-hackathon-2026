@@ -1,0 +1,32 @@
+{
+ "model": "opus",
+ "max_turns": 60,
+ "checker_policy": true,
+ "num_turns": 30,
+ "duration_ms": 499325,
+ "total_cost_usd": 0.8470628000000002,
+ "is_error": false,
+ "subtype": "success",
+ "final_message": "2 atoms).\n\n| Law | Value |\n|---|---|\n| Free weights on k/2^10 grid | 0.3833 |\n| Free weights on k/2^14 grid (start from a ladder) | 0.3891 |\n| Odd-numerator grid (no ties) | same as the plain grid |\n| Parent nested ladders, 112 atoms | 0.399323 (certified) |\n\n- **Structure the weights took:** the optimizer rebuilt a ratio-2 ladder by itself. It put small clusters of atoms at 1 \u2212 2^-j for each j \u2264 m, and about 0.47 of the mass at 0. This is evidence that the ladder is the correct shape.\n- **Why grids lose:** a grid of step 2^-m can hold only m ladder levels. The parent law needs a depth of about 2^-85, which no grid can give at a cost the checker can certify.\n- **Cost limit:** certification needs about K^4/6 dict entries for any ladder law. Smaller atom denominators give at most 1.5\u00d7 speed, which is not sufficient for more atoms.\n- **Timing risk:** on this machine, certification of the 112-atom law took 34 s, but the limit in TASK.md is 20 s. I kept 112 atoms because the parent passed with it. If the scorer runs on a machine as slow as this one, the law can time out. To certify in under 20 s here, the law must have about 100 atoms, and then the value falls below 0.3993.\n- **Confidence:** `report.json` gives `{\"c1_1_1_-2\": 0.001}`. The 0.400695 limit is known to be reachable, so a certified value of 0.399323 cannot be within 1e-4 of the supremum.\n\nThe 5-line header in `strategy.py` records these findings. The question that stays open is whether any law beats the 0.400695 limit.",
+ "stderr_tail": "",
+ "returncode": 0,
+ "wall_s": 501.0,
+ "check_runs": 1,
+ "check_totals": {
+  "certified": 1,
+  "estimated": 0,
+  "rejected": 0,
+  "strategy_s": 1.78,
+  "certify_s": 34.45,
+  "estimate_s": 0.0
+ },
+ "fitness": 0.8874318425184874,
+ "gaps": [
+  0.8874318425184874
+ ],
+ "lane": "grid",
+ "parents": [
+  "round4/child0"
+ ],
+ "check_output": "value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).\nkey                           value      kind       best      lower      upper  structure\nc1_1_1_-2                  0.399323 CERTIFIED   0.399323   0.259970   0.417000  112 atoms [0.0000:0.061 0.0000:0.046 0.0000:0.024 0.0000:0.019 0.0000:0.021 0.0000:0.024 0.0000:0.031 0.0000:0.016 0.0000:0.009 0.0000:0.009 0.0000:0.009 0.0000:0.009] ... (112 atoms)  strategy 2.2s certify 28.3s\n"
+}

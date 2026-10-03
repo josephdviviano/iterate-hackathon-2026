@@ -61,28 +61,54 @@ Files: `instances.json`, `verify.py`, `check.py`, `strategy.py`, `report.json`.
 """
 
 CHECK_SCRIPT = r'''
-import json, importlib.util, traceback, sys, math, time
+import json, importlib.util, traceback, sys, time, os
 from fractions import Fraction
 import verify
 rows = json.load(open("instances.json"))
+policy = not os.path.exists("ALWAYS_CERTIFY")
+best = json.load(open("best.json")) if (policy and os.path.exists("best.json")) else {}
 spec = importlib.util.spec_from_file_location("strategy", "strategy.py")
 mod = importlib.util.module_from_spec(spec)
 try:
     spec.loader.exec_module(mod)
 except Exception:
     print("LOAD ERROR\n" + traceback.format_exc()[-1500:]); sys.exit(1)
-print(f"{'key':24s} {'certified':>10s} {'bernoulli':>10s} {'hoeffding':>10s}  structure")
+def coerce(x):
+    if isinstance(x, str): return Fraction(x)
+    if isinstance(x, list): return [coerce(y) for y in x]
+    return x
+def fmt(x): return "   none   " if x is None else f"{x:10.6f}"
+print("value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).")
+stats = {"certified": 0, "estimated": 0, "rejected": 0, "strategy_s": 0.0, "certify_s": 0.0, "estimate_s": 0.0}
+print(f"{'key':24s} {'value':>10s} {'kind':>9s} {'best':>10s} {'lower':>10s} {'upper':>10s}  structure")
 for d in rows:
-    n, m, t = int(d["n"]), Fraction(d["m"]), Fraction(d["t"])
+    args = [coerce(x) for x in d["args"]]
     t0 = time.time()
     try:
-        atoms, weights = mod.strategy(n, m, t)
-        c = verify.certify_raw(atoms, weights, n, m, t)
-        atoms_s = " ".join(f"{float(a):.4f}:{float(w):.3f}" for a, w in zip(c["atoms"], c["weights"]))
-        print(f"{d['key']:24s} {c['value']:10.6f} {d['bernoulli']:10.6f} {d['hoeffding']:10.6f}  "
-              f"{len(c['atoms'])} atoms [{atoms_s}]{' (repaired)' if c['repaired'] else ''}  {time.time()-t0:.1f}s")
+        atoms, weights = mod.strategy(*args)
+        t1 = time.time()
+        est = verify.estimate_raw(atoms, weights, d)
+        inc = best.get(d["key"])
+        if not policy or inc is None or est["upper"] > inc + 1e-9:
+            c = verify.certify_raw(atoms, weights, d); kind = "CERTIFIED"; val = c["value"]
+            if inc is None or val > inc: best[d["key"]] = val
+        else:
+            c = est; kind = "ESTIMATE"; val = est["value"]
+        t2 = time.time()
+        stats["strategy_s"] += t1 - t0
+        stats["certify_s" if kind == "CERTIFIED" else "estimate_s"] += t2 - t1
+        stats["certified" if kind == "CERTIFIED" else "estimated"] += 1
+        atoms_s = " ".join(f"{float(a):.4f}:{float(w):.3f}" for a, w in list(zip(c["atoms"], c["weights"]))[:12])
+        more = "" if len(c["atoms"]) <= 12 else f" ... ({len(c['atoms'])} atoms)"
+        print(f"{d['key']:24s} {val:10.6f} {kind:>9s} {fmt(best.get(d['key']))} {fmt(d['lower'])} {fmt(d['upper'])}  "
+              f"{len(c['atoms'])} atoms [{atoms_s}]{more}{' (repaired)' if c.get('repaired') else ''}  "
+              f"strategy {t1-t0:.1f}s {'certify' if kind == 'CERTIFIED' else 'estimate'} {t2-t1:.1f}s")
     except Exception as e:
-        print(f"{d['key']:24s} {'REJECTED':>10s} {d['bernoulli']:10.6f} {d['hoeffding']:10.6f}  {str(e)[-200:]}")
+        stats["rejected"] += 1
+        print(f"{d['key']:24s} {'REJECTED':>10s} {'':>9s} {fmt(best.get(d['key']))} {fmt(d['lower'])} {fmt(d['upper'])}  {str(e)[-200:]}")
+json.dump(best, open("best.json", "w"))
+with open("check_log.jsonl", "a") as f:
+    f.write(json.dumps(dict(stats, t=time.time())) + "\n")
 '''
 
 STUB = '''"""Structure: (fill in)
@@ -125,17 +151,20 @@ class SynthResult:
     check_output: str = ""
 
 
-def _write_workspace(ws: Path, train: list[Instance], seed: str | None) -> None:
-    task = CONTRACT
+def _write_workspace(ws: Path, train: list, seed: str | None, task=None, checker_policy: bool = True) -> None:
+    if task is None:
+        from .task import hoeffding_task
+        task = hoeffding_task()
+    if not checker_policy:
+        (ws / "ALWAYS_CERTIFY").write_text("the checker certifies every evaluation (control arm)\n")
+    text = task.contract
     if seed:
-        task += "\n# Hypothesis to build on\n\n" + seed.strip() + "\n"
-    (ws / "TASK.md").write_text(task)
-    (ws / "instances.json").write_text(json.dumps(
-        [dict(i.to_json(), key=i.key, bernoulli=float(bernoulli_value(i)), hoeffding=hoeffding_bound(i))
-         for i in train], indent=1))
-    (ws / "verify.py").write_text(_standalone_verifier())
+        text += "\n# Hypothesis to build on\n\n" + seed.strip() + "\n"
+    (ws / "TASK.md").write_text(text)
+    (ws / "instances.json").write_text(json.dumps(task.rows(train), indent=1))
+    (ws / "verify.py").write_text(task.verifier_source)
     (ws / "check.py").write_text(CHECK_SCRIPT)
-    (ws / "strategy.py").write_text(STUB)
+    (ws / "strategy.py").write_text(task.stub)
 
 
 def synthesize(train: list[Instance], seed: str | None = None, *, model: str = "opus",
@@ -143,10 +172,11 @@ def synthesize(train: list[Instance], seed: str | None = None, *, model: str = "
     return synthesize_in(train, seed, model=model, max_turns=max_turns, timeout_s=timeout_s, keep_dir=keep_dir)
 
 
-def synthesize_in(train: list[Instance], seed: str | None = None, *, model: str = "opus",
-                  max_turns: int = 40, timeout_s: float = 900, keep_dir: Path | None = None) -> SynthResult:
+def synthesize_in(train: list, seed: str | None = None, *, model: str = "opus",
+                  max_turns: int = 40, timeout_s: float = 900, keep_dir: Path | None = None,
+                  task=None, checker_policy: bool = True) -> SynthResult:
     ws = Path(tempfile.mkdtemp(prefix="hsynth_"))
-    _write_workspace(ws, train, seed)
+    _write_workspace(ws, train, seed, task, checker_policy)
     prompt = ("Read TASK.md, then implement strategy in strategy.py. Run `python3 check.py` to see certified "
               "values. Stop when you cannot improve, after writing report.json.")
     cmd = ["claude", "-p", prompt, "--model", model, "--output-format", "json",
@@ -156,7 +186,7 @@ def synthesize_in(train: list[Instance], seed: str | None = None, *, model: str 
            "--allowedTools", "Read", "Write", "Edit", "Glob", "Grep", "Bash(python3:*)", "Bash(python:*)"]
     env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
     t0 = time.time()
-    meta: dict = {"model": model, "max_turns": max_turns}
+    meta: dict = {"model": model, "max_turns": max_turns, "checker_policy": checker_policy}
     try:
         proc = subprocess.run(cmd, cwd=ws, capture_output=True, text=True, timeout=timeout_s, env=env)
         try:
@@ -179,8 +209,19 @@ def synthesize_in(train: list[Instance], seed: str | None = None, *, model: str 
             report = json.loads((ws / "report.json").read_text())
         except json.JSONDecodeError:
             meta["report_error"] = "invalid json"
-    check = subprocess.run(["python3", "check.py"], cwd=ws, capture_output=True, text=True, timeout=300)
-    result = SynthResult(source=source, seed=seed, report=report, meta=meta, check_output=check.stdout[-3000:])
+    log_path = ws / "check_log.jsonl"
+    if log_path.exists():
+        runs = [json.loads(l) for l in log_path.read_text().splitlines() if l.strip()]
+        meta["check_runs"] = len(runs)
+        meta["check_totals"] = {k: round(sum(r.get(k, 0) for r in runs), 2)
+                                for k in ("certified", "estimated", "rejected", "strategy_s", "certify_s", "estimate_s")}
+    (ws / "best.json").unlink(missing_ok=True)  # the final run below certifies everything, as the runner will
+    try:
+        check = subprocess.run(["python3", "check.py"], cwd=ws, capture_output=True, text=True, timeout=600)
+        check_output = check.stdout[-3000:]
+    except subprocess.TimeoutExpired:
+        check_output = "final check.py timed out after 600 s; the runner certifies the strategy with its own timeout"
+    result = SynthResult(source=source, seed=seed, report=report, meta=meta, check_output=check_output)
     if keep_dir is not None:
         shutil.copytree(ws, keep_dir, dirs_exist_ok=True)
     shutil.rmtree(ws, ignore_errors=True)

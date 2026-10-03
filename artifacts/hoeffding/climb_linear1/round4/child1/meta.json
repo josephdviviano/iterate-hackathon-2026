@@ -1,0 +1,33 @@
+{
+ "model": "opus",
+ "max_turns": 60,
+ "checker_policy": true,
+ "num_turns": 41,
+ "duration_ms": 1729720,
+ "total_cost_usd": 1.4253642,
+ "is_error": false,
+ "subtype": "success",
+ "final_message": "lane):**\n\n| Attempt | Result |\n|---|---|\n| Separated-scale formula `V = (1-p)[p\u00b3 + 3p\u00b2(1-p)Q1 + 3p(1-p)\u00b2Q2 + (1-p)\u00b3Q3]/(1-p\u2074)` | `Q = (1, 2/3, 0)` at `p = 0.4743` gives exactly 0.400695, so the BF limit is this nested ladder. To beat it, a law must make `Q3 > 0` pay for itself. |\n| Exact column generation from {0, 1/2, 1}, adding the best new atom each round | It rebuilt the 1 \u2212 2^-i ladder by itself and stopped at 0.3918. A midpoint variant gave 0.3909 with 209 atoms. |\n| Centres k/24 with micro ladders \u00b12^j and a recursive 0 | Gain over centre 1 alone: 0.0049 / 0.0013 / 0.0006 / 0.00035 at 8 / 16 / 24 / 32 levels. The extra centres only stand in for missing ladder levels. |\n| Sweep of the parent's parameters (level ratio, number of levels, scale gap, iterations) | All values \u2264 0.399272, so the parent is at a fixed point. |\n| 110 or 112 atoms | 0.399298 / 0.399323, but certification takes 20.4 s / 20.1 s CPU, over the 20 s limit. |\n\n**Files:**\n- `strategy.py`: the parent's law, with a new 5-line header that gives the lane (explore, result refine) and the findings above.\n- `report.json`: `{\"c1_1_1_-2\": 0.001}`. The certified value is 0.0014 below the proven lower bound 0.400695, so it cannot be within 1e-4 of the supremum.\n\n**Risk:** in the final `check.py` run, certification took 33 s wall clock (about 15.5 s CPU when I measured it separately). If the grader measures wall time on a loaded machine, the 108-atom law can go over the 20 s limit. The parent law has the same risk.",
+ "stderr_tail": "",
+ "returncode": 0,
+ "wall_s": 1731.7,
+ "check_runs": 2,
+ "check_totals": {
+  "certified": 2,
+  "estimated": 0,
+  "rejected": 0,
+  "strategy_s": 6.89,
+  "certify_s": 72.01,
+  "estimate_s": 0.0
+ },
+ "fitness": 0.8871072708007635,
+ "gaps": [
+  0.8871072708007635
+ ],
+ "lane": "explore",
+ "parents": [
+  "round3/child0",
+  "round3/child1"
+ ],
+ "check_output": "value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).\nkey                           value      kind       best      lower      upper  structure\nc1_1_1_-2                  0.399272 CERTIFIED   0.399272   0.259970   0.417000  108 atoms [0.0000:0.062 0.0000:0.046 0.0000:0.028 0.0000:0.024 0.0000:0.028 0.0000:0.037 0.0000:0.016 0.0000:0.009 0.0000:0.009 0.0000:0.009 0.0000:0.010 0.0000:0.010] ... (108 atoms)  strategy 2.0s certify 18.1s\n"
+}

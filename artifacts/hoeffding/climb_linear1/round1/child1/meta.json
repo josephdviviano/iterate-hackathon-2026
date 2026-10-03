@@ -1,0 +1,32 @@
+{
+ "model": "opus",
+ "max_turns": 60,
+ "checker_policy": true,
+ "num_turns": 34,
+ "duration_ms": 636405,
+ "total_cost_usd": 1.0876923999999997,
+ "is_error": false,
+ "subtype": "success",
+ "final_message": "om pool | Best float value | Structure the search chose |\n|---|---|---|\n| Uniform integer grid, N = 64 | 0.373 | Mass at 0 and 1, plus scattered atoms near the top |\n| Dyadic grid 1/128 + scaled copy at 0 | 0.3857 | Uneven grid, worse than the ladder |\n| Ladders at 1/4, 1/2, 3/4, 7/8, 1 + copy | 0.3938 | Only the ladder 1 \u2212 2^-i |\n| Grid + two-sided ladders at 1/2, 12 random starts | 0.3939 | Only the ladder 1 \u2212 2^-i |\n| 64-atom ladder + 2 off-ladder atoms just above 1/2 and 3/4 | +9e-7 | Not worth the extra atoms |\n\nEvery search went back to the parent's structure: a ladder 1 \u2212 2^-i with a scaled copy of itself at 0. I found no evidence against the conjecture that 0.400695 is the supremum.\n\n**Refinement:** The new law uses ladders 1 \u2212 2^-i at three nested scales, with 49, 11 and 3 levels, and an atom at 0. I tested every split of 63 ladder atoms across 3 or 4 scales, and 49/11/3 was the best. A pure-Python weight optimiser runs inside `strategy` in 1.2 s. Other values of c still use the parent's search, unchanged.\n\n**Atom limit:** The 128-atom cap is not the real limit. Certification cost grows as about K\u2074 (K = number of atoms), so 64 atoms takes 14.7 s here. 66 atoms would give about 0.398335 (+7e-5) but would take about 17 s to certify, too close to the 20 s limit, so I kept 64.\n\n**Confidence:** I set `confidence` to 0.001 and wrote `report.json` as `{\"c1_1_1_-2\": 0.001}`. The certified value is at least 0.0024 below the supremum, because the supremum is at least 0.400695.",
+ "stderr_tail": "",
+ "returncode": 0,
+ "wall_s": 637.3,
+ "check_runs": 1,
+ "check_totals": {
+  "certified": 1,
+  "estimated": 0,
+  "rejected": 0,
+  "strategy_s": 1.2,
+  "certify_s": 14.68,
+  "estimate_s": 0.0
+ },
+ "fitness": 0.8806657878670263,
+ "gaps": [
+  0.8806657878670263
+ ],
+ "lane": "explore",
+ "parents": [
+  "seed:best7/run0"
+ ],
+ "check_output": "value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).\nkey                           value      kind       best      lower      upper  structure\nc1_1_1_-2                  0.398261 CERTIFIED   0.398261   0.259970   0.417000  64 atoms [0.0000:0.104 0.0000:0.034 0.0000:0.037 0.0000:0.052 0.0000:0.023 0.0000:0.016 0.0000:0.017 0.0000:0.017 0.0000:0.018 0.0000:0.019 0.0000:0.021 0.0000:0.022] ... (64 atoms)  strategy 1.2s certify 15.0s\n"
+}

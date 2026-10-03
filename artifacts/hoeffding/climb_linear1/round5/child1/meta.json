@@ -1,0 +1,32 @@
+{
+ "model": "opus",
+ "max_turns": 60,
+ "checker_policy": true,
+ "num_turns": 13,
+ "duration_ms": 431624,
+ "total_cost_usd": 0.6559313999999998,
+ "is_error": false,
+ "subtype": "success",
+ "final_message": "earch objective, not certified) | 16 cards | 0.388747 (strict 0.363312, tie 0.065430) |\n| Two-level law from that deck, \u03b7 = 2^-25 | 81 | 0.387083 (certified) |\n| Parent's nested ladders (returned) | 112 | 0.399323 (certified) |\n\n- **Best deck:** 8 zeros, then 6951423, 10985173, 12244371, 13020158, 13178745, 13241302, 13290499, 13297718. I found it by annealing, with n from 4 to 16 and card values up to 2^24.\n- **Why decks stop near 0.388:** every card has weight 1/n, so mass at 0 can only change in steps of 1/16. The ladder law can set each weight freely, and that is where its advantage comes from.\n- **Why the ladder law cannot grow:** with all-distinct partial sums, certification cost grows as about K\u2074/6. On this machine, the 112-atom law took 21 s of CPU and 38\u201344 s of wall-clock time to certify. That is already over the 20 s limit, so more atoms are not possible.\n- **Header:** the 5-line header in `strategy.py` records the best deck, its strict and tie fractions, the certified two-level value, and the open question of whether any law beats 0.400695. The editor shows type warnings in code inherited from the parent; the code runs correctly.\n- **Confidence:** `confidence` gives 0.001 for (1, 1, 1, \u22122), and `report.json` contains `{\"c1_1_1_-2\": 0.001}`. The value is that low because 0.399323 is more than 1e-4 below the known 0.400695 limit, so it cannot be within 1e-4 of the supremum.\n\nI stopped because I found no change that improves the certified value inside the time limit.",
+ "stderr_tail": "",
+ "returncode": 0,
+ "wall_s": 433.4,
+ "check_runs": 2,
+ "check_totals": {
+  "certified": 2,
+  "estimated": 0,
+  "rejected": 0,
+  "strategy_s": 5.84,
+  "certify_s": 82.7,
+  "estimate_s": 0.0
+ },
+ "fitness": 0.8874318425184874,
+ "gaps": [
+  0.8874318425184874
+ ],
+ "lane": "deck",
+ "parents": [
+  "round4/child0"
+ ],
+ "check_output": "value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).\nkey                           value      kind       best      lower      upper  structure\nc1_1_1_-2                  0.399323 CERTIFIED   0.399323   0.259970   0.417000  112 atoms [0.0000:0.061 0.0000:0.046 0.0000:0.024 0.0000:0.019 0.0000:0.021 0.0000:0.024 0.0000:0.031 0.0000:0.016 0.0000:0.009 0.0000:0.009 0.0000:0.009 0.0000:0.009] ... (112 atoms)  strategy 2.6s certify 26.8s\n"
+}

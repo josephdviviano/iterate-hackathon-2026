@@ -1,0 +1,33 @@
+{
+ "model": "opus",
+ "max_turns": 60,
+ "checker_policy": true,
+ "num_turns": 33,
+ "duration_ms": 509472,
+ "total_cost_usd": 1.0880172000000001,
+ "is_error": false,
+ "subtype": "success",
+ "final_message": "t get above the 0.400695 limit.\n\n| Change | Effect |\n|---|---|\n| Ladder gaps changed from 1 \u2212 2^-i to 1 \u2212 u(2^(L\u2212j+1) \u2212 1), so e_{j\u22121} = 2e_j + u | Removes the three-way ties: +2e-5 at 64 atoms, and fewer bits per atom, so certification is faster |\n| 4 nested scales instead of 3, each about 0.229 the size of the one above (83/19/4/1) | +1e-5 |\n| 108 atoms instead of 64 | +9.5e-4 |\n| Weight search runs 1000 iterations instead of 3000 | Stays within 1e-10 of convergence; the strategy runs in 1.8 s |\n\n**Certification time is close to the limit.** The checker certified the 108-atom law in 20.7 s wall time, about 14 s CPU, with the machine load average at 18. The 20 s rule is for wall time, so this run went over it. The cost grows faster than K^4: 128 atoms took 64 s here. TASK.md says the grader certifies 104 atoms in about 1 s, so 108 atoms should be safe there. On a machine as loaded as this one, it could time out and score zero. If you want a margin, set `LADDER_ATOMS = 104`: that law gets about 0.399213, which is 6e-5 less, and certified in about 11 s here.\n\n**What did not help at 108 atoms:**\n- Changing the gap between scales: no effect.\n- A 5th scale: less value.\n- An extra atom at exactly 1: less value.\n\n`confidence` returns 0.001, and `report.json` has `{\"c1_1_1_-2\": 0.001}`. The 0.400695 limit is a known lower bound on the supremum, and 0.399272 is more than 1e-4 below it.\n\nI deleted my scratch files. The checker's `best.json` and `check_log.jsonl` stay in the directory.",
+ "stderr_tail": "",
+ "returncode": 0,
+ "wall_s": 510.7,
+ "check_runs": 1,
+ "check_totals": {
+  "certified": 1,
+  "estimated": 0,
+  "rejected": 0,
+  "strategy_s": 1.8,
+  "certify_s": 20.68,
+  "estimate_s": 0.0
+ },
+ "fitness": 0.8871072708007635,
+ "gaps": [
+  0.8871072708007635
+ ],
+ "lane": "refine",
+ "parents": [
+  "round1/child1",
+  "round1/child0"
+ ],
+ "check_output": "value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).\nkey                           value      kind       best      lower      upper  structure\nc1_1_1_-2                  0.399272 CERTIFIED   0.399272   0.259970   0.417000  108 atoms [0.0000:0.062 0.0000:0.046 0.0000:0.028 0.0000:0.024 0.0000:0.028 0.0000:0.037 0.0000:0.016 0.0000:0.009 0.0000:0.009 0.0000:0.009 0.0000:0.010 0.0000:0.010] ... (108 atoms)  strategy 2.3s certify 21.1s\n"
+}

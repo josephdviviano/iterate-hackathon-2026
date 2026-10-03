@@ -1,0 +1,32 @@
+{
+ "model": "opus",
+ "max_turns": 60,
+ "checker_policy": true,
+ "num_turns": 43,
+ "duration_ms": 929272,
+ "total_cost_usd": 1.4222514000000002,
+ "is_error": false,
+ "subtype": "success",
+ "final_message": "n `c1_1_1_-2`, up from the parent's 0.398198 (+3.9e-5). It is a refine-lane law. The main risk is time: certification now takes 17.5\u201318.4 s against the 20 s limit, so a machine about 10% slower would time out and score zero on this instance.\n\n| Item | Parent | New |\n|---|---|---|\n| Atoms | 64 | 65 |\n| Ladder offsets | 4^-j | (2^(L-j) \u2212 1)\u00b7u |\n| Largest atom denominator | 128 bits | 74 bits |\n| Certify time | 16.3\u201317.6 s | 17.5\u201318.4 s |\n| Strategy time | 2.5 s | 2.6 s |\n\n**Why I stopped here:**\n- **Weights are already optimal.** For the 64-atom law with its atoms held fixed, optimizing all weights together gained only 1e-8.\n- **Atom count is limited by certification time.** Cost grows with the number of distinct partial sums, about C(K+2,3)\u00b7K, and the ladder needs its sums to be distinct. The new offsets remove only about 2.6% of the sums, and the smaller denominators speed certification by about 2%. That is enough for 1 more atom.\n- **More atoms would help but do not fit.** Ignoring the time limit, 96 atoms give about 0.39901 and 128 atoms give about 0.39935 (float estimates). 66 atoms take about 19 s and 68 take 20.5 s.\n\n`confidence` returns 0.002: the certified value is 0.0025 below the limit value 0.400695, so it cannot be within 1e-4 of the supremum. `report.json` is `{\"c1_1_1_-2\": 0.002}`.\n\nI put the 5-line header in `strategy.py`. The question it leaves open is the same as the parent's: whether a law outside the ladder-plus-copy family does better at a fixed atom count.",
+ "stderr_tail": "",
+ "returncode": 0,
+ "wall_s": 937.6,
+ "check_runs": 3,
+ "check_totals": {
+  "certified": 3,
+  "estimated": 0,
+  "rejected": 0,
+  "strategy_s": 7.68,
+  "certify_s": 52.95,
+  "estimate_s": 0.0
+ },
+ "fitness": 0.8805145122590143,
+ "gaps": [
+  0.8805145122590143
+ ],
+ "lane": "refine",
+ "parents": [
+  "seed:best7/run0"
+ ],
+ "check_output": "value is CERTIFIED (exact) when the law can beat your best so far on that instance, else ESTIMATE (float bracket).\nkey                           value      kind       best      lower      upper  structure\nc1_1_1_-2                  0.398237 CERTIFIED   0.398237   0.259970   0.417000  65 atoms [0.0000:0.105 0.0000:0.052 0.0000:0.032 0.0000:0.038 0.0000:0.039 0.0000:0.015 0.0000:0.015 0.0000:0.016 0.0000:0.016 0.0000:0.017 0.0000:0.018 0.0000:0.019] ... (65 atoms)  strategy 2.5s certify 17.7s\n"
+}
