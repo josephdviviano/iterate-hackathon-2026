@@ -8,6 +8,38 @@ version 19; every number on it points to a RESULTS entry).
 
 ## State
 
+Update 2026-10-03 23:50 BST (session iterate-62). Everything below this
+paragraph is the 22:00 state; these are the changes since.
+
+- Every build is committed and pushed on `jdv` (head `6b881e6`): the
+  environment port, reward hacking, Hoeffding, ONC, BioProt, SciGym, the idea
+  filter, docs and packages, in one commit per build. Left out on purpose:
+  `external/conceptualizer` and eight ONC and Hoeffding logs that hold
+  absolute paths. The `*_opine_devin.log` files also hold absolute paths
+  (tracebacks); commit the run directories, not the logs.
+- P0 passed (tr87 probe 1.0). P1 wave one (ka59 L2, ar25 L3, m0r0 L3) ran
+  at 22:45. At about 22:50 the hotspot lost DNS for 20 minutes; every runner
+  process died in its poll loop and 14 sessions kept running on Devin with
+  no local owner. `committee.recover` (new) lists finished committee
+  sessions no stored run references, matches each to its condition and run
+  index by the seed text in its prompt, and writes the run; all 14 were
+  recovered, 3 never-started runs were topped up with `--start`. The Devin
+  client now retries over transport errors, and one failed run no longer
+  ends its condition. Recovered runs carry `recovered: true` and a `wall_s`
+  that includes the suspension.
+- P1 results so far (frame_out, `committee.summary`): ka59 L2 single 0.89,
+  0.89, 0.91 against vote 0.909, AUROC 0.81, unanimous error 0.03 against
+  split 0.33; m0r0 L3 single 0.86 x3 against vote 0.864, AUROC 0.69,
+  unanimous 0.08 against split 0.38; ar25 L3 single 0.98, 0.98, 0.93
+  against vote 1.000 (7 of 8 members in; run6 still running). Wave two
+  (sk48 L2, ar25 L7, ls20 L3, g50t L1) launched 23:20.
+- P2 started on the two levels under 0.95: m0r0 L3 (`L3_f40_probe33`: the
+  first probe is the most disagreed row, then every remaining row in time
+  order; the 33rd refutes the last 4 survivors, so the passive split equals
+  the active one and only the counterexample text differs) and ka59 L2
+  (`L2_f40_probe2`: probes at steps 79 and 101, 42 held out). Passive and
+  object-diff arms wait on these results.
+
 - Branch `jdv`, head `e953262`, pushed to origin. `main` holds only the
   pre-event commits; the user's decision is "pull from main, push jdv only".
   Merging into `main` is the user's call and is needed before the demo can
