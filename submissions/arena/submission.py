@@ -32,7 +32,7 @@ HYP = {
     "compile": True,
     "muon_lr": 0.24,
     "muon_momentum": 0.6,
-    "ns_steps": 5,
+    "ns_steps": 3,
 }
 
 
