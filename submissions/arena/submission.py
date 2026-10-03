@@ -40,16 +40,17 @@ ACTS = dict(relu=lambda: nn.ReLU(inplace=True), gelu=nn.GELU, silu=lambda: nn.Si
 
 def newton_schulz(g, steps=3, eps=1e-7):
     # Approximately orthogonalize g (Muon); quintic iteration coefficients from Keller Jordan.
+    # Works on a batch [..., m, n] of matrices.
     a, b, c = 3.4445, -4.7750, 2.0315
     x = g.bfloat16()
-    x = x / (x.norm() + eps)
-    tall = g.size(0) > g.size(1)
+    x = x / (x.norm(dim=(-2, -1), keepdim=True) + eps)
+    tall = g.size(-2) > g.size(-1)
     if tall:
-        x = x.T
+        x = x.mT
     for _ in range(steps):
-        m = x @ x.T
+        m = x @ x.mT
         x = a * x + (b * m + c * m @ m) @ x
-    return x.T if tall else x
+    return x.mT if tall else x
 
 
 def muon_update(p, g, buf, lr, momentum, ns_steps=3):
@@ -57,6 +58,21 @@ def muon_update(p, g, buf, lr, momentum, ns_steps=3):
     g = g.add(buf, alpha=momentum)
     p.mul_(len(p) ** 0.5 / p.norm())  # fixed filter norm instead of weight decay
     p.sub_(newton_schulz(g.reshape(len(g), -1), ns_steps).view(p.shape) * lr)
+
+
+def muon_batched(ps, gs, bufs, lr, momentum, ns_steps=3):
+    # muon_update for several filters at once: zero padding commutes with Newton-Schulz,
+    # so small matrices share one batched iteration instead of many tiny kernels.
+    rows, cols = max(len(p) for p in ps), max(p[0].numel() for p in ps)
+    padded = []
+    for p, g, buf in zip(ps, gs, bufs):
+        buf.mul_(momentum).add_(g)
+        g = g.add(buf, alpha=momentum).reshape(len(g), -1)
+        p.mul_(len(p) ** 0.5 / p.norm())
+        padded.append(F.pad(g, (0, cols - g.shape[1], 0, rows - g.shape[0])))
+    out = newton_schulz(torch.stack(padded), ns_steps)
+    for p, o in zip(ps, out):
+        p.sub_(o[: len(p), : p[0].numel()].reshape(p.shape) * lr)
 
 
 def conv_bn(c_in, c_out, act, pool=False):
@@ -158,9 +174,13 @@ def build(context: BuildContext):
             segs = [torch.compile(f, dynamic=False) for f in segs]
         fixed = {id(p) for p in model.body[:frozen].parameters()}
         active = [i for i, p in enumerate(params) if id(p) not in fixed]
-        act_conv = [i for i in conv if i in active]
+        tail = {id(p) for p in model.body[-3:].parameters()}
+        # Tail filters: Muon via hooks, overlapped with backward. Stem filters: one batch.
+        act_conv = [i for i in conv if i in active and id(params[i]) in tail]
+        stem_conv = [i for i in conv if i in active and id(params[i]) not in tail]
         act_sgd = [i for i in sgd if i in active]
         act_decay = [i for i in decay if i in active]
+        batch_fn = torch.compile(muon_batched, dynamic=False) if cuda else muon_batched
 
         def step(x):
             if frozen:
@@ -169,11 +189,11 @@ def build(context: BuildContext):
             for f in segs[1 if frozen else 0:]:
                 with torch.autocast(device.type, dtype=torch.bfloat16):
                     x = f(x)
-            update(x, active, act_conv, act_sgd, act_decay)
+            update(x, active, act_conv, act_sgd, act_decay, stem_conv, batch_fn)
 
         return step
 
-    def update(logits, active, conv, sgd, decay):
+    def update(logits, active, conv, sgd, decay, stem_conv, batch_fn):
         muon_lr = state.lr * muon_scale
         main = torch.cuda.current_stream() if cuda else None
 
@@ -197,6 +217,16 @@ def build(context: BuildContext):
             grads[i] = g
         for h in handles:
             h.remove()
+        if stem_conv:
+            with torch.no_grad():
+                batch_fn(
+                    [params[i] for i in stem_conv],
+                    [grads[i] for i in stem_conv],
+                    [state.bufs[i] for i in stem_conv],
+                    muon_lr,
+                    muon_mom,
+                    ns,
+                )
         if cuda and conv:
             main.wait_stream(side)
         with torch.no_grad():
