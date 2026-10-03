@@ -27,7 +27,7 @@ HYP = {
     "widths": (128, 384, 576),
     "convs_per_group": (2, 3, 3),
     "bn_momentum": 0.6,
-    "scaling_factor": 1 / 9,
+    "scaling_factor": 2 / 9,
     "compile": True,
     "res_schedule": ((20, 2), (24, 3), (28, 2)),  # (resolution, epochs) stages before full 32 px
     "freeze_first_full_res": True,  # freeze group 1's first conv block in the 32 px epochs
