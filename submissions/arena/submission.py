@@ -33,7 +33,7 @@ HYP = {
     "head_lr_mult": 2.0,
     "contrast": 0.13,  # per-image contrast/brightness jitter amplitudes (uniform +-)
     "brightness": 0.14,
-    "res_schedule": ((1.5, 20), (3.0, 28)),  # (until epoch, size): whole images downsampled; 32px afterwards
+    "res_schedule": ((1.5, 20), (3.5, 28)),  # (until epoch, size): whole images downsampled; 32px afterwards
     "muon_lr": 0.16,
     "muon_momentum": 0.8,
     "ns_steps": 3,
