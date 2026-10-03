@@ -119,8 +119,26 @@ uv run python -m committee.experiment ar25 --level 3 --train-n 30 --runs 8 --see
 uv run python -m committee.cegis ar25 --level 3 --report      # every stored round vs passive
 uv run python -m committee.cegis ar25 --level 3 --from-probe 1 --runs 8 --backend devin   # round 3
 uv run python -m committee.live ar25 --level 3 --steps 300 --probe 4   # live play, local engine, needs ARC_API_KEY
+uv run python -m committee.experiment ar25 --level 3 --train-frac 0.4 --runs 8 --seeded --backend devin \
+    --condition committee_frameout_devin --frame-out --parallel 4   # OPINE-World's environment: frame in, frame out
 uv run pytest
 ```
+
+Environment modes (`committee.env`, one implementation for every build). By
+default a program maps the object list to the next object list. `--frame`
+also gives it the 64x64 before frame, where OPINE-World's rule reads the
+walls, floor and hazards the extractor does not emit. `--frame-out` is
+OPINE-World's rule itself: the program returns the next frame and is
+admitted by frame equality, cell by cell; the released extractor on the
+predicted frame gives the object view for the effect-row analyses. The
+mode is stored in each run's `meta.json`, and `evaluate`, `cegis`,
+`calibrate`, `selection`, `live` and `demo` read it from there, so a round 2
+or a live round plays in the mode of the committee it starts from. Every
+number in RESULTS.md R1 to R32 is in the objects mode. Since 2026-10-03
+(evening) the workspace checker in every mode applies the verifier's static
+filter and rule 2 of the task lists the full set of rejected patterns; R1 to
+R33 and RH1 to RH9 were synthesized with the earlier checker, which reported
+ALL PASS on a source the verifier then rejected.
 
 Synthesis backends, selected with `--backend`:
 
@@ -176,8 +194,10 @@ uv run python -m rewardhack.report demo                                 # 90-sec
 uv run python -m rewardhack.report table                                # outcome counts per synthesizer model
 uv run python -m rewardhack.experiment ls20 --level 3 --runs 3 --frame  # program also gets the before frame, as OPINE does
 uv run python -m rewardhack.experiment re86 --level 5 --runs 3 --frame-out  # program returns the next frame, as OPINE does
-uv run modal run -m rewardhack.modal_synth --game re86 --level 5 --runs 3 --frame-out  # same, one Modal container per run
+uv run modal run -m rewardhack.modal_synth --game re86 --level 5 --runs 3 --frame-out --backend devin  # same, via Devin sessions driven from Modal
 uv run python -m rewardhack.split tr87:2 wa30:1                         # committee disagreement on decided vs undecided rows
+uv run python -m rewardhack.live_audit ar25 --level 3 --members ar25/L3_f40_probe4_live70/live_devin \
+    --log ar25/live/L3_cegis_devin_probe4_seed0.json                    # audit a live ARC round on the engine
 uv run modal deploy src/rewardhack/modal_app.py                         # open-weight synthesizer (vLLM on Modal)
 uv run python -m rewardhack.experiment tr87 --level 1 --runs 3 --contradiction --abstain \
     --backend modal --model Qwen/Qwen2.5-Coder-7B-Instruct --max-turns 4   # chat loop, 4 checker rounds
@@ -235,3 +255,149 @@ Credits for this part:
 - Ideas: adaptive conformal inference (Gibbs and Candès, 2021); potential-based
   reward shaping (Ng, Harada and Russell, 1999); the Brier score as a proper
   scoring rule (Brier, 1950); group-relative policy gradient (GRPO, Shao et al., 2024).
+
+## BioProt selective prediction (Track 2.3, bio domain)
+
+Does an agent know which of its own lab protocols are bad? The agent writes a
+full protocol as pseudocode for each of the 100 BioProt protocols (title,
+human description, the admissible pseudofunctions in shuffled order; five
+samples per protocol at temperature 0.7). Each plan is scored against the
+expert pseudocode by the normalised Levenshtein distance between function
+sequences, and is acceptable at or below 0.4, a threshold fixed before any
+plan was scored. Four uncertainty signals are collected per plan, side by
+side: self-consistency across the five samples (label free), verbalised
+confidence with an explicit abstain channel, sequence logprob, and a
+PASS or FAIL self-critique, the last two in separate calls against the
+stored plan so the elicitation cannot change what is judged. Plans are
+sorted by uncertainty and the abstention threshold is swept: the
+risk-coverage curve, its area (AURC), the selective risk at 0.9, 0.75 and
+0.5 coverage, with a random-order and an oracle baseline on every plot and
+95% intervals from a bootstrap over protocols. Three open-weight models
+from three families, each served by vLLM on Modal. See RESULTS.md B1 to B4.
+
+Result (RESULTS.md B1, binary risk, 500 plans per model; intervals from a
+bootstrap over protocols):
+
+| Model | Error at full coverage | Self-consistency AURC | Verbalised confidence AURC | Sequence logprob AURC | Error at half coverage, best signal |
+|---|---|---|---|---|---|
+| Qwen3-Coder-30B-A3B | 0.69 | 0.57 [0.44, 0.70] | 0.49 [0.38, 0.62] | 0.67 [0.55, 0.78] | 0.53 |
+| gpt-oss-120b | 0.61 | 0.48 [0.34, 0.61] | 0.46 [0.35, 0.58] | 0.61 [0.51, 0.70] | 0.45 |
+| Mistral-Small-24B | 0.70 | 0.47 [0.34, 0.59] | 0.52 [0.41, 0.64] | 0.69 [0.59, 0.78] | 0.50 |
+
+Verbalised confidence and self-consistency rank plans better than random
+order on every model; sequence logprob is flat at the random line. Keeping
+the more confident half of the plans cuts the error by 21 to 29 percent
+(from 0.61 to 0.70 down to 0.45 to 0.54). The confidence number is a rank, not a probability:
+the models say 66 to 86 while 31 to 40 percent of plans are acceptable (ECE
+0.26 to 0.53), the same shape as the committee's vote share (R22). The R22 conformal
+wrapper over the same scores holds the 0.90 coverage target on every model
+and signal (B3): it commits on 22 to 57 percent of plans at 0.62 to 0.83
+accuracy and abstains on the rest, and the plans it passes for execution
+carry error 0.18 to 0.43 against 0.61 to 0.70 when everything passes. Shuffling
+the functions halves accuracy and moves the stated confidence by 3 to 8
+points (B2), so the signal does not track task difficulty. The highest-risk
+plans are not the dangerous ones: on Qwen they unroll a repeated step once
+per tube. The severity subset that would separate verbose from dangerous is
+written as a template (`artifacts/bioprot/severity_template.csv`) and needs
+a wet-lab reader.
+
+![risk-coverage curves](artifacts/bioprot/risk_coverage.png)
+
+The committee method on the same plans (B4): members are the samples,
+admitted when they call only the given functions, voting with equal weight
+over identical call sequences. Disagreement predicts the committee's error at
+AUROC 0.69 to 0.77 per family, split committees err far more often than
+unanimous ones, and the vote lifts accuracy by at most 3 points over a single
+sample while "any member right" sits 7 to 28 points higher, the same shape as
+R13 and R23. A cross-family committee of all 15 samples is the strongest
+uncertainty on the benchmark: graded disagreement AURC 0.42 against
+0.64 random, below every single-sample signal, with no elicitation call, and its
+conformal sets commit on 53% of protocols at 0.81 accuracy. A step gate that
+executes the agreed prefix and stops at the first disagreement buys little,
+because plans depart from the expert order early.
+
+
+```
+uv run python -m bioprot.generate --model qwen --k 5              # 100 protocols x 5 samples, shuffled functions
+uv run python -m bioprot.score --model qwen                       # normalised Levenshtein, precision, recall, acceptable flag
+uv run python -m bioprot.uncertainty --model qwen                 # the four signals; two elicitation calls per plan
+uv run python -m bioprot.report                                   # curves, AURC, baselines, calibration, severity template
+uv run python -m bioprot.conformal                                # R22 conformal sets over the scores, 0.90 coverage (B3)
+uv run python -m bioprot.committee                                # the committee method against single-sample baselines (B4)
+uv run python -m bioprot.generate --model qwen --k 5 --unshuffled # order-leak ablation
+uv run python -m bioprot.generate --model qwen --k 5 --description ai       # GPT-4 descriptions
+uv run python -m bioprot.generate --model qwen --k 5 --temperature 1.0      # sample diversity
+COMMITTEE_LLM=gptoss COMMITTEE_LLM_APP=bioprot-llm-gptoss uv run modal deploy -m committee.modal_llm   # the gpt-oss server
+COMMITTEE_LLM=mistral COMMITTEE_LLM_APP=bioprot-llm-mistral uv run modal deploy -m committee.modal_llm # the Mistral server
+uv run pytest tests/test_bioprot.py
+```
+
+Models: `qwen` (Qwen3-Coder-30B-A3B-Instruct-FP8), `gptoss` (gpt-oss-120b,
+reasoning effort low), `mistral` (Mistral-Small-24B-Instruct-2501). Server
+URLs are read from `.env.committee` (`OPENAI_BASE_URL`, `BIOPROT_GPTOSS_URL`,
+`BIOPROT_MISTRAL_URL`). `haiku` runs the Claude Code CLI with no tools in a
+Modal container (`bioprot.modal_claude`) and needs a `claude-auth` secret that
+logs the CLI in. Every raw reply is stored in
+`artifacts/bioprot/<condition>/generations.jsonl`; `scores.jsonl` and
+`uncertainty.jsonl` join on `(protocol_id, sample_idx)`; `summary.json`
+holds every number with its interval.
+
+Credits for this part:
+
+- Data: BioProt, the 100 protocols with expert pseudocode from BioPlanner
+  (O'Donoghue, Shtedritski, Ginger, Abboud, Ghareeb and Rodriques, 2023,
+  arXiv:2310.10632; github.com/bioplanner/bioplanner), read from the
+  `external/bioplanner` submodule as frozen input. The metric follows the
+  paper's definition; no code is copied.
+- Pre-trained models: gpt-oss-120b (OpenAI, Apache-2.0) and
+  Mistral-Small-24B-Instruct-2501 (Mistral AI, Apache-2.0), served with vLLM on
+  Modal beside Qwen3-Coder-30B.
+- Ideas: risk-coverage curves and AURC (Geifman and El-Yaniv, 2017);
+  self-consistency as an uncertainty signal (Wang et al., 2023); the abstain
+  design of LAB-Bench (Laurent et al., 2024).
+
+## SciGym reaction discovery (Track 2.3, the full loop on a bio benchmark)
+
+SciGym (Duan, Lu, Harrigan, Maddison et al., NeurIPS 2025 Datasets and
+Benchmarks) hides the reactions of a curated BioModels network and lets an
+agent run experiments on a simulator: observe, set a species' initial
+concentration, knock a species out. Unlike BioProt, this is a world the
+agent can probe, so the whole ARC loop applies. Members are reaction
+networks proposed in text by the model and built into SBML by us; a member's
+rate constants are fitted to every observed trajectory by least squares, and
+it is admitted when the fitted model reproduces every experiment within a
+SMAPE tolerance of 0.15 (the function set was the verifier on BioProt; here
+the simulator is). The committee's next experiment is the candidate on which
+admitted members' predicted trajectories diverge most; members that miss the
+observed result are refuted and resynthesized on the counterexample; the
+committee's answer is the member closest to all others in reaction-set
+distance, with the majority reaction set reported beside it. Scoring follows
+the paper: reaction matching precision, recall and F1 by reactant and
+product multisets, and the trajectory SMAPE on held-out perturbations.
+
+Three arms on the same systems, experiment budget and model: the committee
+with disagreement-chosen experiments, the same committee with a fixed
+experiment order, and a single member with the fixed order. The paper's
+frontier-model rows are the external reference. See RESULTS.md B5.
+
+```
+uv run modal run -m scigym.modal_app --arm committee_probe --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40
+uv run modal run -m scigym.modal_app --arm committee_fixed --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40
+uv run modal run -m scigym.modal_app --arm single_fixed   --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40
+uv run python -m scigym.report --model qwen                       # arms side by side, paired test, the paper's rows
+uv run python -m scigym.loop --arm committee_probe --model qwen --only BIOMD0000000036   # the same loop locally
+uv run pytest tests/test_scigym.py
+```
+
+Credits for this part:
+
+- Benchmark: SciGym (Duan, Lu, Harrigan, Maddison et al., 2025,
+  arXiv:2507.02083, paper CC BY 4.0); the 137 small systems are read from the
+  `h4duan/scigym-sbml` dataset on Hugging Face into `cache/` as frozen input.
+  The systems are curated BioModels entries (Malik-Sheriff et al., 2020). The
+  metric definitions are reimplemented from the paper; no code is copied.
+- Libraries: libroadrunner (Apache-2.0) simulates SBML; python-libsbml (LGPL)
+  reads and writes it; SciPy fits the rate constants.
+- Ideas: query by committee for experiment design (Seung, Opper and
+  Sompolinsky, 1992); counterexample-guided inductive synthesis
+  (Solar-Lezama et al., 2006).
