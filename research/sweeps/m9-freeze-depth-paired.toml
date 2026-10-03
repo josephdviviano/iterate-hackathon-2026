@@ -1,0 +1,41 @@
+# Modal A100 same-host paired timing of the S44 survivors on the current base (DCT, 7.75 epochs,
+# max-autotune as submitted). 4 hosts x 1 block x 10 seeds; arm order alternates between hosts.
+#   .venv-modal/bin/modal run research/modal_a100.py::interleave --sweep research/sweeps/m9-freeze-depth-paired.toml --hosts 4 --blocks 1
+name = "m9-freeze-depth-paired"
+submission = "research/lab_recipe"
+seeds = [4900, 4901, 4902, 4903, 4904, 4905, 4906, 4907, 4908, 4909, 4910, 4911, 4912, 4913, 4914, 4915, 4916, 4917, 4918, 4919, 4920, 4921, 4922, 4923, 4924, 4925, 4926, 4927, 4928, 4929, 4930, 4931, 4932, 4933, 4934, 4935, 4936, 4937, 4938, 4939]
+devices = []
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+epochs = 7.75
+compile_mode = "max-autotune"
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+stage1_cooldown = [0.6, 0.8]                  # cooldown + exact stage-1 freeze from 80%
+freeze_schedule = [[0.8, 1]]
+[[configs]]
+stage1_cooldown = [0.55, 0.75]                # freeze from 75%
+freeze_schedule = [[0.75, 1]]
+[[configs]]
+stage_depths = [2, 3, 3]                      # depth-2 stage 1, +0.25 epoch
+epochs = 8.0
+[[configs]]
+stage_depths = [3, 2, 3]                      # depth-2 stage 2, +0.5 epoch
+epochs = 8.25
+[[configs]]                                   # freeze 80% + depth-2 stage 2
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+stage_depths = [3, 2, 3]
+epochs = 8.25

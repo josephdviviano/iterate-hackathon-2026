@@ -360,6 +360,26 @@
 - **Decision consequence:** Keep our submission as the team entry; if Muon is pursued, port their optimiser into the lab on our base and cap build time; tell the teammates their builds risk the 600 s timeout.
 - **Resolution:** Our submission leads; Muon port optional.
 
+### F-046 — resolved, material
+
+- **Observation:** S42 (20 seeds 4500-4519, current submission base, control 75.27%): orthogonal init of the non-identity conv rows 75.27%; 2-D DCT filter-bank init 75.44% (+0.17); deterministic ZerO-style Hadamard init 75.23%; SkipInit residual gates from 0 / 0.25: 74.29 / 74.65%; DCT + gate 0 74.60%. S43 (40 fresh seeds 4600-4639): control 8.0 / 7.75 epochs 75.25 / 75.07%; DCT 8.0 / 7.75 epochs 75.36 / 75.23% (SE about 0.04).
+- **Interpretation:** The DCT filter-bank start for each stage's widening outputs replicates (+0.17, +0.11, +0.15 pp) and buys 0.25 epoch: DCT at 7.75 epochs matches the 8.0-epoch control (75.23 vs 75.25%). Orthogonal and ZerO inits are neutral, so the gain comes from the frequency structure, not orthogonality. Gating residual branches toward identity costs 0.6-1.0 pp: the residual convs already start as identity and the short run needs the branches from the first step. All of these are unlearned constructions (the rule-compliant stand-in for build-time pre-training, which RULES.md section 3 forbids).
+- **Decision consequence:** Adopt the DCT init with 7.75 epochs (372 steps); reject SkipInit; re-qualify on A100 PCIe.
+- **Resolution:** Adopted: DCT init, 7.75 epochs.
+
+### F-047 — resolved, blocking
+
+- **Observation:** M8b (Modal, NVIDIA A100 80GB PCIe 300 W, torch 2.4.0, 40 fresh random seeds): submission defaults with the DCT init at 7.75 epochs reach 75.244% (SD 0.182, min 74.78) at 5.526 s mean prepare+train (SD 0.015). M8a on an A100-SXM4 400 W: 75.177% (SD 0.271) at 4.991 s.
+- **Interpretation:** The entry still qualifies on the official card (margin above 5 SE on each block), now at 5.526 s: 2.0% below M7a and 8.3% below T-015, both cross-host comparisons.
+- **Decision consequence:** The DCT/7.75-epoch defaults are the current entry; stage-1 freeze and depth cuts (S44) go to paired A100 timing next.
+- **Resolution:** Entry qualifies at 5.526 s on A100 PCIe.
+
+### F-048 — open, material
+
+- **Observation:** S44 (20 seeds 4700-4719, bias scaler 16 at 8.0 epochs base, control 75.24% at 5.20 s local): stage-1 lr cooldown 0.6->0.8 75.19% (5.04 s); the same cooldown plus freezing stage 1 from 80% 75.19% (identical) at 4.72 s; cooldown 0.5->0.7 + freeze from 70% 74.99% (4.72 s); 18 px first phase 75.15%; depth-2 stage 1 at 8.25 epochs 75.07% (4.84 s); depth-2 stage 2 at 8.5 epochs 75.11% (4.85 s). Arms ran on two GPUs, so local times are indicative.
+- **Interpretation:** Cooling stage 1's lr to zero by 80% costs about 0.05 pp, and the freeze that then skips stage 1's backward is exact (identical accuracy), saving an estimated 6-9% because it removes backward work in the expensive 32 px tail. Freezing from 70% costs 0.25 pp. Depth-2 stage cuts trade about 0.02 pp per 1% time, below the 0.054 exchange rate. The 18 px phase saves nothing measurable and costs accuracy.
+- **Decision consequence:** Confirm freeze (80%, 75%), depth cuts and the freeze + depth stack on 40 fresh seeds on the current base (S45) and time them same-host on A100 (M9); reject the 18 px phase.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -443,6 +463,13 @@
 - **Decision:** Set bias_scaler 16 and epochs 8.0 (384 steps); keep everything else.
 - **Rationale:** Scaler 16 replicated in five sweeps (+0.24 to +0.40 pp) and holds control accuracy at 8.0 epochs (75.26% vs 75.19%, 40 seeds), a 3% step cut with an unchanged qualification margin; 7.75 epochs is too close to 75%.
 - **Alternatives:** 7.75 epochs (75.10%, about 2.5 SE above the threshold; qualification risk too high); WSD + balanced order on top (no added gain over scaler 16 in S39)
+
+### D-011 — settled
+
+- **Question:** Does the DCT filter-bank initialisation enter the submission, and at what budget?
+- **Decision:** Adopt the DCT init for the non-identity rows of each stage's widening conv and cut the budget to 7.75 epochs (372 steps).
+- **Rationale:** Replicated in S42 and S43 (+0.11 to +0.17 pp); at 7.75 epochs it matches the 8.0-epoch control on 40 fresh seeds, a 3% step cut at no time cost; bit-identical to the lab on CPU.
+- **Alternatives:** Keep 8.0 epochs and bank the accuracy margin (+0.11 pp); 7.5 epochs (untested; margin would likely fall below 75%)
 
 ## Deferred or rejected work
 

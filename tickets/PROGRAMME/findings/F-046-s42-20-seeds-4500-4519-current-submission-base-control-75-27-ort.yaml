@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-046
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S42 (20 seeds 4500-4519, current submission base, control 75.27%): orthogonal init of the
+  non-identity conv rows 75.27%; 2-D DCT filter-bank init 75.44% (+0.17); deterministic ZerO-style Hadamard
+  init 75.23%; SkipInit residual gates from 0 / 0.25: 74.29 / 74.65%; DCT + gate 0 74.60%. S43 (40 fresh
+  seeds 4600-4639): control 8.0 / 7.75 epochs 75.25 / 75.07%; DCT 8.0 / 7.75 epochs 75.36 / 75.23% (SE
+  about 0.04).'
+interpretation: 'The DCT filter-bank start for each stage''s widening outputs replicates (+0.17, +0.11,
+  +0.15 pp) and buys 0.25 epoch: DCT at 7.75 epochs matches the 8.0-epoch control (75.23 vs 75.25%). Orthogonal
+  and ZerO inits are neutral, so the gain comes from the frequency structure, not orthogonality. Gating
+  residual branches toward identity costs 0.6-1.0 pp: the residual convs already start as identity and
+  the short run needs the branches from the first step. All of these are unlearned constructions (the
+  rule-compliant stand-in for build-time pre-training, which RULES.md section 3 forbids).'
+decision_implication: Adopt the DCT init with 7.75 epochs (372 steps); reject SkipInit; re-qualify on
+  A100 PCIe.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: unresolved
+  rationale: frequency-selective filters on whitened inputs give early layers edge and texture detectors
+    from step 0
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s43-dct-confirm-table.csv
+  locator: research/evidence/T-019/s43-dct-confirm-table.csv
+  sha256: 85c7f79da26186d3c2950bce4c5fcb3e94d9bede05adc4aff503332b1760d9ce
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: 'Adopted: DCT init, 7.75 epochs.'

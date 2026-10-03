@@ -1,0 +1,23 @@
+schema_version: '1.0'
+decision_id: D-011
+task_id: T-019
+question: Does the DCT filter-bank initialisation enter the submission, and at what budget?
+decision: Adopt the DCT init for the non-identity rows of each stage's widening conv and cut the budget
+  to 7.75 epochs (372 steps).
+rationale: Replicated in S42 and S43 (+0.11 to +0.17 pp); at 7.75 epochs it matches the 8.0-epoch control
+  on 40 fresh seeds, a 3% step cut at no time cost; bit-identical to the lab on CPU.
+alternatives:
+- Keep 8.0 epochs and bank the accuracy margin (+0.11 pp)
+- 7.5 epochs (untested; margin would likely fall below 75%)
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s43-dct-confirm-table.csv
+  locator: research/evidence/T-019/s43-dct-confirm-table.csv
+  sha256: 85c7f79da26186d3c2950bce4c5fcb3e94d9bede05adc4aff503332b1760d9ce
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: settled

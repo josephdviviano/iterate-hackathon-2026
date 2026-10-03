@@ -6,6 +6,8 @@ statistics held in buffers, and returns float32 logits from a single view.
 
 from __future__ import annotations
 
+import math
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -115,6 +117,40 @@ def reset_model(model: Net) -> None:
         elif hasattr(module, "reset_parameters"):
             module.reset_parameters()
     model.whiten.bias.zero_()
+    for module in model.modules():
+        if isinstance(module, Conv):
+            dct_init_(module.weight)
+
+
+def dct_basis(size: int) -> torch.Tensor:
+    """[size*size, size, size] orthonormal 2-D DCT-II basis patterns."""
+    n = torch.arange(size, dtype=torch.float64)
+    c = torch.cos(math.pi * (n[None, :] + 0.5) * n[:, None] / size)
+    c[0] /= math.sqrt(2)
+    c *= math.sqrt(2 / size)
+    return torch.einsum("ui,vj->uvij", c, c).reshape(size * size, size, size).float()
+
+
+@torch.no_grad()
+def dct_init_(weight: torch.Tensor) -> None:
+    """Re-initialise the conv rows after the identity block (each stage's widening outputs) as a
+    DCT filter bank: filter o is the 2-D DCT pattern o mod 9 times an orthonormal in-channel
+    mixing vector, scaled to the default (Kaiming) row norm. Unlearned: a fixed basis with
+    per-trial random mixing from the generator the harness seeds."""
+    cin, kh = weight.size(1), weight.size(2)
+    rest = weight[cin:]
+    n = rest.size(0)
+    if n == 0:
+        return
+    device = weight.device
+    target = rest.float().flatten(1).norm(dim=1).mean()
+    basis = dct_basis(kh).to(device)
+    mix = torch.empty(n, cin, device=device)
+    nn.init.orthogonal_(mix)
+    pattern = basis[torch.arange(n, device=device) % len(basis)]
+    new = mix[:, :, None, None] * pattern[:, None]
+    new = new / new.flatten(1).norm(dim=1).clamp_min(1e-12).view(-1, 1, 1, 1) * target
+    rest.copy_(new.to(rest))
 
 
 @torch.no_grad()

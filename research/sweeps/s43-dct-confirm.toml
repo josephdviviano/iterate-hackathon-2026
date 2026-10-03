@@ -1,0 +1,31 @@
+# Fresh-seed confirmation of the S42 DCT filter-bank init (+0.17 pp, best of 7 arms) on the
+# current submission base, with an epoch-cut cell to price it. 40 fresh seeds, both GPUs.
+name = "s43-dct-confirm"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [4600, 4601, 4602, 4603, 4604, 4605, 4606, 4607, 4608, 4609, 4610, 4611, 4612, 4613, 4614, 4615, 4616, 4617, 4618, 4619, 4620, 4621, 4622, 4623, 4624, 4625, 4626, 4627, 4628, 4629, 4630, 4631, 4632, 4633, 4634, 4635, 4636, 4637, 4638, 4639]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+
+[[configs]]                                   # control (= submission)
+epochs = 8.0
+[[configs]]
+epochs = 8.0
+conv_init = "dct"
+[[configs]]
+epochs = 7.75
+conv_init = "dct"
+[[configs]]
+epochs = 7.75

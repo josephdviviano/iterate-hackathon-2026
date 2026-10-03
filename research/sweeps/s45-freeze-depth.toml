@@ -1,0 +1,42 @@
+# Fresh-seed accuracy for the S44 survivors on the current submission base (DCT, 7.75 epochs):
+# stage-1 cooldown + exact freeze (80% / 75%), depth-2 stage 1 or 2 with extra epochs, and the
+# freeze + depth stack. 40 seeds, both GPUs; paired A100 timing in M9.
+name = "s45-freeze-depth"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [4800, 4801, 4802, 4803, 4804, 4805, 4806, 4807, 4808, 4809, 4810, 4811, 4812, 4813, 4814, 4815, 4816, 4817, 4818, 4819, 4820, 4821, 4822, 4823, 4824, 4825, 4826, 4827, 4828, 4829, 4830, 4831, 4832, 4833, 4834, 4835, 4836, 4837, 4838, 4839]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+epochs = 7.75
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+stage1_cooldown = [0.6, 0.8]                  # cooldown + exact stage-1 freeze from 80%
+freeze_schedule = [[0.8, 1]]
+[[configs]]
+stage1_cooldown = [0.55, 0.75]                # freeze from 75%
+freeze_schedule = [[0.75, 1]]
+[[configs]]
+stage_depths = [2, 3, 3]                      # depth-2 stage 1, +0.25 epoch
+epochs = 8.0
+[[configs]]
+stage_depths = [3, 2, 3]                      # depth-2 stage 2, +0.5 epoch
+epochs = 8.25
+[[configs]]                                   # freeze 80% + depth-2 stage 2
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+stage_depths = [3, 2, 3]
+epochs = 8.25

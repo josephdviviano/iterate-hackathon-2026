@@ -1,0 +1,28 @@
+schema_version: '2.0'
+finding_id: F-047
+task_id: T-019
+result_kind: positive
+importance: blocking
+observation: 'M8b (Modal, NVIDIA A100 80GB PCIe 300 W, torch 2.4.0, 40 fresh random seeds): submission
+  defaults with the DCT init at 7.75 epochs reach 75.244% (SD 0.182, min 74.78) at 5.526 s mean prepare+train
+  (SD 0.015). M8a on an A100-SXM4 400 W: 75.177% (SD 0.271) at 4.991 s.'
+interpretation: 'The entry still qualifies on the official card (margin above 5 SE on each block), now
+  at 5.526 s: 2.0% below M7a and 8.3% below T-015, both cross-host comparisons.'
+decision_implication: The DCT/7.75-epoch defaults are the current entry; stage-1 freeze and depth cuts
+  (S44) go to paired A100 timing next.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: m8-official-equivalent.txt
+  locator: research/evidence/T-019/m8-official-equivalent.txt
+  sha256: dd87516e6f5fca2d892a6a5b6203580ece25987d50ff3499d0ec90533b4e4dab
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Entry qualifies at 5.526 s on A100 PCIe.

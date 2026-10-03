@@ -1,0 +1,42 @@
+# Agent round 2 budget hypotheses on the current submission base (X-005): FreezeOut-style stage-1
+# lr cooldown, alone and with the exact freeze that skips stage 1's backward (accuracy must match
+# the cooldown arm; time drops); an 18 px first phase; and stage depth cuts with extra epochs.
+# 20 seeds, both GPUs; local time is indicative (paired A100 timing for survivors).
+name = "s44-budget-round2"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [4700, 4701, 4702, 4703, 4704, 4705, 4706, 4707, 4708, 4709,
+         4710, 4711, 4712, 4713, 4714, 4715, 4716, 4717, 4718, 4719]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+epochs = 8.0
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+stage1_cooldown = [0.6, 0.8]                  # stage-1 lr -> 0 by 80%, no freeze
+[[configs]]
+stage1_cooldown = [0.6, 0.8]                  # + exact freeze from 80% (skips stage-1 backward)
+freeze_schedule = [[0.8, 1]]
+[[configs]]
+stage1_cooldown = [0.5, 0.7]
+freeze_schedule = [[0.7, 1]]
+[[configs]]
+res_schedule = [[0.0, 18], [0.5, 32]]         # 18 px first phase (same stage-2/3 grids as 20 px)
+[[configs]]
+stage_depths = [2, 3, 3]                      # depth-2 stage 1, +0.25 epoch
+epochs = 8.25
+[[configs]]
+stage_depths = [3, 2, 3]                      # depth-2 stage 2, +0.5 epoch
+epochs = 8.5

@@ -15,7 +15,7 @@ class RecipeConfig:
     """
 
     widths: tuple[int, int, int] = (128, 384, 640)
-    epochs: float = 8.0
+    epochs: float = 7.75
     batch_size: int = 1024
     lr: float = 11.5
     momentum: float = 0.85
