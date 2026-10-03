@@ -196,7 +196,7 @@ def live_round(game: str, level: int, train_frac: float, probe: int, log_path: P
         return
     base.parent.mkdir(parents=True, exist_ok=True)
     (base.parent / "split.json").write_text(json.dumps(
-        {"source": str(cond.relative_to(ARTIFACTS)), "live_log": str(log_path.relative_to(ARTIFACTS)),
+        {"source": str(cond.relative_to(ARTIFACTS)), "live_log": str(log_path.resolve().relative_to(ARTIFACTS)),
          "through": through, "refuting_move": refuting, "actions": [r["action"] for r in log[:through + 1]]}, indent=1))
     run_split(train_all, [], base, seeds, cfg, f"{game} L{level} {condition}", 0, parallel)
 
