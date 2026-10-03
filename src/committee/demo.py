@@ -138,6 +138,17 @@ def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
         inside = "yes, by abstention" if t["abstain"] else ("yes" if t["hit"] else "no")
         print(f"    step {t['step']:4d}  set: {what:<44}  truth inside: {inside}")
 
+    base0 = condition_dir(game, level, train_frac, committee)
+    if test_level is None and any(base0.parent.parent.glob(f"{base0.parent.name}_probe*")):
+        from .cegis import report
+        rounds = report(game, level, train_frac, committee, "cegis_devin", "passive_devin")
+        print(f"\n[7] Closing the loop: observe the probe that refutes every member, resynthesize on the "
+              f"counterexample, score on the {rounds['n_common']} transitions no round observed.")
+        for name, r in rounds["arms"].items():
+            print(f"    {name:9s} observed {r['observed']}  vote {r['vote']:.2f}  members {min(r['member_accuracy']):.2f} "
+                  f"to {max(r['member_accuracy']):.2f}  distinct {r['distinct']}  "
+                  f"unanimous {r['unanimous_n']} (error {r['unanimous_error']:.2f})")
+
 
 def main(argv: list[str] | None = None) -> None:
     import argparse

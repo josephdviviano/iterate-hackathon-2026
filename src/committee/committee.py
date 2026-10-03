@@ -16,6 +16,7 @@ import gzip
 import json
 import math
 from dataclasses import dataclass
+from functools import cached_property
 
 from .verify import canonical
 
@@ -47,6 +48,11 @@ class Member:
     test_preds: list[list[dict] | None]
     length: int
 
+    @cached_property
+    def keys(self) -> list[str]:
+        """Canonical JSON of each prediction, computed once per member."""
+        return [json.dumps(canonical(p)) if p is not None else "<error>" for p in self.test_preds]
+
 
 @dataclass
 class Vote:
@@ -74,8 +80,7 @@ class Committee:
     def vote(self, index: int) -> Vote:
         dist: dict[str, float] = {}
         for m, w in zip(self.members, self.weights):
-            pred = m.test_preds[index]
-            key = json.dumps(canonical(pred)) if pred is not None else "<error>"
+            key = m.keys[index]
             dist[key] = dist.get(key, 0.0) + w
         prediction = max(dist, key=lambda k: dist[k])
         if len(dist) > 1:
@@ -94,8 +99,7 @@ class Committee:
         sharpen the point prediction; equal weights keep every surviving hypothesis visible."""
         counts: dict[str, int] = {}
         for m in self.members:
-            pred = m.test_preds[index]
-            key = json.dumps(canonical(pred)) if pred is not None else "<error>"
+            key = m.keys[index]
             counts[key] = counts.get(key, 0) + 1
         if len(counts) < 2:
             return 0.0
@@ -107,10 +111,8 @@ class Committee:
         truth = [json.dumps(canonical(a)) for a in test_after]
         correct = [v.prediction == t for v, t in zip(votes, truth)]
         simplest = self.members[self.weights.index(max(self.weights))]
-        simplest_correct = [p is not None and json.dumps(canonical(p)) == t
-                            for p, t in zip(simplest.test_preds, truth)]
-        member_acc = [sum(p is not None and json.dumps(canonical(p)) == t for p, t in zip(m.test_preds, truth))
-                      / max(1, len(truth)) for m in self.members]
+        simplest_correct = [k == t for k, t in zip(simplest.keys, truth)]
+        member_acc = [sum(k == t for k, t in zip(m.keys, truth)) / max(1, len(truth)) for m in self.members]
         disagreement = [v.disagreement for v in votes]
         uniform = [self.uniform_disagreement(i) for i in range(len(votes))]
         errors = [not c for c in correct]
@@ -127,8 +129,7 @@ class Committee:
             "reliability": reliability(disagreement, errors),
             "reliability_uniform": reliability(uniform, errors),
             "mean_disagreement": sum(disagreement) / max(1, len(disagreement)),
-            "n_distinct_behaviours": len({tuple(json.dumps(canonical(p)) if p is not None else "<error>"
-                                                for p in m.test_preds) for m in self.members}),
+            "n_distinct_behaviours": len({tuple(m.keys) for m in self.members}),
             "per_transition": [{"disagreement": round(d, 4), "uniform_disagreement": round(u, 4), "correct": c,
                                 "n_distinct": v.n_distinct}
                                for d, u, c, v in zip(disagreement, uniform, correct, votes)],

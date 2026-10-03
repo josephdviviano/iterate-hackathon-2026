@@ -45,10 +45,6 @@ def _truth(test: list[Transition]) -> list[str]:
     return [json.dumps(canonical(t.after_objs)) for t in test]
 
 
-def _pred_key(pred: list[dict] | None) -> str:
-    return json.dumps(canonical(pred)) if pred is not None else "<error>"
-
-
 def count_priority(train: list[Transition], test: list[Transition]) -> list[float]:
     """Higher for transitions whose object rows have fewer train observations."""
     matrix = EffectMatrix.from_transitions(train)
@@ -86,7 +82,7 @@ def simulate(members: list[Member], test: list[Transition], strategy: str, lam: 
         """Error of the survivor that is right most often on the unobserved transitions: selection in hindsight."""
         if not unobserved:
             return 0.0
-        return min(sum(_pred_key(m.test_preds[i]) != truth[i] for i in unobserved) for m in current) / len(unobserved)
+        return min(sum(m.keys[i] != truth[i] for i in unobserved) for m in current) / len(unobserved)
 
     best_error_left = [best_error(alive)]
     vote_error_left.append(vote_error(alive))
@@ -101,7 +97,7 @@ def simulate(members: list[Member], test: list[Transition], strategy: str, lam: 
             pick = rng.choice(unobserved)
         probes.append(pick)
         unobserved.remove(pick)
-        survivors = [m for m in alive if _pred_key(m.test_preds[pick]) == truth[pick]]
+        survivors = [m for m in alive if m.keys[pick] == truth[pick]]
         if not survivors:
             falsified_at = len(probes)
             members_left.append(0)
