@@ -450,13 +450,14 @@ def inputs_results():
 def llm(role, prompt, schema, tools=""):
     """One separate, stateless LLM call with structured output. Returns (dict, cost)."""
     os.makedirs(META_DIR, exist_ok=True)
-    cmd = [LLM_CMD, "-p", prompt, "--model", META_MODEL, "--effort", META_EFFORT, "--tools", tools,
+    # the prompt goes on stdin: as an argument it hits the OS limit once the results grow (~128 KB)
+    cmd = [LLM_CMD, "-p", "--model", META_MODEL, "--effort", META_EFFORT, "--tools", tools,
            "--no-session-persistence", "--strict-mcp-config", "--output-format", "json",
            "--json-schema", json.dumps(schema)]  # no MCP servers: the prompt is the only input  # fmt: skip
     if tools:
         cmd += ["--allowedTools", tools]
     with tempfile.TemporaryDirectory() as empty:  # nothing on disk to look at: only the prompt
-        p = subprocess.run(cmd, cwd=empty, capture_output=True, text=True, timeout=META_TIMEOUT)
+        p = subprocess.run(cmd, cwd=empty, input=prompt, capture_output=True, text=True, timeout=META_TIMEOUT)
     stamp = time.strftime("%Y%m%dT%H%M%S")
     with open(os.path.join(META_DIR, f"{stamp}-{role}.json"), "w") as f:
         f.write(p.stdout or p.stderr)

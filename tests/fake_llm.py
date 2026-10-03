@@ -10,12 +10,12 @@ import re
 import sys
 
 argv = sys.argv[1:]
-prompt = argv[argv.index("-p") + 1]
+prompt = sys.stdin.read()  # research.py sends the prompt on stdin
 tools = argv[argv.index("--tools") + 1]
 role = re.search(r"^ROLE: (\w+)", prompt, re.MULTILINE).group(1)
 with open(os.environ["FAKE_LLM_LOG"], "a") as f:
     f.write(json.dumps({"role": role, "tools": tools, "cwd_files": os.listdir("."),
-                        "model": argv[argv.index("--model") + 1], "has_results": "=== RESULTS" in prompt}) + "\n")
+                        "model": argv[argv.index("--model") + 1], "has_results": "=== RESULTS" in prompt, "prompt_bytes": len(prompt.encode())}) + "\n")
 tree = re.findall(r"^(H[\d.]+)\t\d\t[^\t]*\topen\t", prompt, re.MULTILINE)
 if role == "search":
     out = {"findings": [{"source": "arXiv:0000.00000", "claim": "lower lr helps", "relevance": "H1",

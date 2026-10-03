@@ -239,6 +239,18 @@ class TestHypothesisFramework(Workspace):
         self.assertEqual(meta[0]["cost_usd"], "0.03")
         self.assertNotIn("hypo", self.ok("research.py", "--help"))  # the experimenter cannot edit the tree
 
+    def test_large_inputs_reach_the_call(self):
+        self.start()
+        for k in range(60):  # notebook outcomes grow the "results" input well past the ~128 KB argv limit
+            with open(os.path.join(self.ws, "notebook", f"E9{k:02d}.md"), "w") as f:
+                f.write("## Outcome\n" + "long outcome text. " * 200 + "\n")
+        with open(os.path.join(self.ws, "results.tsv"), "a") as f:
+            for k in range(60):
+                f.write(f"E9{k:02d}\tabc1234\t1.0\t0.5\tno\tno\tdiscard\t-\tfiller\n")
+        research = load_research(self.ws)
+        research.run_ideate()
+        self.assertGreater(self.calls()[-1]["prompt_bytes"], 140_000)
+
     def results_of(self, name):
         lines = open(os.path.join(self.ws, name)).read().splitlines()
         h = lines[0].split("\t")
