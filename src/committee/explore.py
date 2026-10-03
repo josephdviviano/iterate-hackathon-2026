@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .committee import Committee, Member
 from .loader import Transition
@@ -28,6 +28,7 @@ class Trace:
     members_left: list[int]
     vote_error_left: list[float]
     falsified_at: int | None
+    best_error_left: list[float] = field(default_factory=list)
 
     @property
     def probes_to_collapse(self) -> int | None:
@@ -81,6 +82,13 @@ def simulate(members: list[Member], test: list[Transition], strategy: str, lam: 
         wrong = sum(c.vote(i).prediction != truth[i] for i in unobserved)
         return wrong / len(unobserved)
 
+    def best_error(current: list[Member]) -> float:
+        """Error of the survivor that is right most often on the unobserved transitions: selection in hindsight."""
+        if not unobserved:
+            return 0.0
+        return min(sum(_pred_key(m.test_preds[i]) != truth[i] for i in unobserved) for m in current) / len(unobserved)
+
+    best_error_left = [best_error(alive)]
     vote_error_left.append(vote_error(alive))
     while unobserved and alive:
         if strategy == "disagreement":
@@ -98,11 +106,13 @@ def simulate(members: list[Member], test: list[Transition], strategy: str, lam: 
             falsified_at = len(probes)
             members_left.append(0)
             vote_error_left.append(1.0)
+            best_error_left.append(1.0)
             break
         alive = survivors
         members_left.append(len(alive))
         vote_error_left.append(vote_error(alive))
-    return Trace(strategy, probes, members_left, vote_error_left, falsified_at)
+        best_error_left.append(best_error(alive))
+    return Trace(strategy, probes, members_left, vote_error_left, falsified_at, best_error_left)
 
 
 def compare_strategies(members: list[Member], train: list[Transition], test: list[Transition],

@@ -39,3 +39,18 @@ def test_disputed_probes_rank_by_disagreement_and_describe_outcomes():
     assert "nothing changes" in texts and any("x 0->1" in t for t in texts) and "error" in texts
     seed = targeted_seed(d, ["rule A", ""], 3)
     assert "step 11" in seed and "program 0: rule A" in seed and "program 1" not in seed
+
+
+def test_oracle_headroom_and_best_survivor_track_the_member_that_is_right():
+    from committee.selection import headroom
+
+    m1 = Member("m1", "", [A, A, B], length=10)   # right on every transition
+    m3 = Member("m3", "", [A, A, A], length=14)   # wrong on transition 2
+    m4 = Member("m4", "", [B, B, B], length=9)    # right on transition 2 only
+    test = _test_set()
+    h = headroom([m1, m3], test)
+    assert abs(h["mean_member"] - 5 / 6) < 1e-9 and (h["best_member"], h["oracle"]) == (1.0, 1.0)
+    h2 = headroom([m3, m4], test)   # complementary members: the oracle exceeds the best member
+    assert (h2["best_member"], h2["oracle"]) == (2 / 3, 1.0)
+    tr = simulate([m1, m3], test, "disagreement", lam=0.0)
+    assert tr.members_left[:2] == [2, 1] and tr.best_error_left[:2] == [0.0, 0.0]

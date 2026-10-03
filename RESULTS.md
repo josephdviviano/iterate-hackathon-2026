@@ -1087,3 +1087,56 @@ captured for these rounds because the resumed process predates that
 instrumentation. Runs: 1. Command: `uv run python -m hoeffding.climb --task
 linear --rounds 2 --children 2 --top 2 --max-turns 40 --timeout 1800
 --eval-timeout 600 --resume --tiers`. Commit: uncommitted, base a718512.
+
+## R23. Oracle headroom and probes as selection
+
+Inputs: the stored committee members on the four informative levels, 40%
+train, condition `committee_devin`. `committee.selection`; file
+`artifacts/selection.json`.
+
+**Headroom.** A held-out transition counts for the oracle when any member
+predicts it. The oracle bounds every weighting of the members.
+
+| Level | K | held-out | mean member | best member | equal-weight vote | oracle any-right |
+|---|---|---|---|---|---|---|
+| ar25 L3 | 8 | 44 | 0.48 | 0.64 | 0.48 | 0.64 |
+| m0r0 L3 | 8 | 44 | 0.76 | 0.77 | 0.77 | 0.77 |
+| sk48 L2 | 8 | 68 | 0.74 | 0.97 | 0.69 | 0.97 |
+| ar25 L7 | 8 | 65 | 0.41 | 0.42 | 0.42 | 0.42 |
+
+On every level the oracle equals the best member: no transition is
+predicted by a weaker member alone. No combination rule can beat the best
+member. The vote loses to it by 0.16 on ar25 L3 and 0.28 on sk48 L2, and
+matches it on m0r0 L3 and ar25 L7.
+
+**Probes as selection.** Observe one held-out transition, drop the members
+that mispredicted it, score the survivors' equal-weight vote on the
+transitions not yet observed. The best survivor is chosen in hindsight.
+
+Disagreement order: on all four levels the first probe falsifies every
+member, because the observed outcome is outside every member's prediction.
+This order selects nothing; it reports that a hypothesis is missing.
+
+Random order, vote accuracy of the survivors after n probes, mean over the
+orders with at least one survivor (20 orders; the count in parentheses):
+
+| Level | n = 0 | 1 | 2 | 3 | 4 | 5 | best member |
+|---|---|---|---|---|---|---|---|
+| ar25 L3 | 0.48 | 0.52 (11) | 0.57 (7) | 0.58 (5) | 0.56 (4) | 0.59 (3) | 0.64 |
+| sk48 L2 | 0.69 | 0.75 (20) | 0.77 (19) | 0.79 (16) | 0.85 (15) | 0.86 (15) | 0.97 |
+| m0r0 L3 | 0.77 | 0.77 (15) | 0.76 (10) | 0.76 (10) | 0.75 (10) | 0.74 (8) | 0.77 |
+| ar25 L7 | 0.42 | 0.41 (10) | 0.40 (1) | 0.39 (1) | | | 0.42 |
+
+Reading: selection by probes works where the members differ and the probe
+lands inside the version space. On sk48 L2, five random probes take the
+vote from 0.69 to 0.86 with 2.3 members left on average, against the best
+member at 0.97. It cannot work where the members agree: on m0r0 L3 and
+ar25 L7 a probe falsifies all members or none. The surviving orders are
+the ones that probed transitions some member got right, so the random
+curve is conditional on survival. The rule for an agent: a probe that
+splits the survivors selects among them; a probe that falsifies all of
+them calls for new hypotheses, which is the resynthesis step.
+
+Runs: 1, deterministic, with 20 random probe orders. Split: temporal, 40%
+train per level. Baseline: equal-weight vote with no probes. Command:
+`uv run python -m committee.selection`. Commit: uncommitted, base ee733d0.
