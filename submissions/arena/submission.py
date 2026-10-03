@@ -186,7 +186,7 @@ def build(context: BuildContext):
     torch.backends.cudnn.allow_tf32 = True
     model = Net(context.num_classes, hyp["widths"], hyp["depth"], hyp["bn_momentum"], hyp["scale"])
     model = model.to(device).to(memory_format=torch.channels_last)
-    step_model = torch.compile(model) if hyp["compile"] and device.type == "cuda" else model
+    step_model = torch.compile(model, mode="max-autotune-no-cudagraphs") if hyp["compile"] and device.type == "cuda" else model
     state = SimpleNamespace(model=model, step_model=step_model, context=context, hyp=hyp)
     # Warm up compilation and cuDNN autotuning on synthetic data (state is reset in prepare).
     bs = hyp["batch_size"]
