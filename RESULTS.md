@@ -1262,3 +1262,51 @@ Reading:
 | Baseline | Round 1 committee |
 | Command | `uv run python -m committee.live ar25 --level 3 --steps 300 --seed S [--probe 4]` |
 | Commit | dd76b2f; logs `artifacts/ar25/live/` |
+
+## R26. Live loop closed: resynthesis on the live counterexample
+
+Harness change first. R25 scored every move with a fresh process per member,
+which drops a program's hidden state between moves. `committee.live` now
+keeps one process per member for the scored trajectory (teacher forcing, as
+in `verify.run_program`); candidate actions are still chosen from stateless
+what-if predictions. Under this harness the R25 runs change in one place:
+round 1 on seed 1 is refuted at move 64 instead of 29 (vote 0.40 instead of
+0.34, AUROC 0.85 instead of 0.81). The other three runs are identical.
+
+Live counterexample round: train is the 33 recorded transitions of round 3
+plus the 71 live transitions of the seed 0 run through move 70, and the seed
+states the refuting move (counter 64 to 63, piece renaming). 8 members, all
+replay 104 of 104. Their notes name the rule the recorded data could not
+show: a hidden move budget of 128 whose bar displays min(budget, 64). The
+seed 1 run is a trajectory the new committee never saw.
+
+| Committee | Seed | Moves | Vote | AUROC | Unanimous n (error) | Split n (error) | First move with every member wrong |
+|---|---|---|---|---|---|---|---|
+| Round 1 | 0 | 160 | 0.40 | 0.60 | 140 (0.54) | 20 (1.00) | 64 |
+| Round 1 | 1 | 161 | 0.40 | 0.85 | 84 (0.36) | 77 (0.87) | 64 |
+| Round 3 | 0 | 157 | 0.41 | 0.52 | 154 (0.58) | 3 (1.00) | 64 |
+| Round 3 | 1 | 164 | 0.39 | 0.52 | 161 (0.60) | 3 (1.00) | 64 |
+| Live round | 0 | 144 | 0.71 | 0.79 | 120 (0.15) | 24 (1.00) | 70 |
+| Live round | 1 | 139 | 0.86 | 0.66 | 133 (0.10) | 6 (1.00) | 66 |
+
+Reading:
+
+1. The loop closes live. Observe the refuting move, resynthesize on it,
+   replay: the new committee predicts the counter tick at move 64 and every
+   move through 69 on seed 0, and live vote accuracy goes from 0.40 to 0.71
+   and 0.86.
+2. The next refutation is a different mechanic: an action 3 move at moves 70
+   and 81 on seed 0, and from about move 110 every prediction fails. That is
+   the next counterexample. Seed 1 is refuted at move 66.
+3. Where members disagree live, the vote is wrong almost every time (split
+   error 0.87 to 1.00), as on the recorded data.
+
+| Item | Value |
+|---|---|
+| Metric | Live vote accuracy, AUROC, unanimous and split error, first refuting move |
+| Runs | 6 live runs; 8 Devin sessions for the live round |
+| Split | Train 33 recorded plus 71 live (seed 0, moves 0 to 70); test is each live trajectory |
+| Baseline | Round 1 and round 3 under the same harness |
+| Command | `uv run python -m committee.live ar25 --level 3 --probe 4 --resynth-from artifacts/ar25/live/L3_cegis_devin_probe4_seed0.json --through 70 --runs 8 --backend devin --parallel 4`; `uv run python -m committee.live ar25 --level 3 --steps 300 --seed S --members-dir ar25/L3_f40_probe4_live70/live_devin` |
+| Commit | 0409cac (round), 00d9874 (harness and logs) |
+

@@ -70,3 +70,10 @@ def test_cegis_moves_the_falsifying_probe_into_train_and_names_the_refuted_predi
     assert [t.step for t in train2] == [1, 12] and [t.step for t in test2] == [10, 11]
     text = counterexample_text(members, test, probes)
     assert "step 12" in text and "2 program(s) predicted" in text and "1 program(s) predicted" in text
+
+
+def test_static_filter_rejects_socket_imports_not_the_word():
+    from committee.verify import static_violations
+
+    assert static_violations("import socket\n") and static_violations("from socket import create_connection\n")
+    assert not static_violations("def socket_inner(s):\n    return s  # a socket stops blocks\n")

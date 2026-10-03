@@ -1,0 +1,24 @@
+{
+ "seed": "Objects of type `wall` under action ACTION5 with touching neighbours [player] show mixed outcomes: gone x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.",
+ "synth": {
+  "backend": "devin",
+  "attachments_uploaded": 3,
+  "prompt_chars": 2938,
+  "session_id": "devin-10974f9012eb4061a6efed07dcee16ee",
+  "session_url": "https://app.devin.ai/sessions/10974f9012eb4061a6efed07dcee16ee",
+  "status": "blocked",
+  "wall_s": 460.6,
+  "nudges": 0,
+  "devin_train_pass": "35/35 transitions replay exactly",
+  "notes": "Player 5x5 moves 6/step; blocked by field top (y<8), wall pixels, invisible cell (20,14) (only explanation for t0 no-op, unconfirmed); wall handle cell walkable, body on it slides key end +6.\nA5 after a move: player path recorded -> ghost replay (one path step per successful player move, hidden under player at spawn), HUD colour-2 slot at (1,1), huds x+4, player -> spawn (14,8); A5 with ghost -> clear; A5 with no move since -> no-op.\nHypothesis wall A5 gone vs no_change = name index shift (wall last in sequential names, slot/ghost inserted before it) vs A5 no-op; not an object field.\nCounter w = 64-(n+1)//2 with hidden action count n (continuity-gated; stateless fallback n=2*(64-w) gives 16/35).\nUnconfirmed: ghost collisions/pressing handle, ghost path exhaustion, A5 with no prior move in mode0, right/bottom bounds.",
+  "passed": false
+ },
+ "check_output": "ERROR: forbidden: ['replay']",
+ "train_pass": [],
+ "test_pass": [],
+ "consistent": false,
+ "test_accuracy": null,
+ "error": "forbidden: ['replay']",
+ "source_bytes": 7021,
+ "finished_at": "2026-10-03T18:37:54"
+}

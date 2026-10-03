@@ -21,7 +21,8 @@ from pathlib import Path
 
 from .loader import Transition
 
-FORBIDDEN = [r"\bopen\s*\(", r"\bpickle\b", r"\bsubprocess\b", r"\bsocket\b", r"\burllib\b",
+FORBIDDEN = [r"\bopen\s*\(", r"\bpickle\b", r"\bsubprocess\b", r"\bimport\s+socket\b", r"\bfrom\s+socket\s+import\b",
+             r"\burllib\b",
              r"\brequests\b", r"\b__import__\b", r"\bimportlib\b", r"\beval\s*\(", r"\bexec\s*\(",
              r"replay", r"buffer\.json"]
 
