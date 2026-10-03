@@ -220,3 +220,15 @@
     - ONC refute-then-resynthesize measurement: specified in chat (refutation on new batches, counterexample-conditioned templates, passive control, scoring on later batches over the 200 dev worlds). Owner: the ONC session.
   ABANDONED:
     - "Resynthesis on the first counterexample lifts accuracy" as a general claim. R27 shows it is level dependent and can lose (ka59). The claim is now: it lifts where the probe names one missing mechanic, and convergence of the new committee is the warning sign.
+
+- [jdv] - Probe policy check, selective score for abstention, report versions 10 to 12 - a4d8c33
+  Two questions from the user about the method, answered from stored data; the report page rebuilt with a map of directions.
+  DONE:
+    - R28: disagreement on seen rows first delays refutation (24 probes on m0r0, 14 on ar25 L7) and selects no better than the unrestricted order. Among split transitions, every member is wrong on 70 percent of those on unseen rows against 24 percent on seen rows. The hypotheses are missing, not misordered.
+    - R29: a selective score (+1 committed right, -1 committed wrong, 0 abstain or set) over the conformal wrapper. Abstaining throughout is the floor at 0. Live, the counterexample round lifts the commit share from 0.44 to 0.78 and the score from 0.35 to 0.65; quarters 2 and 3 go from abstention to correct commitment. Live logs now carry vote shares.
+    - Report page versions 10 to 12: map of every direction and its standing, closed loop (R23, R24, R27) with charts, live play (R25, R26), replication (R27), probe policy (R28), selective score (R29), revised reading. Diagram wording about where the uncertainty is defined was corrected.
+  DEFERRED:
+    - Training a synthesizer or policy on the selective score for ARC. The ONC build trains a decision policy on the same reward shape (O7).
+    - The wrapper over-abstains on ls20 L3 and ka59 L2 (selective score 0.46 against 0.73 always-commit, 0.09 against 0.64). A less conservative start (gamma, quantile with few samples) is a one-parameter study from stored data.
+  ABANDONED:
+    - Probing by disagreement as a selection step. R23 and R28 close it: refutation is what the probe buys.

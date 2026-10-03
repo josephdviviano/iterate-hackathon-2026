@@ -184,7 +184,10 @@ def play(game: str, level: int, members: list[Member], steps: int, seed: int = 0
             correct = [k == truth for k in keys]
             if not advanced:
                 alive = {k for k in alive if correct[k]}
+            counts = Counter(keys)
             row = {"step": t, "action": action, "disagreement": round(dis[j], 3), "n_distinct": len(set(keys)),
+                   "shares": sorted((c / len(members) for c in counts.values()), reverse=True),
+                   "truth_share": counts.get(truth, 0) / len(members),
                    "vote_correct": vote == truth, "members_correct": sum(correct), "alive": len(alive),
                    "level_advance": advanced, "levels_completed": frame.levels_completed, "state": str(frame.state)}
             log.append(row)

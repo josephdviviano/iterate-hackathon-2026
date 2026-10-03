@@ -1437,3 +1437,71 @@ covers this", and the repair is synthesis.
 | Command | `uv run python -m committee.selection` style run; data in `artifacts/probe_policy.json` |
 | Commit | this session, after f5d4253 |
 
+## R29. Abstention is a floor, not a score: a selective score and what the loop does to it
+
+Coverage alone rewards abstention: a wrapper that abstains on every step
+covers 1.0 and says nothing (R22, check 1 in O5). To put a price on that,
+score each step of the conformal wrapper (R22 protocol, alpha 0.1, gamma
+0.05): a committed single-state answer earns +1 if right and -1 if wrong; a
+set of several states or an abstention earns 0. Abstaining throughout scores
+0; always committing to the plurality scores 2 x vote accuracy - 1; confident
+failure is negative. The same score was computed on the six live trajectories
+of R26, with the wrapper run over each trajectory's vote shares.
+
+Recorded held-out trajectories, round 1 committees:
+
+| Level | Coverage | Commit share | Committed accuracy | Abstain rate | Selective score, wrapper | Selective score, always commit |
+|---|---|---|---|---|---|---|
+| ar25 L3 | 0.955 | 0.14 | 0.83 | 0.84 | 0.09 | -0.05 |
+| m0r0 L3 | 0.909 | 0.77 | 0.88 | 0.23 | 0.59 | 0.55 |
+| sk48 L2 | 0.882 | 0.66 | 0.93 | 0.09 | 0.57 | 0.38 |
+| ar25 L7 | 0.985 | 0.02 | 1.00 | 0.97 | 0.02 | -0.17 |
+| ls20 L3 | 0.898 | 0.59 | 0.89 | 0.37 | 0.46 | 0.73 |
+| ka59 L2 | 0.955 | 0.14 | 0.83 | 0.84 | 0.09 | 0.64 |
+| g50t L1 | 0.962 | 0.12 | 1.00 | 0.83 | 0.12 | 0.04 |
+
+Live trajectories, ar25 level 3 (wrapper over the live vote shares):
+
+| Committee, seed | Moves | Coverage | Commit share | Committed accuracy | Selective score, wrapper | Always commit | Commit share by quarter of the trajectory |
+|---|---|---|---|---|---|---|---|
+| Round 1, 0 | 160 | 0.956 | 0.44 | 0.90 | 0.35 | -0.20 | 0.97, 0.78, 0.00, 0.00 |
+| Round 1, 1 | 161 | 0.950 | 0.38 | 0.95 | 0.34 | -0.20 | 0.88, 0.65, 0.00, 0.00 |
+| Round 3, 0 | 157 | 0.955 | 0.45 | 0.90 | 0.36 | -0.18 | 0.97, 0.82, 0.00, 0.00 |
+| Round 3, 1 | 164 | 0.957 | 0.43 | 0.90 | 0.34 | -0.22 | 0.98, 0.73, 0.00, 0.00 |
+| Live round, 0 | 144 | 0.917 | 0.75 | 0.94 | 0.65 | 0.42 | 0.97, 1.00, 1.00, 0.03 |
+| Live round, 1 | 139 | 0.906 | 0.81 | 0.90 | 0.65 | 0.73 | 0.97, 1.00, 1.00, 0.24 |
+
+Reading:
+
+1. Abstention is the floor. Under the selective score a trajectory of
+   abstentions is worth 0: better than confident failure (always commit on
+   ar25 L3 live: -0.20) and worth nothing in itself. The wrapper's value on
+   the recorded levels is that it sits above both the floor and the
+   always-commit policy on five of seven levels; on ls20 and ka59 it
+   abstains too much on a committee that is mostly right (0.46 against 0.73,
+   0.09 against 0.64), a cost that coverage alone hides.
+2. What turns abstention into score is the loop, not the wrapper. Live, the
+   recorded-data committees commit in the first half of the trajectory and
+   abstain entirely after the counter tick (quarters 3 and 4 at 0.00). The
+   live counterexample round converts those quarters into correct
+   commitments (1.00, 1.00), lifts the commit share from 0.44 to 0.78 and the
+   selective score from 0.35 to 0.65, and abstains again only in the last
+   quarter, where the next unseen mechanic sits. The abstention region is the
+   map of where to collect counterexamples; resynthesis cashes them.
+3. This is the shape of the training signal. The score rewards turning an
+   abstention into a correct commitment, penalises a wrong commitment, and
+   is indifferent to abstaining, so an agent paid by it has one way up:
+   observe where it abstains and repair its hypotheses. In this project that
+   step is the counterexample round; in the ONC build the same shape, task
+   score plus calibration plus disagreement drop, trains a decision policy
+   (O5, O7). Training a synthesizer on it is the open item.
+
+| Item | Value |
+|---|---|
+| Metric | Coverage, commit share, committed accuracy, selective score (+1 committed right, -1 committed wrong, 0 otherwise) |
+| Runs | 7 recorded levels, deterministic; 6 live trajectories of R26 |
+| Split | As R22 and R26 |
+| Baseline | Always commit to the plurality; abstain throughout (0) |
+| Command | Wrapper from `committee.calibrate.aci` over `level_steps` and over the live logs' `shares` and `truth_share` (logged since this commit); data in `artifacts/abstention_score.json` |
+| Commit | this session, after a4d8c33 |
+
