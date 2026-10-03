@@ -99,7 +99,7 @@ class Net(nn.Module):
         x = (x - self.mean) / self.std
         x = F.gelu(self.whiten(x))
         x = self.groups(x)
-        x = x.amax(dim=(2, 3))
+        x = F.max_pool2d(x, x.shape[-1]).flatten(1)
         return self.head(x) * self.scale
 
 
