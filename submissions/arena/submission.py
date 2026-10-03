@@ -17,7 +17,7 @@ from benchmark.api import BuildContext, TrainingData
 HYP = {
     "widths": (128, 384, 576),
     "depth": 3,  # convs per group; depth 3 adds a residual around conv2/conv3
-    "epochs": 9,
+    "epochs": 8,
     "batch_size": 1024,
     "lr": 9.0,
     "momentum": 0.85,
@@ -30,6 +30,9 @@ HYP = {
     "scale": 1 / 9,
     "lookahead": True,
     "compile": True,
+    "muon_lr": 0.24,
+    "muon_momentum": 0.6,
+    "ns_steps": 5,
 }
 
 
@@ -132,6 +135,48 @@ def augment(padded, flip_bits, epoch, r):
     return out
 
 
+
+@torch.compile(dynamic=False)
+def zeropower_via_newtonschulz5(G, steps: int, eps: float = 1e-7):
+    a, b, c = (3.4445, -4.7750, 2.0315)
+    X = G.bfloat16()
+    X = X / (X.norm() + eps)
+    transposed = G.size(0) > G.size(1)
+    if transposed:
+        X = X.T
+    for _ in range(steps):
+        A = X @ X.T
+        B = b * A + c * A @ A
+        X = a * X + B @ X
+    if transposed:
+        X = X.T
+    return X
+
+
+class Muon(torch.optim.Optimizer):
+    """Orthogonalized Nesterov momentum for conv filters, with per-step weight-norm projection (airbench94_muon)."""
+
+    def __init__(self, params, lr, momentum, ns_steps):
+        super().__init__(params, dict(lr=lr, momentum=momentum, ns_steps=ns_steps))
+
+    @torch.no_grad()
+    def step(self):
+        for group in self.param_groups:
+            for p in group["params"]:
+                g = p.grad
+                state = self.state[p]
+                if "momentum_buffer" not in state:
+                    state["momentum_buffer"] = torch.zeros_like(g)
+                buf = state["momentum_buffer"]
+                buf.mul_(group["momentum"]).add_(g)
+                g = g.add(buf, alpha=group["momentum"])
+                p.mul_(len(p) ** 0.5 / p.norm())
+                g2 = g.reshape(len(g), -1)
+                scale = max(1.0, g2.size(0) / g2.size(1)) ** 0.5
+                update = zeropower_via_newtonschulz5(g2, group["ns_steps"]).view(g.shape)
+                p.add_(update, alpha=-group["lr"] * scale)
+
+
 class Lookahead:
     def __init__(self, model):
         self.ema = {k: v.detach().clone() for k, v in model.state_dict().items() if v.is_floating_point()}
@@ -153,20 +198,23 @@ def make_optimizer(model, hyp, total_steps):
     lr_biases = lr * hyp["bias_scaler"]
     whiten_bias = [model.whiten.bias]
     norm_biases = [p for k, p in model.named_parameters() if "norm" in k and p.requires_grad]
+    filters = [p for k, p in model.named_parameters() if p.ndim == 4 and p.requires_grad]
     other = [
         p
         for k, p in model.named_parameters()
-        if "norm" not in k and p.requires_grad and p is not model.whiten.bias
+        if "norm" not in k and p.requires_grad and p is not model.whiten.bias and p.ndim != 4
     ]
     groups = [
         dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=other, lr=lr, weight_decay=wd / lr),
     ]
-    optimizer = torch.optim.SGD(groups, momentum=momentum, nesterov=True)
-    for g in optimizer.param_groups:
-        g["base_lr"] = g["lr"]
-    return optimizer
+    sgd = torch.optim.SGD(groups, momentum=momentum, nesterov=True)
+    muon = Muon(filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], ns_steps=hyp["ns_steps"])
+    for opt in (sgd, muon):
+        for g in opt.param_groups:
+            g["base_lr"] = g["lr"]
+    return [sgd, muon]
 
 
 def lr_factor(step, total_steps):
@@ -205,9 +253,11 @@ def train_step(state, optimizer, x, y):
     with torch.autocast(state.context.device.type, dtype=torch.bfloat16):
         logits = state.step_model(x)
         loss = F.cross_entropy(logits.float(), y, label_smoothing=state.hyp["label_smoothing"], reduction="sum")
-    optimizer.zero_grad(set_to_none=True)
+    for opt in optimizer:
+        opt.zero_grad(set_to_none=True)
     loss.backward()
-    optimizer.step()
+    for opt in optimizer:
+        opt.step()
 
 
 def prepare(state, data: TrainingData, seed: int) -> None:
@@ -259,8 +309,10 @@ def train(state) -> nn.Module:
             if step >= total:
                 break
             f = lr_factor(step, total)
-            for gi, g in enumerate(optimizer.param_groups):
+            for gi, g in enumerate(optimizer[0].param_groups):
                 g["lr"] = g["base_lr"] * f if (gi != 0 or whiten_on) else 0.0
+            for g in optimizer[1].param_groups:
+                g["lr"] = g["base_lr"] * f
             train_step(state, optimizer, imgs[i * bs : (i + 1) * bs], labels[i * bs : (i + 1) * bs])
             step += 1
             if state.lookahead is not None and step % 5 == 0:
