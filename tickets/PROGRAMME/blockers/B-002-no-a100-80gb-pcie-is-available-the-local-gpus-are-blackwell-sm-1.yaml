@@ -1,0 +1,29 @@
+schema_version: '1.0'
+blocker_id: B-002
+requirement_ids:
+- R-007
+task_ids:
+- T-004
+kind: external
+description: 'No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned
+  torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.'
+consequence: A100 timing (R-005) and cross-stack accuracy agreement (R-007) cannot be measured; the regime
+  decision T-006 waits on them, while the local frontier probe T-005 can proceed.
+candidate_identity: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: pinned-stack-blackwell.txt
+  locator: research/evidence/pinned-stack-blackwell.txt
+  sha256: 333a3d6d211519ca197e14d893de5c2b98e22a9663ca45ba98672601b3a17c59
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+attempted_remedies: []
+retry_condition: The team lead confirms an A100 80GB PCIe provider, budget and access method in TRACKER.md
+  or a human-decision record.
+human_question: null
+options: []
+state: open
+resolution: null

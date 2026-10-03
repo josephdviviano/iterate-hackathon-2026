@@ -1,0 +1,39 @@
+schema_version: '2.0'
+finding_id: F-001
+task_id: T-002
+result_kind: positive
+importance: material
+observation: The default airbench94-equivalent recipe (64/256/256, 10 epochs, batch 1024, no TTA) reaches
+  69.4-69.7% single-view CIFAR-100 accuracy on the dev stack (7 trials over eager and compiled runs);
+  the smoke sweep gives 59.8% at 4 epochs and 43.1% at 2 epochs for the same width.
+interpretation: The airbench94 shape is about 5.5 pp short of 75% at 10 epochs, versus 93.3% single-view
+  on CIFAR-10 at the same budget; reaching 75.3% needs more epochs, more width, or both, so the P1 grid
+  range (10-24 epochs, widths 1x-2x plus the airbench96 shape) is appropriately placed. The observation
+  does not yet separate H2 from H3.
+decision_implication: Launch P1 as specified; if no cell reaches 75.3% by 24 epochs, extend epochs or
+  width before the regime decision.
+requirement_ids:
+- R-003
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: real-data-default.txt
+  locator: research/evidence/T-002/real-data-default.txt
+  sha256: 354fde5b5d6f657423ee18fb60d446747e155db6dad699f97e49c15233f81aeb
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: smoke-gpu-table.csv
+  locator: research/evidence/T-003/smoke-gpu-table.csv
+  sha256: 86cc166242ef9244f41430e095f3f8a9fba465b2ff44b5e29e190a4772c9fe65
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Recorded as the P1 starting anchor.

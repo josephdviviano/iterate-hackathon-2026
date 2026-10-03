@@ -1,0 +1,12 @@
+T-003 runbook walkthrough, 2026-10-03, host engs-32851
+Fresh detached worktree of commit a53ce9b at /tmp/c100-runbook-check; commands from research/README.md sections 1, 2 and 6 executed as written:
+
+uv sync --frozen                                -> ok
+research/env/setup-blackwell.sh                 -> CIFAR-100 is ready; 2.7.1+cu128 NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition
+CUDA_VISIBLE_DEVICES= uv run pytest -q research/tests -> 10 passed in 24.19s
+benchmark.run --submission team_segal --n 1 --no-accuracy-target (GPU 0) -> trial 1/1: accuracy=69.62%, complete true
+sweep.py run p1-frontier.toml --dry-run          -> 17 pending configurations
+sweep.py status p1-frontier.toml               -> {"configs": 17, "pending": 17}
+writing-tools programme status                  -> valid: True
+
+Not executed here: section 5 (A100 Docker commands) needs the rented A100 (T-004).

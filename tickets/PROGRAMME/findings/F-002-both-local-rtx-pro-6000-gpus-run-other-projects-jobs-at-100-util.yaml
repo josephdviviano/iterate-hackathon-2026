@@ -1,0 +1,36 @@
+schema_version: '2.0'
+finding_id: F-002
+task_id: T-003
+result_kind: surprising
+importance: contextual
+observation: Both local RTX PRO 6000 GPUs run other projects' jobs at 100% utilisation, 300 W power cap
+  and 87-88 C; a compiled default run took 14.8-23.6 s on GPU 1 versus 8.0-9.0 s eager on GPU 0, with
+  no recompilation logged.
+interpretation: Local wall times reflect contention and power capping, not the recipe; exploration throughput
+  depends on the other workloads.
+decision_implication: Keep one slot per GPU, never compare local times, and take all timing from the A100
+  (T-004).
+requirement_ids:
+- R-006
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: rejected
+  rationale: TORCH_LOGS=recompiles showed no recompilation in the compiled run
+  discriminating_test: null
+- kind: workflow_comparator
+  disposition: supported
+  rationale: nvidia-smi showed foreign processes, 100% utilisation and power-cap throttling on both GPUs
+  discriminating_test: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: real-data-default.txt
+  locator: research/evidence/T-002/real-data-default.txt
+  sha256: 354fde5b5d6f657423ee18fb60d446747e155db6dad699f97e49c15233f81aeb
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Runbook section 4 sets one slot per device; local times are labelled non-evidence.

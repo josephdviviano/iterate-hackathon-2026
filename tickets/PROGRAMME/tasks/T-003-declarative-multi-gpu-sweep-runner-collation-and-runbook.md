@@ -26,38 +26,117 @@ decision_effect: Determines exploration throughput and the trustworthiness of ev
 uncertainty: null
 dependencies:
 - T-001
-status: ready
+status: completed
 acceptance:
 - criterion_id: AC-01
   statement: A multi-configuration sweep runs across both local GPUs through the harness
   expected_evidence: sweep log and collated table
-  status: pending
-  evidence_ids: []
+  status: verified
+  evidence_ids:
+  - E-001
+  - E-002
+  - E-003
+  - E-004
+  - E-005
+  - E-006
   rationale: null
 - criterion_id: AC-02
   statement: An interrupted sweep resumes without rerunning completed configurations and collation matches
     the uninterrupted table
   expected_evidence: resume log and table diff
-  status: pending
-  evidence_ids: []
+  status: verified
+  evidence_ids:
+  - E-001
+  - E-002
+  - E-003
+  - E-004
+  - E-005
+  - E-006
   rationale: null
 - criterion_id: AC-03
   statement: A failing configuration is reported as failed in collation rather than dropped
   expected_evidence: collated table row
-  status: pending
-  evidence_ids: []
+  status: verified
+  evidence_ids:
+  - E-001
+  - E-002
+  - E-003
+  - E-004
+  - E-005
+  - E-006
   rationale: null
 - criterion_id: AC-04
   statement: The runbook commands execute as written
   expected_evidence: runbook walkthrough output
-  status: pending
-  evidence_ids: []
+  status: verified
+  evidence_ids:
+  - E-001
+  - E-002
+  - E-003
+  - E-004
+  - E-005
+  - E-006
   rationale: null
 evidence_requirements: []
 out_of_scope: []
 risks: []
-evidence: []
-completion_summary: null
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: smoke-gpu-sweep.log
+  locator: research/evidence/T-003/smoke-gpu-sweep.log
+  sha256: 724355546a846f2a5ad013cb02480d11fc06e5ff0adef024b90bb4be4a64488e
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-002
+  kind: file
+  label: smoke-gpu-table.csv
+  locator: research/evidence/T-003/smoke-gpu-table.csv
+  sha256: 86cc166242ef9244f41430e095f3f8a9fba465b2ff44b5e29e190a4772c9fe65
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-003
+  kind: file
+  label: smoke-gpu-interrupt-resume.txt
+  locator: research/evidence/T-003/smoke-gpu-interrupt-resume.txt
+  sha256: 59da83bc40d360260fd57ad6f1752903e10910f91f95f56bfad82be4212c0a28
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-004
+  kind: file
+  label: test_sweep.py
+  locator: research/tests/test_sweep.py
+  sha256: 33b46ce045782810695f2f8dec61a2d02919a9a253207e7573c6b69f0f8a91b0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-005
+  kind: file
+  label: runbook-walkthrough.txt
+  locator: research/evidence/T-003/runbook-walkthrough.txt
+  sha256: d5963af231841f4a411d0888aab8ed7c58957b93fadbf45f0aa715863599e544
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+- evidence_id: E-006
+  kind: file
+  label: README.md
+  locator: research/README.md
+  sha256: 0ce0ee80d56f4d5348a664c8dde5b38a5a208b132f58ae6642e532c90cfd638e
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+completion_summary: Sweep runner dispatches across both GPUs through the harness, resumes only interrupted
+  configs, records failures, and collates reproducibly; runbook replayed from a fresh worktree.
 blocker_ids: []
 ---
 
@@ -79,11 +158,24 @@ Determines exploration throughput and the trustworthiness of every frontier tabl
 
 ## Acceptance
 
-- [ ] AC-01: A multi-configuration sweep runs across both local GPUs through the harness
+- [x] AC-01: A multi-configuration sweep runs across both local GPUs through the harness
   Evidence: sweep log and collated table
-- [ ] AC-02: An interrupted sweep resumes without rerunning completed configurations and collation matches the uninterrupted table
+- [x] AC-02: An interrupted sweep resumes without rerunning completed configurations and collation matches the uninterrupted table
   Evidence: resume log and table diff
-- [ ] AC-03: A failing configuration is reported as failed in collation rather than dropped
+- [x] AC-03: A failing configuration is reported as failed in collation rather than dropped
   Evidence: collated table row
-- [ ] AC-04: The runbook commands execute as written
+- [x] AC-04: The runbook commands execute as written
   Evidence: runbook walkthrough output
+
+## Evidence
+
+- E-001: smoke-gpu-sweep.log — `research/evidence/T-003/smoke-gpu-sweep.log` (verified)
+- E-002: smoke-gpu-table.csv — `research/evidence/T-003/smoke-gpu-table.csv` (verified)
+- E-003: smoke-gpu-interrupt-resume.txt — `research/evidence/T-003/smoke-gpu-interrupt-resume.txt` (verified)
+- E-004: test_sweep.py — `research/tests/test_sweep.py` (verified)
+- E-005: runbook-walkthrough.txt — `research/evidence/T-003/runbook-walkthrough.txt` (verified)
+- E-006: README.md — `research/README.md` (verified)
+
+## Resolution
+
+Sweep runner dispatches across both GPUs through the harness, resumes only interrupted configs, records failures, and collates reproducibly; runbook replayed from a fresh worktree.

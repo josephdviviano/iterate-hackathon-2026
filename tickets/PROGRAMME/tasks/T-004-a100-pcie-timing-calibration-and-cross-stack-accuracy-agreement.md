@@ -25,7 +25,7 @@ uncertainty: Per-epoch A100 PCIe time per candidate width under 300 W power capp
   2.7.1 Blackwell accuracy transfers to torch 2.4.0 A100 accuracy.
 dependencies:
 - T-002
-status: ready
+status: blocked
 acceptance:
 - criterion_id: AC-01
   statement: Per-epoch and fixed-cost A100 PCIe timings with SM clock, power and temperature telemetry
@@ -47,7 +47,9 @@ risks:
   exists.
 evidence: []
 completion_summary: null
-blocker_ids: []
+blocker_ids:
+- B-001
+- B-002
 ---
 
 # T-004: A100 PCIe timing calibration and cross-stack accuracy agreement
