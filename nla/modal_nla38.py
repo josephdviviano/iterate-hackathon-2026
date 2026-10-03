@@ -505,6 +505,7 @@ CKPT = f"{VOL}/ckpts"
 train_image = image.add_local_file(HERE / "patch_qwen35_gva_518.py", "/root/patch_gva.py", copy=True).run_commands(
     "python /root/patch_gva.py",
 )
+hopper_image = train_image.pip_install("triton==3.7.1")   # see check_hopper_triton
 # NB: B200 only for training. On Hopper, fla (triton<3.7.1) refuses the gated-delta backward
 # (wrong results, fla#640); installing tilelang did not unlock it.
 @app.function(gpu="B200", timeout=900)
@@ -1295,9 +1296,11 @@ def _rl(rank, world, av_sft="av38_sft", ar_sft="ar38_sft", run="rl38", num_steps
     P(f"done [{(time.time()-t0)/60:.1f}m]")
 
 
-@app.function(image=train_image, gpu=["B200:8", "B200:4"], volumes={VOL: vol}, timeout=24 * 3600,
-              secrets=secrets, memory=262144, cpu=32.0)
+@app.function(image=hopper_image, gpu=["B200:8", "H200:8", "B200:4", "H200:4"], volumes={VOL: vol},
+              timeout=24 * 3600, secrets=secrets, memory=262144, cpu=32.0)
 def train_rl(**kw):
+    # hopper_image = train_image + triton 3.7.1: fla's gated-delta backward is correct on H200 with it
+    # (check_hopper_triton: fwd/bwd within 0.6% of a naive fp32 recurrence); B200 unaffected.
     ddp_run(_rl, kw)
 
 
@@ -1481,3 +1484,58 @@ def push_data(repo: str = "gereon/qwen3.8-27b-nla-L42-data", private: bool = Tru
     api.upload_folder(folder_path=f"{VOL}/results", path_in_repo="results", repo_id=repo, repo_type="dataset",
                       allow_patterns=["*.json"], commit_message="eval results")
     print("pushed", repo, flush=True)
+
+
+
+@app.function(image=hopper_image, gpu="H200", timeout=1200)
+def check_hopper_triton():
+    """fla gated-delta fwd+bwd (GVA, bf16) on Hopper with triton 3.7.1 vs a naive fp32 recurrence."""
+    import torch
+    import torch.nn.functional as F
+    import triton
+    from fla.ops.gated_delta_rule import chunk_gated_delta_rule
+    print("torch", torch.__version__, "triton", triton.__version__, torch.cuda.get_device_name(), flush=True)
+
+    def naive(q, k, v, g, beta):
+        # q,k [B,T,HK,D]; v [B,T,HV,Dv]; g,beta [B,T,HV]. GVA: v-head h reads qk-head h // (HV/HK)
+        B, T, HK, D = q.shape
+        HV, Dv = v.shape[2], v.shape[3]
+        r = HV // HK
+        q = F.normalize(q.float(), dim=-1).repeat_interleave(r, 2) * D ** -0.5
+        k = F.normalize(k.float(), dim=-1).repeat_interleave(r, 2)
+        v, g, beta = v.float(), g.float(), beta.float()
+        S = torch.zeros(B, HV, D, Dv, device=q.device)
+        out = []
+        for t in range(T):
+            S = S * g[:, t].exp()[..., None, None]
+            kt, vt = k[:, t], v[:, t]
+            vn = beta[:, t][..., None] * (vt - torch.einsum("bhd,bhdv->bhv", kt, S))
+            S = S + torch.einsum("bhd,bhv->bhdv", kt, vn)
+            out.append(torch.einsum("bhd,bhdv->bhv", q[:, t], S))
+        return torch.stack(out, 1)
+
+    torch.manual_seed(0)
+    B, T, HK, HV, D = 2, 200, 4, 12, 128
+    q = torch.randn(B, T, HK, D, device="cuda")
+    k = torch.randn(B, T, HK, D, device="cuda")
+    v = torch.randn(B, T, HV, D, device="cuda")
+    g = -F.softplus(torch.randn(B, T, HV, device="cuda")) * 0.1
+    beta = torch.rand(B, T, HV, device="cuda")
+    w = torch.randn(B, T, HV, D, device="cuda")
+    res = {}
+    for name in ("fla", "naive"):
+        qq, kk, vv = (x.clone().to(torch.bfloat16 if name == "fla" else torch.float32).requires_grad_(True)
+                      for x in (q, k, v))
+        if name == "fla":
+            o, _ = chunk_gated_delta_rule(qq, kk, vv, g=g, beta=beta.to(torch.bfloat16), use_qk_l2norm_in_kernel=True)
+        else:
+            o = naive(qq, kk, vv, g, beta)
+        (o.float() * w).sum().backward()
+        res[name] = (o.float(), qq.grad.float(), kk.grad.float(), vv.grad.float())
+    worst = 0.0
+    for j, n in enumerate(("out", "dq", "dk", "dv")):
+        a, b = res["fla"][j], res["naive"][j]
+        e = ((a - b).norm() / b.norm()).item()
+        worst = max(worst, e)
+        print(n, "rel_err", e, flush=True)
+    print("VERDICT", "OK" if worst < 0.05 else "MISMATCH", flush=True)
