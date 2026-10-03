@@ -130,7 +130,7 @@ def score(members: list[Member], test: list[Transition]) -> dict:
             "auroc": e["auroc_uniform_disagreement_vs_error"],
             "unanimous_n": un["n"], "unanimous_error": un["error_rate"], "split_n": len(split),
             "split_error": round(sum(not p["correct"] for p in split) / len(split), 3) if split else None,
-            "distinct": e["n_distinct_behaviours"],
+            "distinct": e["n_distinct_behaviours"], "member_accuracy": e["member_accuracy"],
             "next_falsified_at": simulate(members, test, "disagreement", 0.0).falsified_at}
 
 
