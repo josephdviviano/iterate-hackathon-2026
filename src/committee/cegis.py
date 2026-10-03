@@ -138,6 +138,12 @@ def mechanism_text(members: list[Member], test: list[Transition], probes: list[i
     return "\n".join(lines)
 
 
+GEOMETRY_RULE = ("Rule for this repair: a movement stops because of a visible object, a field of an object, or a bound "
+                 "that a visible object marks. Do not infer invisible floors, corridors or regions from where objects "
+                 "stopped; a repair that adds coordinate constants the earlier programs did not need is a lookup table "
+                 "and will be rejected.")
+
+
 def repair_hypothesis(k: int) -> str:
     kind = REPAIR_KINDS[k % len(REPAIR_KINDS)]
     return (f"Repair hypothesis for this seed: the rule for the row(s) above is decided by {kind}. Write that rule "
@@ -162,7 +168,7 @@ def stored_round(game: str, level: int, train_frac: float, source_condition: str
 
 def run_round(game: str, level: int, train_frac: float, source_condition: str, condition: str,
               from_probe: int, runs: int, cfg: dict, parallel: int, start: int, dry_run: bool,
-              mechanism: bool = False) -> None:
+              mechanism: bool = False, geometry_rule: bool = False) -> None:
     train, test = temporal_split(build_buffer(game), level, train_frac)
     probes, cond = stored_round(game, level, train_frac, source_condition, condition, from_probe)
     train_r, test_r = split_after_probes(train, test, probes)
@@ -174,7 +180,7 @@ def run_round(game: str, level: int, train_frac: float, source_condition: str, c
     remaining = [i for i in range(len(test)) if i not in set(probes)]
     probes = probes + [remaining[j] for j in new]
     train2, test2 = split_after_probes(train, test, probes)
-    seeds = [f"{s}\n\n{text}" + (f"\n\n{repair_hypothesis(k)}" if mechanism else "")
+    seeds = [f"{s}\n\n{text}" + (f"\n\n{repair_hypothesis(k)}" if mechanism else "") + (f"\n\n{GEOMETRY_RULE}" if geometry_rule else "")
              for k, s in enumerate(make_seeds(train2, runs))]
     base = probe_split_dir(game, level, train_frac, len(probes), condition)
     print(f"probes {probes} (steps {[test[i].step for i in probes]}); train {len(train2)}, held out {len(test2)}")
@@ -272,6 +278,7 @@ def main(argv: list[str] | None = None) -> None:
                         help="start from the stored round that observed this many probes; 0 is round 1")
     parser.add_argument("--mechanism", action="store_true",
                         help="state the counterexample at the effect-row level and give each seed a distinct repair hypothesis")
+    parser.add_argument("--geometry-rule", action="store_true", help="add the rule against hidden geometry to every seed")
     parser.add_argument("--conditions", default=None, help="report: comma-separated round 2 conditions to compare")
     parser.add_argument("--dry-run", action="store_true", help="print the split and the seed, synthesize nothing")
     parser.add_argument("--report", action="store_true")
@@ -282,7 +289,7 @@ def main(argv: list[str] | None = None) -> None:
                             args.passive_condition, args.conditions.split(",") if args.conditions else None))
         return
     run_round(args.game, args.level, args.train_frac, args.source_condition, args.condition, args.from_probe,
-              args.runs, backend_cfg(args), args.parallel, args.start, args.dry_run, args.mechanism)
+              args.runs, backend_cfg(args), args.parallel, args.start, args.dry_run, args.mechanism, args.geometry_rule)
 
 
 if __name__ == "__main__":
