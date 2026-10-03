@@ -2839,3 +2839,111 @@ the channel does nothing for it.
 | Runs | 800 replies, 2 models x 4 conditions x 100 protocols, 0 backend errors; about 1.5 H100 hours shared with the ARC grid |
 | Command | `uv run python -m rewardhack.bio --model openai/gpt-oss-120b --max-model-len 20000` |
 | Commit | uncommitted, base a718512 |
+
+## R34. Seven levels in OPINE-World's environment: single programs against the committee
+
+The definitive rerun of R3, R4, R6, R17 and R27 under the environment port
+(`committee.env`, mode `frame_out`, commit `eec1677`) and its final task
+text. Every level has the same temporal 40 percent split as before. Each
+level ran 3 unseeded single programs (`baseline_opine_devin`) and 8 seeded
+members (`committee_opine_devin`), all synthesized by Devin, admitted by
+exact frame replay of every training transition. Equal weights. Fourteen
+of the 77 sessions were collected by `committee.recover` after a network
+outage killed the runner (NOTES.md); their programs are the ones Devin
+returned, unchanged. One ar25 L3 member returned a program that replays 1
+of 29 and is not admitted.
+
+| Level | n test | Single programs (mean) | Committee vote | Members (K, behaviours) | Best member | AUROC | Unanimous n (error) | Split n (error) |
+|---|---|---|---|---|---|---|---|---|
+| ar25 L3 | 44 | 0.93, 0.98, 0.98 (0.962) | 1.000 | 0.98 to 1.00 (7 of 8, 2) | 1.000 | none | 43 (0.00) | 1 (0.00) |
+| m0r0 L3 | 44 | 0.86, 0.86, 0.86 (0.864) | 0.864 | 0.84 to 0.86 (8, 4) | 0.864 | 0.69 | 36 (0.08) | 8 (0.38) |
+| sk48 L2 | 68 | 0.79, 0.79, 0.79 (0.794) | 0.868 | 0.63 to 0.87 (8, 4) | 0.868 | 0.32 | 47 (0.19) | 21 (0.00) |
+| ar25 L7 | 65 | 0.42, 1.00, 1.00 (0.805) | 1.000 | 1.00 (8, 1) | 1.000 | none | 65 (0.00) | 0 |
+| ls20 L3 | 59 | 0.93, 0.95, 0.95 (0.944) | 0.932 | 0.90 to 0.95 (8, 5) | 0.949 | 1.00 | 53 (0.00) | 6 (0.67) |
+| ka59 L2 | 44 | 0.89, 0.89, 0.91 (0.894) | 0.909 | 0.82 to 0.91 (8, 5) | 0.909 | 0.81 | 35 (0.03) | 9 (0.33) |
+| g50t L1 | 52 | 0.54, 0.58, 0.79 (0.635) | 0.692 | 0.54 to 0.79 (8, 8) | 0.788 | 0.84 | 23 (0.04) | 29 (0.52) |
+| Mean | 376 | 0.843 | 0.895 | | 0.911 | pooled 0.756 | 302 (0.046) | 74 (0.338) |
+
+Pooled AUROC of uniform disagreement against error: 0.756, transition
+bootstrap 95 percent interval 0.678 to 0.837. Selective accuracy when the
+committee answers only its most agreed half: 0.936; most agreed 80 percent:
+0.953; overall 0.896.
+
+Reading:
+
+1. Question 1 (committee against single): the vote beats the mean single
+   program on 5 of 7 levels, ties on m0r0 and loses on ls20 by one
+   transition (0.932 against 0.944). Mean over levels 0.895 against 0.843.
+   The gain is on the levels where single programs vary (sk48 0.79 to
+   0.87, ar25 L7 0.42 to 1.00, g50t 0.54 to 0.79): the vote takes the
+   majority behaviour, which is the right one. Where single programs
+   agree with each other the committee adds nothing in accuracy (m0r0,
+   ls20, ka59).
+2. Question 3 (disagreement higher when wrong): pooled unanimous error
+   0.046 against split error 0.338, AUROC 0.76. The exception is sk48 L2:
+   its errors are 9 transitions every member gets wrong the same way (a
+   mechanic that first appears at step 87, blocks carried by the arm), and
+   its 21 split transitions are all voted right. Disagreement is silent on
+   a shared blind spot; see R36 for what the counterexample round does
+   with it.
+3. In the objects contract (R4, R27) the same committees sat at 0.48 to
+   0.82. The environment, not the synthesizer, held the earlier numbers
+   down. The committee's standing is the same in both: equal to the best
+   single program, with a calibrated flag.
+
+| Item | Value |
+|---|---|
+| Metric | Held-out next-state accuracy by frame equality; AUROC of uniform disagreement against error |
+| Runs | 77 sessions: 3 single and 8 seeded per level, 7 levels; 76 admitted |
+| Split | Temporal 40 percent per level |
+| Baseline | The 3 unseeded single programs of each level |
+| Command | `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --runs 3 --backend devin --frame-out --condition baseline_opine_devin --parallel 3`; `... --runs 8 --seeded --frame-out --condition committee_opine_devin --parallel 4`; `uv run python -m committee.summary` (writes `artifacts/summary_opine.json`) |
+| Commit | e20b07f |
+
+## R35. Calibration in OPINE-World's environment: vote share, isotonic map, conformal sets
+
+R22 rerun on the seven R34 committees (`committee.calibrate --condition
+committee_opine_devin`), 376 held-out transitions.
+
+| Measure | Value |
+|---|---|
+| Vote-share ECE, pooled (5 equal-mass bins) | 0.042 (R22, objects mode: 0.22) |
+| Vote-share Brier, pooled | 0.075 |
+| Reliability (mean vote share, accuracy, n) | (0.69, 0.667, 75), (1.00, 0.987, 75), (1.00, 0.853, 75), (1.00, 1.000, 75), (1.00, 0.974, 76) |
+| Leave-one-level-out isotonic map, ECE raw to mapped | ar25 L3 0.010 to 0.065; m0r0 0.080 to 0.094; sk48 0.210 to 0.303; ar25 L7 0.000 to 0.059; ls20 0.042 to 0.086; ka59 0.034 to 0.049; g50t 0.099 to 0.116 |
+| Adaptive conformal, target 0.90, gamma 0.05: coverage per level | 0.977, 0.886, 0.956, 1.000, 0.932, 0.955, 0.942; pooled 0.952 |
+| Mean set size; abstain rate | ar25 L3 1.00, 0.02; m0r0 1.23, 0.16; sk48 1.37, 0.38; ar25 L7 1.02, 0.02; ls20 1.17, 0.20; ka59 1.57, 0.46; g50t 2.31, 0.65 |
+| Singleton rate; singleton accuracy | 0.955, 1.00; 0.795, 0.914; 0.603, 0.951; 0.985, 1.00; 0.729, 1.00; 0.545, 0.917; 0.231, 0.833 |
+| Agreed but wrong (n wrong of n unanimous); row-entropy AUROC | m0r0 3 of 36, 0.40; sk48 9 of 47, 0.79; ka59 1 of 35, 0.66; g50t 1 of 23, 0.57; three levels 0 |
+| Good-Turing missing mass against unanimous error | sk48 0.051 against 0.191; g50t 0.077 against 0.043; m0r0 0.011 against 0.083; ka59 0.014 against 0.029 |
+
+Reading:
+
+1. Question 2 (calibration): in this environment the vote share is close
+   to a probability on its own (ECE 0.04 pooled; 0.00 to 0.10 on six
+   levels), where in the objects contract it was 0.22. The one bad level is
+   sk48 (0.21): unanimous and wrong on 9 transitions. The isotonic map fit
+   on the other levels makes every level worse, because it learns that
+   unanimity is worth 0.94 to 0.98 and that is too low for five levels and
+   too high for sk48. Keep the raw vote share and the conformal set; drop
+   the map.
+2. The adaptive conformal wrapper holds its 0.90 target on every level
+   (0.886 to 1.000, pooled 0.952) with sets of mean size 1.0 to 2.3. The
+   wrapper abstains where the committee is unsure: 2 percent of steps on
+   ar25, 65 percent on g50t. Singleton sets are right 0.83 to 1.00 of the
+   time. The coverage guarantee is the transferable part: the same code and
+   parameters give 0.90 coverage on the BioProt benchmark (B4).
+3. The shared blind spot on sk48 shows in the Good-Turing gap (missing mass
+   0.05 against unanimous error 0.19): the committee's own diversity
+   under-estimates what it has not sampled there. The row-entropy flag
+   does catch some of it (AUROC 0.79 among unanimous steps), which is the
+   one signal that reaches an agreed-but-wrong step.
+
+| Item | Value |
+|---|---|
+| Metric | ECE, Brier, conformal coverage, set size, abstain rate; n 376 |
+| Runs | The R34 committees; no new sessions |
+| Split | Temporal 40 percent; conformal sets run along the held-out sequence of each level |
+| Baseline | R22 (objects mode, four levels) |
+| Command | `uv run python -m committee.calibrate --levels ar25:3,m0r0:3,sk48:2,ar25:7,ls20:3,ka59:2,g50t:1 --condition committee_opine_devin --out artifacts/calibration_opine.json` |
+| Commit | e20b07f |
