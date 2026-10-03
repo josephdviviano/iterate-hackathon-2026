@@ -13,7 +13,7 @@ MEAN = (0.5071, 0.4865, 0.4409)
 STD = (0.2673, 0.2564, 0.2762)
 
 DEFAULTS = dict(
-    stages=[[24, 6], [32, 3]],  # [resolution, epochs] in training order
+    stages=[[16, 1], [24, 5], [32, 3]],  # [resolution, epochs] in training order
     batch_size=768,
     lr=0.5,
     momentum=0.9,
@@ -175,7 +175,7 @@ def build(context: BuildContext):
         grads = list(torch.autograd.grad(loss, params))
         for h in handles:
             h.remove()
-        if cuda:
+        if cuda and conv:
             main.wait_stream(side)
         with torch.no_grad():
             torch._foreach_add_([grads[i] for i in decay], [params[i] for i in decay], alpha=wd)
