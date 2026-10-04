@@ -3471,3 +3471,39 @@ Reading:
 | Baseline | K = 1 (one program); unseeded members at equal K |
 | Command | `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --backend devin --frame-out --runs 8 --start 8 --seeded --condition committee16_opine_devin --parallel 4`; `... --runs 8 --condition unseeded_opine_devin --parallel 4`; `uv run python -m committee.ksweep` (writes `artifacts/ksweep_opine.json`, figure `artifacts/figures/ksweep.png`) |
 | Commit | this commit |
+
+## O11. Devin programs on the expressive full-access store, first 30 worlds
+
+Store `onc-agi-public-train-expressive-full-access` (248 worlds; roles that
+stress the fixed templates). First 30 worlds in store order, scorer
+`scorer-1.0`. Devin wrote 4 seeded programs per world (analyst, direct,
+sparse, confounder), 120 sessions, all 120 admissible; a network drop at
+13:00 cost 89 sessions, which were redone (the 89 failed records held no
+program and are kept out of the cache). Committee as O10: likelihood
+weights, one vote per distinct driver set, the leak filter.
+
+| Agent, first 30 expressive worlds | DS | 95% | Find | Restraint |
+|---|---|---|---|---|
+| forward_score (benchmark baseline) | 0.556 | [0.37, 0.75] | 0.64 | 0.88 |
+| 4 Devin programs | 0.464 | [0.27, 0.65] | 0.51 | 0.92 |
+| univariate_bh (benchmark baseline) | 0.426 | [0.27, 0.59] | 0.49 | 0.88 |
+| 1 Devin program (analyst) | 0.415 | [0.23, 0.65] | 0.50 | 0.83 |
+| templates and 4 Devin programs | 0.292 | [0.12, 0.49] | 0.37 | 0.79 |
+| stability (benchmark baseline) | 0.277 | [0.11, 0.52] | 0.42 | 0.67 |
+| random_forest, elastic_net, lasso | 0.093, 0.078, 0.040 | | | |
+| oracle; 12 cheaters and random | 1.000; 0.000 | | | |
+
+Reading. (1) The best benchmark baseline leads here (0.56 against 0.46);
+the intervals overlap. (2) Unlike full-access (O10, four seeds scored as
+one), four Devin seeds add 0.05 over one (0.464 against 0.415), through
+restraint (0.92 against 0.83). (3) Mixing the templates in lowers the
+score again (0.29), the O10 admission finding: predictive admission lets
+members that fit many columns vote. The templates-alone row on these
+worlds was not in this run; it is computed separately
+(`--tag templates_first30`) and added when it lands.
+
+Runs: 1 per condition, deterministic given the cache. Split: public_train.
+Baseline: the benchmark's baselines on the same 30 worlds. Commands:
+`uv run python -m onc.synth --store artifacts/onc/benchmark/expressive-full-access --mode full --first 30 --k 4 --model devin --workers 10`;
+`uv run python -m onc.evaluate --store artifacts/onc/benchmark/expressive-full-access --mode full --weighting likelihood --first 30 --members synth:4:devin,synth:1:devin,both:4:devin --out artifacts/onc/eval_bench --tag devin_expressive-full-access_first30`;
+`uv run python -m onc.baselines --store artifacts/onc/benchmark/expressive-full-access --first 30 --out artifacts/onc/baselines_bench_first30_expressive-full-access`.
