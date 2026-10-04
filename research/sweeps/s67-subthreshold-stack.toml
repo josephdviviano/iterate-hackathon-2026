@@ -1,0 +1,43 @@
+# Stack of sub-threshold positives (each +0.07 to +0.10 pp, within noise alone): wide-early stage 3
+# (768 at 20 px, transplanted to 640), momentum 0.8, lr 13; at 8.25 and 8.0 epochs. 40 seeds.
+name = "s67-subthreshold-stack"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [7000, 7001, 7002, 7003, 7004, 7005, 7006, 7007, 7008, 7009, 7010, 7011, 7012, 7013, 7014, 7015, 7016, 7017, 7018, 7019, 7020, 7021, 7022, 7023, 7024, 7025, 7026, 7027, 7028, 7029, 7030, 7031, 7032, 7033, 7034, 7035, 7036, 7037, 7038, 7039]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]                                   # momentum 0.8 + lr 13
+momentum = 0.8
+lr = 13.0
+[[configs]]                                   # full stack
+momentum = 0.8
+lr = 13.0
+widths = [128, 384, 768]
+switch_widths = [128, 384, 640]
+[[configs]]                                   # full stack at 8.0 epochs
+momentum = 0.8
+lr = 13.0
+widths = [128, 384, 768]
+switch_widths = [128, 384, 640]
+epochs = 8.0

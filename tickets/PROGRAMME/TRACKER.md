@@ -507,6 +507,25 @@
 - **Decision consequence:** Reject; the teammates' systems ideas (uint8 data on GPU, pinned upload) are not pursued (not exact, or 5-10 ms and host-dependent).
 - **Resolution:** Rejected.
 
+### F-067 — resolved, material
+
+- **Observation:** S66 (20 seeds 6900-6919, D-013 base, control 75.18%): batch 768 for epochs 0-3 then 1024 at 8.25 / 8.0 epochs (schedules re-mapped to keep the switch and freeze at the same epochs): 75.09 / 74.92%; batch 512 then 1024 at 8.25 epochs: 74.62%; none faster locally. S67 (40 fresh seeds 7000-7039, control 75.11%): momentum 0.8 + lr 13: 75.17%; plus wide-early stage 3 (768 -> 640): 75.18% (about +4% local time); the full stack at 8.0 epochs: 74.91%.
+- **Interpretation:** A batch-size ramp hurts at matched epochs (smaller early batches disturb the warm-up the constant-batch schedule is tuned for) and saves no time. The sub-threshold positives do not add up: the stack gains only +0.07 pp, too little to fund a quarter-epoch cut.
+- **Decision consequence:** Reject both; the D-013 submission stays.
+- **Resolution:** Rejected.
+
+### F-068 — open, blocking
+
+- **Observation:** Red-team review (round 6): no rule violations; pooled accuracy at the D-013 defaults over 177 fresh seeds is 75.160% (SD 0.234); local-vs-A100 offset evidence pools to about 0 +/- 0.02 pp (M3/S29 -0.043, M8 +0.01, M7 vs S43 +0.06); P(official 40-seed mean < 75%) about 0.2% at the central offset and up to about 3% if the M3 offset applies; winner's curse shrinks D-012 to about -0.05 pp and D-013 to about +0.00 pp; estimated A100 PCIe time about 4.73 +/- 0.2 s. Checks run: on torch 2.4.0 (CPU, aot_eager) the frozen path compiles 3 graphs over 3 repetitions of all phases with no per-call recompiles; a cold build with fresh compiler caches pinned to 4 cores takes 173 s (limit 600 s) and the trial completes (75.35%, 3.97 s local).
+- **Interpretation:** The entry very probably qualifies and is about 14% faster than M8, but every change since M8 has only run on the dev stack; the margin is narrower than earlier stated (about 75.16%) and the one essential remaining check is an official-equivalent run on an A100 PCIe with the pinned stack.
+- **Decision consequence:** Keep D-013; measure the 8.5-epoch fallback locally (S68); recommend one official-equivalent A100 PCIe run before submission (requires the user's approval to use Modal).
+
+### F-069 — open, material
+
+- **Observation:** S68 (40 fresh seeds 7100-7139, D-013 defaults): 8.25 epochs 75.083% at 4.184 s local; 8.5 epochs 75.296% at 4.409 s (+5.4%). Pooled fresh-seed accuracy at the 8.25-epoch defaults is now about 75.15% over 217 seeds.
+- **Interpretation:** The 8.5-epoch fallback adds about +0.21 pp for about 5% time, restoring roughly the M8-era margin; at 8.25 epochs P(official 40-seed mean < 75%) is about 0.5% at the central offset and 3-4% under the worst measured offset.
+- **Decision consequence:** Margin, not speed, is now binding: either confirm 8.25 epochs on an official-equivalent A100 run or move to an intermediate budget; a zero-cost accuracy lever would be the most valuable find.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.

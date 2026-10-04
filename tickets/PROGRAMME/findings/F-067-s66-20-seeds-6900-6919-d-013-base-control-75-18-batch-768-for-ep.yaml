@@ -1,0 +1,34 @@
+schema_version: '2.0'
+finding_id: F-067
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S66 (20 seeds 6900-6919, D-013 base, control 75.18%): batch 768 for epochs 0-3 then 1024
+  at 8.25 / 8.0 epochs (schedules re-mapped to keep the switch and freeze at the same epochs): 75.09 /
+  74.92%; batch 512 then 1024 at 8.25 epochs: 74.62%; none faster locally. S67 (40 fresh seeds 7000-7039,
+  control 75.11%): momentum 0.8 + lr 13: 75.17%; plus wide-early stage 3 (768 -> 640): 75.18% (about +4%
+  local time); the full stack at 8.0 epochs: 74.91%.'
+interpretation: 'A batch-size ramp hurts at matched epochs (smaller early batches disturb the warm-up
+  the constant-batch schedule is tuned for) and saves no time. The sub-threshold positives do not add
+  up: the stack gains only +0.07 pp, too little to fund a quarter-epoch cut.'
+decision_implication: Reject both; the D-013 submission stays.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: supported
+  rationale: individual +0.07-0.10 pp effects were best-of-k noise that regresses on fresh seeds
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s67-subthreshold-stack-table.csv
+  locator: research/evidence/T-019/s67-subthreshold-stack-table.csv
+  sha256: 129e25363fdfba60ef6f156ccb2f01301be61a7801fda8cf303a2d39fa2c0999
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Rejected.

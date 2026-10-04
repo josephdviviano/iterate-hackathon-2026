@@ -1,0 +1,46 @@
+# Batch-size ramp (round 5 literature, modded-nanogpt PR #163 / AI2 critical batch size): smaller
+# batches in the cheap 20 px phase, 1024 in the 32 px phase. Step-fraction schedules are re-mapped
+# so the resolution switch and stage-1 freeze fall at the same epochs as the control. 20 seeds.
+name = "s66-batch-ramp"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [6900, 6901, 6902, 6903, 6904, 6905, 6906, 6907, 6908, 6909, 6910, 6911, 6912, 6913, 6914, 6915, 6916, 6917, 6918, 6919]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]                                   # 768 for epochs 0-3, then 1024; 8.25 epochs (464 steps)
+batch_schedule = [[0, 768], [4, 1024]]
+res_schedule = [[0.0, 20], [0.573, 32]]
+stage1_cooldown = [0.659, 0.829]
+freeze_schedule = [[0.829, 1]]
+[[configs]]                                   # same ramp at 8.0 epochs (452 steps)
+batch_schedule = [[0, 768], [4, 1024]]
+epochs = 8.0
+res_schedule = [[0.0, 20], [0.575, 32]]
+stage1_cooldown = [0.66, 0.83]
+freeze_schedule = [[0.83, 1]]
+[[configs]]                                   # 512 for epochs 0-3, then 1024; 8.25 epochs (592 steps)
+batch_schedule = [[0, 512], [4, 1024]]
+res_schedule = [[0.0, 20], [0.6655, 32]]
+stage1_cooldown = [0.732, 0.866]
+freeze_schedule = [[0.866, 1]]

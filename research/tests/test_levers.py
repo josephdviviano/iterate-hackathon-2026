@@ -158,6 +158,7 @@ LEVERS = {
         "stage1_cooldown": [0.4, 0.6],
         "freeze_schedule": [[0.6, 1]],
     },
+    "batch-ramp": SMALL | {"batch_schedule": [[0, 8], [1, 16]], "block_depth": 3},
     "floor-base": SMALL | {"lr_decay_end": 0.9, "lookahead_base": 0.97},
     "final-blend-fp32": SMALL | {"lookahead_final_decay": 0.5, "eval_fp32": True},
     "square-kaiming": SMALL | {"square_init": "dirac+kaiming", "square_beta": 0.25},

@@ -172,6 +172,8 @@ class RecipeConfig:
     # Teammates' branches: lr floor reached at ``lr_decay_end`` then held; lookahead base decay.
     lr_decay_end: float = 1.0
     lookahead_base: float = 0.95
+    # Batch-size schedule ((start_epoch, size), ...); schedules stay on a step basis.
+    batch_schedule: tuple[tuple[float, int], ...] = ()
     bias_scaler_final: float | None = None
     # Teammates' hypothesis-branch block: activation after the residual add.
     post_add_activation: bool = False
@@ -251,6 +253,8 @@ class RecipeConfig:
         for key in ("square_kernels", "residual_kernels"):
             if key in values:
                 values[key] = tuple(values[key])
+        if "batch_schedule" in values:
+            values["batch_schedule"] = tuple(tuple(e) for e in values["batch_schedule"])
         if "crop_schedule" in values:
             values["crop_schedule"] = tuple(tuple(e) for e in values["crop_schedule"])
         if "weight_freeze" in values:
@@ -302,6 +306,8 @@ class RecipeConfig:
             self.bn_freeze_frac is not None and not 0 < self.bn_freeze_frac < 1
         ):
             raise ValueError("lookahead_outer_momentum in [0, 1); bn_freeze_frac in (0, 1)")
+        if any(len(e) != 2 or e[0] < 0 or e[1] < 1 for e in self.batch_schedule):
+            raise ValueError("batch_schedule entries are (start_epoch >= 0, size >= 1)")
         if not 0.5 <= self.lr_decay_end <= 1 or not 0 < self.lookahead_base < 1:
             raise ValueError("lr_decay_end must be in [0.5, 1] and lookahead_base in (0, 1)")
         if not 0 <= self.lookahead_final_decay <= 1:

@@ -205,6 +205,7 @@ def make_optimisation(
     total_steps: int,
     steps_per_epoch: int,
     masters: MasterWeights | None = None,
+    whiten_steps: int | None = None,
 ) -> Optimisation:
     norms, whiten, others = _split(model)
     head: list = []
@@ -255,7 +256,8 @@ def make_optimisation(
         wd_bias = wd * config.bias_wd_mult
         lr1, lr_bias1 = lr * config.stage1_lr_mult, lr_bias * config.stage1_lr_mult
         schedule = lr_schedule(config, total_steps)
-        whiten_steps = ceil(config.whiten_bias_epochs * steps_per_epoch)
+        if whiten_steps is None:
+            whiten_steps = ceil(config.whiten_bias_epochs * steps_per_epoch)
 
         def whiten_schedule(i: int) -> float:
             # Freeze the whitening bias with a zero lr (``fit`` may also drop it from autograd).
@@ -457,10 +459,17 @@ def fit(
 
     With ``narrow`` (eager, step) the run continues on that narrower net from the final
     resolution switch (``switch_widths``); it then holds the trained weights."""
-    total_steps = ceil(stream.steps_per_epoch * config.epochs)
+    total_steps = stream.steps_until(config.epochs)
     airbench = isinstance(model, AirbenchNet)
     masters = MasterWeights(model) if config.master_fp32 and airbench else None
-    plan = make_optimisation(model, config, total_steps, stream.steps_per_epoch, masters)
+    plan = make_optimisation(
+        model,
+        config,
+        total_steps,
+        stream.steps_per_epoch,
+        masters,
+        whiten_steps=stream.steps_until(config.whiten_bias_epochs),
+    )
     selector = (
         Selector(selector_net, config, total_steps, stream.steps_per_epoch)
         if selector_net is not None and config.select_fraction < 1
@@ -475,7 +484,7 @@ def fit(
                 if cooldown:
                     frozen_ids |= {p.data_ptr() for p in model.groups[stage].parameters()}
         lookahead = Lookahead(model, masters, config.lookahead_outer_momentum, frozen_ids)
-    whiten_steps = ceil(config.whiten_bias_epochs * stream.steps_per_epoch)
+    whiten_steps = stream.steps_until(config.whiten_bias_epochs)
     final_size = config.res_schedule[-1][1] if config.res_schedule else None
     switch_step = config.res_schedule[-1][0] * total_steps if config.res_schedule else 0.0
     switched = False

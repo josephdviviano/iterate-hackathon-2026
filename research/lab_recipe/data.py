@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from math import ceil
 
 import torch
 import torch.nn.functional as F
@@ -98,6 +99,7 @@ class TrainingStream:
         self.base = F.pad(base, (pad,) * 4, mode="reflect") if pad else base
         self.size = images.size(-1)
         self.steps_per_epoch = len(images) // config.batch_size
+        self.count = len(images)
         # Per-image scores (loss or gradient-norm proxy) from each image's latest visit.
         self.scores = torch.zeros(len(images), device=images.device) if config.prune_frac else None
 
@@ -115,6 +117,24 @@ class TrainingStream:
             torch.rand(rounds.shape, device=labels.device, generator=self.generator), dim=1
         )
         return torch.gather(rounds, 1, shuffle).reshape(-1)
+
+    def batch_size(self, index: int) -> int:
+        """Batch size of epoch ``index`` under ``batch_schedule`` ((start_epoch, size), ...)."""
+        size = self.config.batch_size
+        for start, entry in self.config.batch_schedule:
+            if index >= start:
+                size = entry
+        return size
+
+    def steps_until(self, epochs: float) -> int:
+        """Training steps in the first ``epochs`` epochs (a fractional last epoch rounds up)."""
+        if not self.config.batch_schedule:
+            return ceil(self.steps_per_epoch * epochs)
+        whole = int(epochs)
+        steps = sum(self.count // self.batch_size(e) for e in range(whole))
+        if epochs > whole:
+            steps += ceil((self.count // self.batch_size(whole)) * (epochs - whole))
+        return steps
 
     def _kept(self) -> torch.Tensor:
         """Indices kept this epoch: drop ``prune_frac`` of images by banked score (lowest for
@@ -176,7 +196,7 @@ class TrainingStream:
         if self.scores is not None and index >= config.prune_start:
             keep = self._kept()
             order = keep[torch.randperm(len(keep), device=keep.device, generator=self.generator)]
-        bs = config.batch_size
+        bs = self.batch_size(index)
         for step in range(len(order) // bs):
             idx = order[step * bs : (step + 1) * bs]
             self.last_idx = idx
