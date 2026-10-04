@@ -20,8 +20,8 @@ STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
     epochs=11,
-    batch_size=512,
-    lr=11.5,  # per 1024 examples (summed loss)
+    batch_size=768,
+    lr=14.0,  # per 1024 examples (summed loss)
     momentum=0.85,
     weight_decay=0.0153,
     bias_scaler=16.0,
@@ -44,6 +44,10 @@ DEFAULTS = dict(
     lr_end=0.0,
     res_schedule=((18, 4), (24, 2)),  # (resolution, epochs) stages before full 32px training
 )
+
+
+def make_act():
+    return {"gelu": nn.GELU, "silu": nn.SiLU, "relu": nn.ReLU, "hardswish": nn.Hardswish}[ACT[0]]()
 
 
 class BatchNorm(nn.BatchNorm2d):
@@ -83,7 +87,7 @@ class ConvGroup(nn.Module):
         if depth >= 2:
             self.conv2 = Conv(cout, cout)
             self.norm2 = BatchNorm(cout, bn_momentum)
-        self.activ = {"gelu": nn.GELU(), "silu": nn.SiLU(), "gelu_tanh": nn.GELU(approximate="tanh")}[ACT[0]]
+        self.activ = make_act()
 
     def forward(self, x):
         x = self.activ(self.norm1(self.pool(self.conv1(x))))
@@ -106,6 +110,7 @@ class Net(nn.Module):
         whiten_width = 2 * 3 * whiten_kernel**2
         self.whiten = Conv(3, whiten_width, kernel_size=whiten_kernel, padding=0, bias=True)
         self.whiten.weight.requires_grad = False
+        self.whiten_act = make_act()
         self.layers = nn.Sequential(
             ConvGroup(whiten_width, widths[0], bn_momentum, depth[0]),
             ConvGroup(widths[0], widths[1], bn_momentum, depth[1]),
@@ -115,7 +120,7 @@ class Net(nn.Module):
         self.scaling_factor = scaling_factor
 
     def features(self, x):
-        x = F.silu(self.whiten(x)) if ACT[0] == "silu" else F.gelu(self.whiten(x))
+        x = self.whiten_act(self.whiten(x))
         x = self.layers(x)
         x = F.max_pool2d(x, x.shape[2:]).flatten(1)
         return self.head(x) * self.scaling_factor
