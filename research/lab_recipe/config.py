@@ -180,6 +180,7 @@ class RecipeConfig:
     stage_skips: tuple[bool, bool, bool] = (False, False, False)
     identity_scale: float = 1.0
     translate_low: int | None = None
+    head_multiscale: bool = False
     bias_scaler_final: float | None = None
     # Teammates' hypothesis-branch block: activation after the residual add.
     post_add_activation: bool = False
@@ -314,6 +315,16 @@ class RecipeConfig:
             self.bn_freeze_frac is not None and not 0 < self.bn_freeze_frac < 1
         ):
             raise ValueError("lookahead_outer_momentum in [0, 1); bn_freeze_frac in (0, 1)")
+        if self.head_multiscale and (
+            self.arch != "airbench"
+            or self.head_expand
+            or self.cosine_head_scale
+            or self.exit_weight
+            or any(e[1] > 1 for e in self.freeze_schedule)
+        ):
+            raise ValueError(
+                "head_multiscale supports the plain head with at most a stage-1 freeze"
+            )
         if (self.ls_low is not None and not 0 <= self.ls_low < 1) or self.identity_scale <= 0:
             raise ValueError("ls_low must be in [0, 1) and identity_scale positive")
         if len(self.stage_skips) != 3 or (

@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-075
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S74 (20 seeds 7700-7719, D-014 base, control 75.16%): depth-2 stage 3 with skip at 8.25
+  / 8.5 epochs 74.60 / 74.69%; depth-2 stage 1 with skip at 8.25 / 8.5 epochs 74.85 / 74.92%; all stages
+  depth 2 with skips at 8.75 epochs 74.46%. S75 same-GPU paired timing (GPU 1, ABBA): depth-2 stage 1
+  + skip at 8.5 epochs -4.7%; depth-2 stage 3 + skip at 8.5 epochs -5.3%.'
+interpretation: 'With identity skips the depth cuts lose less than without, but stage 3''s residual conv
+  still carries about 0.5 pp of capacity, and the stage-1 cut (about -7.5% per step) needs roughly as
+  many extra epochs to recover accuracy as it saves: both sit at or below the exchange rate.'
+decision_implication: Reject further depth cuts; D-014 structure stays.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: 20-seed accuracies; the 8.25->8.5 step gained only +0.07 pp here vs +0.21 pp in S68
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s74-depth-skip-table.csv
+  locator: research/evidence/T-019/s74-depth-skip-table.csv
+  sha256: 4e477bb586e14f8bdb6a7ff7c252f8dbd05c56d4b06f3b40b76d3a92ff589b0b
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Rejected.

@@ -1,0 +1,50 @@
+# Depth cuts revisited with identity skips (D-014 showed the skip, not the residual conv, carried
+# most of stage 2's value): depth-2 stage 3 and/or stage 1 with skips, priced at extra epochs.
+# Earlier cuts without skips: stage 3 -0.66 pp (S50), stage 1 break-even (S45/S47). 20 seeds.
+name = "s74-depth-skip"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [7700, 7701, 7702, 7703, 7704, 7705, 7706, 7707, 7708, 7709,
+         7710, 7711, 7712, 7713, 7714, 7715, 7716, 7717, 7718, 7719]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage_skips = [false, true, false]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission, D-014)
+[[configs]]
+stage_depths = [3, 2, 2]                      # depth-2 stage 3 with skip
+stage_skips = [false, true, true]
+[[configs]]
+stage_depths = [3, 2, 2]
+stage_skips = [false, true, true]
+epochs = 8.5
+[[configs]]
+stage_depths = [2, 2, 3]                      # depth-2 stage 1 with skip
+stage_skips = [true, true, false]
+[[configs]]
+stage_depths = [2, 2, 3]
+stage_skips = [true, true, false]
+epochs = 8.5
+[[configs]]
+stage_depths = [2, 2, 2]                      # all depth 2 with skips
+stage_skips = [true, true, true]
+epochs = 8.75

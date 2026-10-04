@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-076
+task_id: T-019
+result_kind: negative
+importance: contextual
+observation: 'S76 (20 seeds 7900-7919, D-014 base, control 75.28%): a single linear head on [global max
+  of stage 3, global max of stage 2] gives 73.77% (seed SD 0.96 pp, unstable) at logit scale 1/6 and 74.75%
+  at 1/7.'
+interpretation: Feeding stage-2 features to the head destabilises training (the extra 384 max-pooled features
+  enlarge and skew the logits) and loses accuracy even at a reduced scale, as the separate multi-exit
+  head did (F-033).
+decision_implication: Reject the multi-scale head.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: unresolved
+  rationale: stage-2 max features have a different scale and noise level than stage-3 features; a per-source
+    normalisation might stabilise it but the expected gain is small
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s76-multiscale-head-table.csv
+  locator: research/evidence/T-019/s76-multiscale-head-table.csv
+  sha256: 8fff2a0ac9d3e252946bb9d7431996b688d32d0d9f65d5b4e113a0bb9450b90c
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Rejected.

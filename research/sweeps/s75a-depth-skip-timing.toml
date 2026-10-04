@@ -1,0 +1,43 @@
+# Same-GPU paired timing (GPU 1) of the S74 depth-with-skip arms at their extra-epoch budgets,
+# max-autotune as submitted; block a in order, block b reversed (ABBA), 10 seeds each.
+name = "s75a-depth-skip-timing"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [7800, 7801, 7802, 7803, 7804, 7805, 7806, 7807, 7808, 7809]
+devices = [1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+compile_mode = "max-autotune"
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage_skips = [false, true, false]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+stage_depths = [3, 2, 2]
+stage_skips = [false, true, true]
+epochs = 8.5
+[[configs]]
+stage_depths = [2, 2, 3]
+stage_skips = [true, true, false]
+epochs = 8.5
+[[configs]]
+stage_depths = [2, 2, 2]
+stage_skips = [true, true, true]
+epochs = 8.75

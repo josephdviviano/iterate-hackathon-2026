@@ -245,6 +245,10 @@ class AirbenchNet(nn.Module):
         rows = NUM_CLASSES * (self.subcenters if self.cosine_scale else 1)
         # Fixed simplex-ETF classifier (frozen constant weights) with a learnable class bias.
         self.etf_head = config.etf_head
+        # Multi-scale head: one linear head on [global max of stage 3, global max of stage 2].
+        self.multiscale = config.head_multiscale
+        if self.multiscale:
+            head_in += w2
         self.head = nn.Linear(head_in, rows, bias=config.etf_head)
         if config.etf_head:
             self.head.weight.requires_grad = False
@@ -285,6 +289,15 @@ class AirbenchNet(nn.Module):
             )
         x = self.normalize(x, self.whiten.weight.dtype)
         frozen = self.frozen_groups if self.training else 0
+        if self.multiscale:
+            pool = self.global_pool or self.pool_impl
+            h = activate(self.whiten(x), self.activation)
+            with torch.set_grad_enabled(torch.is_grad_enabled() and not frozen):
+                h = self.groups[0](h)
+            mid = self.groups[1](h)
+            top = self.groups[2](mid)
+            feats = torch.cat((global_max(top, pool), global_max(mid, pool)), 1)
+            return (self.head(feats) * self.scale).float()
         if frozen:
             with torch.no_grad():
                 x = self.groups[:frozen](activate(self.whiten(x), self.activation))

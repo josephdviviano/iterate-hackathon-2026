@@ -158,6 +158,14 @@ LEVERS = {
         "stage1_cooldown": [0.4, 0.6],
         "freeze_schedule": [[0.6, 1]],
     },
+    "multiscale": SMALL
+    | {
+        "block_depth": 3,
+        "head_multiscale": True,
+        "stage1_cooldown": [0.4, 0.6],
+        "freeze_schedule": [[0.6, 1]],
+        "whiten_bias_epochs": 0.5,
+    },
     "round7": SMALL
     | {
         "block_depth": 3,

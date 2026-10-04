@@ -560,6 +560,20 @@
 - **Decision consequence:** D-014 is the current entry.
 - **Resolution:** Submission verified locally.
 
+### F-075 — resolved, material
+
+- **Observation:** S74 (20 seeds 7700-7719, D-014 base, control 75.16%): depth-2 stage 3 with skip at 8.25 / 8.5 epochs 74.60 / 74.69%; depth-2 stage 1 with skip at 8.25 / 8.5 epochs 74.85 / 74.92%; all stages depth 2 with skips at 8.75 epochs 74.46%. S75 same-GPU paired timing (GPU 1, ABBA): depth-2 stage 1 + skip at 8.5 epochs -4.7%; depth-2 stage 3 + skip at 8.5 epochs -5.3%.
+- **Interpretation:** With identity skips the depth cuts lose less than without, but stage 3's residual conv still carries about 0.5 pp of capacity, and the stage-1 cut (about -7.5% per step) needs roughly as many extra epochs to recover accuracy as it saves: both sit at or below the exchange rate.
+- **Decision consequence:** Reject further depth cuts; D-014 structure stays.
+- **Resolution:** Rejected.
+
+### F-076 — resolved, contextual
+
+- **Observation:** S76 (20 seeds 7900-7919, D-014 base, control 75.28%): a single linear head on [global max of stage 3, global max of stage 2] gives 73.77% (seed SD 0.96 pp, unstable) at logit scale 1/6 and 74.75% at 1/7.
+- **Interpretation:** Feeding stage-2 features to the head destabilises training (the extra 384 max-pooled features enlarge and skew the logits) and loses accuracy even at a reduced scale, as the separate multi-exit head did (F-033).
+- **Decision consequence:** Reject the multi-scale head.
+- **Resolution:** Rejected.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
