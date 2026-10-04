@@ -18,7 +18,7 @@ MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
-    epochs=8,
+    epochs=7.75,
     batch_size=512,
     lr=11.5,  # per 1024 examples (summed loss)
     momentum=0.85,
@@ -34,7 +34,7 @@ DEFAULTS = dict(
     compile_mode=None,
     cudnn_benchmark=True,
     dtype="fp16",
-    alt_flip=False,
+    alt_flip=True,
     low_res_batch_size=None,  # batch size during res_schedule stages (None: batch_size)
     lr_peak=0.23,
     lr_start=0.2,
@@ -58,8 +58,13 @@ class Conv(nn.Conv2d):
         super().reset_parameters()
         if self.bias is not None:
             self.bias.data.zero_()
+        # Identity (dirac) init of the first in_channels filters, vectorized.
         w = self.weight.data
-        torch.nn.init.dirac_(w[: w.size(1)])
+        c, k = w.size(1), w.size(2)
+        if c <= w.size(0):
+            w[:c].zero_()
+            i = torch.arange(c, device=w.device)
+            w[i, i, k // 2, k // 2] = 1
 
 
 class ConvGroup(nn.Module):
@@ -152,6 +157,8 @@ def build(context: BuildContext):
     use_cuda = device.type == "cuda"
     step_fn = torch.compile(model.features, mode=hyp["compile_mode"], dynamic=False) if use_cuda else model.features
     state = SimpleNamespace(model=model, context=context, hyp=hyp, step_fn=step_fn, device=device)
+    # Reusable pinned host buffer for fast host-to-device copies of the training images.
+    state.pinned = torch.empty((50000, 3, 32, 32), dtype=torch.uint8).pin_memory() if use_cuda else None
     # Warm up compilation and lazy CUDA init by running the real prepare/train path
     # on synthetic data for a few steps. prepare() resets everything afterwards.
     if use_cuda:
@@ -195,7 +202,11 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     state.generator = torch.Generator(device=device)
     state.generator.manual_seed(seed)
 
-    images = data.images.to(device, non_blocking=True)
+    if state.pinned is not None and state.pinned.shape == data.images.shape:
+        state.pinned.copy_(data.images)
+        images = state.pinned.to(device, non_blocking=True)
+    else:
+        images = data.images.to(device, non_blocking=True)
     labels = data.labels.to(device, non_blocking=True)
     mean = MEAN.to(device).view(1, 3, 1, 1)
     std = STD.to(device).view(1, 3, 1, 1)
