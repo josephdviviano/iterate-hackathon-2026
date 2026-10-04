@@ -36,6 +36,7 @@ DEFAULTS = {
     "warmup": 0.23,  # fraction of steps spent ramping the learning rate up
     "final_lr": 0.07,  # learning-rate multiplier reached at the last step
     "muon_final_lr": 0.05,  # same, for the Muon groups
+    "freeze_group1_from": 0.85,  # from this fraction of samples, the stem and group 1 stop training
     "muon_lr_32px": 1.25,  # Muon LR multiplier during the 32 px phase
     "decay_end": 0.96,  # fraction of steps at which the LR reaches its floor (then held)
     "tail_steps": 8,  # last steps use a light final EMA instead of the lookahead
@@ -146,8 +147,13 @@ class Net(nn.Module):
         )
         self.whiten.weight.copy_(torch.cat((scaled, -scaled)))
 
-    def forward(self, x, whiten_bias_grad: bool = True):
+    def forward(self, x, whiten_bias_grad: bool = True, freeze_group1: bool = False):
         b = self.whiten.bias
+        if freeze_group1:  # late training: no backward through the stem and group 1
+            with torch.no_grad():
+                x = self.layers[1](self.layers[0](F.conv2d(x, self.whiten.weight, b)))
+            x = self.layers[2:](x).flatten(1)
+            return self.head(x) * self.scaling_factor
         x = F.conv2d(x, self.whiten.weight, b if whiten_bias_grad else b.detach())
         x = self.layers(x).flatten(1)
         return self.head(x) * self.scaling_factor
@@ -228,7 +234,7 @@ class Muon(torch.optim.Optimizer):
             self.next_renorm = self.steps_done + 2 + int(15 * progress)
         self.steps_done += 1
         for group in self.param_groups:
-            shape_groups = group["shape_groups"]
+            shape_groups = [ps for ps in group["shape_groups"] if ps[0].grad is not None]
             group["lr_tensor"].fill_(group["lr"])  # a tensor, so the compiled update never recompiles
             self.update_fn(
                 shape_groups,
@@ -348,6 +354,9 @@ def build(context: BuildContext):
                 prepare(state, synthetic, seed=0)
                 state.whiten_bias_steps = 3
                 _fit(state, total_steps=6, size=size, batch_size=_phase_batch(state, size))
+            if hyp["freeze_group1_from"] < 1:  # the frozen-group-1 graph and Muon variant at 32 px
+                prepare(state, synthetic, seed=0)
+                _fit(state, total_steps=24, size=32, batch_size=_phase_batch(state, 32), freeze_at=3)
         state.classifier.eval()
         with torch.inference_mode():
             for size in (context.eval_batch_size, 10_000 % context.eval_batch_size, 1):
@@ -456,7 +465,7 @@ def _phase_batch(state, size):
     return min(tail_bs, len(state.labels)) if tail_bs and size >= 28 else state.batch_size
 
 
-def _fit(state, total_steps, size=None, batch_size=None):
+def _fit(state, total_steps, size=None, batch_size=None, freeze_at=None):
     """Train for a sample budget; every schedule (LR, resolution, lookahead, tail) follows samples seen."""
     hyp, net = state.hyp, state.net
     labels, unit = state.labels, state.batch_size  # unit: the step size the cadences were tuned for
@@ -469,6 +478,10 @@ def _fit(state, total_steps, size=None, batch_size=None):
     tail_unit = _phase_batch(state, 32)  # the final window counts steps of the 32 px phase
     tail_start = total - hyp["tail_steps"] * tail_unit if size is None else float("inf")
     whiten_until = hyp["whiten_bias_epochs"] / hyp["epochs"] * total if size is None else 3 * batch_size
+    if size is None:
+        freeze_from = hyp["freeze_group1_from"] * total
+    else:
+        freeze_from = freeze_at * batch_size if freeze_at is not None else float("inf")
     look_every, tail_every = hyp["ema_every"] * unit, hyp["tail_every"] * tail_unit
     next_look, next_tail, in_tail = look_every, None, False
     seen, epoch = 0, 0
@@ -493,7 +506,7 @@ def _fit(state, total_steps, size=None, batch_size=None):
             if step_size != 32:
                 x = F.interpolate(x, size=(step_size, step_size), mode="bilinear", antialias=True)
                 x = x.contiguous(memory_format=torch.channels_last)
-            outputs = state.train_net(x, seen < whiten_until)
+            outputs = state.train_net(x, seen < whiten_until, seen >= freeze_from)
             loss = F.cross_entropy(
                 outputs.float(),
                 labels[idx],
