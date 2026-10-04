@@ -11,7 +11,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 9.5,
+    "epochs": 9.75,
     "batch_size": 2000,
     "lr": 9.0,
     "momentum": 0.85,
@@ -38,6 +38,9 @@ HYP = {
     # Group 2 follows the main schedule to 75%, anneals to 0 by this fraction, then is frozen
     # (its output detached) like the stem. 0 disables.
     "freeze_g2_at": 0.9,
+    # After the first pass, each pass uses only this fraction of samples: those with the
+    # highest loss when last seen.
+    "keep_frac": 0.95,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -278,10 +281,11 @@ class Lookahead:
 def train_step(model, optimizer, x, y, label_smoothing, freeze_stem=False, freeze_whiten=False,
                freeze_g2=False):
     out = model(x, freeze_stem=freeze_stem, freeze_whiten=freeze_whiten, freeze_g2=freeze_g2)
-    loss = F.cross_entropy(out, y, label_smoothing=label_smoothing, reduction="none").sum()
+    losses = F.cross_entropy(out, y, label_smoothing=label_smoothing, reduction="none")
     optimizer.zero_grad(set_to_none=True)
-    loss.backward()
+    losses.sum().backward()
     optimizer.step()
+    return losses.detach()
 
 
 def build(context: BuildContext):
@@ -363,7 +367,15 @@ def train(state) -> nn.Module:
     model, opt = state.compiled, state.optimizer
     n, bs = state.n, state.batch_size
     steps_per_epoch = n // bs
-    total_steps = math.ceil(hyp["epochs"] * steps_per_epoch)
+    n_keep = int(hyp["keep_frac"] * n)
+    # Steps per pass: the first pass sees every sample, later ones the n_keep hardest.
+    pass_steps, remaining = [], hyp["epochs"]
+    while remaining > 1e-9:
+        frac = min(1.0, remaining)
+        pass_n = n if not pass_steps else n_keep
+        pass_steps.append(math.ceil(frac * (pass_n // bs)))
+        remaining -= frac
+    total_steps = sum(pass_steps)
     schedule = np.interp(
         np.arange(1 + total_steps), [0, int(0.23 * total_steps), total_steps], [0.2, 1.0, 0.07]
     )
@@ -389,11 +401,16 @@ def train(state) -> nn.Module:
         [r for start, r in hyp["resolutions"] if k >= start * total_steps][-1]
         for k in range(total_steps)
     ]
+    device = state.padded.device
+    sample_loss = torch.zeros(n, device=device)
     step = 0
-    for epoch in range(math.ceil(hyp["epochs"])):
+    for epoch, epoch_len in enumerate(pass_steps):
         epoch_images = augment(state.padded, state.flip_mask, epoch, hyp["translate"])
-        perm = torch.randperm(n, device=state.padded.device)
-        epoch_steps = resolution[epoch * steps_per_epoch : (epoch + 1) * steps_per_epoch]
+        perm = torch.randperm(n, device=device)
+        if epoch > 0 and n_keep < n:
+            hardest = torch.topk(sample_loss, n_keep, sorted=False).indices
+            perm = hardest[torch.randperm(n_keep, device=device)]
+        epoch_steps = resolution[step : step + epoch_len]
         versions = {}
         for res in sorted(set(epoch_steps)):
             images = epoch_images
@@ -403,9 +420,7 @@ def train(state) -> nn.Module:
                 )
             versions[res] = images[perm].contiguous(memory_format=torch.channels_last)
         epoch_labels = state.labels[perm]
-        for i in range(steps_per_epoch):
-            if step >= total_steps:
-                break
+        for i in range(epoch_len):
             for g in opt.param_groups:
                 sched = stem_schedule if g.get("stem") else g2_schedule if g.get("g2") else schedule
                 g["lr"] = g["base_lr"] * sched[step]
@@ -415,10 +430,11 @@ def train(state) -> nn.Module:
                         g["lr"] = 0.0
             x = versions[resolution[step]][i * bs : (i + 1) * bs]
             y = epoch_labels[i * bs : (i + 1) * bs]
-            train_step(
+            losses = train_step(
                 model, opt, x, y, hyp["label_smoothing"], step >= freeze_step, step >= whiten_bias_steps,
                 step >= g2_step,
             )
+            sample_loss[perm[i * bs : (i + 1) * bs]] = losses
             step += 1
             if lookahead is not None and step % ema_every == 0:
                 lookahead.update(float(alpha[step]))
