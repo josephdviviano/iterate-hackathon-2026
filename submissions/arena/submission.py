@@ -243,7 +243,7 @@ def make_optimizer(model, cfg):
         dict(params=others, lr=lr, weight_decay=wd / lr, base_lr=lr),
         dict(params=whiten_bias, lr=lr, weight_decay=wd / lr, base_lr=lr, whiten=True),
     ]
-    return torch.optim.SGD(groups, momentum=momentum, nesterov=True)
+    return torch.optim.SGD(groups, momentum=momentum, nesterov=True, fused=True)
 
 
 def prepare(state, data: TrainingData, seed: int) -> None:
