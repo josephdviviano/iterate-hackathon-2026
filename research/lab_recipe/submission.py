@@ -9,6 +9,7 @@ never triggers compilation.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -85,6 +86,9 @@ def train(state: SimpleNamespace) -> nn.Module:
     if snapshots:
         # Snapshot ensemble: copies of this trial's own weights, averaged at evaluation.
         return EnsembleNet([*snapshots, state.model])
+    if state.config.eval_fp32:
+        # Evaluate an fp32 copy of the trained weights (made inside the timed train).
+        return copy.deepcopy(state.model).float()
     return state.model
 
 

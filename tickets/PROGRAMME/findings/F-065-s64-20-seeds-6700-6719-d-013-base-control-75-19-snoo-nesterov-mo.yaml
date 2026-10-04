@@ -1,0 +1,41 @@
+schema_version: '2.0'
+finding_id: F-065
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S64 (20 seeds 6700-6719, D-013 base, control 75.19%): SNOO (Nesterov momentum on the lookahead
+  outer step, frozen stages and BN statistics excluded) with momentum 0.25 / 0.5 / 0.75: 75.00 / 74.50
+  / 72.22%; momentum 0.5 with lookahead every 10 steps: 74.10%. FrozenBN tail from 85% / 90% of steps
+  failed: the classifier returned non-finite logits.'
+interpretation: 'Outer Nesterov momentum on top of airbench''s decaying lookahead pull overshoots the
+  slow weights in this short run, monotonically worse with momentum; the LLM evidence for SNOO does not
+  transfer. The FrozenBN tail is numerically unsafe with BN eps 1e-12: channels with near-zero running
+  variance blow up in running-statistics mode during training, which train-mode batch statistics never
+  hit.'
+decision_implication: Reject SNOO and the FrozenBN tail (fixing the latter would need a larger BN eps,
+  a model change, for at most about 1% time).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: implementation
+  disposition: supported
+  rationale: non-finite logits only in the BN-eval arms; eps 1e-12 with near-zero running variance
+  discriminating_test: none
+- kind: mechanism
+  disposition: supported
+  rationale: outer momentum amplifies the slow-weight step that airbench's schedule already sizes; overshoot
+    grows with momentum
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s64-literature-table.csv
+  locator: research/evidence/T-019/s64-literature-table.csv
+  sha256: cb425af990084a9cb59f18282cd52ac212f4b6636fc0da1e175b7cbadbc17a17
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Rejected.

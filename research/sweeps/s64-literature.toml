@@ -1,0 +1,44 @@
+# Round 5 literature candidates on the D-013 base: SNOO (Nesterov momentum on the lookahead outer
+# step; frozen stages and BN statistics excluded) and a FrozenBN tail (BN running statistics for
+# the last 10-15% of steps). 20 seeds, both GPUs.
+name = "s64-literature"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [6700, 6701, 6702, 6703, 6704, 6705, 6706, 6707, 6708, 6709,
+         6710, 6711, 6712, 6713, 6714, 6715, 6716, 6717, 6718, 6719]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+lookahead_outer_momentum = 0.25
+[[configs]]
+lookahead_outer_momentum = 0.5
+[[configs]]
+lookahead_outer_momentum = 0.75
+[[configs]]
+lookahead_outer_momentum = 0.5
+lookahead_every = 10
+[[configs]]
+bn_freeze_frac = 0.85
+[[configs]]
+bn_freeze_frac = 0.9

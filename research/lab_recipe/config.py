@@ -164,6 +164,14 @@ class RecipeConfig:
     # Stop at the last periodic lookahead update (exact: later steps are overwritten by the
     # final slow-weight copy); every schedule keeps its full-length basis.
     trim_tail: bool = False
+    # Round 5: final lookahead blend, and an fp32 copy of the trained model for evaluation.
+    lookahead_final_decay: float = 1.0
+    eval_fp32: bool = False
+    lookahead_outer_momentum: float = 0.0
+    bn_freeze_frac: float | None = None
+    # Teammates' branches: lr floor reached at ``lr_decay_end`` then held; lookahead base decay.
+    lr_decay_end: float = 1.0
+    lookahead_base: float = 0.95
     bias_scaler_final: float | None = None
     # Teammates' hypothesis-branch block: activation after the residual add.
     post_add_activation: bool = False
@@ -290,6 +298,14 @@ class RecipeConfig:
                 or entry[3] not in ("all", "conv1")
             ):
                 raise ValueError("weight_freeze entries are (stage 0-2, start, end, all|conv1)")
+        if not 0 <= self.lookahead_outer_momentum < 1 or (
+            self.bn_freeze_frac is not None and not 0 < self.bn_freeze_frac < 1
+        ):
+            raise ValueError("lookahead_outer_momentum in [0, 1); bn_freeze_frac in (0, 1)")
+        if not 0.5 <= self.lr_decay_end <= 1 or not 0 < self.lookahead_base < 1:
+            raise ValueError("lr_decay_end must be in [0.5, 1] and lookahead_base in (0, 1)")
+        if not 0 <= self.lookahead_final_decay <= 1:
+            raise ValueError("lookahead_final_decay must be in [0, 1]")
         kernels = (*self.square_kernels, *self.residual_kernels)
         if len(kernels) != 6 or any(k not in (1, 3) for k in kernels) or self.centre_tap_max < 0:
             raise ValueError("square/residual kernels must be three of 1 or 3; centre_tap_max >= 0")

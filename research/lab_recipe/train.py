@@ -126,6 +126,15 @@ def triangle(steps: int, start: float, peak_frac: float, end: float) -> Schedule
 
 
 def lr_schedule(config: RecipeConfig, steps: int) -> Schedule:
+    if config.lr_decay_end < 1 and config.lr_shape == "triangle":
+        # The decay reaches lr_end at ``lr_decay_end`` and is then held (a floor tail).
+        decay_steps = max(2, round(config.lr_decay_end * steps))
+        inner = triangle(decay_steps, config.lr_start, config.lr_peak_frac, config.lr_end)
+        return lambda i: inner(min(i, decay_steps))
+    return _lr_schedule(config, steps)
+
+
+def _lr_schedule(config: RecipeConfig, steps: int) -> Schedule:
     """Triangular (default), warmup-stable-decay, or warmup-cosine multiplier."""
     if config.lr_shape == "triangle":
         return triangle(steps, config.lr_start, config.lr_peak_frac, config.lr_end)
@@ -350,16 +359,46 @@ def make_optimisation(
 class Lookahead:
     """airbench lookahead: every few steps, pull weights toward a slow EMA and copy it back."""
 
-    def __init__(self, model: nn.Module, masters: MasterWeights | None = None) -> None:
+    def __init__(
+        self,
+        model: nn.Module,
+        masters: MasterWeights | None = None,
+        outer_momentum: float = 0.0,
+        exclude: set[int] | None = None,
+    ) -> None:
         floating = (torch.half, torch.float)
         self.current = [v for v in model.state_dict().values() if v.dtype in floating]
         if masters is not None:
             self.current = [masters.of(v) for v in self.current]
         self.slow = [v.detach().clone() for v in self.current]
+        # SNOO (Kallusky et al. 2025): Nesterov momentum on the outer step, for trainable
+        # parameters only (not BN statistics, and not stages that freeze, so freezes stay exact).
+        self.momentum = outer_momentum
+        self.outer = []
+        if outer_momentum:
+            exclude = exclude or set()
+            params = {p.data_ptr() for p in model.parameters() if p.requires_grad}
+            params -= exclude
+            self.outer = [i for i, v in enumerate(self.current) if v.data_ptr() in params]
+            self.buffers = [torch.zeros_like(self.current[i]) for i in self.outer]
 
     @torch.no_grad()
     def update(self, decay: float) -> None:
-        torch._foreach_lerp_(self.slow, self.current, 1 - decay)
+        if self.momentum and self.outer and decay < 1:
+            current = [self.current[i] for i in self.outer]
+            slow = [self.slow[i] for i in self.outer]
+            delta = torch._foreach_sub(current, slow)
+            torch._foreach_mul_(self.buffers, self.momentum)
+            torch._foreach_add_(self.buffers, delta)
+            torch._foreach_add_(delta, self.buffers, alpha=self.momentum)
+            torch._foreach_add_(slow, delta, alpha=1 - decay)
+            rest = set(self.outer)
+            others = [i for i in range(len(self.current)) if i not in rest]
+            torch._foreach_lerp_(
+                [self.slow[i] for i in others], [self.current[i] for i in others], 1 - decay
+            )
+        else:
+            torch._foreach_lerp_(self.slow, self.current, 1 - decay)
         torch._foreach_copy_(self.current, self.slow)
 
 
@@ -427,7 +466,15 @@ def fit(
         if selector_net is not None and config.select_fraction < 1
         else None
     )
-    lookahead = Lookahead(model, masters) if config.lookahead else None
+    lookahead = None
+    if config.lookahead:
+        frozen_ids: set[int] = set()
+        if airbench:
+            frozen_ids.add(model.whiten.bias.data_ptr())
+            for stage, cooldown in ((0, config.stage1_cooldown), (1, config.stage2_cooldown)):
+                if cooldown:
+                    frozen_ids |= {p.data_ptr() for p in model.groups[stage].parameters()}
+        lookahead = Lookahead(model, masters, config.lookahead_outer_momentum, frozen_ids)
     whiten_steps = ceil(config.whiten_bias_epochs * stream.steps_per_epoch)
     final_size = config.res_schedule[-1][1] if config.res_schedule else None
     switch_step = config.res_schedule[-1][0] * total_steps if config.res_schedule else 0.0
@@ -448,7 +495,12 @@ def fit(
         seed = int(torch.randint(2**31 - 1, (1,)).item())
         crop_generator = torch.Generator(device=stream.labels.device).manual_seed(seed)
     stop = total_steps
-    if config.trim_tail and config.lookahead and not config.lookahead_flush:
+    if (
+        config.trim_tail
+        and config.lookahead
+        and not config.lookahead_flush
+        and config.lookahead_final_decay == 1.0
+    ):
         stop = total_steps - total_steps % config.lookahead_every
     epoch, epoch_start = 0, -1
     # Pruned epochs are shorter, so run epochs until the step budget is spent.
@@ -459,6 +511,13 @@ def fit(
         epoch_start = step
         targets.new_epoch()
         for inputs, labels in stream.epoch(epoch - 1):
+            if config.bn_freeze_frac is not None and step == ceil(
+                config.bn_freeze_frac * total_steps
+            ):
+                # FrozenBN tail (Wu & Johnson 2021): BN uses running statistics from here.
+                for module in model.modules():
+                    if isinstance(module, nn.BatchNorm2d):
+                        module.eval()
             if freezable:
                 model.frozen_groups = scheduled(config.freeze_schedule, step, total_steps, 0)
                 if config.thin_window:
@@ -556,6 +615,7 @@ def fit(
             net.train_size = None
             net.soft_pool = False
             net.whiten.bias.requires_grad_(True)
+            net.train()
             for module in net.modules():
                 if isinstance(module, nn.Conv2d) and module is not net.whiten:
                     module.weight.requires_grad_(True)
@@ -564,7 +624,8 @@ def fit(
     if lookahead is not None:
         if config.lookahead_flush and step % config.lookahead_every:
             lookahead.update(decay=lookahead_decay(config, step, total_steps))
-        lookahead.update(decay=1.0)
+        # 1.0 returns the slow weights; lower values blend the final fast weights back in.
+        lookahead.update(decay=config.lookahead_final_decay)
     if masters is not None:
         masters.sync()
     if config.bn_recal_batches:
@@ -712,7 +773,7 @@ class TrainingObjective(nn.Module):
 
 def lookahead_decay(config: RecipeConfig, step: int, total_steps: int) -> float:
     """airbench's lookahead pull, scaled to the update interval: base**every * progress**power."""
-    base = 0.95**config.lookahead_every
+    base = config.lookahead_base**config.lookahead_every
     return base * (step / total_steps) ** config.lookahead_power
 
 

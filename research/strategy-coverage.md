@@ -192,3 +192,16 @@ and 19→9→4→2 at 20 px. Stage 3's conv2 and residual conv run on a **3×3 g
 | 1x1 stage-3 convs, 4x4 terminal grid, width 768 via 1x1, centre-tap pruning | agent r4 (topology) | rejected | S56 (F-057) |
 | Stage-3 residual 1x1; stage-1 width 96 | agent r4 (topology) | rejected (predicted savings not realised under max-autotune) | S59, S60 (F-060) |
 | Pinned-memory staged H2D copy | agent r4 (audit) | not pursued (5-10 ms, host-dependent) | — |
+
+### Round 5 (T-019), 2026-10-04
+
+| Strategy | Source | Status | Evidence |
+| --- | --- | --- | --- |
+| Re-tune lr, wd, BN-bias scaler, freeze window after LS 0.4 | lead | converged (all within noise) | S63 (F-063) |
+| Final lookahead blend with fast weights; fp32 evaluation copy | lead | rejected (null) | S63 (F-063) |
+| SNOO (Nesterov momentum on the lookahead outer step) | literature agent (arXiv 2510.15830) | rejected (-0.18 to -2.96 pp) | S64 (F-065) |
+| FrozenBN tail | literature agent (Wu & Johnson 2021) | rejected (non-finite logits with BN eps 1e-12) | S64 (F-065) |
+| Cautious weight decay; batch ramp; schedule-free; NorMuon | literature agent | not run (weak transfer case; see the r5 report) | — |
+| Teammates' latest tips (youssef-baseline / -hypothesis / -lit / -dr) | team branches | ours leads at matched accuracy (+16.6% / +4.8% / +76% time; dr fails to compile) | C3 (F-064) |
+| Fable-style lr floor; lookahead base 0.93/0.97; 28 px phase | team branches | rejected | S65 (F-066) |
+| uint8 data on GPU; pinned upload | team branches, audit agent | not pursued (not exact / 5-10 ms) | — |

@@ -479,6 +479,34 @@
 - **Decision consequence:** Commit D-013 as the current entry; an official A100 PCIe run would confirm absolute time if the user wants Modal used.
 - **Resolution:** Submission verified locally.
 
+### F-063 — resolved, contextual
+
+- **Observation:** S63 (20 seeds 6500-6519, D-013 base, control 75.19%): lr 10 / 13 75.12 / 75.16%; weight decay 0.013 / 0.0176 75.12 / 75.17%; BN-bias scaler 12 / 24 75.07 / 75.08%; stage-1 cooldown+freeze at 0.65-0.85 75.22%; final lookahead blend 0.5 / 0.0 (fast weights) 75.23 / 75.14%; evaluating an fp32 copy 75.17%.
+- **Interpretation:** The D-013 base sits at the optimum for lr, weight decay and the BN-bias scaler after the label-smoothing change; blending the final fast weights and fp32 evaluation add nothing (fp16 rounding does not limit evaluation).
+- **Decision consequence:** Keep D-013; no re-tune needed.
+- **Resolution:** No change.
+
+### F-064 — resolved, material
+
+- **Observation:** C3 (local dev stack, paired on two GPUs in opposite arm order, 10 seeds per arm per GPU): our submission 75.07% at 4.231 / 4.087 s; youssef-baseline (b046a15) 75.49% at +16.6% time; youssef-hypothesis (a47c48c) 75.14% at +4.8% (GPU 0 only; Inductor compile error on GPU 1; build 407 s); youssef-hypothesis-lit (7d2a86e) 76.00% at +76% time; youssef-hypothesis-dr (283aba5) failed to compile on both GPUs (Inductor symbolic-shape error).
+- **Interpretation:** At the exchange rate (about 0.054 pp per 1% time) our submission still dominates every teammate tip: baseline buys +0.42 pp for 16.6% time (worth about 0.9 pp), hypothesis +0.10 pp for 4.8%, lit +0.93 pp for 76%. Two tips have reliability risks on this stack (compile failures; a 407 s build against the 600 s limit), and youssef-baseline hard-codes CIFAR mean/std constants (a rule question).
+- **Decision consequence:** Keep our submission as the team entry; report the compile, build-time and constants risks to the teammate.
+- **Resolution:** Our submission leads.
+
+### F-065 — resolved, material
+
+- **Observation:** S64 (20 seeds 6700-6719, D-013 base, control 75.19%): SNOO (Nesterov momentum on the lookahead outer step, frozen stages and BN statistics excluded) with momentum 0.25 / 0.5 / 0.75: 75.00 / 74.50 / 72.22%; momentum 0.5 with lookahead every 10 steps: 74.10%. FrozenBN tail from 85% / 90% of steps failed: the classifier returned non-finite logits.
+- **Interpretation:** Outer Nesterov momentum on top of airbench's decaying lookahead pull overshoots the slow weights in this short run, monotonically worse with momentum; the LLM evidence for SNOO does not transfer. The FrozenBN tail is numerically unsafe with BN eps 1e-12: channels with near-zero running variance blow up in running-statistics mode during training, which train-mode batch statistics never hit.
+- **Decision consequence:** Reject SNOO and the FrozenBN tail (fixing the latter would need a larger BN eps, a model change, for at most about 1% time).
+- **Resolution:** Rejected.
+
+### F-066 — resolved, material
+
+- **Observation:** S65 (20 seeds 6800-6819, D-013 base, control 75.11%): lr floor reached at 96% / 90% and held: 75.06 / 74.87%; lookahead base decay 0.97 / 0.93: 75.02 / 75.08%; a 28 px phase over 50-60% / 45-60% of steps: 74.94 / 75.13% (local times about -1.5% / +1% after GPU adjustment).
+- **Interpretation:** The untested ideas from the teammates' branches (Fable-style lr floor, lookahead base decay, an intermediate 28 px phase) do not improve the D-013 base: all within noise or negative, and the 28 px phase does not save enough time to pay for its accuracy cost.
+- **Decision consequence:** Reject; the teammates' systems ideas (uint8 data on GPU, pinned upload) are not pursued (not exact, or 5-10 ms and host-dependent).
+- **Resolution:** Rejected.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.

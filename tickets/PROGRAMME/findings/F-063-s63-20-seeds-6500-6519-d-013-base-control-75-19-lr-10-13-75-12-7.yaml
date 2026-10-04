@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-063
+task_id: T-019
+result_kind: 'null'
+importance: contextual
+observation: 'S63 (20 seeds 6500-6519, D-013 base, control 75.19%): lr 10 / 13 75.12 / 75.16%; weight
+  decay 0.013 / 0.0176 75.12 / 75.17%; BN-bias scaler 12 / 24 75.07 / 75.08%; stage-1 cooldown+freeze
+  at 0.65-0.85 75.22%; final lookahead blend 0.5 / 0.0 (fast weights) 75.23 / 75.14%; evaluating an fp32
+  copy 75.17%.'
+interpretation: The D-013 base sits at the optimum for lr, weight decay and the BN-bias scaler after the
+  label-smoothing change; blending the final fast weights and fp32 evaluation add nothing (fp16 rounding
+  does not limit evaluation).
+decision_implication: Keep D-013; no re-tune needed.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: supported
+  rationale: all arms within about 2 SE of control at 20 seeds
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s63-retune-ls04-table.csv
+  locator: research/evidence/T-019/s63-retune-ls04-table.csv
+  sha256: 370b24ee67968594a6b0a0018f1e161f2e3b57823d361967b93dcae6cdf6d579
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: No change.

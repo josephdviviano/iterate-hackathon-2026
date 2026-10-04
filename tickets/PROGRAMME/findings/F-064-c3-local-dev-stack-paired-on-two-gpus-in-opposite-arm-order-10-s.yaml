@@ -1,0 +1,36 @@
+schema_version: '2.0'
+finding_id: F-064
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'C3 (local dev stack, paired on two GPUs in opposite arm order, 10 seeds per arm per GPU):
+  our submission 75.07% at 4.231 / 4.087 s; youssef-baseline (b046a15) 75.49% at +16.6% time; youssef-hypothesis
+  (a47c48c) 75.14% at +4.8% (GPU 0 only; Inductor compile error on GPU 1; build 407 s); youssef-hypothesis-lit
+  (7d2a86e) 76.00% at +76% time; youssef-hypothesis-dr (283aba5) failed to compile on both GPUs (Inductor
+  symbolic-shape error).'
+interpretation: 'At the exchange rate (about 0.054 pp per 1% time) our submission still dominates every
+  teammate tip: baseline buys +0.42 pp for 16.6% time (worth about 0.9 pp), hypothesis +0.10 pp for 4.8%,
+  lit +0.93 pp for 76%. Two tips have reliability risks on this stack (compile failures; a 407 s build
+  against the 600 s limit), and youssef-baseline hard-codes CIFAR mean/std constants (a rule question).'
+decision_implication: Keep our submission as the team entry; report the compile, build-time and constants
+  risks to the teammate.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: dev stack (torch 2.7); compile failures may not reproduce on the official torch 2.4
+  discriminating_test: rerun failing tips on the pinned stack if needed
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: c3-teammate-tips-report.txt
+  locator: research/evidence/T-019/c3-teammate-tips-report.txt
+  sha256: 6b72141b17af96f8072e26514732f615a74cc2ae1f2aae03d7f647e10dadbae8
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Our submission leads.

@@ -1,0 +1,53 @@
+# Round 5 on the D-013 base (LS 0.4, 8.25 epochs, trimmed tail): re-tune lr, weight decay, BN-bias
+# scaler and the stage-1 freeze window after the smoothing change, plus two zero-cost levers:
+# a final lookahead blend of slow and fast weights, and evaluating an fp32 copy of the model.
+# 20 seeds, both GPUs.
+name = "s63-retune-ls04"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [6500, 6501, 6502, 6503, 6504, 6505, 6506, 6507, 6508, 6509,
+         6510, 6511, 6512, 6513, 6514, 6515, 6516, 6517, 6518, 6519]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+lr = 10.0
+[[configs]]
+lr = 13.0
+[[configs]]
+weight_decay = 0.013
+[[configs]]
+weight_decay = 0.0176
+[[configs]]
+bias_scaler = 12.0
+[[configs]]
+bias_scaler = 24.0
+[[configs]]
+stage1_cooldown = [0.65, 0.85]                # later freeze (less saving, more stage-1 learning)
+freeze_schedule = [[0.85, 1]]
+[[configs]]
+lookahead_final_decay = 0.5                   # blend final fast weights into the slow copy
+[[configs]]
+lookahead_final_decay = 0.0                   # return the final fast weights
+[[configs]]
+eval_fp32 = true                              # evaluate an fp32 copy

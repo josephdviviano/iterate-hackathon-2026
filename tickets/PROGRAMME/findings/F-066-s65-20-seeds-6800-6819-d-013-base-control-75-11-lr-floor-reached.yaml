@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-066
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S65 (20 seeds 6800-6819, D-013 base, control 75.11%): lr floor reached at 96% / 90% and
+  held: 75.06 / 74.87%; lookahead base decay 0.97 / 0.93: 75.02 / 75.08%; a 28 px phase over 50-60% /
+  45-60% of steps: 74.94 / 75.13% (local times about -1.5% / +1% after GPU adjustment).'
+interpretation: 'The untested ideas from the teammates'' branches (Fable-style lr floor, lookahead base
+  decay, an intermediate 28 px phase) do not improve the D-013 base: all within noise or negative, and
+  the 28 px phase does not save enough time to pay for its accuracy cost.'
+decision_implication: Reject; the teammates' systems ideas (uint8 data on GPU, pinned upload) are not
+  pursued (not exact, or 5-10 ms and host-dependent).
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: supported
+  rationale: all arms within about 2 SE of control at 20 seeds
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s65-teammate-ideas-table.csv
+  locator: research/evidence/T-019/s65-teammate-ideas-table.csv
+  sha256: 92fb8390d922c418bbf777aef4eaba38a2354b31e0e48c92df2b12828101133f
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Rejected.

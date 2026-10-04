@@ -150,6 +150,16 @@ LEVERS = {
     },
     "centre-tap": SMALL
     | {"block_depth": 3, "res_schedule": [[0.0, 20], [0.5, 32]], "centre_tap_max": 2},
+    "snoo-bnfreeze": SMALL
+    | {
+        "block_depth": 3,
+        "lookahead_outer_momentum": 0.5,
+        "bn_freeze_frac": 0.8,
+        "stage1_cooldown": [0.4, 0.6],
+        "freeze_schedule": [[0.6, 1]],
+    },
+    "floor-base": SMALL | {"lr_decay_end": 0.9, "lookahead_base": 0.97},
+    "final-blend-fp32": SMALL | {"lookahead_final_decay": 0.5, "eval_fp32": True},
     "square-kaiming": SMALL | {"square_init": "dirac+kaiming", "square_beta": 0.25},
     "celu": SMALL | {"activation": "celu", "epochs": 2.3},
     "select": SMALL | {"select_fraction": 0.5, "selector_widths": [16, 32, 32]},
