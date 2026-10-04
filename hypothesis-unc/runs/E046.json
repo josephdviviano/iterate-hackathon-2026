@@ -1,0 +1,28 @@
+{
+  "exp": "E046",
+  "commit": "8a2452a",
+  "pid": 772392,
+  "start_ticks": 6627337,
+  "started": 1791089868.6951566,
+  "tag": "I070",
+  "description": "Exploit, staggered FreezeOut cascade. This is the only remaining backward-truncation lever that targets the largest block, group 2 (~51% of conv MACs). On the E036 tip, put the group-2 conv filters (Muon) and group-2 BN params (SGD) in their own param groups. Their LR follows the global schedule until 75%, then decays linearly to 0 by 90% of steps; E028's annealed freeze is what kept group 1 neutral. For the last 10% of steps (about 23 steps, 32 px, group 1 already frozen), detach group 2's output before group 3 and use a new compiled 32 px step with no group-1/2 backward and no update for those params. Group-2 BN stays in train mode, and Lookahead still averages every param. Capture the new variant in build with channels_last tensors, with error_on_recompile on. Judge on seeds 13\u201332 against E036 on the same seeds, plus seeds 0\u20132.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E046.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7539666666666667,
+    "time": 5.0786617846655036,
+    "complete": true
+  },
+  "row": {
+    "exp": "E046",
+    "commit": "8a2452a",
+    "accuracy": 0.7539666666666667,
+    "time": 5.0786617846655036,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I070",
+    "description": "Exploit, staggered FreezeOut cascade. This is the only remaining backward-truncation lever that targets the largest block, group 2 (~51% of conv MACs). On the E036 tip, put the group-2 conv filters (Muon) and group-2 BN params (SGD) in their own param groups. Their LR follows the global schedule until 75%, then decays linearly to 0 by 90% of steps; E028's annealed freeze is what kept group 1 neutral. For the last 10% of steps (about 23 steps, 32 px, group 1 already frozen), detach group 2's output before group 3 and use a new compiled 32 px step with no group-1/2 backward and no update for those params. Group-2 BN stays in train mode, and Lookahead still averages every param. Capture the new variant in build with channels_last tensors, with error_on_recompile on. Judge on seeds 13\u201332 against E036 on the same seeds, plus seeds 0\u20132."
+  }
+}

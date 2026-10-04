@@ -1,0 +1,28 @@
+{
+  "exp": "E074",
+  "commit": "a9bf7d5",
+  "pid": 693611,
+  "start_ticks": 5885358,
+  "started": 1791082448.9064295,
+  "tag": "I094",
+  "description": "Retry E054's near-miss on the margin E069 banked. Base: E069 (commit 5ed8687). Make one change: move the 28 -> 32 px switch from 3.5 to 4.0 epochs (sample 200000), so 28 px runs epochs 1.5-4.0 (still without translate) and 32 px with translate-2 runs 4.0-6.75. Total epochs, bs, the sample stream, the block-1 freeze at 0.8 (sample 270000) and every sample-indexed schedule stay unchanged. Port the switch logic from E054 (commit 81c1232) and split the straddling step into the two partial shapes. In build(), warm up the new partial shapes at sample 200000 for the 28 px and 32 px graphs with channels_last tensors in the exact timed layout (E035). Keep build under ~450 s. Run debug_nan.py on the new shapes and compare trial-0 with later-trial times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E074.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7513333333333333,
+    "time": 4.601042431330522,
+    "complete": true
+  },
+  "row": {
+    "exp": "E074",
+    "commit": "a9bf7d5",
+    "accuracy": 0.7513333333333333,
+    "time": 4.601042431330522,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I094",
+    "description": "Retry E054's near-miss on the margin E069 banked. Base: E069 (commit 5ed8687). Make one change: move the 28 -> 32 px switch from 3.5 to 4.0 epochs (sample 200000), so 28 px runs epochs 1.5-4.0 (still without translate) and 32 px with translate-2 runs 4.0-6.75. Total epochs, bs, the sample stream, the block-1 freeze at 0.8 (sample 270000) and every sample-indexed schedule stay unchanged. Port the switch logic from E054 (commit 81c1232) and split the straddling step into the two partial shapes. In build(), warm up the new partial shapes at sample 200000 for the 28 px and 32 px graphs with channels_last tensors in the exact timed layout (E035). Keep build under ~450 s. Run debug_nan.py on the new shapes and compare trial-0 with later-trial times."
+  }
+}

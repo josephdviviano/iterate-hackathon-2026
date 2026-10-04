@@ -1,0 +1,28 @@
+{
+  "exp": "E050",
+  "commit": "3df6233",
+  "pid": 825509,
+  "start_ticks": 6939650,
+  "started": 1791092991.8326237,
+  "tag": "I079",
+  "description": "Explore diagnostic plus systems change, with identical math. Recent keep and discard decisions are noise-limited: E042, E045, E046 and E048 all landed between their thresholds, and the tip's seeds 0\u20132 mean has read 0.7532 / 0.7525 / 0.7497 / 0.7544 across four builds of the same commit. Before any further sub-0.15 pp comparison, find out whether that build-to-build spread can be removed. Run offline on the E036 tip (commit 60645dd) through the harness code path, seeds 0\u20132. (1) Build once, then run seeds 0\u20132 twice in the same process. Record whether per-seed accuracies are bit-identical, which tests for within-build nondeterminism such as cuDNN wgrad atomics. (2) Build twice in fresh processes with private inductor cache dirs, using mode='max-autotune-no-cudagraphs' for every step variant. Compare per-seed accuracies across the two builds and record mean time against the E036 build. (3) Keep max-autotune with cudagraphs, but pin kernel choice by persisting the inductor/autotune cache under submissions/arena/. Populate it from a synthetic-data build only, never real data. Do two fresh-process builds that read the pinned cache and compare per-seed accuracies. First check RULES.md and the submission contract to confirm that a shipped compile cache is allowed. If it is not, report arm (3) as diagnostic only. Commit only if arm (2) or arm (3) is bit-identical across rebuilds at \u22640.5% time cost versus E036. In that case it becomes the deterministic baseline, and every later idea compares seeds 0\u20132 and 13\u201332 against it exactly.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E050.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7552,
+    "time": 5.206001658336997,
+    "complete": true
+  },
+  "row": {
+    "exp": "E050",
+    "commit": "3df6233",
+    "accuracy": 0.7552,
+    "time": 5.206001658336997,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I079",
+    "description": "Explore diagnostic plus systems change, with identical math. Recent keep and discard decisions are noise-limited: E042, E045, E046 and E048 all landed between their thresholds, and the tip's seeds 0\u20132 mean has read 0.7532 / 0.7525 / 0.7497 / 0.7544 across four builds of the same commit. Before any further sub-0.15 pp comparison, find out whether that build-to-build spread can be removed. Run offline on the E036 tip (commit 60645dd) through the harness code path, seeds 0\u20132. (1) Build once, then run seeds 0\u20132 twice in the same process. Record whether per-seed accuracies are bit-identical, which tests for within-build nondeterminism such as cuDNN wgrad atomics. (2) Build twice in fresh processes with private inductor cache dirs, using mode='max-autotune-no-cudagraphs' for every step variant. Compare per-seed accuracies across the two builds and record mean time against the E036 build. (3) Keep max-autotune with cudagraphs, but pin kernel choice by persisting the inductor/autotune cache under submissions/arena/. Populate it from a synthetic-data build only, never real data. Do two fresh-process builds that read the pinned cache and compare per-seed accuracies. First check RULES.md and the submission contract to confirm that a shipped compile cache is allowed. If it is not, report arm (3) as diagnostic only. Commit only if arm (2) or arm (3) is bit-identical across rebuilds at \u22640.5% time cost versus E036. In that case it becomes the deterministic baseline, and every later idea compares seeds 0\u20132 and 13\u201332 against it exactly."
+  }
+}

@@ -1,0 +1,44 @@
+round 27 (update): 4/4 members, 6 ideas forecast; scored E022
+H4.1.3->refuted, H4.3.1->supported, H2.2.3->refuted, H2.5.1->refuted, H1.5.3->refuted, H1.5.1->open, H1.5.2->inconclusive, H1.3.1->inconclusive, H1.3.4->inconclusive, H4.2.3->supported, H4.2->supported, H4.2.2->supported, +H5, +H5.1, +H5.1.1, +H5.1.2, +H6, +H6.1, +H6.1.1, +H4.1.4, +H1.5.5, +H1.5.6, +H1.5.7, +H2.3.5, +H2.6, +H2.6.1, +H2.4.2. I made the noise model and bookkeeping match the loop's own data. H4.1 now spells out a three-part noise budget:
+- **Rebuild noise:** about ±0.03 pp on the 3-seed mean (E019).
+- **Seed noise:** the 3-seed mean SE is about 0.14 pp.
+- **RNG-stream re-roll:** the offset of seeds 0–2 from the held-out mean has RMS about 0.23 pp. E016 and E017 are the outliers.
+
+**Status changes:**
+- H4.1.1 is narrowed to builds without cudagraphs. H4.3.1 is supported: cudagraph rebuilds are not bit-identical, but the 3-seed mean moves only about 0.03 pp.
+- Refuted, because pre-registered results already contradict them: H4.1.3, H2.2.3, H2.5.1 and H1.5.3.
+- H4.2.3 is supported: E012's timing shows 9.5 true epochs.
+- Moved to inconclusive, because each rests on one 3-seed difference within noise: H1.3.1 (LS), H1.3.4 (LR floor) and H1.5.2 (width).
+- Lowered: H1.5.1 to 0.45 (the held-out gain is +0.24 pp and confounded with E015's compile change) and H1.5 to 0.45 (the committee voted refuted 4/4). H1.2.1 lost E006's support because E006 changed optimizer and batch size together.
+- H4.2 is restated in true epochs: about 0.44 pp and 0.68 s per epoch, roughly 1.5 s/pp. This is still the cheapest dial. The −0.5 epoch half of H4.2.4 has not been run.
+
+**Counterexamples explained:**
+- **E006:** new Lvl1 N1 says step count and batch size are a lever separate from epochs. Batch 2500 and batch 1500 tests are added under it.
+- **E016:** filter renormalization may make the filter wd do nothing (H1.5.4 raised to 0.6). H4.1.4 tests whether E016's 0.7607 reproduces from a fresh build.
+- **E018:** H2.3 is now supported only for the mild E007 schedule, with three candidate mechanisms. Two tests separate them: H2.3.5 (phase order and the size of the final jump) and H2.3.3, now aimed at BN recalibration on E018.
+
+**Other changes:**
+- H2.2's claim that at most 5% systems headroom remains is now marked unmeasured. New Lvl1 N2 proposes that kernel throughput is poor on small feature maps.
+- Added from search: BN recalibration on the tip, scored on held-out seeds (H1.3.6, conf 0.35, based on +0.55 pp in arXiv 2411.18704); LS 0.1 and Muon lr ×2; the paired wd ×1 vs ×0.5 test; FreezeOut (H2.6); selective backprop only in mid-training (H2.4.2); and an eval compliance sweep over every B from 1 to 1024 (H3.1.2).
+- H1.2.3 lowered to 0.25, since the NS step count may already be 3.
+
+N1 and N2 are the two open Lvl1 hypotheses.
+
+**Recommended next steps:** the −0.5 true-epoch trim, BN recalibration, the E016 re-run, the per-layer profile, and the eval sweep. Score every keep decision on the held-out 10-seed mean.
+added I042, I043, I044, I045, I046; dropped I039. The tip is E023: 9.0 true epochs, 6.20 s, held-out mean 0.7556, about 0.26 pp above the bar. So far the epoch dial (about 1.5 s per pp) is the cheapest trade measured; resolution and width cuts traded at 0.5–1.0 s per pp.
+
+**New ideas**
+- **Epoch trim (priority 4):** it depends on I038. If I038 adds at least 0.15 pp on held-out seeds, cut to 8.5 epochs; otherwise cut to 8.75 epochs (about 6.03 s, held-out about 0.7545).
+- **FreezeOut, H2.6.1 (priority 4):** stop backprop through group 1 and the whitening bias for the last 25% of steps. Their LR is annealed to 0 by that point. Expected time is down 4–6%, and it wins if it costs 0.2 pp or less.
+- **Easy-example dropping without a proxy, new H2.4 child (priority 3):** reuse each sample's loss from the previous pass, which costs nothing extra, and skip the easiest 10% from epoch 2 on. Expected time is down 8–10%. It beats the epoch dial if the held-out mean drops 0.2 pp or less.
+- **Batch 2500, H5.1.1 (priority 2):** the faster direction of the batch lever, after the committee vetoed the smaller batch in I026.
+- **Muon lr 0.48, H1.5.6 (priority 2):** a booster that doesn't change time, judged on held-out seeds.
+
+**Dropped**
+- **I035:** 20 px gives odd feature-map sizes that tile poorly (the E024 lesson), so the time saving would likely fall below 4%. The committee forecast harm.
+- **I039:** label smoothing has been flat (E013), and all four members forecast harm.
+
+**Kept:** I040, the per-layer profiling diagnostic, at priority 2. Its "harm" votes don't mean much because it changes nothing in the recipe, and it decides H6/H2.2.4.
+
+The queue now holds 6 queued ideas, with I038 still running.
+round 28 (forecast): 4/4 members, 5 ideas forecast

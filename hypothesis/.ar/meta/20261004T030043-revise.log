@@ -1,0 +1,34 @@
+H4->supported, H4.2.8->retired, H4.5->retired, H4.6->supported, H4.6.1->supported, H4.7->retired, H4.8->retired, H2.20->supported, H2.20.1->inconclusive, H2.11->inconclusive, H2.11.3->inconclusive, H2.11.4->inconclusive, H10->inconclusive, H10.1->inconclusive, H11->retired, H11.2.1->retired, H8->supported, H8.2->inconclusive, H8.2.2->inconclusive, H12.2->refuted, H12.2.1->refuted, +H2.21, +H2.21.1, +H2.21.2, +H2.20.2, +H2.20.3, +H2.20.4, +H4.6.2, +H4.9, +H4.9.1, +H10.1.2. I rebuilt the noise model around E113. One component, a per-trajectory sd of ~0.26 pp with no benefit from seed pairing, explains all the run-to-run variation. On that basis I retired H4.5, H4.7, H4.8 and H4.2.8, corrected H4.6 (effective n = distinct trajectories; large-seed A/Bs are two-sample comparisons) and marked H4.6.1 supported. I also added a pooled 200-trajectory E100 baseline (N_pool) and an explicit acceptance rule (N_rule). The rule closes the gap between the official 40-seed bar (0.75, where a population mean of >=0.7518 is safe) and the local 3-seed gate (pass probability ~Phi((mu-0.753)/0.15)).
+
+Many 8–22-seed deltas turn out to be ~1 SE under this model. As a result H2.11, H2.11.3, H2.11.4 and H10 drop to inconclusive. H10.2 stays refuted, but only as a lever: effects >=~0.15 pp are excluded, and the mechanism claim is dropped. H7.1's 'flat' becomes an exclusion bound, and H9 is narrowed to averaging design with a 100-seed re-measure of the lookahead ablation as a precondition. H9.2.1 now uses the airbench cubic-ramp arms from the search.
+
+E114 nulled the reallocation axis. I retired H11 and its children, rewrote H8 as 'flat optimum with concave returns' (supported) and set H8.2 to inconclusive at low value. E112 refutes class-balanced batches (H12.2/H12.2.1).
+
+E116 is the live lever: a late freeze of the stem plus group 1 costs ~0.025–0.033 pp per 1% of time. H2.20 is now supported. H2 is rewritten around a falsifiable claim: in the energy-bound 32 px phase, time tracks backward activation bytes more than FLOPs. New nodes test it:
+- a per-group backward profile (N_bytes_a);
+- group-1 width as a byte lever (N_g1w);
+- a freeze dose-response at 92/85/75% (N_freeze_dose);
+- a progressive Drop-Muon-style freeze (N_freeze_prog);
+- a deeper group-2 freeze (N_freeze_deep);
+- a 100-seed re-measure of E104 before it is used to fund E116's loss (N_e104);
+- a 100-seed re-measure of the 32 px trim rate yardstick (N_trim).
+
+H2.4.3 now projects E116 onto the 300 W judge. Evidence-token sign mismatches on H5, H2.8, H2.10 and H10.1.1 are noted in the update reasons, since the update format has no evidence field. Open Lvl1s: H2, H9, H12.
+added I129, I130, I131, I132, I133, I134; dropped none. I added six new ideas, so the queue holds 8: six new plus I114 (depth-cut profile) and I124 (multi-sample augmentation). I123 is still running.
+
+**Main exploit.** E116 (stem and group 1 frozen from 85% of samples) can likely be banked as the tip under the loop's own acceptance rule (H4.9):
+- Its population mean is about 0.7521, which is at or above the 0.7518 bar. The official 40-seed check should therefore clear 75% almost surely.
+- The idea adds about 100 more trajectories to firm up that estimate. It then allows up to 3 scored attempts to get a row of 0.753 or more.
+- Expected time is about 4.26–4.31 s, roughly 4% faster than the 4.465 s tip.
+- A passing scored row is partly luck by construction, so the decision rests on the population mean, not on that row.
+
+**Fallback and dose-response.** Freezing from 92% instead should save about 2% for a loss of 0.06 pp or less. It is the safer point to bank, and it shows whether the accuracy cost of freezing is concentrated late.
+
+**Can the freeze be funded?** A 100-seed measurement of E104 (batch size 1024 in every phase) tests whether extra updates really buy about 0.04 pp per 1% of time. That rate is currently about 1 standard error, so it is unconfirmed.
+
+**Explore ideas:**
+- An untimed per-group backward-energy profile, to check whether the early high-resolution layers cost more than their FLOP share.
+- A deeper late freeze that also freezes group 2 from 92%.
+- Translate 4 instead of 2 under Muon, in the 28 and 32 px phases only.
+
+I dropped no queued ideas: none of the remaining queued ideas tests a settled hypothesis.

@@ -1,0 +1,411 @@
+"""Airbench-style CIFAR-100 speedrun recipe.
+
+Whitening stem + three conv groups, bf16 autocast, channels_last, torch.compile
+warmed up on synthetic data in build (untimed). Nesterov SGD with label
+smoothing, lookahead EMA, GPU-side flip/translate augmentation.
+"""
+
+import math
+from types import SimpleNamespace
+
+import torch
+import torch.nn.functional as F
+from torch import nn
+
+from benchmark.api import BuildContext, TrainingData
+
+HYP = {
+    "widths": (128, 384, 576),
+    "depth": 3,  # convs per group; depth 3 adds a residual around conv2/conv3
+    "epochs": 6.75,
+    "batch_size": 1536,
+    "lr": 9.0,
+    "momentum": 0.85,
+    "weight_decay": 0.012,
+    "bias_scaler": 64.0,
+    "label_smoothing": 0.2,
+    "whiten_bias_epochs": 1,
+    "translate": 2,
+    "bn_momentum": 0.6,
+    "scale": 1 / 9,
+    "lookahead": True,
+    "compile": True,
+    "freeze_block1_after": 5.0625,  # epoch from which block 1's output is detached (no block-1 gradients)
+    "head_lr_mult": 2.0,
+    "contrast": 0.13,  # per-image contrast/brightness jitter amplitudes (uniform +-)
+    "brightness": 0.14,
+    "res_schedule": ((1.5, 20), (3.5, 28)),  # (until epoch, size): whole images downsampled; 32px afterwards
+    "muon_lr": 0.16,
+    "muon_momentum": 0.8,
+    "ns_steps": 3,
+}
+
+
+class BatchNorm(nn.BatchNorm2d):
+    def __init__(self, num_features, momentum, eps=1e-12):
+        super().__init__(num_features, eps=eps, momentum=1 - momentum)
+        self.weight.requires_grad = False
+
+    def reset_parameters(self):
+        super().reset_parameters()
+
+
+class Conv(nn.Conv2d):
+    def __init__(self, cin, cout, kernel_size=3, padding="same", bias=False):
+        super().__init__(cin, cout, kernel_size=kernel_size, padding=padding, bias=bias)
+
+    def reset_parameters(self):
+        super().reset_parameters()
+        if self.bias is not None:
+            self.bias.data.zero_()
+        w = self.weight.data
+        torch.nn.init.dirac_(w[: w.size(1)])
+
+
+class ConvGroup(nn.Module):
+    def __init__(self, cin, cout, depth, bn_momentum):
+        super().__init__()
+        self.depth = depth
+        self.conv1 = Conv(cin, cout)
+        self.pool = nn.MaxPool2d(2)
+        self.norm1 = BatchNorm(cout, bn_momentum)
+        self.conv2 = Conv(cout, cout)
+        self.norm2 = BatchNorm(cout, bn_momentum)
+        if depth == 3:
+            self.conv3 = Conv(cout, cout)
+            self.norm3 = BatchNorm(cout, bn_momentum)
+        self.activ = nn.SiLU()
+
+    def forward(self, x):
+        x = self.activ(self.norm1(self.pool(self.conv1(x))))
+        if self.depth == 3:
+            x0 = x
+            x = self.activ(self.norm2(self.conv2(x)))
+            x = self.activ(self.norm3(self.conv3(x)) + x0)
+        else:
+            x = self.activ(self.norm2(self.conv2(x)))
+        return x
+
+
+class Net(nn.Module):
+    def __init__(self, num_classes, widths, depth, bn_momentum, scale):
+        super().__init__()
+        self.register_buffer("mean", torch.zeros(1, 3, 1, 1))
+        self.register_buffer("std", torch.ones(1, 3, 1, 1))
+        whiten_width = 2 * 3 * 2 * 2
+        self.whiten = Conv(3, whiten_width, kernel_size=2, padding=0, bias=True)
+        self.whiten.weight.requires_grad = False
+        self.groups = nn.Sequential(
+            ConvGroup(whiten_width, widths[0], depth, bn_momentum),
+            ConvGroup(widths[0], widths[1], depth, bn_momentum),
+            ConvGroup(widths[1], widths[2], depth, bn_momentum),
+        )
+        self.head = nn.Linear(widths[2], num_classes, bias=False)
+        self.scale = scale
+        self.whiten_bias_grad = True
+        self.freeze_block1 = False
+
+    def forward(self, x):
+        x = (x - self.mean) / self.std
+        bias = self.whiten.bias if self.whiten_bias_grad else self.whiten.bias.detach()
+        x = F.silu(F.conv2d(x, self.whiten.weight, bias))
+        x = self.groups[0](x)
+        if self.freeze_block1:
+            x = x.detach()
+        x = self.groups[2](self.groups[1](x))
+        x = F.max_pool2d(x, x.shape[-1]).flatten(1)
+        return self.head(x) * self.scale
+
+
+@torch.no_grad()
+def init_whitening(layer, images, eps=5e-4):
+    c, (h, w) = images.shape[1], layer.weight.shape[2:]
+    patches = images.unfold(2, h, 1).unfold(3, w, 1).transpose(1, 3).reshape(-1, c, h, w).float()
+    flat = patches.view(len(patches), -1)
+    cov = (flat.T @ flat) / len(flat)
+    eigenvalues, eigenvectors = torch.linalg.eigh(cov, UPLO="U")
+    eigenvalues = eigenvalues.flip(0).view(-1, 1, 1, 1)
+    eigenvectors = eigenvectors.T.reshape(c * h * w, c, h, w).flip(0)
+    scaled = eigenvectors / torch.sqrt(eigenvalues + eps)
+    layer.weight.copy_(torch.cat((scaled, -scaled)))
+
+
+def augment(padded, flip_bits, epoch, r, contrast=0.0, brightness=0.0, translate=True):
+    """Random translate by up to r pixels (from reflect-padded images) + alternating flip."""
+    n = len(padded)
+    device = padded.device
+    shifts = torch.randint(0, 2 * r + 1, (n, 2), device=device)
+    if not translate:  # still drawn above so the RNG stream is unchanged
+        shifts = torch.full_like(shifts, r)
+    base = torch.arange(32, device=device)
+    rows = (base[None, :] + shifts[:, :1])[:, None, :, None]
+    cols = (base[None, :] + shifts[:, 1:])[:, None, None, :]
+    idx_n = torch.arange(n, device=device)[:, None, None, None]
+    idx_c = torch.arange(3, device=device)[None, :, None, None]
+    out = padded[idx_n, idx_c, rows, cols]
+    flip = flip_bits if epoch % 2 == 0 else ~flip_bits
+    out = torch.where(flip[:, None, None, None], out.flip(-1), out)
+    if contrast or brightness:
+        mean = out.mean(dim=(1, 2, 3), keepdim=True)
+        c = 1 + (torch.rand(n, 1, 1, 1, device=device) * 2 - 1) * contrast
+        b = (torch.rand(n, 1, 1, 1, device=device) * 2 - 1) * brightness
+        out = (out - mean) * c + mean + b
+    return out
+
+
+
+# Per-iteration quintic coefficients from a greedy minimax (Polar Express style) composition on [0.012, 1]
+# (drafts/polar_express.py), and per-shape factors that rescale the result to NS3's mean output norm (measured on the
+# E058 recipe's real momentum matrices) so only the spectrum shape changes, not the step size.
+PE_COEFFS = ((7.934617, -22.621886, 16.362605), (3.504426, -2.573436, 0.50288), (2.505927, -1.813921, 0.419256))
+PE_NORM_MATCH = {(128, 216): 0.874, (128, 1152): 0.969, (384, 1152): 0.853, (384, 3456): 0.863, (576, 3456): 0.861, (576, 5184): 0.827}
+
+
+def _newtonschulz(G, steps: int, eps: float = 1e-7):
+    """Quintic Newton-Schulz on a stack of matrices G [k, m, n], in bf16, with per-iteration coefficients."""
+    X = G.bfloat16()
+    X = X / (X.norm(dim=(1, 2), keepdim=True) + eps)
+    transposed = G.size(1) > G.size(2)
+    if transposed:
+        X = X.mT
+    for a, b, c in PE_COEFFS[:steps]:
+        A = X @ X.mT
+        B = b * A + c * A @ A
+        X = a * X + B @ X
+    if transposed:
+        X = X.mT
+    return X
+
+
+@torch.compile(dynamic=False)
+def _muon_update(params, grads, bufs, lr, momentum: float, ns_steps: int, shape_groups: tuple):
+    with torch.no_grad():
+        torch._foreach_mul_(bufs, momentum)
+        torch._foreach_add_(bufs, grads)
+        updates = torch._foreach_add(grads, bufs, alpha=momentum)
+        for idx in shape_groups:
+            G = torch.stack([updates[i].reshape(len(updates[i]), -1) for i in idx])
+            scale = max(1.0, G.size(1) / G.size(2)) ** 0.5
+            U = _newtonschulz(G, ns_steps)
+            U = U * PE_NORM_MATCH[(min(G.shape[1:]), max(G.shape[1:]))]
+            for j, i in enumerate(idx):
+                p = params[i]
+                p.mul_(len(p) ** 0.5 / p.norm())
+                p.sub_(U[j].view(p.shape).float() * (lr * scale))
+
+
+class Muon:
+    """Orthogonalized Nesterov momentum for conv filters, with per-step weight-norm projection (airbench94_muon).
+
+    One compiled graph updates all filters; same-shape filters are orthogonalized together as one batched matmul,
+    and the lr is a 0-d GPU tensor so schedule changes never recompile.
+    """
+
+    def __init__(self, params, lr, momentum, ns_steps):
+        self.params = list(params)
+        self.bufs = [torch.zeros_like(p) for p in self.params]
+        self.lr_t = torch.tensor(float(lr), device=self.params[0].device)
+        self.param_groups = [dict(lr=lr)]
+        self.momentum = momentum
+        self.ns_steps = ns_steps
+        groups = {}
+        for i, p in enumerate(self.params):
+            groups.setdefault(tuple(p.shape), []).append(i)
+        self.shape_groups = tuple(tuple(v) for v in groups.values())
+
+    def zero_grad(self, set_to_none=True):
+        for p in self.params:
+            p.grad = None
+
+    def step(self):
+        self.lr_t.fill_(self.param_groups[0]["lr"])
+        live = [i for i, p in enumerate(self.params) if p.grad is not None]
+        if len(live) == len(self.params):
+            grads = [p.grad for p in self.params]
+            _muon_update(self.params, grads, self.bufs, self.lr_t, self.momentum, self.ns_steps, self.shape_groups)
+        else:  # some filters are frozen (no grad): update the rest with their own shape groups
+            params = [self.params[i] for i in live]
+            groups = {}
+            for j, p in enumerate(params):
+                groups.setdefault(tuple(p.shape), []).append(j)
+            shape_groups = tuple(tuple(v) for v in groups.values())
+            bufs = [self.bufs[i] for i in live]
+            _muon_update(params, [p.grad for p in params], bufs, self.lr_t, self.momentum, self.ns_steps, shape_groups)
+
+
+class Lookahead:
+    def __init__(self, model):
+        self.ema = {k: v.detach().clone() for k, v in model.state_dict().items() if v.is_floating_point()}
+
+    @torch.no_grad()
+    def update(self, model, decay):
+        for k, v in model.state_dict().items():
+            if k in self.ema:
+                self.ema[k].lerp_(v, 1 - decay)
+                v.copy_(self.ema[k])
+
+
+def make_optimizer(model, hyp, total_steps):
+    bs = hyp["batch_size"]
+    momentum = hyp["momentum"]
+    kilostep_scale = 1024 * (1 + 1 / (1 - momentum))
+    lr = hyp["lr"] / kilostep_scale
+    wd = hyp["weight_decay"] * bs / kilostep_scale
+    lr_biases = lr * hyp["bias_scaler"]
+    whiten_bias = [model.whiten.bias]
+    norm_biases = [p for k, p in model.named_parameters() if "norm" in k and p.requires_grad]
+    filters = [p for k, p in model.named_parameters() if p.ndim == 4 and p.requires_grad]
+    other = [
+        p
+        for k, p in model.named_parameters()
+        if "norm" not in k and p.requires_grad and p is not model.whiten.bias and p.ndim != 4
+    ]
+    groups = [
+        dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases),
+        dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
+        dict(params=other, lr=lr * hyp["head_lr_mult"], weight_decay=wd / (lr * hyp["head_lr_mult"])),
+    ]
+    sgd = torch.optim.SGD(groups, momentum=momentum, nesterov=True)
+    muon = Muon(filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], ns_steps=hyp["ns_steps"])
+    for opt in (sgd, muon):
+        for g in opt.param_groups:
+            g["base_lr"] = g["lr"]
+    return [sgd, muon]
+
+
+def lr_factor(step, total_steps):
+    warmup = int(total_steps * 0.23)
+    if step < warmup:
+        frac = step / warmup
+        return 0.2 * (1 - frac) + 1.0 * frac
+    frac = (step - warmup) / max(1, total_steps - warmup)
+    return 1.0 * (1 - frac) + 0.07 * frac
+
+
+def build(context: BuildContext):
+    hyp = {**HYP, **context.parameters}
+    device = context.device
+    torch.backends.cudnn.benchmark = True
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+    model = Net(context.num_classes, hyp["widths"], hyp["depth"], hyp["bn_momentum"], hyp["scale"])
+    model = model.to(device).to(memory_format=torch.channels_last)
+    step_model = torch.compile(model, mode="max-autotune-no-cudagraphs") if hyp["compile"] and device.type == "cuda" else model
+    state = SimpleNamespace(model=model, step_model=step_model, context=context, hyp=hyp)
+    # Warm up compilation and cuDNN autotuning on synthetic data (state is reset in prepare).
+    bs = hyp["batch_size"]
+    x = torch.rand(bs, 3, 32, 32, device=device).to(memory_format=torch.channels_last)
+    y = torch.randint(0, context.num_classes, (bs,), device=device)
+    model.train()
+    opt = make_optimizer(model, hyp, 10)
+    # Warm up exactly the (resolution, whitening-bias grad, block-1 frozen) variants the timed run uses.
+    starts = [0.0] + [until for until, _ in hyp["res_schedule"]]
+    sizes = [size for _, size in hyp["res_schedule"]] + [32]
+    ends = starts[1:] + [hyp["epochs"]]
+    variants = set()
+    for start, end, size in zip(starts, ends, sizes):
+        if start < hyp["whiten_bias_epochs"]:
+            variants.add((size, True, False))
+        if end > hyp["whiten_bias_epochs"]:
+            variants.add((size, False, False))
+        if end > hyp["freeze_block1_after"]:
+            variants.add((size, False, True))
+    for size, bias_grad, frozen in sorted(variants):
+        xs = downsample(x, size) if size < 32 else x
+        model.whiten_bias_grad, model.freeze_block1 = bias_grad, frozen
+        for _ in range(3):
+            train_step(state, opt, xs, y)
+    model.whiten_bias_grad, model.freeze_block1 = True, False
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+    return state
+
+
+def downsample(x, size):
+    return F.interpolate(x, size=(size, size), mode="bilinear", antialias=True).contiguous(memory_format=torch.channels_last)
+
+
+def train_step(state, optimizer, x, y):
+    with torch.autocast(state.context.device.type, dtype=torch.bfloat16):
+        logits = state.step_model(x)
+        loss = F.cross_entropy(logits.float(), y, label_smoothing=state.hyp["label_smoothing"], reduction="sum")
+    for opt in optimizer:
+        opt.zero_grad(set_to_none=True)
+    loss.backward()
+    for opt in optimizer:
+        opt.step()
+
+
+def prepare(state, data: TrainingData, seed: int) -> None:
+    hyp = state.hyp
+    device = state.context.device
+    model = state.model
+    for m in model.modules():
+        if m is not model and hasattr(m, "reset_parameters"):
+            m.reset_parameters()
+        if isinstance(m, nn.BatchNorm2d):
+            m.reset_running_stats()
+    images = data.images.to(device, non_blocking=True).float().div_(255)
+    labels = data.labels.to(device, non_blocking=True)
+    mean = images.mean(dim=(0, 2, 3), keepdim=True)
+    std = images.std(dim=(0, 2, 3), keepdim=True)
+    with torch.no_grad():
+        model.mean.copy_(mean)
+        model.std.copy_(std)
+        init_whitening(model.whiten, ((images[:5000] - mean) / std))
+    r = hyp["translate"]
+    state.padded = F.pad(images, (r, r, r, r), mode="reflect") if r > 0 else images
+    state.labels = labels
+    state.flip_bits = torch.rand(len(images), device=device) < 0.5
+    steps_per_epoch = len(images) // hyp["batch_size"]
+    state.total_steps = int(steps_per_epoch * hyp["epochs"])
+    state.optimizer = make_optimizer(model, hyp, state.total_steps)
+    state.lookahead = Lookahead(model) if hyp["lookahead"] else None
+    model.train()
+
+
+def train(state) -> nn.Module:
+    hyp = state.hyp
+    model = state.model
+    optimizer = state.optimizer
+    total = state.total_steps
+    bs = hyp["batch_size"]
+    n = len(state.labels)
+    r = hyp["translate"]
+    alpha = ((0.97**5) * (torch.arange(total + 1) / total) ** 3).tolist()
+    res_steps = [(int((n // bs) * until), size) for until, size in hyp["res_schedule"]]
+    freeze_step = int((n // bs) * hyp["freeze_block1_after"])
+    step = 0
+    epoch = 0
+    while step < total:
+        whiten_on = epoch < hyp["whiten_bias_epochs"]
+        model.whiten_bias_grad = whiten_on
+        translate = epoch + 1 > hyp["res_schedule"][-1][0]  # no translate in epochs that are entirely low-res
+        imgs = augment(state.padded, state.flip_bits, epoch, r, hyp["contrast"], hyp["brightness"], translate)
+        perm = torch.randperm(n, device=imgs.device)
+        imgs = imgs[perm].contiguous(memory_format=torch.channels_last)
+        labels = state.labels[perm]
+        for i in range(n // bs):
+            if step >= total:
+                break
+            f = lr_factor(step, total)
+            for gi, g in enumerate(optimizer[0].param_groups):
+                g["lr"] = g["base_lr"] * f if (gi != 0 or whiten_on) else 0.0
+            for g in optimizer[1].param_groups:
+                g["lr"] = g["base_lr"] * f
+            xb = imgs[i * bs : (i + 1) * bs]
+            for until, size in res_steps:
+                if step < until:
+                    xb = downsample(xb, size)
+                    break
+            model.freeze_block1 = step >= freeze_step
+            train_step(state, optimizer, xb, labels[i * bs : (i + 1) * bs])
+            step += 1
+            if state.lookahead is not None and step % 5 == 0:
+                state.lookahead.update(model, decay=alpha[step])
+        epoch += 1
+    if state.lookahead is not None:
+        state.lookahead.update(model, decay=1.0)
+    model.whiten_bias_grad, model.freeze_block1 = True, False
+    model.eval()
+    return model

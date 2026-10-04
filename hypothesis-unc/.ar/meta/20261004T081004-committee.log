@@ -1,0 +1,20 @@
+round 72 (update): 4/4 members, 3 ideas forecast; scored E061
+added I099, I100, I101, I102, I103; dropped I098. The new ideas are built around the re-measured epoch dial: buying accuracy back with more epochs now costs about 0.77 s per percentage point (pp) of accuracy (E059). That makes two things worth revisiting: cuts rejected at the old ~1.5 s/pp rate, and near-misses that were judged on seed sets already reused for earlier keep decisions (H4.4). The tip is E061: 5.02 s, with a pooled 40-draw mean of about 0.7532. A single committed build passes the local 0.753 bar only about half the time, so every candidate goes through the frozen gate.
+
+**Queue after this round:** I096 (Muon → SGD, running), I097 (cheaper GELU, gated) and five new ideas.
+
+**New ideas, highest priority first:**
+1. **Second early trim (H4.2.5, priority 5).** Remove 12 more steps from the 20 px phase (225 → 213), about −0.15 s. This answers W6's crux: do early steps stay nearly free beyond 225?
+2. **Narrow group 3 from 512 to 448 channels (H2.5, priority 4).** Group 3 is the only group that trains on every step, frozen phases included. The old width results (E010 at ~1.4 s/pp, E021 at ~1.0 s/pp) both beat the new dial. The measured s/pp rate decides whether width cuts reopen, followed by a narrowing-plus-top-up run.
+3. **Drop group 1's third conv (H2.5.2, priority 3).** This was dropped as I034 when the break-even rate was 1.5 s/pp. At 0.77 s/pp, a ~0.2 s cut breaks even at a loss of about 0.26 pp.
+4. **Drop the 24 px bridge, re-tested on fresh seeds (H2.3.8, priority 3).** E040's −0.28 pp was read on biased seeds, the same pattern that made E041 look bad before E061 came in at −0.02 pp.
+5. **Label smoothing 0.3 → 0.15 (H1.5.5, priority 2).** A time-neutral booster on an axis never tested on unbiased seeds.
+
+The mix is roughly two-thirds exploit (ideas 1, 2 and 4) and one-third explore (3 and 5). All are judged on 2 builds × seeds 33–52 against E061.
+
+**Dropped:** I098 (larger early batch). E061 already settles most of its question, and its saving is capped by per-step overhead at about 0.05 s.
+
+**Caveats:**
+- Seeds 33–52 have now driven two keeps (E060, E061). Rotate to fresh seeds 73–92 after about three more decisions.
+- Run the bridge test after the dose test, so each early-phase cut is judged on its own before stacking.
+round 73 (forecast): 4/4 members, 5 ideas forecast

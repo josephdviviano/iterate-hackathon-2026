@@ -1,0 +1,37 @@
+H2.21->inconclusive, H2.21.1->inconclusive, H2.18.1->supported, H2.19.1->refuted, H2.20.1->supported, H10->refuted, H10.1->retired, H10.1.1->refuted, H10.1.2->refuted, H2.10->inconclusive, H2.8.2->refuted, H12.1->refuted, H12.1.1->refuted, H4.6.2->supported, H6.8->inconclusive, H6.8.1->inconclusive, +H2.11.6, +H2.11.7, +H2.10.6, +H2.18.2, +H2.18.3, +H2.19.2, +H2.20.5, +H2.21.3, +H2.8.3, +H9.2.2, +H7.5, +H7.5.1. I updated the tree from the new results (E116-E124), the literature search and the review. Main changes:
+
+1. **H2's core is rewritten.** The "time tracks bytes more than FLOPs" claim is dropped. Once group-2 conv1's dgrad is counted, E116, E117 and E123 all fit time ≈ FLOPs. H2.21 and H2.21.1 are demoted to inconclusive. A new direct-timing check (N_attrib) is added. H2.20.4 (group-2 freeze) must now be measured directly, not sized from E122's profile.
+
+2. **Extra updates are confirmed null.** H10, H10.1.1 and H10.1.2 are refuted by E121, which found +0.004 pp over 99 seeds. As a result, the tip's bs-1024 28/32 px phases are now an unvalidated purchase (H2.11). A 100-seed revert to bs 1536 (N_bs1536_revert, about -2.5% time) is queued as the cheapest likely gain.
+
+3. **The 32 px trim rate is reopened.** H2.10 goes back to inconclusive and N_slope adds ±0.25-epoch arms to measure it. Every later cut is judged against that measured slope.
+
+4. **The biggest measured time levers move up.**
+   - Depth cuts (H2.18, -7.6% and -6.1% projected) rise in confidence, with accuracy arms in N_depth_acc.
+   - Group-3 width 512 (-5.2%) is restated as a FLOP lever with a low accuracy prior from the search. H2.19.1 is refuted.
+
+5. **The late freeze (H2.20) is supported.** The 85% freeze is banked as E119, and E120 gives the 92% dose point. FreezeOut's LR anneal plus eval-mode BN in frozen layers is added as a refinement.
+
+6. **Other corrections.**
+   - H2.8.2's record now says its cost premise was refuted, and a 12 px arm is added.
+   - H12.1 and H12.1.1 are refuted by E124, with the "coverage" mechanism left unresolved.
+   - H6.8 is reopened as inconclusive (E092 was only 8 seeds, about 1.4 SE), with a 100-seed lookahead-removal gate added under H9.2.
+
+7. **H4 and H4.9 record that the banked tip is locally infeasible on average.** It passed the gate 1 time in 6, with population mean 0.7521. Every further accuracy-costing cut must now be funded. H4.2.4 now also lists the E123/E124 base mismatches.
+
+Lvl1 nodes still open: H2, H9 and H12.
+added I135, I136, I137, I138, I139, I140; dropped none. I added six ideas, all built on the current tip (E116 code: 85% freeze, about 4.26 s, population mean 0.7521) and all judged on 100 seeds against the pooled ~198-trajectory E116 baseline. The queue now has 7 queued ideas plus I133, which is running. I dropped nothing: I134 (translate 4, on the E100 base) is still a valid paired test.
+
+**Highest priority:**
+- **Batch size back to 1536 in the 28/32 px phases (H2.11.6, priority 5).** Expected -2 to -2.5% time. E121 (99 seeds) suggests the bs-1024 tail buys nothing, so the expected accuracy loss is about 0 to -0.05 pp. It is bankable only if the 100-seed mean stays at or above 0.7518.
+
+**Priority 4:**
+- **Measure the local yardstick (H2.10.6).** Two arms, 32 px phase -0.25 and +0.25 epoch. The measured slope sets the bar every later cut must beat, and tells us how many 32 px epochs a depth cut must buy back.
+- **Depth cut 2/3/3 (H2.18.2a).** Projected -6.5 to -7.5% time with the freeze on. Expected loss -0.15 to -0.35 pp. If the loss trades better than the slope, a follow-up spends part of the saving on extra 32 px epochs.
+
+**Priority 3 and below:**
+- **Anneal group-1 LR to 0 before the freeze (H2.20.5a).** Zero time cost. It may recover +0.02 to +0.06 pp of the freeze's cost.
+- **Depth cut 3/3/2 (H2.18.2b).** Explore arm. Projected about -6% time, but the prior for accuracy is low because late capacity has been valuable on CIFAR-100.
+- **Lookahead removal on 100 seeds (H9.2.2).** This gates the averaging-strength arms (H9.2.1). Expected time saving is only about 0.4%.
+
+Because the margin is gone (0.7521 against the 0.7518 floor), every cut that costs accuracy is framed as needing an accuracy source to pay for it. Each idea also requires checking the source hash against its stated base (H4.2.4).

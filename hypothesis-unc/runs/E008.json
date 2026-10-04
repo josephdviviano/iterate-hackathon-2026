@@ -1,0 +1,28 @@
+{
+  "exp": "E008",
+  "commit": "7df727a",
+  "pid": 624542,
+  "start_ticks": 5345113,
+  "started": 1791077046.4609966,
+  "tag": "I009",
+  "description": "Exploit. On the E007 recipe (Muon + Lookahead/EMA + progressive resizing 24\u219228\u219232 px, 9 epochs), change only the epoch count from 9 to 8.5. Keep the resolution split as fractions of total steps (about 40/30/30%) and stretch the LR and EMA schedules to the new step count. Warm up every resolution in build with channels_last tensors from the training code path. Set torch._dynamo.config.error_on_recompile=True after build so a leak fails loudly. This spends part of E007's 0.60 pp margin and measures the slope with EMA and Muon on.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E008.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7572333333333333,
+    "time": 6.977379820668527,
+    "complete": true
+  },
+  "row": {
+    "exp": "E008",
+    "commit": "7df727a",
+    "accuracy": 0.7572333333333333,
+    "time": 6.977379820668527,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I009",
+    "description": "Exploit. On the E007 recipe (Muon + Lookahead/EMA + progressive resizing 24\u219228\u219232 px, 9 epochs), change only the epoch count from 9 to 8.5. Keep the resolution split as fractions of total steps (about 40/30/30%) and stretch the LR and EMA schedules to the new step count. Warm up every resolution in build with channels_last tensors from the training code path. Set torch._dynamo.config.error_on_recompile=True after build so a leak fails loudly. This spends part of E007's 0.60 pp margin and measures the slope with EMA and Muon on."
+  }
+}

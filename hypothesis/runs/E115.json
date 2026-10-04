@@ -1,0 +1,28 @@
+{
+  "exp": "E115",
+  "commit": "657f310",
+  "pid": 690128,
+  "start_ticks": 5850617,
+  "started": 1791082101.4933748,
+  "tag": "I127",
+  "description": "Late freeze of group 1 plus the stem as a FLOP/byte time lever, profiled untimed first. Step 1, untimed side script on E100 code: build a second static 32 px / bs-1024 train graph in which group 1's output is detached (no backward into group 1 or the stem; group-1 BN still runs in train mode). Warm it up in build. Measure ms/step and NVML energy over 20 steps for each variant, and project total run time for freezes over the last 15% and last 30% of samples. Step 2, only if the detached step is >=8% cheaper: score a freeze from 85% of samples, which lies inside the 32 px phase and covers the floor-hold and final EMA. From then on, group-1 filters drop out of the compiled Muon stacks (a second warmed variant of the update, with momentum untouched) and group-1 BN params drop out of the SGD foreach. Lookahead and the final EMA stay unchanged. Selection is a host-side flag, so nothing recompiles in timed code. Decide accuracy on the large-seed paired instrument (H4.6.1) against E100, plus two distinct scored samples.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E115.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7553666666666666,
+    "time": 6.972298407999915,
+    "complete": true
+  },
+  "row": {
+    "exp": "E115",
+    "commit": "657f310",
+    "accuracy": 0.7553666666666666,
+    "time": 6.972298407999915,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "crash",
+    "tag": "I127",
+    "description": "Late freeze of group 1 plus the stem as a FLOP/byte time lever, profiled untimed first. Step 1, untimed side script on E100 code: build a second static 32 px / bs-1024 train graph in which group 1's output is detached (no backward into group 1 or the stem; group-1 BN still runs in train mode). Warm it up in build. Measure ms/step and NVML energy over 20 steps for each variant, and project total run time for freezes over the last 15% and last 30% of samples. Step 2, only if the detached step is >=8% cheaper: score a freeze from 85% of samples, which lies inside the 32 px phase and covers the floor-hold and final EMA. From then on, group-1 filters drop out of the compiled Muon stacks (a second warmed variant of the update, with momentum untouched) and group-1 BN params drop out of the SGD foreach. Lookahead and the final EMA stay unchanged. Selection is a host-side flag, so nothing recompiles in timed code. Decide accuracy on the large-seed paired instrument (H4.6.1) against E100, plus two distinct scored samples."
+  }
+}

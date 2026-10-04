@@ -1,0 +1,24 @@
+added I130, I131, I132, I133, I134, I135; dropped none. The queue now holds 7 ideas: I129 (projection-frequency gate, still running) and 6 new ones.
+
+**Why the next step looks like this.** E082 is the tip at 4.584 s. Its one-process 30-seed mean (~0.7541) is only ~0.1 pp above the gate. Every lever that was priced but changes the training math sits on a flat frontier of ~0.05 pp per 1% of time:
+- block-1 freeze at 0.75
+- 25 px middle stage
+- extra epochs
+
+So the only real gains left are math-preserving time cuts or a genuine accuracy gain.
+
+**Exploit ideas:**
+- **Priority 5: launch-once stack screen on the I125 base.** I125 is a math-preserving cut worth -0.7%. The screen runs on 40 seeds in one process with four configs: base, freeze at 0.75, 25 px, and both. The launch probability now also counts the ~0.1 pp build/process offset from I123. Expected result: a launch of the freeze-0.75 config at ~4.51 s with about a 60% chance of clearing the gate.
+- **Priority 4: the remaining trial-0 prepare excess.** Worth ~0.6%, and it can only be cut if a legal synthetic warmup exists.
+- **Priority 2: hide block-3 Muon NS behind the block-1/2 backward on a side stream.** This is a new mechanism (proposed H2.6). It sits behind a strict microbenchmark gate.
+
+**Explore ideas (untested scalars and mechanisms, all screened in one process for a paired gain of ≥ 2 SE):**
+- SGD-group weight-decay strength at fixed lr. Every earlier test held lr×wd constant, so the wd level itself was never varied.
+- Class-stratified batches to cut the 100-way head's gradient noise (proposed H1.15).
+- SGD-group Nesterov momentum. Muon's momentum turned out to have a sharp optimum, so this one may too.
+
+**No drops.** Every other queued idea is already done or dropped.
+
+**Tree bookkeeping the hypothesis owner should do** (results already settle these):
+- Close H1.2.9 (I098), H1.6/H1.6.1 (I104, I108), H1.12.1 (I105), H1.13.1 (I120), H1.1.5 (residual present), H1.14.1 (I123) and H2.5.1 (I117 refuted).
+- Mark H4.1.8 supported: paired sd is ~0.3-0.4 pp.

@@ -1,0 +1,28 @@
+{
+  "exp": "E124",
+  "commit": "f581844",
+  "pid": 754787,
+  "start_ticks": 6465638,
+  "started": 1791088251.7115972,
+  "tag": "I124",
+  "description": "Multi-sample augmentation in the 32 px phase, at equal compute. Base: E100 code. In the 2.75-epoch 32 px phase only (bs 1024), build each batch from 512 unique images, drawn as the next 512 of the epoch permutation, times 2 augmentation draws. Copy A keeps the existing alternating-flip state and its own translate offsets. Copy B gets the opposite flip and independently drawn translate offsets. Batch shape, step count, LR/EMA/tail indexing and the compiled graphs are unchanged; only the gather indices and the augmentation parameters differ. The 32 px phase then covers ~1.375 unique epochs instead of 2.75. The 16/24/28 px phases are unchanged. Smoke-test that the duplicated indices and the flip parity are correct on one batch. Decide on off-seed seeds 3-26 in >=3 fresh processes against E106, plus one scored sample, and a second only if off-seed >= +0.05 pp.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E124.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.744,
+    "time": 4.264321459665855,
+    "complete": true
+  },
+  "row": {
+    "exp": "E124",
+    "commit": "f581844",
+    "accuracy": 0.744,
+    "time": 4.264321459665855,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I124",
+    "description": "Multi-sample augmentation in the 32 px phase, at equal compute. Base: E100 code. In the 2.75-epoch 32 px phase only (bs 1024), build each batch from 512 unique images, drawn as the next 512 of the epoch permutation, times 2 augmentation draws. Copy A keeps the existing alternating-flip state and its own translate offsets. Copy B gets the opposite flip and independently drawn translate offsets. Batch shape, step count, LR/EMA/tail indexing and the compiled graphs are unchanged; only the gather indices and the augmentation parameters differ. The 32 px phase then covers ~1.375 unique epochs instead of 2.75. The 16/24/28 px phases are unchanged. Smoke-test that the duplicated indices and the flip parity are correct on one batch. Decide on off-seed seeds 3-26 in >=3 fresh processes against E106, plus one scored sample, and a second only if off-seed >= +0.05 pp."
+  }
+}

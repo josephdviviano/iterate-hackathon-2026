@@ -1,0 +1,28 @@
+{
+  "exp": "E054",
+  "commit": "ecf36b9",
+  "pid": 850084,
+  "start_ticks": 7149695,
+  "started": 1791095092.2728853,
+  "tag": "I084",
+  "description": "Explore, proposing a new H2.6 child: the stem needs a steady adaptation signal, not a gradient on every step. Intermittent stem backward in the 28 px phase, which is the most expensive phase (about 71 steps \u00d7 ~26 ms \u2248 1.8 s). On the E049 tip, on every second step of the 28 px phase (40\u201370% of steps), use the group-1-detached 28 px step variant. That variant has no group-1 wgrad/dgrad and no BN/GELU backward on the stem maps, and group-1 params get no Muon/SGD update and no momentum-buffer change on those steps. The variant already existed in E037's commit 6293350. On the other steps, run the usual whitening-detached full step with the group-1 LR as scheduled. Do not rescale the LR: single factor. Group 1 still trains on every step at 20/24 px and from 70% to 75% at 32 px, so it still adapts through the 28\u219232 switch, which E037/E042 say it needs. Lookahead averages every param. Capture the variant in build with channels_last tensors, with error_on_recompile on. Judge on seeds 13\u201332 against a same-build E049 baseline, plus seeds 0\u20132.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E054.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7498666666666667,
+    "time": 4.98940229100117,
+    "complete": true
+  },
+  "row": {
+    "exp": "E054",
+    "commit": "ecf36b9",
+    "accuracy": 0.7498666666666667,
+    "time": 4.98940229100117,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I084",
+    "description": "Explore, proposing a new H2.6 child: the stem needs a steady adaptation signal, not a gradient on every step. Intermittent stem backward in the 28 px phase, which is the most expensive phase (about 71 steps \u00d7 ~26 ms \u2248 1.8 s). On the E049 tip, on every second step of the 28 px phase (40\u201370% of steps), use the group-1-detached 28 px step variant. That variant has no group-1 wgrad/dgrad and no BN/GELU backward on the stem maps, and group-1 params get no Muon/SGD update and no momentum-buffer change on those steps. The variant already existed in E037's commit 6293350. On the other steps, run the usual whitening-detached full step with the group-1 LR as scheduled. Do not rescale the LR: single factor. Group 1 still trains on every step at 20/24 px and from 70% to 75% at 32 px, so it still adapts through the 28\u219232 switch, which E037/E042 say it needs. Lookahead averages every param. Capture the variant in build with channels_last tensors, with error_on_recompile on. Judge on seeds 13\u201332 against a same-build E049 baseline, plus seeds 0\u20132."
+  }
+}

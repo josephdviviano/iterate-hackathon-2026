@@ -1,0 +1,28 @@
+{
+  "exp": "E049",
+  "commit": "3df6233",
+  "pid": 790911,
+  "start_ticks": 6774774,
+  "started": 1791091343.06813,
+  "tag": "I075",
+  "description": "Exploit, the decisive test of the E046 crux (W2/W3/W5/W6). On the E036 tip, apply E046's group-2 freeze exactly as committed in 8a2452a. Group-2 filters and BN params get their own groups, with LR annealed from 75% to 0 at 90% of steps. For the last 10% of steps, group 2's output is detached before group 3, using the truncated 32 px variant. Group-2 BN stays in train mode and Lookahead averages every param. On top of that, add 0.25 true epoch (231 \u2192 237 steps, all schedules kept as fractions). Capture the variants in build, with error_on_recompile on. Judge in the same build session as I074, against the same-build E036 baseline and the I074 arm on seeds 13\u201332, plus seeds 0\u20132. Decision: if time is at least 2% below E036 and the 20-seed mean is within 0.03 pp of E036 or above it, the cascade-plus-top-up dominates E036 and becomes the base for further margin buying. If it trails the I074 arm by more than 0.15 pp, the group-2 freeze is no better than the dial and the cascade closes.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E049.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7535333333333334,
+    "time": 5.1979249523283215,
+    "complete": true
+  },
+  "row": {
+    "exp": "E049",
+    "commit": "3df6233",
+    "accuracy": 0.7535333333333334,
+    "time": 5.1979249523283215,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I075",
+    "description": "Exploit, the decisive test of the E046 crux (W2/W3/W5/W6). On the E036 tip, apply E046's group-2 freeze exactly as committed in 8a2452a. Group-2 filters and BN params get their own groups, with LR annealed from 75% to 0 at 90% of steps. For the last 10% of steps, group 2's output is detached before group 3, using the truncated 32 px variant. Group-2 BN stays in train mode and Lookahead averages every param. On top of that, add 0.25 true epoch (231 \u2192 237 steps, all schedules kept as fractions). Capture the variants in build, with error_on_recompile on. Judge in the same build session as I074, against the same-build E036 baseline and the I074 arm on seeds 13\u201332, plus seeds 0\u20132. Decision: if time is at least 2% below E036 and the 20-seed mean is within 0.03 pp of E036 or above it, the cascade-plus-top-up dominates E036 and becomes the base for further margin buying. If it trails the I074 arm by more than 0.15 pp, the group-2 freeze is no better than the dial and the cascade closes."
+  }
+}

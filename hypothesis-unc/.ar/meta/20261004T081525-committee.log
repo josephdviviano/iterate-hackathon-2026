@@ -1,0 +1,46 @@
+round 74 (update): 4/4 members, 6 ideas forecast; scored E062; COUNTEREXAMPLE E062 outside every range (time, accuracy)
+H1.2->supported, H1.2.2->supported, H1.4->supported, H2.3.8->retired, H2.5.2->retired, H2.6.7->refuted, H2.6.11->inconclusive, H4.2.6->supported, H4.4->refuted, H4.4.3->refuted, H4.5->refuted, H4.6->supported, H4.6.1->inconclusive, H5.1.4->retired, H6->supported, H6.5.1->refuted, +H8, +H8.1, +H8.1.1, +H8.2, +H8.2.1, +H1.2.4, +H2.2.5, +H2.6.12, +H2.6.13, +H4.7, +H4.7.1, +H4.2.7, +H4.2.8, +H6.5.4. I corrected two verdicts that pointed the wrong way and dropped the seed-set bias model; the main job now is buying about 0.13 pp of accuracy margin cheaply.
+
+**Corrected verdicts**
+- **E062 (SGD in place of Muon):** it supports H1.2.2 (−3.0 pp, where the hypothesis predicted a drop of at least 0.3 pp). It had been logged as refuting it only because the experiment's own pre-registered range missed. I raised H1.2 to supported 0.6. The caveat: only one untuned SGD setup was tried, and the near-identical seeds suggest a learning-rate scaling bug (new N2).
+- **E059 (epoch dial):** the measured ~0.77 s/pp sits inside H4.2.6's predicted band, so I marked it supported (0.55). H4.2 now states the dial as one number with a confidence interval of roughly 0.5–2 s/pp, because it rests on a single 20-draw build. New N7 re-measures it at 60 draws per arm.
+
+**Seed-set bias refuted (E057)**
+- Each rebuild re-draws every seed's outcome independently, and the kept tip's own value is optimistic by only ~0.05 pp. So H4.4, H4.4.3 and H4.5 are refuted, and H4.4.1 and H4.4.2 are retired. New N6 replaces them: the challenger deficits of ~0.2 pp seen after each keep are mostly real effects.
+- I restored E022, E025, E030, E032 and E040 as probable real harms, and removed the hedges in H1, H1.3 and H2.3 that depended on the bias story.
+- H4.1(a) now bounds the rebuild variation of a 20-seed mean at ≲0.06 pp.
+- **Seed-1 recount:** I recounted from the logged per-seed numbers, over post-E049 runs only. Seed 1 is the lowest of seeds 0–2 in 9 of 15 runs, against 5 expected by chance (p≈0.03). That is suggestive, so H4.1.6 stays open at low priority. It doesn't affect the keep gate, because the seeds 0–2 average across builds matches the population mean.
+
+**Where the tip stands (H4 and H4.6)**
+- The tip is now E061: 5.02 s, with a population mean of ~0.7532 from 40 fresh draws. That passes the local 0.753 bar only about half the time per build.
+- E058 showed the official 40-seed bar is easy to clear. The local bar is the binding one: a population of about 0.7545 is needed to pass it about 80% of the time.
+- New rule: any keep whose effect is under 0.2 pp needs at least 3 builds × 20 fresh seeds per arm. Any time claim under 1% needs per-step CUDA-event timing.
+- H2.6.11 (whitening detach at 6%) is downgraded to inconclusive: its time saving is unverified and inside build noise. A code read should also confirm that E061's commit actually carries the 6% detach.
+
+**Counterexamples the committee didn't predict**
+- **E062 time:** dropping Muon saved more than its Newton-Schulz GPU time accounts for. New N3: merging the separate Muon calls into one may recover ~0.1 s of overhead.
+- **E062 accuracy:** explained by N2 (scaling) and the new Lvl1 below.
+- **E056 time:** ReLU's saving fits the memory-bound account, so H6 is now supported. H6.5.1 is refuted. Search says SiLU and tanh-GELU move the same bytes as GELU, so N9 is a cheap profile-only check.
+- **E046 and E031:** already explained by H6.6.
+- **E043 accuracy:** rebuild noise.
+- **E032:** read as a real harm under the restored H1.3.
+
+**New Lvl1, N1 (per-step update quality):** in a ~225-step run, changes that degrade each step's progress (SGD swap, ReLU, stride-2 stem) cost 3–10× more than the dial. Its children:
+- N1.1.1: Muon momentum 0.6→0.8.
+- N1.2 and N1.2.1: does the recipe under-fit? A one-off train-accuracy diagnostic that decides whether the regularizer ideas are worth testing.
+- H1.5.6 is re-based on E061 as a Muon lr ×1.5 test.
+
+**Freeze tests were confounded:** every freeze-dose run moved the learning-rate anneal end along with the freeze point. H2.6 now flags this, H2.6.7 is refuted as stated, and H7 and H7.1 are lowered (E061's nearly free early trim also contradicts H7).
+- N5 separates the two factors by moving only the detach point.
+- N4 tests freezing *later* (80%), likely a booster better than the dial.
+
+**Other changes**
+- **Batch size (H5):** search bounds its time effect at 1–3% (E047), so it is now mainly an accuracy lever. H5.1.4 is retired, and H5.1.2 is re-based as batch 1600 on E061.
+- **Lowered or retired:** H1.8 and H1.8.1 lowered (the HAF results are a strong counter-prior). H1.4 marked supported from the airbench paper. H1.3.5, H1.5.5, H1.5.8 and H1.5.9 lowered or gated behind N1.2.1. H2.5.2 and H2.3.8 retired.
+- **Resolution:** H2.3.7 is re-based as moving the 28→32 px switch from 70% to 65% of steps.
+- **Next trim:** N8 continues the early 20 px trim.
+- **Tip check:** N6.1 confirms E061 on reserved seeds 53–72.
+
+Lvl1 hypotheses still open: H5, H7 and N1.
+added I104, I105, I106, I107, I108, I109; dropped I100, I103. The tip is E061: 5.02 s, with a population mean of about 0.7532, so it passes the local 0.753 bar only about half the time per build. The binding constraint is buying about 0.13 pp of margin with near-time-neutral boosters, and then spending any surplus on early trims. Queue after this round: I099 (the early-trim dose; it crashed as E063 on a warm-up bug that has since been fixed, so it should simply be relaunched), I097 (the gated tanh-GELU/SiLU check, kept because it settles the W3 vs W5 crux at the cost of one offline profile) and six new ideas. Exploit: (1) a time-neutral group-1 anneal extension (anneal end 75%→80%, detach kept at 75%), which separates decay compression from lost late steps in E055's cost (H2.6.13); (2) freeze plus anneal moved to 80% for +0.09 s, where break-even is about 0.12 pp at the dial (H2.6.12); (3) Muon lr ×1.5 on 60 draws (H1.5.6); (4) a measurement-gated merge of the per-group Muon calls into one compiled, batched update, with identical math (H2.2.5, the W3/W5 crux on E062's unexplained ~0.1 s). Explore: (5) Muon momentum 0.6→0.8 as the decisive test between critical-batch theory and H8.1 (H8.1.1); (6) an offline under-fitting diagnostic that decides whether regularizer boosters such as LS ↓ or jitter are worth any further runs (H8.2.1). Dropped: I100, where the group-3 width cut is forecast at about the dial rate (0/4 improve) and so cannot buy margin, and I103, the LS 0.15 test forecast flat, now gated on the H8.2.1 diagnostic. If both freeze-timing ideas and the lr booster win, stack them and spend the gain on I099's trim.
+round 75 (forecast): 4/4 members, 6 ideas forecast

@@ -1,0 +1,28 @@
+{
+  "exp": "E036",
+  "commit": "60645dd",
+  "pid": 721611,
+  "start_ticks": 6114126,
+  "started": 1791084736.5833726,
+  "tag": "I054",
+  "description": "Exploit. First read the code. If the whitening bias already stops training before 25% of steps, close H2.6.3 without a run. Otherwise, on the H2.6.2 successor (or E027 if it is not kept), stop the whitening bias's gradient after 20% of steps (Hiverge; airbench96 trains it for 3/45 epochs). Use a third compiled step variant in which the whitening output is detached, so no input-grad of group 1's first conv and no whitening backward on the 31\u00d731 maps. Group 1 still trains normally until the freeze. Anneal the whitening-bias LR to 0 by 20% of steps. Capture the new variant at every resolution it runs at (20/24/28/32 px) in build, with error_on_recompile on. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E036.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7532333333333333,
+    "time": 5.31434218333258,
+    "complete": true
+  },
+  "row": {
+    "exp": "E036",
+    "commit": "60645dd",
+    "accuracy": 0.7532333333333333,
+    "time": 5.31434218333258,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I054",
+    "description": "Exploit. First read the code. If the whitening bias already stops training before 25% of steps, close H2.6.3 without a run. Otherwise, on the H2.6.2 successor (or E027 if it is not kept), stop the whitening bias's gradient after 20% of steps (Hiverge; airbench96 trains it for 3/45 epochs). Use a third compiled step variant in which the whitening output is detached, so no input-grad of group 1's first conv and no whitening backward on the 31\u00d731 maps. Group 1 still trains normally until the freeze. Anneal the whitening-bias LR to 0 by 20% of steps. Capture the new variant at every resolution it runs at (20/24/28/32 px) in build, with error_on_recompile on. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132."
+  }
+}

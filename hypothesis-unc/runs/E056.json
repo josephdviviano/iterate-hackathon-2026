@@ -1,0 +1,28 @@
+{
+  "exp": "E056",
+  "commit": "e3500ad",
+  "pid": 863372,
+  "start_ticks": 7272993,
+  "started": 1791096325.255304,
+  "tag": "I086",
+  "description": "Sharpened replacement for I078, gated on the committee's shared crux (do ReLU's saved bytes reach 3%?). Step 1 is offline, with no repo change. On the E049 tip code with synthetic channels_last batch-2000 data, compile the 32 px whitening-detached, group-1-frozen and group-1+2-frozen steps and the 28 px step twice: GELU vs ReLU in all conv groups. Measure GPU kernel time per step (torch.profiler, 20 steps each), and record whether Inductor's ReLU backward saves a bool mask or the fp16 output. Weight the per-step savings by the tip's step counts per phase. Step 2 runs only if the projected saving is \u22653% of train time: commit the ReLU swap, recapture every variant in build with error_on_recompile on, and judge on seeds 13\u201332 against a same-build E049 baseline plus seeds 0\u20132. If the projected saving is under 3%, close H6.5's activation branch with no run.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E056.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.752,
+    "time": 4.952750553997855,
+    "complete": true
+  },
+  "row": {
+    "exp": "E056",
+    "commit": "e3500ad",
+    "accuracy": 0.752,
+    "time": 4.952750553997855,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I086",
+    "description": "Sharpened replacement for I078, gated on the committee's shared crux (do ReLU's saved bytes reach 3%?). Step 1 is offline, with no repo change. On the E049 tip code with synthetic channels_last batch-2000 data, compile the 32 px whitening-detached, group-1-frozen and group-1+2-frozen steps and the 28 px step twice: GELU vs ReLU in all conv groups. Measure GPU kernel time per step (torch.profiler, 20 steps each), and record whether Inductor's ReLU backward saves a bool mask or the fp16 output. Weight the per-step savings by the tip's step counts per phase. Step 2 runs only if the projected saving is \u22653% of train time: commit the ReLU swap, recapture every variant in build with error_on_recompile on, and judge on seeds 13\u201332 against a same-build E049 baseline plus seeds 0\u20132. If the projected saving is under 3%, close H6.5's activation branch with no run."
+  }
+}

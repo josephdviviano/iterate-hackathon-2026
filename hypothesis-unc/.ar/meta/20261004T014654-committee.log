@@ -1,0 +1,20 @@
+round 17 (update): 4/4 members, 3 ideas forecast; scored E015
+added I023, I024, I025, I026, I027, I028; dropped none. The tip is E015 (6.58 s, 0.7574). Its effective margin is closer to E010's held-out 0.754, because the E015 accuracy gain is a kernel reshuffle. E012 settled the cost picture: time is about 95% conv work that scales with pixel count. Fixed and first-epoch cost is negligible. Systems trims beyond I021 can win at most about 1-2%. So the remaining time levers are fewer pixel-epochs and narrower widths, and each has to be paid for in accuracy. LS, Muon lr and the final-LR floor were all flat.
+
+**New exploit ideas**
+- **Swap 28→24 px, keep the 32 px tail at 30% (priority 5):** about -8% time. It tests D002/E011's reading that the full-resolution tail, not total pixels, sets accuracy.
+- **Trim 0.75 epoch from the 24 px phase only (priority 4):** cuts the same time as a uniform 0.5-epoch trim, which separates "late epochs matter more" (W5's crux) from a uniform dial.
+- **Rebuild plus held-out-seed diagnostic on E015 (priority 3):** answers the W1/W3/W5 crux and H4.1.1 by checking whether max-autotune kernel choice is stable across rebuilds and what the tip's true mean is.
+- **Muon momentum 0.8 (priority 2):** the third grid point.
+
+**New explore ideas**
+- **Batch size 1250 (priority 3):** checks whether 225 steps is too few for CIFAR-100.
+- **Group 2 from 384 to 320 channels (priority 2):** group 2 is the largest FLOP block, and this measures its exchange rate against the epoch dial.
+
+**Existing queue**
+- I021 (graph breaks, consensus about -1%) and I022 (plain EMA, which answers W5's crux on averaging) stay.
+- I019 is still running.
+- Nothing is dropped: no queued idea has a settled hypothesis or a harm forecast.
+
+The queue now holds 8 ideas.
+round 18 (forecast): 4/4 members, 6 ideas forecast; vetoed I026

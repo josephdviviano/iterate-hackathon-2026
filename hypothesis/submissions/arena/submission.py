@@ -25,17 +25,19 @@ with open(__file__, "rb") as _f:
 
 # Override any value with --params, e.g. '{"epochs": 9, "widths": [128, 384, 768]}'.
 DEFAULTS = {
-    "epochs": 7.5,
+    "epochs": 7.25,
     "batch_size": 1536,
     "tail_batch_size": 1024,  # batch size for the 32 px phase; 0 uses batch_size throughout
     "lr": 9.0,  # per 1024 examples, decoupled from momentum (airbench convention)
     "momentum": 0.85,
     "weight_decay": 0.012,  # per 1024 examples, decoupled from the learning rate
-    "bias_scaler": 64.0,  # learning-rate multiplier for BatchNorm biases
+    "bias_scaler": 32.0,  # learning-rate multiplier for BatchNorm biases
     "label_smoothing": 0.3,
     "warmup": 0.23,  # fraction of steps spent ramping the learning rate up
     "final_lr": 0.07,  # learning-rate multiplier reached at the last step
     "muon_final_lr": 0.05,  # same, for the Muon groups
+    "freeze_bn_eval": True,  # frozen group-1 BatchNorms switch to eval mode (no batch statistics)
+    "freeze_group1_from": 0.85,  # from this fraction of samples, the stem and group 1 stop training
     "muon_lr_32px": 1.25,  # Muon LR multiplier during the 32 px phase
     "decay_end": 0.96,  # fraction of steps at which the LR reaches its floor (then held)
     "tail_steps": 8,  # last steps use a light final EMA instead of the lookahead
@@ -43,6 +45,7 @@ DEFAULTS = {
     "tail_weight": 0.3,
     "whiten_bias_epochs": 3,
     "translate": 2,
+    "translate_late": 1,  # translate magnitude in the 28/32 px phases; 0 keeps "translate"
     "cutout": 0,
     "widths": [128, 384, 576],
     "depth": 3,  # convs per group; the third adds a residual connection
@@ -56,7 +59,7 @@ DEFAULTS = {
     "muon_head": True,  # also train the linear head with Muon (without renormalization)
     "muon_head_lr_scale": 0.5,  # head Muon LR relative to the filters'
     # Progressive resizing: [until_fraction_of_steps, size] pairs; later epochs train at 32 px.
-    "res_schedule": [[2 / 7.5, 16], [3.75 / 7.5, 24], [5.0 / 7.5, 28]],
+    "res_schedule": [[2 / 7.25, 16], [3.25 / 7.25, 24], [4.5 / 7.25, 28]],
 }
 
 
@@ -146,8 +149,13 @@ class Net(nn.Module):
         )
         self.whiten.weight.copy_(torch.cat((scaled, -scaled)))
 
-    def forward(self, x, whiten_bias_grad: bool = True):
+    def forward(self, x, whiten_bias_grad: bool = True, freeze_group1: bool = False):
         b = self.whiten.bias
+        if freeze_group1:  # late training: no backward through the stem and group 1
+            with torch.no_grad():
+                x = self.layers[1](self.layers[0](F.conv2d(x, self.whiten.weight, b)))
+            x = self.layers[2:](x).flatten(1)
+            return self.head(x) * self.scaling_factor
         x = F.conv2d(x, self.whiten.weight, b if whiten_bias_grad else b.detach())
         x = self.layers(x).flatten(1)
         return self.head(x) * self.scaling_factor
@@ -228,7 +236,7 @@ class Muon(torch.optim.Optimizer):
             self.next_renorm = self.steps_done + 2 + int(15 * progress)
         self.steps_done += 1
         for group in self.param_groups:
-            shape_groups = group["shape_groups"]
+            shape_groups = [ps for ps in group["shape_groups"] if ps[0].grad is not None]
             group["lr_tensor"].fill_(group["lr"])  # a tensor, so the compiled update never recompiles
             self.update_fn(
                 shape_groups,
@@ -348,6 +356,9 @@ def build(context: BuildContext):
                 prepare(state, synthetic, seed=0)
                 state.whiten_bias_steps = 3
                 _fit(state, total_steps=6, size=size, batch_size=_phase_batch(state, size))
+            if hyp["freeze_group1_from"] < 1:  # the frozen-group-1 graph and Muon variant at 32 px
+                prepare(state, synthetic, seed=0)
+                _fit(state, total_steps=24, size=32, batch_size=_phase_batch(state, 32), freeze_at=3)
         state.classifier.eval()
         with torch.inference_mode():
             for size in (context.eval_batch_size, 10_000 % context.eval_batch_size, 1):
@@ -385,6 +396,8 @@ def prepare(state, data: TrainingData, seed: int) -> None:
 
     # Alternating flip: flip a random half once, then mirror everything on odd epochs.
     images = batch_flip_lr(images)
+    if hyp["translate_late"]:  # separate translate magnitude for the 28/32 px phases
+        state.images_late = F.pad(images, (hyp["translate_late"],) * 4, "reflect")
     if hyp["translate"]:
         images = F.pad(images, (hyp["translate"],) * 4, "reflect")
     state.images = images
@@ -456,7 +469,7 @@ def _phase_batch(state, size):
     return min(tail_bs, len(state.labels)) if tail_bs and size >= 28 else state.batch_size
 
 
-def _fit(state, total_steps, size=None, batch_size=None):
+def _fit(state, total_steps, size=None, batch_size=None, freeze_at=None):
     """Train for a sample budget; every schedule (LR, resolution, lookahead, tail) follows samples seen."""
     hyp, net = state.hyp, state.net
     labels, unit = state.labels, state.batch_size  # unit: the step size the cadences were tuned for
@@ -469,17 +482,18 @@ def _fit(state, total_steps, size=None, batch_size=None):
     tail_unit = _phase_batch(state, 32)  # the final window counts steps of the 32 px phase
     tail_start = total - hyp["tail_steps"] * tail_unit if size is None else float("inf")
     whiten_until = hyp["whiten_bias_epochs"] / hyp["epochs"] * total if size is None else 3 * batch_size
+    if size is None:
+        freeze_from = hyp["freeze_group1_from"] * total
+    else:
+        freeze_from = freeze_at * batch_size if freeze_at is not None else float("inf")
     look_every, tail_every = hyp["ema_every"] * unit, hyp["tail_every"] * tail_unit
     next_look, next_tail, in_tail = look_every, None, False
     seen, epoch = 0, 0
     net.train()
     while seen < total:
-        images = batch_crop(state.images, 32) if hyp["translate"] else state.images
-        if epoch % 2 == 1:
-            images = images.flip(-1)
-        if hyp["cutout"]:
-            images = batch_cutout(images, hyp["cutout"])
+        images = None  # this epoch's augmented images, built on first use
         order = torch.randperm(n, device=labels.device)
+        images_late = None
         i = 0
         while seen < total:
             progress = seen / total
@@ -489,11 +503,27 @@ def _fit(state, total_steps, size=None, batch_size=None):
                 break
             idx = order[i : i + bs]
             i += bs
-            x = images[idx]
+            if hyp["translate_late"] and step_size >= 28:
+                if images_late is None:  # same flip parity, its own translate magnitude
+                    images_late = batch_crop(state.images_late, 32)
+                    if epoch % 2 == 1:
+                        images_late = images_late.flip(-1)
+                x = images_late[idx]
+            else:
+                if images is None:
+                    images = batch_crop(state.images, 32) if hyp["translate"] else state.images
+                    if epoch % 2 == 1:
+                        images = images.flip(-1)
+                    if hyp["cutout"]:
+                        images = batch_cutout(images, hyp["cutout"])
+                x = images[idx]
             if step_size != 32:
                 x = F.interpolate(x, size=(step_size, step_size), mode="bilinear", antialias=True)
                 x = x.contiguous(memory_format=torch.channels_last)
-            outputs = state.train_net(x, seen < whiten_until)
+            frozen = seen >= freeze_from
+            if frozen and hyp["freeze_bn_eval"] and net.layers[1].training:
+                net.layers[1].eval()  # frozen group-1 BN uses its running stats (prepare restores train mode)
+            outputs = state.train_net(x, seen < whiten_until, frozen)
             loss = F.cross_entropy(
                 outputs.float(),
                 labels[idx],

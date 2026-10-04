@@ -1,0 +1,28 @@
+{
+  "exp": "E117",
+  "commit": "dc7657b",
+  "pid": 713372,
+  "start_ticks": 6025384,
+  "started": 1791083849.1632693,
+  "tag": "I123",
+  "description": "Group-3 width set by tile alignment, decided cheaply first. Step 1, free: read the cuDNN/cutlass kernel names already logged for the group-3 convs at 28/32 px bs 1024 and 24 px bs 1536 (E094/E098/E099/E106 profiler logs). If every group-3 GEMM uses a tile width dividing 576 (64-wide N/M tiles), close H2.19 with no run. Step 2, untimed, only if 128/256-wide tiles appear: in a side script on E100 code, build group-3 widths 512, 576 and 640. Group-3 conv1 input stays 384, the head becomes [100, W], and the Muon stacks are re-batched. Compile and warm up all shapes. Measure ms/step and NVML energy over 20 steps per (resolution, batch) shape, and project total run time over the E100 schedule. Step 3: score 640 on E100 only if it projects <=+1.5% total time. Decide on off-seed seeds 3-26 in >=3 fresh processes against E106, plus two distinct scored samples. If no scored arm is justified, the scored row reruns E100 unchanged as an extra distinct tip sample.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E117.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7534333333333333,
+    "time": 4.49349159666599,
+    "complete": true
+  },
+  "row": {
+    "exp": "E117",
+    "commit": "dc7657b",
+    "accuracy": 0.7534333333333333,
+    "time": 4.49349159666599,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I123",
+    "description": "Group-3 width set by tile alignment, decided cheaply first. Step 1, free: read the cuDNN/cutlass kernel names already logged for the group-3 convs at 28/32 px bs 1024 and 24 px bs 1536 (E094/E098/E099/E106 profiler logs). If every group-3 GEMM uses a tile width dividing 576 (64-wide N/M tiles), close H2.19 with no run. Step 2, untimed, only if 128/256-wide tiles appear: in a side script on E100 code, build group-3 widths 512, 576 and 640. Group-3 conv1 input stays 384, the head becomes [100, W], and the Muon stacks are re-batched. Compile and warm up all shapes. Measure ms/step and NVML energy over 20 steps per (resolution, batch) shape, and project total run time over the E100 schedule. Step 3: score 640 on E100 only if it projects <=+1.5% total time. Decide on off-seed seeds 3-26 in >=3 fresh processes against E106, plus two distinct scored samples. If no scored arm is justified, the scored row reruns E100 unchanged as an extra distinct tip sample."
+  }
+}

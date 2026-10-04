@@ -1,0 +1,13 @@
+{
+  "id": "R004",
+  "from": "committee",
+  "after": "E043",
+  "question": "What mechanism explains this result, which none of our forecasters predicted? Experiment E043: Explore diagnostic, with no recipe change. It sets the value of the remaining stem levers (H2.6.4/H2.6.5/H2.6.3) and the PCIe-transfer caveat in H4.3. Offline, run torch.profiler on the tip's compiled 32 px full step and truncated step, and on the 24 px step, with batch 2000 and synthetic channels_l Measured accuracy=0.7496666666666667; forecast ranges were W1 {'time': [5.84, 5.88, 5.92], 'accuracy': [0.7543, 0.7547, 0.7551]}; W2 {'time': [5.3, 5.314, 5.33], 'accuracy': [0.7532, 0.7532, 0.7532]}; W3 {'time': [5.26, 5.32, 5.38], 'accuracy': [0.7524, 0.7532, 0.754]}; W5 {'time': [5.29, 5.315, 5.34], 'accuracy': [0.751, 0.7528, 0.7548]}; W6 {'time': [5.28, 5.314, 5.35], 'accuracy': [0.7532, 0.75323, 0.7533]}. Open cruxes: Does a rebuild or re-run of identical code shift accuracy by about 0.3 pp, as E036 vs E043 suggest? That decides whether any 3-seed keep decision is meaningful. | Does the profile show group-1 conv1 (Cin=24) is inefficient? If so, padding to 32 channels (I073) is the only cheap systems win left. | Does the tip's unselected mean stay at or above about 0.752? If it does not, no further trim can be kept. | What is the tip's true population mean? E036, E038 and E043 span 0.7497\u20130.7532 on the same commit. If it is below 0.752, every time cut needs a funder first, and the loop should prioritize pair",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "failed",
+  "created": 1791088495.7626355,
+  "digest": "",
+  "error": "RuntimeError: lit-plan: the call failed: None"
+}

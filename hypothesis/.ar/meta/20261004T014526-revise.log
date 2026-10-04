@@ -1,0 +1,56 @@
+H10.2->refuted, H10.2.1->refuted, H7.1.3->refuted, H11.1.1->refuted, H6.5.4->refuted, H8.2.1->inconclusive, H4.2.7->retired, H2.11.5->retired, H9->open, +H4.6, +H4.6.1, +H4.7, +H4.7.1, +H4.8, +H4.8.1, +H8.2.2, +H9.2, +H9.2.1, +H2.20, +H2.20.1. This revision treats the recent small gains (≤0.12 pp, mostly from single processes) as noise unless pooled multi-process data back them.
+
+**Hypotheses closed**
+- **H10.2 / H10.2.1 (Muon path length) refuted.** Pooled off-seed E100 is 0.7527 (3 processes), against ~0.7525 for E090. The low-res, 28 px and 32 px ×1.5 tests (E107/E111/E110) are all null. E100's advantage is confined to seeds 0–2.
+- **Muon lr closed under H7 / H7.1.** H7.1.3 is refuted: lr is flat from 0.20 to ~0.36 in every phase.
+- **Ledger reconciliation with predictions.tsv:**
+  - H11.1.1 (E102) refuted.
+  - H6.5.4 (E103) refuted.
+  - H10.1.1 stays inconclusive. E104 landed inside its predicted band, and the logged "refutes" was aimed at the early-fragility rival.
+- **Retired:** H2.11.5 (bs 768, already priced by E104 and hurt by wave quantization) and H4.2.7 (superseded).
+
+**Confidence changes**
+- **H11** drops to 0.15. E111 no longer supports it, and E108's +0.09 over 3 processes points against it.
+- **H8.2** rises to 0.35, leaning toward support, applying the same rule used to discount E110's lucky scored draw.
+- **H9** is restored as open (0.40). Every scalar knob since its retirement was null, while the real effects came from structural changes.
+- **Lowered on the search evidence:**
+  - H2.18 depth cuts: the airbench paper reports a 20% FLOP cut with no A100 wall-clock gain.
+  - H2.19 group-3 width: 640 channels is not 256-aligned.
+  - H7.4 WSD schedule: no CNN Muon precedent.
+  - H12.1 multi-sample augmentation: the gain was shown only at ~1000× longer budgets.
+  - H12.3 stronger augmentation: used only in long-budget recipes.
+- **Text updates:** H12.1.1 now uses 1.5 copies instead of 2. H2 is restated as "unresolved at instrument resolution" rather than "converged", with E100's numbers updated.
+
+**H4 noise model**
+H4 now names three noise components: per-process cuDNN picks, recipe re-draw (only more seeds reduce it) and cross-seed spread. It flags the conflict between the ~0.2 pp scored sd (E101) and the ~0.03 pp side-script process sd (E106).
+
+**New hypotheses**
+- **H4.6 / H4.6.1:** build a paired instrument on 100+ seeds, calibrated with a math-neutral perturbation.
+- **H4.7 / H4.7.1:** check whether the side script and the scored harness behave the same.
+- **H4.8 / H4.8.1:** test whether E100's seeds 0–2 advantage persists or was luck. This decides which instrument should gate keeps.
+- **H8.2.2:** run E108 vs E100 on 100 seeds, the decisive test between H8.2 and H11.
+- **H9.2 / H9.2.1:** tune lookahead and final-EMA strength under Muon. These carry ~0.2–0.3 pp and were never tuned for Muon.
+- **H2.20 / H2.20.1:** a late group-1/stem backward freeze (from FreezeOut, low prior), profiled untimed first.
+
+**Lvl1 still open:** H2, H4, H8, H9, H10, H11, H12.
+added I125, I126, I127, I128; dropped none. I added four ideas to the 4 already queued plus I122 (running), bringing the queue to 8. I dropped nothing: every queued idea's hypothesis is still open.
+
+**The bottleneck is measurement, not ideas.** E100 sits at about 4.47 s with essentially no accuracy margin across seeds; its gate passes may be luck. Every recent difference is within about ±1 standard error (SE) at 22 seeds. So the top priority is calibrating the 100-seed paired comparison (I'm calling it the large-seed instrument) under H4.6.1:
+- E100 against a math-neutral copy of itself on seeds 3-102.
+- The same session analyses the cuDNN kernel-name logs that already exist, which H4.5.1 asks for.
+- E100's 100-seed results become the baseline that later comparisons reuse.
+
+**Two ideas follow the calibration run:**
+- **H8.2.2 (bridge vs 32 px tail):** the decisive test. Run E108 on the same 100 seeds, paired against E100. It needs only the one new arm, because it reuses the calibration baseline.
+- **H2.20.1 (late group-1 freeze):** the best remaining time lever that saves compute rather than per-step overhead. Group 1 works on the largest maps, so skipping its backward pass in the last ~15% of samples should save about 2.5-4% (target ~4.30-4.36 s). It gets an untimed profile first and is dropped if the detached step is less than 8% cheaper.
+
+**H4.8.1:** runs E100 and E090 on seeds 0-2 in 5 fresh processes each. This settles whether E100's gate passes come from a lasting seed effect or from luck. The same data answers H4.7.1, which asks whether the side script behaves like the scored harness.
+
+**What's left in the queue:**
+- I114: depth cuts, profiled first. When it runs, it should be rebased from E090 onto E100.
+- I123: group-3 width, starting with a free read of the kernel logs.
+- I119: turning off translate late in training (H11).
+- I124: multi-sample augmentation (H12.1, low prior).
+- I122 (running): class-balanced batches.
+
+The mix is roughly two-thirds exploit and one-third explore. I didn't queue any more scalar-knob variants (averaging strength, the Muon lr schedule shape, translate strength). Their predicted effects are below what we can measure today, so they should wait for the large-seed instrument.

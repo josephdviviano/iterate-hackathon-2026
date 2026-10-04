@@ -1,0 +1,37 @@
+{
+  "id": "R003",
+  "from": "committee",
+  "after": "E025",
+  "question": "What mechanism explains this result, which none of our forecasters predicted? Experiment E025: Exploit, as a time-neutral accuracy booster to fund trims (W1 crux: does a stronger or longer EMA add 0.3 pp?). E005 showed end-of-run averaging is worth about 1 pp on CIFAR-100, and E009 showed a lower final LR adds nothing on top of it, so averaging strength is the untuned part. On the E017 recipe Measured time=6.201652335997399; forecast ranges were W1 {'time': [6.48, 6.55, 6.65], 'accuracy': [0.7505, 0.7543, 0.758]}; W2 {'time': [6.5, 6.55, 6.62], 'accuracy': [0.7505, 0.7545, 0.758]}; W3 {'time': [6.45, 6.55, 6.65], 'accuracy': [0.75, 0.754, 0.758]}; W5 {'time': [6.47, 6.55, 6.65], 'accuracy': [0.7495, 0.7545, 0.7585]}. Open cruxes: What are the held-out (seeds 3\u201312) means of E023 and E025? If alpha exponent 2 is a real gain of 0.15 pp or more, it funds a \u22120.5 epoch trim (to about 5.9 s). | What TFLOP/s do the 32 px vs 24 px steps achieve per layer? If above 100, systems levers are exhausted and only step-count and backward-truncation cuts remain. | Does truncating group-1 backward in the 32 px tail (I043) really save about 15% of tail step time without more than 0.2 pp held-out loss? That is the only untried mechanism that cuts compute without cutting data passes. | What is the held-out seeds 3-12 mean of the E023 tip? I",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791081410.3139727,
+  "digest": "D003",
+  "plan": {
+    "question": "E025's time (6.20 s) is not a surprise of the averaging change: it matches E023's 6.198 s, so E025 almost certainly ran on the E023 tip (~9.0 true epochs), not E017 (~9.5 epochs, 6.55 s) as forecasters assumed; the alpha exponent does not change step count or FLOPs. The open mechanism is the accuracy: raising the Lookahead alpha ramp from exponent 3 to 2 gave +0.19 pp vs E023 on seeds 0-2 (0.7538 -> 0.7557), below the ~0.4 pp resolution limit and with RNG re-roll. In short, high-LR, momentum-based (Muon+SGD, ~9 epoch) training, how does the schedule of weight averaging (start time, strength ramp, power-law vs constant EMA decay, Lookahead pull-back vs passive EMA) affect final accuracy, and is there evidence that stronger/earlier averaging yields a real >=0.15 pp gain, or that averaging gains saturate once the LR anneals (so +0.19 pp is likely noise)? This decides whether alpha exponent 2 funds a -0.5 epoch trim and whether H1.3.5 (passive EMA suffices) is worth testing.",
+    "queries": [
+      "EMA weight averaging decay schedule short training accuracy",
+      "power function EMA post-hoc averaging profile length",
+      "Lookahead optimizer alpha schedule versus exponential moving average",
+      "latest weight averaging LAWA early-epoch speedup",
+      "weight averaging learning rate annealing equivalence schedule-free",
+      "stochastic weight averaging BatchNorm statistics short budget CIFAR-100"
+    ],
+    "rubric": [
+      "Compares different averaging schedules or strengths (EMA decay, averaging start point, ramp shape, power-law profiles, or Lookahead alpha), not just averaging on vs off.",
+      "Reports results for short or few-epoch training budgets, or analyzes how the averaging gain scales with run length and LR annealing schedule.",
+      "From-scratch image classification (CIFAR/ImageNet) or a general mechanism (averaging as implicit LR decay / noise reduction) transferable to small ConvNets.",
+      "Quantifies the interaction of averaging with LR decay-to-zero or BatchNorm statistics (relevant to E009 and H1.3.6)."
+    ],
+    "exclude": [
+      "methods requiring pretrained weights, external data, or distillation from a pretrained teacher",
+      "test-time augmentation or any use of the test set, including test-time ensembles",
+      "model soups or averaging across separately trained runs (information flow between trials is banned)",
+      "LLM/diffusion fine-tuning-only studies with no from-scratch classification results",
+      "hardware clock or power manipulation"
+    ]
+  },
+  "cost": 0.8022
+}

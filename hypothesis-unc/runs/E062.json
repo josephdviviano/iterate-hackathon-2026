@@ -1,0 +1,28 @@
+{
+  "exp": "E062",
+  "commit": "cdfccca",
+  "pid": 959308,
+  "start_ticks": 7798135,
+  "started": 1791101576.6833084,
+  "tag": "I096",
+  "description": "Explore, the largest untested optimizer axis. It is now cheap to judge because the break-even loss is about 0.25 pp at the 0.77 s/pp dial. On the E049 tip, replace Muon on every conv filter group (group 1, group 2 and group 3) with Nesterov SGD. Use momentum 0.85, airbench's value, as in E005's commit ac425fc. Use the E005 conv lr, scaled linearly from batch 1024 to 2000 the way the port's airbench lr normalization already does, and wd \u00d70.5 as in E016. Each filter group keeps its own LR schedule, including the anneal-to-0 at 75% for group 1 and the 75\u219290% anneal for group 2. The freeze, detach, resolution, step count, Lookahead, LS and SGD groups are all unchanged. Init RNG draw order is unchanged. Recapture every variant in build, with error_on_recompile on. Record per-step CUDA-event time to isolate the Newton\u2013Schulz saving (about 0.8 ms per step \u00d7 237 steps, per E043). Judge on 2 fresh builds \u00d7 seeds 33\u201352 against E049's 60 draws. PR #3 (CIFAR-100, airbench96) reports SGD beating Muon at every size. E006's +0.66 pp confounded Muon with the batch change from 1024 to 2000 and an RNG re-draw.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E062.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7237,
+    "time": 4.743637117329247,
+    "complete": true
+  },
+  "row": {
+    "exp": "E062",
+    "commit": "cdfccca",
+    "accuracy": 0.7237,
+    "time": 4.743637117329247,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I096",
+    "description": "Explore, the largest untested optimizer axis. It is now cheap to judge because the break-even loss is about 0.25 pp at the 0.77 s/pp dial. On the E049 tip, replace Muon on every conv filter group (group 1, group 2 and group 3) with Nesterov SGD. Use momentum 0.85, airbench's value, as in E005's commit ac425fc. Use the E005 conv lr, scaled linearly from batch 1024 to 2000 the way the port's airbench lr normalization already does, and wd \u00d70.5 as in E016. Each filter group keeps its own LR schedule, including the anneal-to-0 at 75% for group 1 and the 75\u219290% anneal for group 2. The freeze, detach, resolution, step count, Lookahead, LS and SGD groups are all unchanged. Init RNG draw order is unchanged. Recapture every variant in build, with error_on_recompile on. Record per-step CUDA-event time to isolate the Newton\u2013Schulz saving (about 0.8 ms per step \u00d7 237 steps, per E043). Judge on 2 fresh builds \u00d7 seeds 33\u201352 against E049's 60 draws. PR #3 (CIFAR-100, airbench96) reports SGD beating Muon at every size. E006's +0.66 pp confounded Muon with the batch change from 1024 to 2000 and an RNG re-draw."
+  }
+}

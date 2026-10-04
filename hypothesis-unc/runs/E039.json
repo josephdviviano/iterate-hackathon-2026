@@ -1,0 +1,28 @@
+{
+  "exp": "E039",
+  "commit": "62638a9",
+  "pid": 737409,
+  "start_ticks": 6276683,
+  "started": 1791086362.1557505,
+  "tag": "I057",
+  "description": "Explore, the next memory-bound lever on the frozen stem. On the H2.6.2 successor (or the freeze recipe in fcacfc6), at the freeze point: run one no-grad train-mode forward of group 1 over the current batch to set its BN running stats. Use the existing buffers if their values are already the frozen-phase stats. Then, for the frozen phase, put group-1 BN in eval mode and fold scale and shift into the conv weights and biases (done inside timed train, once). The truncated step then runs group 1 as conv+bias+GELU under no_grad, with no BN statistics reductions on the 31\u00d731 maps. Lookahead still averages the unfolded params. Keep the unfolded copies so the final weights and BN buffers stay consistent: either fold only in the compiled frozen forward, or unfold before the final copy. Eval uses the standard model. Capture the new truncated variant in build, with error_on_recompile on. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E039.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7512333333333333,
+    "time": 5.282147257334145,
+    "complete": true
+  },
+  "row": {
+    "exp": "E039",
+    "commit": "62638a9",
+    "accuracy": 0.7512333333333333,
+    "time": 5.282147257334145,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I057",
+    "description": "Explore, the next memory-bound lever on the frozen stem. On the H2.6.2 successor (or the freeze recipe in fcacfc6), at the freeze point: run one no-grad train-mode forward of group 1 over the current batch to set its BN running stats. Use the existing buffers if their values are already the frozen-phase stats. Then, for the frozen phase, put group-1 BN in eval mode and fold scale and shift into the conv weights and biases (done inside timed train, once). The truncated step then runs group 1 as conv+bias+GELU under no_grad, with no BN statistics reductions on the 31\u00d731 maps. Lookahead still averages the unfolded params. Keep the unfolded copies so the final weights and BN buffers stay consistent: either fold only in the compiled frozen forward, or unfold before the final copy. Eval uses the standard model. Capture the new truncated variant in build, with error_on_recompile on. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132."
+  }
+}

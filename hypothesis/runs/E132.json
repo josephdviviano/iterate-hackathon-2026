@@ -1,0 +1,28 @@
+{
+  "exp": "E132",
+  "commit": "fe9a884",
+  "pid": 857519,
+  "start_ticks": 7222392,
+  "started": 1791095819.2459912,
+  "tag": "I141",
+  "description": "Trim the 16 px phase on the tip. Base: E116 code (82e6219). Precondition, free: log the source hash and a one-line diff against 82e6219. Change only the schedule, from 2@16 + 1.25@24 + 1.25@28 + 2.75@32 to 1.5@16 + 1.25@24 + 1.25@28 + 2.75@32 (6.75 epochs), with switches indexed by samples. Rescale LR warmup/decay, the floor-hold and the renorm cadence to the new total, as the earlier trims (E070/E088) did. Two anchors stay where they are instead of being rescaled: (a) the whitening-bias detach keeps its position inside the 24 px phase, ~0.97 epoch after the 24 px switch. Plain 41% rescaling would push it into the 28 px phase, where the grad variant is not warmed. (b) The stem + group-1 freeze keeps the same number of frozen samples before the end (~1.09 epochs), so the time saving comes only from the 16 px trim. The final-EMA/lookahead window stays pinned to the last 8 steps. All shapes and variants are already warmed; check with TORCH_LOGS=recompiles on a 2-trial dev run. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled ~198-trajectory E116 baseline (SE ~0.032). Add one scored run with per-trial prepare/train logs.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E132.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7512666666666666,
+    "time": 4.129220121336402,
+    "complete": true
+  },
+  "row": {
+    "exp": "E132",
+    "commit": "fe9a884",
+    "accuracy": 0.7512666666666666,
+    "time": 4.129220121336402,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I141",
+    "description": "Trim the 16 px phase on the tip. Base: E116 code (82e6219). Precondition, free: log the source hash and a one-line diff against 82e6219. Change only the schedule, from 2@16 + 1.25@24 + 1.25@28 + 2.75@32 to 1.5@16 + 1.25@24 + 1.25@28 + 2.75@32 (6.75 epochs), with switches indexed by samples. Rescale LR warmup/decay, the floor-hold and the renorm cadence to the new total, as the earlier trims (E070/E088) did. Two anchors stay where they are instead of being rescaled: (a) the whitening-bias detach keeps its position inside the 24 px phase, ~0.97 epoch after the 24 px switch. Plain 41% rescaling would push it into the 28 px phase, where the grad variant is not warmed. (b) The stem + group-1 freeze keeps the same number of frozen samples before the end (~1.09 epochs), so the time saving comes only from the 16 px trim. The final-EMA/lookahead window stays pinned to the last 8 steps. All shapes and variants are already warmed; check with TORCH_LOGS=recompiles on a 2-trial dev run. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled ~198-trajectory E116 baseline (SE ~0.032). Add one scored run with per-trial prepare/train logs."
+  }
+}

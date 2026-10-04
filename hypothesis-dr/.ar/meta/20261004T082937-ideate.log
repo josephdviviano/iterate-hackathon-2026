@@ -1,0 +1,15 @@
+added I136, I137, I138; dropped none; skipped ideas for unknown/closed H8, H8. The queue was empty, so I added 5 new ideas: 3 exploit and 2 explore. The tip is still E082 at 4.584 s. One-process screens have now covered every tunable setting (Muon lr in every shape, momentum, SGD-group wd and momentum, augmentation, pooling, schedule, averaging). All of them are at their optimum or flat, and every time cut priced so far sits on the ~0.05 pp per 1% frontier.
+
+What's left falls into three groups:
+
+1. **Launch the math-preserving base (I136, priority 5).** I131_base is E082 plus a compiled lookahead blend, a whole-epoch resize, and buffers and warmups set up in build(). It should save ~1.8% (point ~4.50 s). Its pass chance on the 3-seed gate is ~0.65-0.70, given a grand mean of ~0.7540 across the seven one-process screens. Launch once, no re-roll.
+
+2. **Test where blocks downsample (new node H8).** ConvGroup runs conv1 before its max-pool. The first convs of blocks 2 and 3 are each ~21% of FLOPs, and pooling first would cut them ~5x without changing any output or final-map size. Nobody has varied this.
+   - **I137 (priority 4):** a 40-seed one-process screen pricing pool-first in block 3, blocks 2+3, block 1, and blocks 2+3 at low resolution only.
+   - **I138 (priority 3):** runs only if I137 finds an arm priced at half the frontier or better. It turns that arm's saving into extra epochs, picks a config with the I130-style EV rule, and launches once.
+
+3. **Smaller checks.**
+   - **I139 (priority 2):** screens SiLU against ReLU for elementwise cost (H2.4.1).
+   - **I140 (priority 1):** an offline-only analysis that pools the existing per-seed data. It restates official-gate headroom (H4.3) and calibrates the launch-rule sd.
+
+No queued items needed dropping: everything in the queue was already done or dropped.

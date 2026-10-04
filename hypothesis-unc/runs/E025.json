@@ -1,0 +1,28 @@
+{
+  "exp": "E025",
+  "commit": "1223459",
+  "pid": 677207,
+  "start_ticks": 5739749,
+  "started": 1791080992.817895,
+  "tag": "I038",
+  "description": "Exploit, as a time-neutral accuracy booster to fund trims (W1 crux: does a stronger or longer EMA add 0.3 pp?). E005 showed end-of-run averaging is worth about 1 pp on CIFAR-100, and E009 showed a lower final LR adds nothing on top of it, so averaging strength is the untuned part. On the E017 recipe (or I033's if kept), change only the Lookahead alpha ramp exponent from 3 to 2: alpha = 0.95**5 * (step/total)**2 instead of **3. The averaging then pulls harder from about mid-run on. Update frequency (every 5 steps), the final full copy, LR schedule, epochs and resolution all stay unchanged. Alpha is a per-step tensor or constant, so recapture the graphs if it is baked in. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132. This proposes a new H1.3 child: the airbench96 averaging schedule is under-tuned for CIFAR-100 short runs.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E025.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7556666666666667,
+    "time": 6.201652335997399,
+    "complete": true
+  },
+  "row": {
+    "exp": "E025",
+    "commit": "1223459",
+    "accuracy": 0.7556666666666667,
+    "time": 6.201652335997399,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I038",
+    "description": "Exploit, as a time-neutral accuracy booster to fund trims (W1 crux: does a stronger or longer EMA add 0.3 pp?). E005 showed end-of-run averaging is worth about 1 pp on CIFAR-100, and E009 showed a lower final LR adds nothing on top of it, so averaging strength is the untuned part. On the E017 recipe (or I033's if kept), change only the Lookahead alpha ramp exponent from 3 to 2: alpha = 0.95**5 * (step/total)**2 instead of **3. The averaging then pulls harder from about mid-run on. Update frequency (every 5 steps), the final full copy, LR schedule, epochs and resolution all stay unchanged. Alpha is a per-step tensor or constant, so recapture the graphs if it is baked in. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132. This proposes a new H1.3 child: the airbench96 averaging schedule is under-tuned for CIFAR-100 short runs."
+  }
+}

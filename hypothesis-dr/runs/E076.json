@@ -1,0 +1,28 @@
+{
+  "exp": "E076",
+  "commit": "bd590c1",
+  "pid": 704877,
+  "start_ticks": 5969442,
+  "started": 1791083289.7520497,
+  "tag": "I100",
+  "description": "Cheaper frozen block 1. Run only after the freeze-at-0.7 idea is read: apply this to its commit if it was kept (a 30% frozen window makes the saving gradable), else to E069. Make one change inside the existing block-1-frozen 32 px train graph: run block 1's BatchNorms in eval mode, using the running stats as of the freeze switch, with no further stat updates. The forward then skips the batch-stat reductions and running-stat writes. Use a Python flag fixed at trace time, with no data-dependent branch. Lookahead keeps blending block 1's buffers, now constant. Re-warm the frozen graph and its partial shapes in build() with channels_last tensors in the exact timed layout (E035). Run debug_nan.py and compare trial-0 with later-trial times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E076.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7507,
+    "time": 4.666763829998672,
+    "complete": true
+  },
+  "row": {
+    "exp": "E076",
+    "commit": "bd590c1",
+    "accuracy": 0.7507,
+    "time": 4.666763829998672,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I100",
+    "description": "Cheaper frozen block 1. Run only after the freeze-at-0.7 idea is read: apply this to its commit if it was kept (a 30% frozen window makes the saving gradable), else to E069. Make one change inside the existing block-1-frozen 32 px train graph: run block 1's BatchNorms in eval mode, using the running stats as of the freeze switch, with no further stat updates. The forward then skips the batch-stat reductions and running-stat writes. Use a Python flag fixed at trace time, with no data-dependent branch. Lookahead keeps blending block 1's buffers, now constant. Re-warm the frozen graph and its partial shapes in build() with channels_last tensors in the exact timed layout (E035). Run debug_nan.py and compare trial-0 with later-trial times."
+  }
+}

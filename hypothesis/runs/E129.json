@@ -1,0 +1,28 @@
+{
+  "exp": "E129",
+  "commit": "71f50ae",
+  "pid": 829819,
+  "start_ticks": 6978243,
+  "started": 1791093377.7617002,
+  "tag": "I138",
+  "description": "FreezeOut-style anneal before the 85% freeze, arm (a) only. Base: E116 code. Over 75%-85% of samples, ramp the LR multiplier of the group-1 filters (Muon) and the stem/group-1 BN params (SGD) linearly from 1 to 0, then detach at 85% exactly as now. Use separate 0-d LR tensors for the group-1 Muon stack and the group-1 SGD group, written host-side so nothing recompiles; if the group-1 filters currently share a stacked Muon update with others, scale their slice by a 0-d per-stack factor. All other groups, the schedule and the tail are unchanged. Time is unchanged. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled ~198-trajectory E116 baseline.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E129.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7532666666666666,
+    "time": 4.263891366664514,
+    "complete": true
+  },
+  "row": {
+    "exp": "E129",
+    "commit": "71f50ae",
+    "accuracy": 0.7532666666666666,
+    "time": 4.263891366664514,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I138",
+    "description": "FreezeOut-style anneal before the 85% freeze, arm (a) only. Base: E116 code. Over 75%-85% of samples, ramp the LR multiplier of the group-1 filters (Muon) and the stem/group-1 BN params (SGD) linearly from 1 to 0, then detach at 85% exactly as now. Use separate 0-d LR tensors for the group-1 Muon stack and the group-1 SGD group, written host-side so nothing recompiles; if the group-1 filters currently share a stacked Muon update with others, scale their slice by a 0-d per-stack factor. All other groups, the schedule and the tail are unchanged. Time is unchanged. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled ~198-trajectory E116 baseline."
+  }
+}

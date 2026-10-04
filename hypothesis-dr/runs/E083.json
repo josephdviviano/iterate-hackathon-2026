@@ -1,0 +1,28 @@
+{
+  "exp": "E083",
+  "commit": "69a0351",
+  "pid": 977603,
+  "start_ticks": 7914224,
+  "started": 1791102737.5733857,
+  "tag": "I136",
+  "description": "Exploit: launch the math-preserving I131 base once on seeds 0-2. drafts/I131_base.py is the E082 tip (18 px first stage, 6.875 epochs, block-1 freeze at 0.8, PE-NS3, fused augment, vectorised dirac) plus two additions. (a) I125: a compiled foreach lookahead blend with a 0-d decay tensor, plus a whole-epoch low-res resize for epochs that sit entirely inside one stage. (b) I131: persistent GPU and pinned-host train-set buffers allocated in build(), plus build-time warmups of prepare()'s first-use ops on synthetic data. Both additions were checked bit-identical in unit tests, and neither touches real data or seeds in build(). Before launching, re-run debug_nan.py and check offline that seeds 0-2 per-seed accuracy in one process matches the I131 screen's base config, and that prepare is ~0.02 s on every trial. Launch once and do not re-roll. If it misses, I131_base stays the code base for every later candidate. The recipe's true mean is unchanged, so a miss says nothing about H2.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E083.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7555999999999999,
+    "time": 4.56676784500208,
+    "complete": true
+  },
+  "row": {
+    "exp": "E083",
+    "commit": "69a0351",
+    "accuracy": 0.7555999999999999,
+    "time": 4.56676784500208,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I136",
+    "description": "Exploit: launch the math-preserving I131 base once on seeds 0-2. drafts/I131_base.py is the E082 tip (18 px first stage, 6.875 epochs, block-1 freeze at 0.8, PE-NS3, fused augment, vectorised dirac) plus two additions. (a) I125: a compiled foreach lookahead blend with a 0-d decay tensor, plus a whole-epoch low-res resize for epochs that sit entirely inside one stage. (b) I131: persistent GPU and pinned-host train-set buffers allocated in build(), plus build-time warmups of prepare()'s first-use ops on synthetic data. Both additions were checked bit-identical in unit tests, and neither touches real data or seeds in build(). Before launching, re-run debug_nan.py and check offline that seeds 0-2 per-seed accuracy in one process matches the I131 screen's base config, and that prepare is ~0.02 s on every trial. Launch once and do not re-roll. If it misses, I131_base stays the code base for every later candidate. The recipe's true mean is unchanged, so a miss says nothing about H2."
+  }
+}

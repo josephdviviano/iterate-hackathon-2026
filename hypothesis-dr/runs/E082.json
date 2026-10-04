@@ -1,0 +1,28 @@
+{
+  "exp": "E082",
+  "commit": "f703dcc",
+  "pid": 863334,
+  "start_ticks": 7272794,
+  "started": 1791096323.2676802,
+  "tag": "I124",
+  "description": "Run one offline screen of a few configs, then launch the best one exactly once. Base is the I119 code: the E081 bundle (E069 + fused per-epoch augment + build-time prepare warmups) plus the paired_gate.py config switch. Run everything in ONE process with one build, seeds 3-32 (30 seeds), configs alternating per seed so they share autotuned kernels, as in I119. Configs: - c0 = E081 bundle as is (20 px first stage, 6.75 epochs). Control. - c1 = I119 cfg1: 18 px first stage, 6.875 epochs, block-1 freeze at 0.8 of total samples (275000). - c2 = 18 px first stage, 6.9375 epochs (346875 samples). The extra 0.1875 epoch goes into the 32 px stage, the block-1 freeze moves to 277500, and every schedule is indexed by samples seen. The final partial epoch uses the first 0.9375 of its permutation, and the fused augment writes only the consumed samples. - If the I123 warmup screen promotes an arm, or the outside-step cut (next idea) passes its gate first, add it to c1 and c2. Never add it to c0. Warm up every new partial shape (277500, the run end) in build() with channels_last tensors (E035), and run debug_nan.py. Pre-registered launch rule. For each config compute: - m = 30-seed mean; - t = offline train+prepare time \u00d7 (4.506/4.515), the E081 harness/offline calibration; - P = \u03a6((m \u2212 0.7530)/0.16), using a 3-seed-mean sd of 0.16 pp from the per-seed sd of ~0.28; - EV = P \u00d7 (4.678 \u2212 t). Launch the argmax-EV config once on seeds 0-2 only if P \u2265 0.60 and t \u2264 4.63 s. Do not re-roll. Report seeds 23-32 separately: they are fresh, while seeds 3-22 of c1 already informed I119.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E082.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7555999999999999,
+    "time": 4.583510030332643,
+    "complete": true
+  },
+  "row": {
+    "exp": "E082",
+    "commit": "f703dcc",
+    "accuracy": 0.7555999999999999,
+    "time": 4.583510030332643,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I124",
+    "description": "Run one offline screen of a few configs, then launch the best one exactly once. Base is the I119 code: the E081 bundle (E069 + fused per-epoch augment + build-time prepare warmups) plus the paired_gate.py config switch. Run everything in ONE process with one build, seeds 3-32 (30 seeds), configs alternating per seed so they share autotuned kernels, as in I119. Configs: - c0 = E081 bundle as is (20 px first stage, 6.75 epochs). Control. - c1 = I119 cfg1: 18 px first stage, 6.875 epochs, block-1 freeze at 0.8 of total samples (275000). - c2 = 18 px first stage, 6.9375 epochs (346875 samples). The extra 0.1875 epoch goes into the 32 px stage, the block-1 freeze moves to 277500, and every schedule is indexed by samples seen. The final partial epoch uses the first 0.9375 of its permutation, and the fused augment writes only the consumed samples. - If the I123 warmup screen promotes an arm, or the outside-step cut (next idea) passes its gate first, add it to c1 and c2. Never add it to c0. Warm up every new partial shape (277500, the run end) in build() with channels_last tensors (E035), and run debug_nan.py. Pre-registered launch rule. For each config compute: - m = 30-seed mean; - t = offline train+prepare time \u00d7 (4.506/4.515), the E081 harness/offline calibration; - P = \u03a6((m \u2212 0.7530)/0.16), using a 3-seed-mean sd of 0.16 pp from the per-seed sd of ~0.28; - EV = P \u00d7 (4.678 \u2212 t). Launch the argmax-EV config once on seeds 0-2 only if P \u2265 0.60 and t \u2264 4.63 s. Do not re-roll. Report seeds 23-32 separately: they are fresh, while seeds 3-22 of c1 already informed I119."
+  }
+}

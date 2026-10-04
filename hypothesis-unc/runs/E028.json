@@ -1,0 +1,28 @@
+{
+  "exp": "E028",
+  "commit": "fcacfc6",
+  "pid": 688747,
+  "start_ticks": 5834362,
+  "started": 1791081938.9505584,
+  "tag": "I043",
+  "description": "Explore/exploit: a FreezeOut-style backward truncation, a mechanism not yet tried in this loop. On the E023 tip, put group-1 conv filters (Muon) and the whitening bias plus group-1 BN params (SGD) in their own param groups. Their LR schedule follows the global triangle up to its peak, then decays linearly to 0 at 75% of total steps. The other groups keep their schedules. For the last 25% of steps, all of them at 32 px, detach group 1's output before group 2, and use a second compiled train step that does no group-1 or whitening backward and leaves group-1 params out of the Muon/SGD update. Group-1 BN still runs in train mode, and Lookahead still averages every param. Capture both 32 px step variants (full and truncated) in build with channels_last synthetic tensors, with error_on_recompile on. Back-of-envelope: group 1 is about 20% of conv MACs at the largest maps, so skipping its weight-grad and input-grad work saves about 14\u201318% of a 32 px step (including memory-bound BN/GELU backward), applied to about 2.0 s of tail time. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E028.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7516666666666667,
+    "time": 5.358429700664904,
+    "complete": true
+  },
+  "row": {
+    "exp": "E028",
+    "commit": "fcacfc6",
+    "accuracy": 0.7516666666666667,
+    "time": 5.358429700664904,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I043",
+    "description": "Explore/exploit: a FreezeOut-style backward truncation, a mechanism not yet tried in this loop. On the E023 tip, put group-1 conv filters (Muon) and the whitening bias plus group-1 BN params (SGD) in their own param groups. Their LR schedule follows the global triangle up to its peak, then decays linearly to 0 at 75% of total steps. The other groups keep their schedules. For the last 25% of steps, all of them at 32 px, detach group 1's output before group 2, and use a second compiled train step that does no group-1 or whitening backward and leaves group-1 params out of the Muon/SGD update. Group-1 BN still runs in train mode, and Lookahead still averages every param. Capture both 32 px step variants (full and truncated) in build with channels_last synthetic tensors, with error_on_recompile on. Back-of-envelope: group 1 is about 20% of conv MACs at the largest maps, so skipping its weight-grad and input-grad work saves about 14\u201318% of a 32 px step (including memory-bound BN/GELU backward), applied to about 2.0 s of tail time. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132."
+  }
+}

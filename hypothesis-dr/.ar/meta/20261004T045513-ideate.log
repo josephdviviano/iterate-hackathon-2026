@@ -1,0 +1,24 @@
+added I113, I114, I115, I116, I117, I118; dropped none. I wrote 6 new ideas. Nothing was dropped, because every idea already in the queue is done or dropped.
+
+**Where things stand**
+- The tip is E069: 4.678 s, with a true mean accuracy of about 0.753 on 13 seeds.
+- Two cuts have been verified bit-identical offline and are real time savings: the fused per-epoch augment (E078, -2.5%) and the prepare() warmups (E077, -1.3%). Both missed the 3-seed gate only because the score varies from process to process.
+- Every remaining lever costs about 0.04-0.06 pp per 1% of time, and that includes buying more epochs. So adding epochs to fund a cut is roughly neutral. The real gains are math-preserving cuts and any new cheap cut.
+
+**The ideas, in run order**
+1. **25 px middle stage (H6.1, priority 5).** A new structural cut: shrink the 28 px stage to 25 px, which keeps the final map at 3x3. My FLOP estimate is a 1.8% time saving. It gets an offline gate only and feeds into idea 3 rather than being launched alone.
+2. **Epoch-slope check (H6, priority 4).** Run E069 at 7.0 epochs offline on seeds 3-12. This settles the E063 vs E070 conflict on the true-mean scale and decides whether idea 3 gets an epoch buffer.
+3. **Cut stack with a buffer (H4.4, priority 4).** Combine E077, E078, the 0.75 block-1 freeze, the 18 px first stage, the 25 px middle stage, and optionally 7.0 epochs. It is gated on a seeds 3-12 mean of at least 0.7535, which also keeps the official 40-seed mean safe. Expected about -2.5% time with a ~60% chance of clearing the gate, or about -6.8% without the epoch buffer.
+4. **Fallback: pure systems bundle (H2, priority 3).** E077 plus E078 alone, about -3.8% time. It is a ~50% coin flip on the local gate and should not be re-rolled if it misses.
+5. **Autotune check (H2.5.1, priority 2, offline explore).** Test whether default compile with cudnn.benchmark off removes the process-to-process score variation and costs less than 0.7% time. If so, math-preserving cuts would keep their seed draw.
+6. **Translate off at 32 px too (H1.8.2, priority 2, explore).** The all-stage removal has never been tested. It gets an offline gate on seeds 3-12.
+
+**Tree bookkeeping the loop should do (the tree still lists these as open)**
+- H1.2.9 is refuted by I098 (paired -0.07 pp).
+- H1.2.8 is refuted by I103.
+- H1.6.1 is refuted in all three arms (E028, I104, I108).
+- H1.12.1 is refuted by I105.
+- H1.2.5 is refuted by I110.
+- H2.4.8 failed its gate in I087.
+- H6.1.2 is supported by E080.
+- H4.1.7 has conflicting evidence: I102 supports it, E077 contradicts it.

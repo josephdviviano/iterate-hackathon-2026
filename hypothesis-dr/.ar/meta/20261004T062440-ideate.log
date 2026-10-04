@@ -1,0 +1,21 @@
+added I124, I125, I126, I127, I128, I129; dropped none. Where things stand: every reallocation of time now trades at about 0.05 pp per 1% of time. That covers epochs (I114), the freeze points (E079), the 25 px middle stage (I113), the late batch ramp (I110) and width (I105), so none of them helps on net. The averaging, logit-scale, pooling and translate-removal axes are closed, and the residual check (I121) did not apply. Autotune nondeterminism cannot be removed (I117), so every launch is a fresh draw around the recipe's true mean.
+
+The only realistic route to the gate is to spend the math-preserving bundle (E081, -3.7%) on a small epoch buffer.
+
+**Lead idea (I124, priority 5).** A one-process, 30-seed screen of:
+- the E081 control;
+- I119 cfg1 (18 px first stage, 6.875 epochs);
+- a 6.9375-epoch version of cfg1.
+
+It replaces I119's arbitrary mean ≥ 0.7540 bar with a launch rule fixed in advance: estimated pass probability × time saved. Launch once only if pass probability ≥ 0.6 and time ≤ 4.63 s. The expected outcome is a ~70% chance of the first new feasible tip, at ~4.57-4.61 s.
+
+**Supporting exploit ideas.**
+- A cut to outside-step work: compile the lookahead blend and resize each low-res stage once per epoch. Expected saving ~0.7%, folded into the stack rather than launched alone.
+- A gate-first check of how often the Muon weight-norm projection runs (priority 1). It is likely to retire H2.4.3 without a run.
+
+**Explore screens.** Each needs ≥ +0.12 pp at 2 SE before it is promoted into the stack:
+- Muon momentum 0.7 / 0.9, untuned since bs 1024 and the old Newton-Schulz coefficients;
+- translate 3 at 32 px, the untested stronger side of augmentation;
+- per-block Muon lr.
+
+I123 (warmup screen) is still running, and any arm it promotes gets folded into I124. No queued ideas needed dropping: everything except I123 is already done or dropped.

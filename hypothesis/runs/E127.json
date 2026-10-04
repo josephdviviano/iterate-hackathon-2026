@@ -1,0 +1,28 @@
+{
+  "exp": "E127",
+  "commit": "4e9d1fd",
+  "pid": 785159,
+  "start_ticks": 6749387,
+  "started": 1791091089.1963675,
+  "tag": "I136",
+  "description": "Depth cut arm (a), 2/3/3. Base: E116 code. Remove group-1 conv3 (with its BN and GELU) so group 1 is conv1 plus a single-conv residual branch. Re-batch the Muon filter stacks for the changed counts, including the frozen-group-1 update variant. Rebuild the dirac init over the remaining convs. Warm every (resolution, batch) x freeze x renorm x whiten-bias-grad variant in build, and check on a 2-trial dev run with TORCH_LOGS=recompiles that nothing compiles after build. Change nothing else: schedule, 85% freeze, tail. Before deciding, run an untimed per-step profile of the modified net at all four shapes (with the frozen 32 px variant) and project total time over the E116 schedule, because E123's -7.6% was measured with the freeze off. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled ~198-trajectory E116 baseline. Score once only if the loss is <= 0.35 pp.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E127.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7484666666666666,
+    "time": 3.964941650662998,
+    "complete": true
+  },
+  "row": {
+    "exp": "E127",
+    "commit": "4e9d1fd",
+    "accuracy": 0.7484666666666666,
+    "time": 3.964941650662998,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I136",
+    "description": "Depth cut arm (a), 2/3/3. Base: E116 code. Remove group-1 conv3 (with its BN and GELU) so group 1 is conv1 plus a single-conv residual branch. Re-batch the Muon filter stacks for the changed counts, including the frozen-group-1 update variant. Rebuild the dirac init over the remaining convs. Warm every (resolution, batch) x freeze x renorm x whiten-bias-grad variant in build, and check on a 2-trial dev run with TORCH_LOGS=recompiles that nothing compiles after build. Change nothing else: schedule, 85% freeze, tail. Before deciding, run an untimed per-step profile of the modified net at all four shapes (with the frozen 32 px variant) and project total time over the E116 schedule, because E123's -7.6% was measured with the freeze off. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled ~198-trajectory E116 baseline. Score once only if the loss is <= 0.35 pp."
+  }
+}

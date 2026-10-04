@@ -1,0 +1,38 @@
+{
+  "id": "R002",
+  "from": "committee",
+  "after": "E011",
+  "question": "What mechanism explains this result, which none of our forecasters predicted? Experiment E011: Exploit, building on E007's finding that time scales with pixel count. On the E007 recipe at 9 epochs, use a more aggressive resolution schedule: the first 30% of steps at 20 px, then 30% at 24 px, 20% at 28 px, and the last 20% at 32 px. Each resolution is compiled and warmed up in build with chann Measured time=5.703121792665722, accuracy=0.7451; forecast ranges were W1 {'time': [5.75, 6.1, 6.5], 'accuracy': [0.7465, 0.7525, 0.757]}; W2 {'time': [5.9, 6.5, 7.1], 'accuracy': [0.748, 0.7545, 0.7595]}; W3 {'time': [5.95, 6.3, 6.75], 'accuracy': [0.7465, 0.7515, 0.756]}; W4 {'time': [5.9, 6.6, 7.3], 'accuracy': [0.746, 0.7535, 0.7595]}. Open cruxes: Do held-out seeds 3-12 (I016) put the tip's mean below 0.7545? If so, the next step must rebuild margin before cutting time. | Does any time-neutral optimizer lever (Muon lr, LS) give +0.3 pp or more, which could be spent as about 0.75 epoch (about 7% time)? | What share of the per-step time is GPU idle under the 4-CPU pin (I021 profile)? It decides whether CUDA graphs or fusion work can beat 3%. | How much GPU idle or launch overhead is there per step under the 4-CPU pin? A large fraction would make CUDA graphs a big lossless win; a small one would not. | What is the 40-seed mean of the E010 ",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791077599.93047,
+  "digest": "D002",
+  "plan": {
+    "question": "Why did a more aggressive progressive-resizing schedule (30% of steps at 20 px, 30% at 24, 20% at 28, 20% at 32) on a short (9-epoch) CIFAR-100 airbench-style run lose about 1.4 pp of accuracy relative to the milder 24\u219228\u219232 schedule (E007: 0.759 \u2192 E011: 0.745)? That drop is far more than forecast, while the time saving (5.70 s vs 7.33 s) was also larger than forecast. What mechanism makes accuracy fall off non-linearly once early resolution goes below about 24 px, or once the time spent at full resolution shrinks to 20%? Candidates include: train/test resolution discrepancy and apparent object size (FixRes), BatchNorm statistics fitted at the wrong scale, too few full-resolution steps to re-adapt late in training, interaction with the frozen 2x2 patch-whitening stem and the global max-pool head, loss of fine-grained detail that CIFAR-100 needs, and regularization strength that should change with resolution (EfficientNetV2 progressive learning). Also, which resolution schedule shapes, such as a longer final phase at full resolution, ramping regularization with resolution, or a brief BN recalibration at the test resolution, keep most of the FLOP savings without the accuracy cliff?",
+    "queries": [
+      "progressive resizing low resolution training accuracy drop",
+      "train test resolution discrepancy FixRes batch normalization",
+      "progressive learning adaptive regularization image size EfficientNetV2",
+      "budgeted training resolution schedule fast convergence",
+      "low resolution curriculum CIFAR training efficiency",
+      "mixed resolution training final full resolution fine-tuning"
+    ],
+    "rubric": [
+      "Measures how accuracy depends on training resolution or on the shape of a resolution schedule (minimum resolution, fraction of training at full resolution), not just a single fixed resolution",
+      "Explains or isolates a mechanism for the accuracy loss: train/test scale mismatch, BatchNorm statistics, regularization-vs-resolution coupling, or lost fine-grained information",
+      "Targets short or compute-budgeted training from scratch (few epochs, or CIFAR/ImageNet speed training), so the results carry over to a run of about 9 epochs",
+      "Proposes a schedule or fix (longer final full-res phase, BN recalibration at test resolution, resolution-dependent augmentation or label smoothing) whose cost is small and measurable"
+    ],
+    "exclude": [
+      "Methods that rely on pretrained weights, external data, or knowledge distillation from a pretrained teacher",
+      "Test-time augmentation or test-time resolution changes, or anything that touches the test set or changes model state during evaluation",
+      "Methods that need test-set statistics for BN recalibration (recalibration must use training images inside timed train)",
+      "Super-resolution or image-upsampling generative work unrelated to classifier training efficiency",
+      "Vision-transformer-only token-pruning methods that don't apply to small ResNet-style conv nets",
+      "Methods that need new packages beyond PyTorch 2.4 / torchvision 0.19"
+    ]
+  },
+  "cost": 0.6923
+}

@@ -1,0 +1,28 @@
+{
+  "exp": "E065",
+  "commit": "2962393",
+  "pid": 983796,
+  "start_ticks": 7944947,
+  "started": 1791103044.8048778,
+  "tag": "I104",
+  "description": "Exploit: a time-neutral test that separates the two parts of the freeze-dose cost. On the E061 tip (225 steps), change only the end point of the group-1 LR anneal (conv filters on Muon; BN params on SGD): it moves from 75% to 80% of steps, so group 1's LR decays more slowly over the whole run. The group-1 detach stays at 75% (same absolute step), so the frozen variant covers exactly the same steps and time is unchanged. At the detach, the group-1 LR is then about 5/57 \u2248 9% of peak instead of 0. E009 and C0021 say the LR floor does not matter under Lookahead averaging. Whitening detach, group-2 freeze, resolution, step count, Lookahead and LS are unchanged. If the LR is a GPU tensor table, no recapture is needed; otherwise recapture every variant in build, with error_on_recompile on. Judge on 3 fresh builds \u00d7 seeds 33\u201352 (60 draws) against E061's 40 draws, then the frozen gate. This is the time-neutral form of H2.6.13. E055's \u22120.29 pp moved the anneal end and the detach together; this moves only the anneal.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E065.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7560666666666667,
+    "time": 5.028791770998699,
+    "complete": true
+  },
+  "row": {
+    "exp": "E065",
+    "commit": "2962393",
+    "accuracy": 0.7560666666666667,
+    "time": 5.028791770998699,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I104",
+    "description": "Exploit: a time-neutral test that separates the two parts of the freeze-dose cost. On the E061 tip (225 steps), change only the end point of the group-1 LR anneal (conv filters on Muon; BN params on SGD): it moves from 75% to 80% of steps, so group 1's LR decays more slowly over the whole run. The group-1 detach stays at 75% (same absolute step), so the frozen variant covers exactly the same steps and time is unchanged. At the detach, the group-1 LR is then about 5/57 \u2248 9% of peak instead of 0. E009 and C0021 say the LR floor does not matter under Lookahead averaging. Whitening detach, group-2 freeze, resolution, step count, Lookahead and LS are unchanged. If the LR is a GPU tensor table, no recapture is needed; otherwise recapture every variant in build, with error_on_recompile on. Judge on 3 fresh builds \u00d7 seeds 33\u201352 (60 draws) against E061's 40 draws, then the frozen gate. This is the time-neutral form of H2.6.13. E055's \u22120.29 pp moved the anneal end and the detach together; this moves only the anneal."
+  }
+}

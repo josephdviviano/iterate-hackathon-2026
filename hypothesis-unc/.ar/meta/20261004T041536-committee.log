@@ -1,0 +1,67 @@
+round 46 (update): 4/4 members, 6 ideas forecast; scored E041
+H3->retired, H3.2.1->inconclusive, H4.3.2->inconclusive, H4.2.5->inconclusive, H2.3.6->supported, H2.6.2->supported, H2.6.3->supported, H2.6.4->refuted, H2.6.5->refuted, H1.3.8->refuted, +H6.4, +H6.4.1, +H6.4.2, +H2.6.7, +H2.6.8, +H2.3.8, +H2.7, +H2.7.1, +H5.2, +H5.2.1, +H5.1.4, +H4.4, +H4.4.1. I revised the tree to match the E036 tip (5.31 s, which passed the local bar on only 1 of its 2 builds) and to apply the review's points on statistics.
+
+**Statistics**
+- **Rebuild noise (H4.1):** rewritten. A rebuild moves individual seeds by 0.1–0.44 pp, not the ±0.03 pp the tree said.
+- **Winner's curse (H4.1):** E036 scores 0.7557 on seeds 3–12, which were used to keep it, but 0.7538 on fresh seeds 13–22.
+- **Tip feasibility (H4):** the unbiased population estimate is ~0.754, so the tip passes the local bar about 55–70% of the time. Keeps should use one fixed gate, measured on seeds not used for selection.
+- **Overstated refutations (H4.4, new):** E040 and E041 were compared against E036's inflated seeds 3–12 mean. Against the fresh baseline they lose only about 0.09 and 0.01 pp. H4.2.5 moves from refuted to inconclusive. H2.3.8 (dropping the 24 px phase) and H4.4.1 (E040 and E041 stacked, judged on 20 seeds) are new.
+- **H4.3** (local results transfer to the judge) is lowered to 0.4, and **H4.3.2** is set to inconclusive.
+
+**Statuses reconciled with their evidence**
+- Supported: H2.6.2 (E034), H2.6.3 (E036), and H2.3.6 (E033 tested its exact statement; E040 tested a different one).
+- Refuted: H2.6.4 (E037), H2.6.5 (E039), H1.3.8 (E032).
+- H3.2.1 is inconclusive (E035 kept the full whitening set and saved only 0.035 s).
+- H3 and H3.2 are retired, since the remaining fixed cost is ~0.02 s on the mean.
+- H2, H2.6, H2.3 and H1.3 are rewritten with the current levers and limits. The "early steps carry accuracy" reading of E040/E041 is withdrawn.
+
+**Mechanisms**
+- **H6 (uneven per-layer cost):** reworded. E039 places group-1 BN on 15×15 maps and shows it costs nothing, so H6.3 is narrowed to the 31×31 tensors before the pool and lowered to 0.3.
+- **H6.1 and H6.2 (small maps, tile alignment):** downgraded. Map-size arithmetic explains E024 and E021 without them.
+- **H6.4 (new):** the 24-channel whitening output makes group-1 conv1 inefficient. It has a profiler test (H6.4.1) and a math-identical pad-to-32-channels test (H6.4.2).
+
+**Committee counterexamples**
+- E025 and E026 time: both runs were built on E023 while the forecasts assumed E016/E017.
+- E028 time: explained by H6.3 or H6.4.
+- E030 accuracy: the Lookahead reset is part of the gain (H1.3).
+- E032 accuracy: label smoothing 0.3 shapes the averaged solution (H1.3).
+- E031 time: selection removes steps, and time follows steps (H2.7 and H5.2, both new).
+
+**Other new branches**
+- **Stem freeze:** H2.6.7 (freeze at ~71%, right after the switch to 32 px, to locate E037's cliff) and H2.6.8 (a staggered group-2 freeze).
+- **Proxy-free loss selection:** H2.7 and H2.7.1, with E031 as evidence.
+- **Batch size and step count:** H5.2 and H5.2.1 (step count carries early accuracy), set up as the opposite prediction to H5.1.3. H5.1.4 (late batch growth) is from the Seesaw paper. H5 is raised to 0.3, and H5.1.x are rebased to E036 with 20-seed judging.
+
+**Other confidence changes**
+- H1.3.6 (BN recompute) rises to 0.45: the search confirmed in airbench's code that Lookahead lerps the BN buffers, and the committee is split, so it needs a decisive 20-seed test.
+- H1.2.3 and H1.5.4 now point to code reads for the Newton-Schulz step count and filter renormalization.
+- Lowered: H1.4, H1.5.5, H1.5.8, H2.3.4, H2.4.
+
+H5 and H6 stay open as Lvl1 hypotheses.
+added I067, I068, I069, I070, I071, I072, I073; dropped I064, I065. Where things stand: the E036 tip runs in 5.31 s. Its true mean accuracy is about 0.754 (0.7538 on fresh seeds), so it clears the 0.753 local bar only about 55–70% of the time. Any further time cut therefore needs an accuracy gain to pay for it, and should beat the epoch dial of about 1.5 s per pp of accuracy.
+
+**Accuracy boosters (to pay for cuts):**
+- **BN recalibration (H1.3.6), priority 4.** It replaces I064. The test is now paired inside one process: each trial is evaluated before and after recalibration on the same trained weights. That removes trajectory and rebuild noise, so the ~0.05 pp the committee forecasts can actually be measured. It costs about 0.03 s, so a gain of +0.05 pp already breaks even.
+- **Batch 1000 only in the 20 px phase (H5.2), priority 4.** This tests the step-count crux that E041 raised: it adds steps at the cheapest resolution for about +0.1 s.
+- **Global batch 1500 (H5.1.2), priority 3.** This is the crux named by W2, W5 and W6.
+
+**Time cuts to stack once accuracy is paid for:**
+- **Freeze group 2 for the last 10% of steps (H2.6.8), priority 3.** About −0.15 s; group 2 is the largest block.
+- **Keep the top 95% of samples by loss (H2.7.1), priority 2.** A milder dose of E031's near-miss.
+- **Pad the stem's 24 channels to 32 (H6.4.2), priority 2.** The math is unchanged, so it has no accuracy cost.
+
+**Diagnostic:** a sharpened profiling run (H6.4.1, priority 3) replaces I058. It adds GPU idle and augmentation accounting over a whole run, and its result decides whether the padding idea moves up.
+
+**Dropped:**
+- I065 (16 px start): the committee expects it to trade worse than the dial.
+- I058 and I064: replaced by the sharper versions above.
+
+**Not queued:**
+- Freezing at 70–71%: it saves only about 0.09 s, and a difference that small can't be resolved with 20 seeds.
+- Re-testing E040 on fresh seeds: even the optimistic reading only matches the dial, and its seeds 0–2 already miss the bar.
+
+**Evaluation protocol:**
+- New ideas are judged on seeds 13–32 against E036 on the same seeds. E038's seeds 13–22 are reused, and E036 is run once on 23–32 to complete the baseline.
+- Final validation must use seeds 33 and up, because 13–32 will now be used for selection.
+- I062 is still running. Its result says where E037's freeze cliff comes from.
+round 47 (forecast): 4/4 members, 7 ideas forecast; veto audit I068; vetoed I069

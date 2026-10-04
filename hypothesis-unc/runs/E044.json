@@ -1,0 +1,28 @@
+{
+  "exp": "E044",
+  "commit": "401eef9",
+  "pid": 760886,
+  "start_ticks": 6517835,
+  "started": 1791088773.6736243,
+  "tag": "I067",
+  "description": "Exploit: a booster that leaves the training trajectory unchanged. It replaces I064 with a paired design that has no trajectory noise. On the E036 tip, at the end of train() and after the final Lookahead copy (which lerps BN running_mean/var from different fast weights and never recomputes them): reset every BN layer's running stats, set momentum=None (cumulative average), run a no-grad train-mode forward at 32 px over K batches of 2000 training images with the usual crop and flip, then restore momentum. Capture this forward-only graph in build on synthetic channels_last tensors, with error_on_recompile on. Eval stays a plain forward pass. Judge it with an offline instrumented copy on unselected seeds 13\u201332. In each trial, evaluate the averaged model once before recalibration and once after, so the two numbers share the exact same trained weights and the difference has no trajectory or rebuild noise. Do the same for K=1 and K=3. Commit the better K, then run ar.py to get time and the seeds 0\u20132 check. The submission evaluates only once.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E044.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7518666666666667,
+    "time": 5.342197174000224,
+    "complete": true
+  },
+  "row": {
+    "exp": "E044",
+    "commit": "401eef9",
+    "accuracy": 0.7518666666666667,
+    "time": 5.342197174000224,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I067",
+    "description": "Exploit: a booster that leaves the training trajectory unchanged. It replaces I064 with a paired design that has no trajectory noise. On the E036 tip, at the end of train() and after the final Lookahead copy (which lerps BN running_mean/var from different fast weights and never recomputes them): reset every BN layer's running stats, set momentum=None (cumulative average), run a no-grad train-mode forward at 32 px over K batches of 2000 training images with the usual crop and flip, then restore momentum. Capture this forward-only graph in build on synthetic channels_last tensors, with error_on_recompile on. Eval stays a plain forward pass. Judge it with an offline instrumented copy on unselected seeds 13\u201332. In each trial, evaluate the averaged model once before recalibration and once after, so the two numbers share the exact same trained weights and the difference has no trajectory or rebuild noise. Do the same for K=1 and K=3. Commit the better K, then run ar.py to get time and the seeds 0\u20132 check. The submission evaluates only once."
+  }
+}

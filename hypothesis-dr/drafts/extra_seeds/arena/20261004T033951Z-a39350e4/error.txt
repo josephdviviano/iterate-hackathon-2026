@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/home/jovyan/work/arena3/hypothesis-dr/benchmark/worker.py", line 97, in run_worker
+    state = module.build(
+            ^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-dr/drafts/extra_seeds/arena/20261004T033951Z-a39350e4/source/submission.py", line 317, in build
+    train_step(state, opt, xs, y)
+  File "/home/jovyan/work/arena3/hypothesis-dr/drafts/extra_seeds/arena/20261004T033951Z-a39350e4/source/submission.py", line 336, in train_step
+    opt.step()
+  File "/home/jovyan/work/arena3/hypothesis-dr/drafts/extra_seeds/arena/20261004T033951Z-a39350e4/source/submission.py", line 225, in step
+    _muon_update(self.params, grads, self.bufs, self.lr_t, self.momentum, self.ns_steps, self.shape_groups)
+  File "/home/jovyan/work/arena3/hypothesis-dr/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 433, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-dr/drafts/extra_seeds/arena/20261004T033951Z-a39350e4/source/submission.py", line 190, in _muon_update
+    U = U * PE_NORM_MATCH[(min(G.shape[1:]), max(G.shape[1:]))]
+            ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: (160, 216)

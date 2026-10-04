@@ -1,0 +1,28 @@
+{
+  "exp": "E066",
+  "commit": "fb4c95c",
+  "pid": 623221,
+  "start_ticks": 5330965,
+  "started": 1791076904.9843807,
+  "tag": "I084",
+  "description": "NorMuon on the conv filters. On the tip (E058 or its successor), make one change inside the batched compiled Muon step: after NS3 and before the sqrt(max(1,out/in)) scaling, apply per-row (per output filter) second-moment normalization. Keep a buffer v per group of shape [n_mats, out, 1], initialised to zero in prepare() (reset per trial). Update v = 0.95*v + 0.05*mean_over_cols(O^2) and set O' = O / sqrt(v_hat + 1e-8), with bias correction v_hat = v / (1 - 0.95^t). Then rescale O' to the Frobenius norm O had, so the per-step update magnitude is unchanged and only its distribution across filters changes. The weight-norm projection, Muon lr 0.16, momentum 0.8, lookahead, curriculum, freeze variants and epochs stay unchanged. The frozen-block Muon variants must update v only for the groups they contain. Pass the step count as a 0-d tensor. Re-warm all Muon variants in build() on synthetic tensors, and run debug_nan.py under max-autotune-no-cudagraphs.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E066.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7511333333333333,
+    "time": 4.706918195333856,
+    "complete": true
+  },
+  "row": {
+    "exp": "E066",
+    "commit": "fb4c95c",
+    "accuracy": 0.7511333333333333,
+    "time": 4.706918195333856,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I084",
+    "description": "NorMuon on the conv filters. On the tip (E058 or its successor), make one change inside the batched compiled Muon step: after NS3 and before the sqrt(max(1,out/in)) scaling, apply per-row (per output filter) second-moment normalization. Keep a buffer v per group of shape [n_mats, out, 1], initialised to zero in prepare() (reset per trial). Update v = 0.95*v + 0.05*mean_over_cols(O^2) and set O' = O / sqrt(v_hat + 1e-8), with bias correction v_hat = v / (1 - 0.95^t). Then rescale O' to the Frobenius norm O had, so the per-step update magnitude is unchanged and only its distribution across filters changes. The weight-norm projection, Muon lr 0.16, momentum 0.8, lookahead, curriculum, freeze variants and epochs stay unchanged. The frozen-block Muon variants must update v only for the groups they contain. Pass the step count as a 0-d tensor. Re-warm all Muon variants in build() on synthetic tensors, and run debug_nan.py under max-autotune-no-cudagraphs."
+  }
+}

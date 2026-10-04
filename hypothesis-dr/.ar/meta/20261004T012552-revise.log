@@ -1,0 +1,48 @@
+H1.2.6->refuted, H1.7->inconclusive, H1.7.1->refuted, H1.9->refuted, H1.10->refuted, H1.10.1->refuted, H2.4.7->supported, H4.1.3->retired, H4.1.4->inconclusive, H6.1.1->refuted, H6.2->refuted, H6.2.1->refuted, H6.3->inconclusive, H6.3.1->inconclusive, +H7, +H7.1, +H7.1.1, +H7.2, +H7.2.1, +H7.3, +H7.3.1, +H6.4, +H6.4.1, +H1.11, +H1.11.1, +H1.2.7, +H2.4.8, +H4.1.6, +H1.8.4, +H1.7.4. I updated 49 nodes and added 18, mostly to roll in E051-E066 and the review's points.
+
+**Margin (H4).** The tip, E058 at 0.7537, clears the 0.753 gate by only 0.07 pp. It got there by keeping noise-sized changes (E051, E052, E058) while discarding near-misses that were just as close (E044, E054, E061).
+- H4 confidence is raised to 0.75.
+- H4.1.2 now asks for E058 to be evaluated offline on seeds 3-12 and is the top priority.
+- H4.1 now states two noise estimates that disagree: about 0.06 pp on the 3-seed mean (from E057) and about 0.12-0.15 pp (from E044 vs E048). H4.1.4 becomes inconclusive, and a new node asks for more random-seed-shift draws to settle it.
+
+**Update geometry (H1).** H1 is rewritten and lowered to 0.30. Every "lever left" it named lost accuracy:
+- Refuted: NorMuon (E066), Muon on the head (H1.10/H1.10.1), H1.7.1 and H6.1.1.
+- H1.9 (scheduled whitening strength) is refuted by E065 (-1.51 pp). The caveat stays that E065's update-norm match was never reported. H1.9.1 is retired.
+- H1.6.6 rises to 0.6: E028 matched its parent to 0.003 pp, so its lookahead change was probably never applied, and the averaging axis counts as untested.
+- New nodes: stronger whitening (NS4 or Polar Express at 3 iterations), Online Label Smoothing as a class-structured target, and BN-bias lr x32.
+
+**Systems (H2).**
+- H2.4.7, freezing block 1 late (E058), is now supported at 0.6.
+- NS2 variants (H2.4.5, H2.4.6) are demoted and gated on a check that they whiten as strongly as NS3, because of E065. Turbo-Muon also saved only 0.8% on its own benchmark.
+- New: Gram Newton-Schulz, which keeps the same math and should cut Newton-Schulz FLOPs by about 45%, since every filter matrix has aspect ratio 9.
+- New: a check for warmup gaps that slow trial 0.
+- H2.5.1 is retargeted to the E058 tip, for the PCIe judging GPU and the build-time budget.
+
+**Resolution and steps (H6).** H6 is rewritten and lowered to 0.5:
+- The early phase cannot lose steps: H6.2 and H6.2.1 are refuted by E053.
+- The 32 px tail is close to its floor: H6.3 and H6.3.1 are inconclusive.
+- New N_TAIL: E063 suggests an extra 32 px epoch is worth little on the current base, so it tests E058 cut to 6.5 epochs.
+
+**Per-block freezing (new Lvl1, N_FREEZE).** This covers why block 1 can be frozen cheaply late and block 2 cannot. It predicts three things:
+- annealing block 1's lr before an earlier freeze point;
+- running the frozen block 1 in eval mode;
+- freezing only block 2's first conv late.
+
+**Bookkeeping.** E052 was attached to the wrong node (H1.8.2). Its finding, that dropping translate in the low-res stages is neutral, now has its own node, N_AUG.
+
+**Suggested order:** the extra-seed check, the compile no-op check, the trial-0 timing check, Gram NS, then E058 at 6.5 epochs.
+added I085, I086, I087, I088, I089, I090, I091, I092; dropped none. The queue was empty (every idea from I001 to I084 is done or dropped), so I added 8 new ideas.
+
+**Exploit (5):**
+- **H4.1.2, priority 4:** an offline check on seeds 3-12 of E058, plus a paired E061 if budget allows. It decides whether the tip's 0.07 pp margin is real, and it gates the time cuts.
+- **H7.1.1, priority 4:** combines E061's near-miss with FreezeOut. Block 1's lr ramps down linearly to 0 between 0.6 and 0.7 of training, then the existing freeze takes over at 0.7. Expected about -2.7% time with E061's accuracy loss mostly recovered.
+- **H2.4.8, priority 3:** Gram Newton-Schulz, the same math with 2 instead of 6 rectangular GEMMs. Expected about -1.3% time, gated in drafts/ on matching outputs and a measured saving of at least 0.25 ms/step.
+- **H6.4.1, priority 3:** cut to 6.5 total epochs, run only once margin is banked.
+- **H7.3.1, priority 2:** freeze only block 2's first conv for the last 10% of samples. Expected about -1% time.
+
+**Explore (3), each aimed at recovering margin at no time cost:**
+- **H1.11.1, priority 3:** Online Label Smoothing, set up so it starts out exactly equal to LS 0.2.
+- **H1.2.7, priority 3:** Polar Express per-iteration coefficients with the update norm matched to the current NS3 output. This is the only update-geometry direction E065 leaves open.
+- **H1.7.4, priority 2:** BN-bias lr x32.
+
+No queued ideas needed dropping. One bookkeeping fix for the tree: H1.6.6 is still listed as open (confidence 0.6), but I075's gate note already refuted it. Every edit pair differed per seed, and all edits reached the timed path. It should be marked refuted, and H1/H1.2/H1.6 should drop the "compile no-op" caveat.

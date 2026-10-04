@@ -1,0 +1,19 @@
+H1.2.6->inconclusive, H1.6.4->inconclusive, H1.7->inconclusive, H1.7.2->inconclusive, H1.7.4->inconclusive, H1.11.1->inconclusive, H2.4.6->retired, H3->supported, H4.1->supported, H4.1.1->refuted, H4.1.4->refuted, H4.1.6->retired, H4.1.7->supported, H4.4->supported, H4.4.1->supported, H6.1->supported, H6.1.2->supported, +H4.5, +H4.5.1, +H4.5.2, +H4.1.8, +H1.13, +H1.13.1, +H1.1.5, +H1.14, +H1.14.1, +H3.3, +H3.3.1. The review's noise model is adopted. Any edit to build() changes which kernels autotuning picks, and that re-draws every seed (E077): about 0.2 pp sd on the 3-seed mean, about 0.35-0.4 pp per seed. Under this model:
+- H4.1 is rewritten and marked supported.
+- H4.1.1 and H4.1.4 are refuted, H4.1.7 is supported, and H4.1.6 is retired.
+- H4.4 and H4.4.1 are supported. Rescored against E069's 13-seed mean (~0.7534), every result lands where H4.4.1 predicted.
+- Six closures that were single runs within ~1-2 sd move from refuted to inconclusive: H1.2.6, H1.6.4, H1.7.2, H1.7.4 and H1.11.1, plus H1.7 as a whole.
+- H1 no longer claims the update geometry is saturated. Only effects of about 0.6 pp or more count as robust.
+
+Search shows no CIFAR gain from stronger orthogonalization: the Polar Express paper's own CIFAR runs, and MUD's airbench table (Muon3 ≈ Muon5). This lowers H1.2.7, H1.2.8 and H1.2.9, and H2.4.6 is retired. Gram NS (H2.4.8) is capped at about 1% end to end.
+
+H2.5.1 is reframed as a determinism test: build without cudnn.benchmark and max-autotune so that math-preserving cuts give bit-identical seeds. H2 now counts the time cuts blocked only by the gate (E078 -2.5%, E077 -1.3%, E081 bundle -3.7%). H3 is reworded: overhead outside the train step is about 4% and grows in share as steps get faster. H6.1 and H6.1.2 are supported (the 18 px stage keeps a 2x2 map and is fine). H6's epoch slope is marked uncertain by about 3x.
+
+New nodes:
+- **H4 escape route (N1).** Raise the true mean to about 0.7555 or more, mainly by spending E081's savings on epochs. N1a measures the epoch slope offline; N1b is the conditional launch.
+- **Noise check (N2).** Pairing on seed buys little for math-changing edits, so offline gates need at least 2 SE.
+- **Untried directions.** Logit scale (N3/N3a), whether the port kept the airbench96 residual (N4), and global schedule shape (N5/N5a).
+- **Outside-step overhead (N6/N6a).** A full-trial re-profile.
+
+H1, H2 and H4 remain open at Lvl1.
+added I119, I120, I121, I122, I123; dropped none. Nothing was left in the queue: every idea through I118 is done or dropped, so there is nothing to drop. The offline results have settled several open nodes: H2.5.1 is refuted by I117 (no compile mode is reproducible across processes, and default compile is 4.4% slower); H1.6.1 is refuted in all three arms (E028, I104, I108); H1.12.1 by I105; H1.2.8 by I103; H1.2.5 by I110; H1.8.2 by I118; H2.4.8 by the I087 gate; and H1.2.9 by I098 (the Polar Express gain was re-draw). H4.5.1 is answered by I114: +0.25 epoch gives +0.23 pp for +5.1% time, which wipes out E081's -3.7%. Its predicted time was wrong, so 7.0 epochs cannot beat E069. Every lever now prices at about 0.05 pp per 1% of time; only the systems bundle and 18 px are close to free. The plan follows from that. The top exploit is E081 + 18 px + only +0.125 epoch: about -1.7% time with a true mean of ~0.7545, so P(passing the gate) is about 70-75%. It is gated on a 20-seed same-process screen and launched once. The cheap explore screens look for a free accuracy buffer that could replace that epoch: the logit scale (H1.13.1), a possibly dropped airbench96 residual (H1.1.5) and the warmup fraction (H1.14.1). One systems profile (H3.3.1) looks for the last ~1% of outside-step work. All screens use 20 seeds in one process and require >= 2 SE before anything is folded into a seeds-0-2 launch.

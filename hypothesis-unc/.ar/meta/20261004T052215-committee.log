@@ -1,0 +1,11 @@
+round 55 (update): 4/4 members, 3 ideas forecast; scored E048
+added I079, I080, I081, I082; dropped none. The loop now has two limits: noise and margin. Every recent cut (E042, E045, E046, E048) landed between its thresholds. The tip's seeds 0–2 mean ranged from 0.7497 to 0.7544 across four builds of the same commit, and the systems branch is essentially closed (E047: 2.8% GPU idle, convs at 200–270 TFLOP/s). Boosters on their own cannot win, because they add time and the committee vetoes them. So every new idea is either a time cut with a plausible rate better than the epoch dial, or a test that reduces noise.
+
+The queue keeps I076 (non-step copies; 3/4 improve votes), I078 (ReLU; it settles W6's bytes-bound crux; 0 harm votes) and I075 (running). Four ideas are added:
+- **H4.1.5 determinism test (explore, priority 3):** no-cudagraph builds versus a pinned autotune cache. If either is bit-identical across rebuilds at ≤0.5% cost, the build lottery disappears from every later comparison.
+- **H2.5 strided stem conv (priority 3):** replace g1.conv1 plus max-pool with a 3×3 stride-2 pad-0 conv. This removes the last full-resolution 128-channel tensor while keeping the 15/7/3 maps. It is the one large untested structural cut, about −5 to −9% time, and is worth keeping if it costs ≤0.25 pp.
+- **H2.7.1 (priority 3, conditional on I075):** stack E048's selection plus a +0.25 epoch top-up on I075's recipe.
+- **H2.6.8 (priority 2, conditional on I075):** extend the group-2 freeze to the last 15%, testing W6's dose crux.
+
+Nothing is dropped. No queued idea's hypothesis is settled, and none has majority harm votes. One note for the tree: W5 reports that Muon renormalizes the filters and applies no wd. If the code confirms this, H1.5.4 is settled without a run, and all wd results are really SGD-group (BN-bias/head) results.
+round 56 (forecast): 4/4 members, 4 ideas forecast

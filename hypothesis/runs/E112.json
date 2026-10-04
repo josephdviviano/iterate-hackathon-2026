@@ -1,0 +1,28 @@
+{
+  "exp": "E112",
+  "commit": "00ced7f",
+  "pid": 648218,
+  "start_ticks": 5544187,
+  "started": 1791079037.200518,
+  "tag": "I122",
+  "description": "Class-balanced (stratified) minibatches at zero compute. Base: E100 code. Inside train, at the start of each epoch, build the permutation on the GPU from the global RNG, which the harness seeds per trial. Nothing is built at import or in build. Steps: (1) for each of the 100 classes, shuffle its 500 indices into a [500, 100] (rank, class) index matrix, using one argsort of random keys within class-sorted labels; (2) independently permute the class order within each rank row; (3) flatten row-major. Every consecutive block of 100 then contains each class exactly once, so a bs-1536 batch holds 15-16 images per class and a bs-1024 batch holds 10-11. The class-sorted label index is computed in prepare, which is timed. Samples, steps, shapes and augmentation are unchanged, and the net graph is untouched. Untimed check: the per-batch class-count max-min is <=1 and the epoch covers all 50,000 images exactly once. Decide on off-seed seeds 3-26 in >=3 fresh processes, paired against the E106 pooled baseline, plus two distinct scored samples.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E112.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.753,
+    "time": 4.467791045666672,
+    "complete": true
+  },
+  "row": {
+    "exp": "E112",
+    "commit": "00ced7f",
+    "accuracy": 0.753,
+    "time": 4.467791045666672,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I122",
+    "description": "Class-balanced (stratified) minibatches at zero compute. Base: E100 code. Inside train, at the start of each epoch, build the permutation on the GPU from the global RNG, which the harness seeds per trial. Nothing is built at import or in build. Steps: (1) for each of the 100 classes, shuffle its 500 indices into a [500, 100] (rank, class) index matrix, using one argsort of random keys within class-sorted labels; (2) independently permute the class order within each rank row; (3) flatten row-major. Every consecutive block of 100 then contains each class exactly once, so a bs-1536 batch holds 15-16 images per class and a bs-1024 batch holds 10-11. The class-sorted label index is computed in prepare, which is timed. Samples, steps, shapes and augmentation are unchanged, and the net graph is untouched. Untimed check: the per-batch class-count max-min is <=1 and the epoch covers all 50,000 images exactly once. Decide on off-seed seeds 3-26 in >=3 fresh processes, paired against the E106 pooled baseline, plus two distinct scored samples."
+  }
+}

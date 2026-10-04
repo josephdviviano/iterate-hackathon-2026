@@ -1,0 +1,28 @@
+{
+  "exp": "E136",
+  "commit": "a21b318",
+  "pid": 933187,
+  "start_ticks": 7633095,
+  "started": 1791099926.2811918,
+  "tag": "I147",
+  "description": "Confound ablation of E126, which may also turn up a -2% time lever. Base: E116 code (82e6219). Precondition, free: log the source hash and a diff against 82e6219. Run the 28 and 32 px phases at bs 1536 instead of 1024, with two differences from E126: (1) the SGD groups (BN biases, whitening bias, head bias) keep their bs-1024 per-step values in those phases, with no kilostep rescale; (2) the final-EMA window and the lookahead stop are pinned to the tip's sample count (~8192 samples, i.e. the last ~5 steps at bs 1536, final EMA ~2 updates spaced to cover the same samples). LR warmup/decay, the floor-hold, the renorm cadence, the 85% freeze and Muon x1.25 at 32 px stay sample-indexed; Muon lr and momentum are unchanged. Reuse E126's warmed bs-1536 28/32 px graphs (every freeze x renorm variant) and verify no recompiles on a 2-trial TORCH_LOGS=recompiles dev run. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled ~198-trajectory E116 baseline (SE ~0.032), with an E126 same-seed comparison. Add one scored run with per-trial logs.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E136.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7525666666666667,
+    "time": 4.16090989333073,
+    "complete": true
+  },
+  "row": {
+    "exp": "E136",
+    "commit": "a21b318",
+    "accuracy": 0.7525666666666667,
+    "time": 4.16090989333073,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I147",
+    "description": "Confound ablation of E126, which may also turn up a -2% time lever. Base: E116 code (82e6219). Precondition, free: log the source hash and a diff against 82e6219. Run the 28 and 32 px phases at bs 1536 instead of 1024, with two differences from E126: (1) the SGD groups (BN biases, whitening bias, head bias) keep their bs-1024 per-step values in those phases, with no kilostep rescale; (2) the final-EMA window and the lookahead stop are pinned to the tip's sample count (~8192 samples, i.e. the last ~5 steps at bs 1536, final EMA ~2 updates spaced to cover the same samples). LR warmup/decay, the floor-hold, the renorm cadence, the 85% freeze and Muon x1.25 at 32 px stay sample-indexed; Muon lr and momentum are unchanged. Reuse E126's warmed bs-1536 28/32 px graphs (every freeze x renorm variant) and verify no recompiles on a 2-trial TORCH_LOGS=recompiles dev run. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled ~198-trajectory E116 baseline (SE ~0.032), with an E126 same-seed comparison. Add one scored run with per-trial logs."
+  }
+}

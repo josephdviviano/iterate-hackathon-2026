@@ -1,0 +1,28 @@
+{
+  "exp": "E134",
+  "commit": "e87b135",
+  "pid": 901015,
+  "start_ticks": 7462727,
+  "started": 1791098222.5948842,
+  "tag": "I143",
+  "description": "Early bs 2048 with the warmup fixed in steps. Base: E116 code. Run the 16 px and 24 px phases at bs 2048 instead of 1536. Keep the LR warmup at the tip's step count, not its sample count, which removes E043's warmup confound. Decay, floor-hold, renorm cadence, whitening-bias detach (~41%) and the 85% freeze stay sample-indexed. Scale the SGD groups (BN biases, whitening bias, head bias) in those phases by the kilostep rule; Muon lr and momentum are unchanged. The 28/32 px phases and the tail are untouched. Compile static bs-2048 16/24 px graphs plus both whiten-bias-grad variants, warm them in build, and verify no recompiles on a 2-trial dev run. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled E116 baseline. Add one scored run with per-trial logs.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E134.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7494999999999999,
+    "time": 4.20788672833199,
+    "complete": true
+  },
+  "row": {
+    "exp": "E134",
+    "commit": "e87b135",
+    "accuracy": 0.7494999999999999,
+    "time": 4.20788672833199,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I143",
+    "description": "Early bs 2048 with the warmup fixed in steps. Base: E116 code. Run the 16 px and 24 px phases at bs 2048 instead of 1536. Keep the LR warmup at the tip's step count, not its sample count, which removes E043's warmup confound. Decay, floor-hold, renorm cadence, whitening-bias detach (~41%) and the 85% freeze stay sample-indexed. Scale the SGD groups (BN biases, whitening bias, head bias) in those phases by the kilostep rule; Muon lr and momentum are unchanged. The 28/32 px phases and the tail are untouched. Compile static bs-2048 16/24 px graphs plus both whiten-bias-grad variants, warm them in build, and verify no recompiles on a 2-trial dev run. Accuracy is decided untimed on seeds 3-102 in one fresh process against the pooled E116 baseline. Add one scored run with per-trial logs."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "exp": "E034",
+  "commit": "fa10c0e",
+  "pid": 710485,
+  "start_ticks": 6000291,
+  "started": 1791083598.2376366,
+  "tag": "I052",
+  "description": "Exploit: stack the free lever (the freeze) with the cheapest accuracy booster (epochs). Start from the E027 tip and apply E028's freeze exactly as committed in fcacfc6. Group-1 conv filters, the whitening bias and group-1 BN params get their own param groups. Their LR follows the global triangle to its peak, then decays linearly to 0 at 75% of total steps. For the last 25% of steps, use the truncated compiled 32 px step: group-1 output detached, and no group-1 or whitening backward or update. Group-1 BN stays in train mode and Lookahead averages every param. Then change only the step count: 8.75 to 9.25 true epochs (about 231 steps at batch 2000). Read the exact count from the code. The resolution phases (20/24/28/32 at 15/25/30/30%), the freeze point (75%), and the LR and Lookahead schedules stay fixed fractions of the new total. Capture full and truncated 32 px variants in build with channels_last synthetic tensors, with error_on_recompile on. In the same session, run held-out seeds 3\u201312. Keep if seeds 0\u20132 \u2265 0.753 and held-out \u2265 0.7545. Do not re-roll RNG streams to chase seeds 0\u20132.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E034.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7539,
+    "time": 5.480649318664898,
+    "complete": true
+  },
+  "row": {
+    "exp": "E034",
+    "commit": "fa10c0e",
+    "accuracy": 0.7539,
+    "time": 5.480649318664898,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I052",
+    "description": "Exploit: stack the free lever (the freeze) with the cheapest accuracy booster (epochs). Start from the E027 tip and apply E028's freeze exactly as committed in fcacfc6. Group-1 conv filters, the whitening bias and group-1 BN params get their own param groups. Their LR follows the global triangle to its peak, then decays linearly to 0 at 75% of total steps. For the last 25% of steps, use the truncated compiled 32 px step: group-1 output detached, and no group-1 or whitening backward or update. Group-1 BN stays in train mode and Lookahead averages every param. Then change only the step count: 8.75 to 9.25 true epochs (about 231 steps at batch 2000). Read the exact count from the code. The resolution phases (20/24/28/32 at 15/25/30/30%), the freeze point (75%), and the LR and Lookahead schedules stay fixed fractions of the new total. Capture full and truncated 32 px variants in build with channels_last synthetic tensors, with error_on_recompile on. In the same session, run held-out seeds 3\u201312. Keep if seeds 0\u20132 \u2265 0.753 and held-out \u2265 0.7545. Do not re-roll RNG streams to chase seeds 0\u20132."
+  }
+}

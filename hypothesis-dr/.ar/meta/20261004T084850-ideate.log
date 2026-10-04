@@ -1,0 +1,27 @@
+added I139, I140, I141, I142, I143; dropped none; skipped ideas for unknown/closed H5. Every idea in the queue is done or dropped, so there is nothing stale to remove. This round adds 6 new ideas: 4 exploit, 2 explore.
+
+**State of the recipe.** The recipe's tunable knobs all look flat on the true-mean scale. The per-block Muon lr, momentum, whitening strength, SGD-group lr/wd/momentum, augmentation strength, schedule warmup, logit scale, pooling, averaging and batch shape all sit at their optimum. Every time cut prices at about 0.05 pp per 1% of time. The tip's true mean is about 0.7539 (I138 grand mean).
+
+**Correction to I138.** I138 says the true mean could be spent down to about 0.7525. That arithmetic is wrong. Keeping P(local pass) ≥ 0.6 needs m ≥ 0.7534, so only about 0.055 pp of margin is spendable.
+
+**Ranking.**
+- **Priority 5:** Inductor Triton coordinate-descent and pointwise autotuning of the memory-bound BN/SiLU kernels (new node H2.7). This is the one untested systems lever inside the compiled step, which holds about 98% of the time. It keeps the true mean and is a ~70% gate lottery.
+- **Priority 4:** stack the best-priced near-miss onto it: block-1 freeze at 0.75, I130's -0.066 pp for -1.7%. The launch rule is pre-registered and uses the corrected arithmetic.
+- **Priority 3:** a bit-identical cleanup of the remaining outside-step work (resize in the straddling epochs, a precomputed step plan). Since the cached model kernels replay, it keeps the 0.7556 draw (E083 precedent).
+- **Priority 3:** a structural explore, H5.2: run block 3's first conv after the pool. This cuts ~17% of FLOPs. It is screened both at fixed epochs and at time-matched epochs, to see whether it beats the flat frontier.
+- **Priority 2:** two time-neutral explores. One tests jitter's true value, covering H1.8.3 (low-res only) and a full ablation. The other tests the whitening eps (new node H1.16), the last inherited scalar never varied.
+
+**Tree hygiene for the next review.** Several nodes are still marked open but are settled by results:
+- H1.6 and H1.6.1 are refuted by E028, I104 and I108.
+- H1.2.8 and H1.2.9 are refuted by I103 and I098.
+- H1.12.x is refuted by I105.
+- H1.13.x is retired by I120.
+- H1.1.5 is not applicable (I121).
+- H1.14.x is closed by I123.
+- H2.5.1 is refuted by I117.
+- H2.4.3 is retired by I129.
+- H2.4.8 is refuted by I087.
+- H1.2.5 is refuted by I110.
+- H1.8.2 is refuted by I118.
+- H4.3 is supported by I138.
+- H4.1.8 is supported: paired sd is ~0.24-0.42 pp.

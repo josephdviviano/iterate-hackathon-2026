@@ -1,0 +1,28 @@
+{
+  "exp": "E047",
+  "commit": "60645dd",
+  "pid": 776245,
+  "start_ticks": 6669514,
+  "started": 1791090290.4724782,
+  "tag": "I071",
+  "description": "Explore diagnostic, with no recipe change. It replaces I058 and adds the overhead accounting from W5's crux. Offline, on the E036 tip with synthetic channels_last data at batch 2000: (1) torch.profiler traces of the compiled 32 px full step, the whitening-detached step, the frozen step and the 20/24 px steps. Record GPU time by kernel class (conv fwd/dgrad/wgrad, BN, GELU, pool, elementwise, Muon NS, Lookahead) and by layer, plus achieved TFLOP/s per conv. Explicitly compare group-1 conv1 (Cin=24, 31\u00d731) against the group-2 convs. (2) One trace of a whole timed train() for seed 13 on real data. Record GPU idle fraction, per-epoch augmentation/interpolate/permute time, and time outside the step graphs. Write the table to the notebook, and label each kept lever as compute-bound or bandwidth-bound (H4.3). Do not edit submissions/arena/.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E047.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7544,
+    "time": 5.343233577664553,
+    "complete": true
+  },
+  "row": {
+    "exp": "E047",
+    "commit": "60645dd",
+    "accuracy": 0.7544,
+    "time": 5.343233577664553,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I071",
+    "description": "Explore diagnostic, with no recipe change. It replaces I058 and adds the overhead accounting from W5's crux. Offline, on the E036 tip with synthetic channels_last data at batch 2000: (1) torch.profiler traces of the compiled 32 px full step, the whitening-detached step, the frozen step and the 20/24 px steps. Record GPU time by kernel class (conv fwd/dgrad/wgrad, BN, GELU, pool, elementwise, Muon NS, Lookahead) and by layer, plus achieved TFLOP/s per conv. Explicitly compare group-1 conv1 (Cin=24, 31\u00d731) against the group-2 convs. (2) One trace of a whole timed train() for seed 13 on real data. Record GPU idle fraction, per-epoch augmentation/interpolate/permute time, and time outside the step graphs. Write the table to the notebook, and label each kept lever as compute-bound or bandwidth-bound (H4.3). Do not edit submissions/arena/."
+  }
+}

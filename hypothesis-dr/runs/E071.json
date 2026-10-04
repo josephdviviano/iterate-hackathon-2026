@@ -1,0 +1,28 @@
+{
+  "exp": "E071",
+  "commit": "5769443",
+  "pid": 682708,
+  "start_ticks": 5774535,
+  "started": 1791081340.6808102,
+  "tag": "I091",
+  "description": "Partial block-2 freeze. Base: E058 (or the H7.1.1 successor). For the last 10% of samples (from 303750, i.e. 6.075 epochs), use a new 32 px train variant that is the block-1-frozen graph plus a detached weight for block 2's first conv only (conv(x, w.detach()) behind a Python flag fixed at trace time). Block 2's later convs, all of block 3 and block-2 BN biases keep training. Pair it with a Muon variant that excludes the 128x1152 block-1 groups and block 2's 384x1152 first-conv group (its own shape group, so it drops out cleanly). Block 2's first-conv dgrad is already skipped once block 1 is frozen, so this removes its wgrad (~300 GFLOP fwd-equivalent at 15x15, bs 1536) plus one NS group. Split the straddling step at 303750 into the two partial shapes. Warm up the new train and Muon variants and every partial shape in build() with channels_last tensors (E035). Run debug_nan.py and compare trial-0 with later-trial times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E071.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7551,
+    "time": 4.6363921493345215,
+    "complete": true
+  },
+  "row": {
+    "exp": "E071",
+    "commit": "5769443",
+    "accuracy": 0.7551,
+    "time": 4.6363921493345215,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I091",
+    "description": "Partial block-2 freeze. Base: E058 (or the H7.1.1 successor). For the last 10% of samples (from 303750, i.e. 6.075 epochs), use a new 32 px train variant that is the block-1-frozen graph plus a detached weight for block 2's first conv only (conv(x, w.detach()) behind a Python flag fixed at trace time). Block 2's later convs, all of block 3 and block-2 BN biases keep training. Pair it with a Muon variant that excludes the 128x1152 block-1 groups and block 2's 384x1152 first-conv group (its own shape group, so it drops out cleanly). Block 2's first-conv dgrad is already skipped once block 1 is frozen, so this removes its wgrad (~300 GFLOP fwd-equivalent at 15x15, bs 1536) plus one NS group. Split the straddling step at 303750 into the two partial shapes. Warm up the new train and Muon variants and every partial shape in build() with channels_last tensors (E035). Run debug_nan.py and compare trial-0 with later-trial times."
+  }
+}

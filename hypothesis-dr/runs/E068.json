@@ -1,0 +1,28 @@
+{
+  "exp": "E068",
+  "commit": "c5c5dc0",
+  "pid": 658310,
+  "start_ticks": 5612243,
+  "started": 1791079717.7603736,
+  "tag": "I088",
+  "description": "Online Label Smoothing replaces uniform LS 0.2. Base: E058. Make one change to the loss. Keep a 100x100 fp32 GPU matrix S (column c = soft target for class c), reset in prepare() to the LS-0.4 matrix (0.6 on the diagonal + 0.4/100 everywhere), plus an accumulator S_acc and counts, zeroed. Training target for a sample of class y: t = 0.5*onehot(y) + 0.5*S[:, y]. At initialization this is exactly LS 0.2, so behaviour is unchanged until the first swap. Inside the compiled step, with no data-dependent branch, add softmax(logits.detach().float()) * correct_mask into S_acc's column y with index_add_ / scatter_add, and add correct_mask to counts. At every half-epoch boundary (picked in Python by samples seen, between steps), set S = S_acc / counts.clamp_min(1). Keep the old column for any class with count 0, then zero S_acc and counts. Pass S, S_acc and counts as tensor inputs, so nothing recompiles. Accumulation runs in every resolution stage and freeze variant. Re-warm all train variants in build() on synthetic data and run debug_nan.py. Eval is unchanged.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E068.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7513333333333333,
+    "time": 4.688112749999466,
+    "complete": true
+  },
+  "row": {
+    "exp": "E068",
+    "commit": "c5c5dc0",
+    "accuracy": 0.7513333333333333,
+    "time": 4.688112749999466,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I088",
+    "description": "Online Label Smoothing replaces uniform LS 0.2. Base: E058. Make one change to the loss. Keep a 100x100 fp32 GPU matrix S (column c = soft target for class c), reset in prepare() to the LS-0.4 matrix (0.6 on the diagonal + 0.4/100 everywhere), plus an accumulator S_acc and counts, zeroed. Training target for a sample of class y: t = 0.5*onehot(y) + 0.5*S[:, y]. At initialization this is exactly LS 0.2, so behaviour is unchanged until the first swap. Inside the compiled step, with no data-dependent branch, add softmax(logits.detach().float()) * correct_mask into S_acc's column y with index_add_ / scatter_add, and add correct_mask to counts. At every half-epoch boundary (picked in Python by samples seen, between steps), set S = S_acc / counts.clamp_min(1). Keep the old column for any class with count 0, then zero S_acc and counts. Pass S, S_acc and counts as tensor inputs, so nothing recompiles. Accumulation runs in every resolution stage and freeze variant. Re-warm all train variants in build() on synthetic data and run debug_nan.py. Eval is unchanged."
+  }
+}

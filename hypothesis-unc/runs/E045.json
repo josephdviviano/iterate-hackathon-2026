@@ -1,0 +1,28 @@
+{
+  "exp": "E045",
+  "commit": "3372553",
+  "pid": 765802,
+  "start_ticks": 6562641,
+  "started": 1791089221.737414,
+  "tag": "I068",
+  "description": "Explore/booster, the step-count crux (W3, W5). E041 found that removing early 20 px steps cost as much as a uniform trim. That suggests early accuracy is carried by optimizer steps, not by pixels. On the E036 tip, use batch 1000 instead of 2000 only during the 20 px phase (the first 30% of data passes, so about 69 steps become about 138). Same data and same pixels; only the step count and per-step overhead change. Key the LR triangle, the whitening-bias detach (20%) and the resolution switch to data progress (samples seen), so they land at the same data point. In this phase, scale the SGD-group lr linearly (\u00d70.5) and keep the Muon lr per step unchanged. Lookahead stays every 5 steps; alpha is near 0 this early. From 24 px on, batch 2000 is unchanged, so the 24/28/32 phases, freeze and Lookahead tail are identical. Capture batch-1000 graphs at 20 px, both the full and whitening-detached variants, in build with channels_last tensors, with error_on_recompile on. Judge on seeds 13\u201332 against E036 on the same seeds (reuse E038's 13\u201322 and run E036 once on 23\u201332; the C/D/selection ideas share this baseline), plus seeds 0\u20132.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E045.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.752,
+    "time": 5.514287654659711,
+    "complete": true
+  },
+  "row": {
+    "exp": "E045",
+    "commit": "3372553",
+    "accuracy": 0.752,
+    "time": 5.514287654659711,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I068",
+    "description": "Explore/booster, the step-count crux (W3, W5). E041 found that removing early 20 px steps cost as much as a uniform trim. That suggests early accuracy is carried by optimizer steps, not by pixels. On the E036 tip, use batch 1000 instead of 2000 only during the 20 px phase (the first 30% of data passes, so about 69 steps become about 138). Same data and same pixels; only the step count and per-step overhead change. Key the LR triangle, the whitening-bias detach (20%) and the resolution switch to data progress (samples seen), so they land at the same data point. In this phase, scale the SGD-group lr linearly (\u00d70.5) and keep the Muon lr per step unchanged. Lookahead stays every 5 steps; alpha is near 0 this early. From 24 px on, batch 2000 is unchanged, so the 24/28/32 phases, freeze and Lookahead tail are identical. Capture batch-1000 graphs at 20 px, both the full and whitening-detached variants, in build with channels_last tensors, with error_on_recompile on. Judge on seeds 13\u201332 against E036 on the same seeds (reuse E038's 13\u201322 and run E036 once on 23\u201332; the C/D/selection ideas share this baseline), plus seeds 0\u20132."
+  }
+}

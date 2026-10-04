@@ -1,0 +1,17 @@
+added I093, I094, I095, I096, I097, I098, I099, I100; dropped none. There were no queued ideas left (everything was done or dropped), so I wrote 8 new ones and dropped none. The tip is E069: Polar Express coefficients, 0.7561 at 4.678 s, which clears the 0.753 gate by 0.31 pp. The plan spends that margin on near-misses that were previously infeasible.
+
+Exploit ideas:
+- **Freeze block 1 at 0.7 on E069** (H2.4.7, priority 5). E061 measured -2.8% time for -0.11 pp, the same on seeds 0-2 and on seeds 3-12. Expect ~4.55 s at ~0.7550.
+- **28 px stage to 4.0 epochs on E069** (H6.3.1, priority 4). E054 measured -2.3% for -0.22 pp. Expect ~4.57 s at ~0.7539.
+- **Stack both cuts** (priority 3, conditional on the two single reads). Expect ~4.44 s at ~0.7530, borderline.
+- **Two Polar Express iterations instead of three** (H2.4.6, priority 3). Launch only if the gates pass: whitening must be no weaker than the old NS3 (E065 cliff) and the saving must be at least 0.3 ms/step. Expect -1.6% time.
+
+Diagnostic:
+- **Offline check of E069 on seeds 3-12** (priority 4), paired against the existing E058 results on the same seeds. This confirms whether the +0.24 pp gain is real before the margin is spent.
+
+Explore ideas:
+- **Stronger whitening at zero cost** (H1.2.7, priority 3): lower ℓ so at least 98% of singular values are lifted. Expect about +0.07 pp.
+- **Muon lr 0.12 on the new whitening** (H1.2.4, priority 2). Expect about -0.05 pp.
+- **Eval-mode BN in the frozen block 1** (H7.2.1, priority 1). Expect about -0.9% time.
+
+Closed axes are not reproposed: label targets, the SGD group, averaging, batch size, epoch trimming (E070), block-2 freezing, and weaker or uniformized Muon updates.

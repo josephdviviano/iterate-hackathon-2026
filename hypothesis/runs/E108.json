@@ -1,0 +1,28 @@
+{
+  "exp": "E108",
+  "commit": "340ecc1",
+  "pid": 622262,
+  "start_ticks": 5322696,
+  "started": 1791076822.2898538,
+  "tag": "I121",
+  "description": "Equal-time reallocation from the 32 px phase into the 24 px bridge. This is the direct discriminating test between H8.2 (the bridge is worth ~0.13 pp per 1%) and H11 (late full-resolution training is what binds). Base: E100 code (176e5ec). If I116 (low-res Muon lr x1.5) is banked first, rebase onto it and say so in the log. Change only the schedule: 2@16 + 1.75@24 at bs 1536, then 1.25@28 + 2.5@32 at bs 1024 (was 1.25@24 and 2.75@32). Total samples stay at 7.5 epochs. Resolution switches, LR warmup/decay, the floor-hold, the renorm cadence and the 32 px-phase Muon factor (1.25x) are indexed by samples, as in E100. The final-EMA window and lookahead stop stay pinned to the last 8 steps. All shapes are already static and warmed up in build. Precondition, untimed: log the source hash and a one-line diff against 176e5ec. Pre-registered time: +0.5 epoch at 24 px (~+0.26 s) minus 0.25 epoch at 32 px/bs 1024 (~-0.23 s) gives +0.3 to +0.9%. Decide on off-seed seeds 3-26 in >=3 fresh processes, paired against the pooled E106 baseline, plus two distinct scored samples.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E108.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7527333333333333,
+    "time": 4.481092582665345,
+    "complete": true
+  },
+  "row": {
+    "exp": "E108",
+    "commit": "340ecc1",
+    "accuracy": 0.7527333333333333,
+    "time": 4.481092582665345,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I121",
+    "description": "Equal-time reallocation from the 32 px phase into the 24 px bridge. This is the direct discriminating test between H8.2 (the bridge is worth ~0.13 pp per 1%) and H11 (late full-resolution training is what binds). Base: E100 code (176e5ec). If I116 (low-res Muon lr x1.5) is banked first, rebase onto it and say so in the log. Change only the schedule: 2@16 + 1.75@24 at bs 1536, then 1.25@28 + 2.5@32 at bs 1024 (was 1.25@24 and 2.75@32). Total samples stay at 7.5 epochs. Resolution switches, LR warmup/decay, the floor-hold, the renorm cadence and the 32 px-phase Muon factor (1.25x) are indexed by samples, as in E100. The final-EMA window and lookahead stop stay pinned to the last 8 steps. All shapes are already static and warmed up in build. Precondition, untimed: log the source hash and a one-line diff against 176e5ec. Pre-registered time: +0.5 epoch at 24 px (~+0.26 s) minus 0.25 epoch at 32 px/bs 1024 (~-0.23 s) gives +0.3 to +0.9%. Decide on off-seed seeds 3-26 in >=3 fresh processes, paired against the pooled E106 baseline, plus two distinct scored samples."
+  }
+}

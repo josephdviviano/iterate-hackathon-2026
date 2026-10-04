@@ -1,0 +1,28 @@
+{
+  "exp": "E080",
+  "commit": "6c57b49",
+  "pid": 768452,
+  "start_ticks": 6588786,
+  "started": 1791089483.1849153,
+  "tag": "I112",
+  "description": "Mechanism test for the E050 16 px collapse, with a small time saving. Base: E069. Make one change: the first-stage resolution goes from 20 px to 18 px (F.interpolate, antialias=True, inside the compiled augment). This should keep a 2x2 final map. In drafts/, print the per-block sizes first; expect whitening 17, then pools 8/4/2. If the final map is not 2x2, abort and record why. Use a static-kernel F.max_pool2d for the final pool (no amax). Stage boundaries in samples, the whitening-bias freeze at 50000, and all schedules stay unchanged. Warm up the 18 px graphs, with and without whitening-bias grad, plus every partial shape at 50000 and 75000 in build() with channels_last tensors. Run debug_nan.py. Gate offline: on seeds 3-12 paired against E069, launch on seeds 0-2 only if the paired delta is >=-0.05 pp and offline train time is <=-0.5%.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E080.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7523,
+    "time": 4.6641797843331005,
+    "complete": true
+  },
+  "row": {
+    "exp": "E080",
+    "commit": "6c57b49",
+    "accuracy": 0.7523,
+    "time": 4.6641797843331005,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I112",
+    "description": "Mechanism test for the E050 16 px collapse, with a small time saving. Base: E069. Make one change: the first-stage resolution goes from 20 px to 18 px (F.interpolate, antialias=True, inside the compiled augment). This should keep a 2x2 final map. In drafts/, print the per-block sizes first; expect whitening 17, then pools 8/4/2. If the final map is not 2x2, abort and record why. Use a static-kernel F.max_pool2d for the final pool (no amax). Stage boundaries in samples, the whitening-bias freeze at 50000, and all schedules stay unchanged. Warm up the 18 px graphs, with and without whitening-bias grad, plus every partial shape at 50000 and 75000 in build() with channels_last tensors. Run debug_nan.py. Gate offline: on seeds 3-12 paired against E069, launch on seeds 0-2 only if the paired delta is >=-0.05 pp and offline train time is <=-0.5%."
+  }
+}

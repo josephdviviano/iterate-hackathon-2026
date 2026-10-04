@@ -1,0 +1,28 @@
+{
+  "exp": "E051",
+  "commit": "36eb3ad",
+  "pid": 829393,
+  "start_ticks": 6975922,
+  "started": 1791093354.5500312,
+  "tag": "I080",
+  "description": "Explore/exploit: remove the last full-resolution tensor from the stem. E047 measured g1.conv1 (24\u2192128 at 31\u00d731) at about 0.45\u00d7 group-2 efficiency, and the 128-channel 31\u00d731 activation feeding the max-pool is the largest memory-bound tensor in the net. E043/E028 showed the stem's 31\u00d731 work costs far more than its FLOP share. On the E036 tip, replace group 1's 'conv1 (3\u00d73, pad 1) \u2192 2\u00d72 max-pool' with a single 3\u00d73 conv with stride 2 and padding 0 (31\u219215, the same 15\u00d715 output as now, so groups 2/3 and their map sizes 15/7/3 are unchanged at 32 px). At 28/24/20 px it gives 13/11/9, which also matches the current pool outputs; verify this for each resolution in code. Keep the same channel counts, BN-GELU after it, init scheme and RNG draw order (same weight shape). The whitening detach (20%) and group-1 freeze (75%) stay unchanged. Recapture every resolution and variant in build, with error_on_recompile on. Judge on seeds 13\u201332 against a same-build E036 baseline, plus seeds 0\u20132. Record the per-step time at 32 px (full and frozen) for the H6 accounting.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E051.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7446999999999999,
+    "time": 4.908014092667145,
+    "complete": true
+  },
+  "row": {
+    "exp": "E051",
+    "commit": "36eb3ad",
+    "accuracy": 0.7446999999999999,
+    "time": 4.908014092667145,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I080",
+    "description": "Explore/exploit: remove the last full-resolution tensor from the stem. E047 measured g1.conv1 (24\u2192128 at 31\u00d731) at about 0.45\u00d7 group-2 efficiency, and the 128-channel 31\u00d731 activation feeding the max-pool is the largest memory-bound tensor in the net. E043/E028 showed the stem's 31\u00d731 work costs far more than its FLOP share. On the E036 tip, replace group 1's 'conv1 (3\u00d73, pad 1) \u2192 2\u00d72 max-pool' with a single 3\u00d73 conv with stride 2 and padding 0 (31\u219215, the same 15\u00d715 output as now, so groups 2/3 and their map sizes 15/7/3 are unchanged at 32 px). At 28/24/20 px it gives 13/11/9, which also matches the current pool outputs; verify this for each resolution in code. Keep the same channel counts, BN-GELU after it, init scheme and RNG draw order (same weight shape). The whitening detach (20%) and group-1 freeze (75%) stay unchanged. Recapture every resolution and variant in build, with error_on_recompile on. Judge on seeds 13\u201332 against a same-build E036 baseline, plus seeds 0\u20132. Record the per-step time at 32 px (full and frozen) for the H6 accounting."
+  }
+}

@@ -1,0 +1,39 @@
+H1.2.4->refuted, H1.2.7->inconclusive, H1.4->retired, H1.5.2->retired, H1.7->supported, H1.7.4->refuted, H1.8.4->supported, H1.11->refuted, H1.11.1->refuted, H2.4.5->retired, H4.1.1->inconclusive, H4.1.5->retired, H6->supported, H6.3->refuted, H6.3.1->refuted, H6.4->refuted, H6.4.1->refuted, H7->supported, H7.1->refuted, H7.1.1->refuted, H7.2->refuted, H7.2.1->refuted, H7.3->refuted, H7.3.1->refuted, +H4.3, +H4.4, +H4.4.1, +H4.1.7, +H1.2.8, +H1.2.9, +H1.12, +H1.12.1. The tree was behind its own evidence; this revision brings it up to date. The biggest change is that the accuracy budget is now treated as the real constraint.
+
+**What changed**
+- **H4 restructured.** Official safety is now its own node: on 13 seeds the tip is ~0.34 pp above the 40-seed bar of 0.75. The binding problem is the local seeds-0-2 gate. A new mechanism node (regression to the mean) explains why all seven children of E069 lost: the tip was chosen on a lucky draw, so any change that re-draws seeds 0-2 loses ~0.25 pp in expectation. That leaves a usable budget of only ~0.04 pp, so the tree now favours margin recovery and time cuts that leave the math unchanged.
+- **Polar Express gain downgraded.** H1.2.7 moves from supported to inconclusive (0.30). The 13-seed mean (~0.7534) erases most of the +0.24 pp seen on seeds 0-2, and the MUD paper finds no gain from stronger whitening on CIFAR-10.
+- **H4.1.1 downgraded.** Its determinism evidence predates the autotune settings, so it is now inconclusive.
+- **Refuted, matching the recorded verdicts:** H1.2.4 (E075), H6.3/H6.3.1, H6.4/H6.4.1 (E070; the 'cheap marginal epoch' and asymmetric-knee story is dropped in favour of a steep ~1.1-1.4 pp/epoch slope), H7.1/H7.1.1, H7.2/H7.2.1, H7.3/H7.3.1, H1.11/H1.11.1, H1.7.4.
+- **Marked supported, with their levers exhausted:** H6, H7 and H1.7.
+- **Retired:** H1.4/H1.4.1, H1.5.2, H2.4.5 (Turbo-Muon saves only 0.8% end to end) and H4.1.5.
+- **Systems nodes revised from the search:**
+  - Gram NS saves ~29% of NS FLOPs, not ~45%, and its gate now checks the singular-value spectrum.
+  - H1.6.6 now covers per-group lr multipliers too. It was lowered to 0.40 because Dynamo guards Python floats, so compile caching is an unlikely cause.
+  - H2.5.1 moves to E069 and must log host load.
+
+**New nodes**
+- N1: official safety holds.
+- N2: regression to the mean, with N2a re-scoring E070-E076 against the 13-seed mean.
+- N3: rerun E069 unchanged to test determinism.
+- N4: Muon lr 0.20 on the Polar Express base.
+- N5: paired E069-vs-E058 comparison on seeds 3-12.
+- N6/N6a: matched-FLOP width reallocation between blocks 1 and 2.
+
+Three Lvl1 hypotheses stay open: H1, H2 and H4.
+
+**Suggested order (all except the first are offline or cheap)**
+1. Record the existing extra-seed numbers (H4.1.2, N5).
+2. RNG-shift controls on both E058 and E069 (H4.1.6).
+3. The H1.6.6 no-op check.
+4. Then math-preserving cuts (Gram NS, projection frequency, the autotune check) and margin recovery (Muon lr 0.20, averaging ramp and sync interval).
+added I101, I102, I103, I104, I105; dropped none; skipped ideas for unknown/closed H7.3.1, H3.2. Nothing is queued: every idea up to I100 is done or dropped. The tip is E069: 4.678 s, 0.7561 on seeds 0-2, but its 13-seed mean is about 0.7534, so a change that re-draws seeds 0-2 is roughly a coin flip at the 0.753 gate. The main exploit is therefore time cuts that preserve the math and keep each seed's result unchanged.
+
+- **I101 (priority 5):** confirm with offline paired timing, then relaunch E071. That commit was already feasible (0.7551) and 0.9% faster, and was discarded only as possible jitter.
+- **I102 (priority 4):** CUDA-graph the 20 px and 28 px train steps. E050 suggests these small-map stages are latency-bound. The idea is gated on a measured launch/idle gap.
+- **H4.1.7 rerun (priority 4):** confirm that a rerun reproduces E069 per seed. The math-preserving cuts rely on this.
+- **Fixed-overhead cleanup (priority 3):** remove the trial-0 first-call excess and cut prepare time, keeping everything bit-identical.
+
+Explore (about 40%): Muon lr 0.20 on the Polar Express base (H1.2.8), a (t/T)^2 lookahead ramp (H1.6.1), and a matched-FLOP 160/352 width split (H1.12.1). All three are gated on paired results over seeds 3-12 against E069's existing extra-seed runs, because 3-seed deltas below ~0.4 pp are unreliable. Any real gain should fund the block-1 freeze at 0.7, which costs about 0.11 pp and saves about 2.2%.
+
+Tree bookkeeping: the I075 gate already refutes H1.6.6, and the I098 paired result (-0.07 pp) refutes H1.2.9 and H1.2.7. The tree should be updated to match. Nothing was dropped because nothing was queued.

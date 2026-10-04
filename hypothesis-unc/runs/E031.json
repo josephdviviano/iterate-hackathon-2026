@@ -1,0 +1,28 @@
+{
+  "exp": "E031",
+  "commit": "4c9a872",
+  "pid": 697125,
+  "start_ticks": 5922281,
+  "started": 1791082818.1428006,
+  "tag": "I044",
+  "description": "Explore: proposes a new H2.4 child. Drop easy examples using free per-sample losses from the main net, with no proxy. The committee vetoed I041 for the proxy's cost; this version adds no extra forward passes. On the E023 tip, change the compiled train step to return the per-sample loss (reduction='none', then mean for backward) and scatter it into a GPU loss buffer indexed by sample id. The buffer is created and reset in prepare. From epoch 2 onward, each epoch's shuffled order uses only the 90% of samples with the highest loss in the previous pass (torch.topk on the GPU, then the usual GPU shuffle). The batch stays at 2000 and the ragged remainder is dropped. Total steps fall from 225 to about 205 (1 + 8\u00d70.9 epoch-equivalents). The resolution phases (40/30/30), LR and Lookahead/EMA schedules are fractions of the new total step count. Alternating flip still uses each sample's own pass parity. Warm up the modified step in build with channels_last tensors, with error_on_recompile on. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E031.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7490333333333333,
+    "time": 5.249974399999094,
+    "complete": true
+  },
+  "row": {
+    "exp": "E031",
+    "commit": "4c9a872",
+    "accuracy": 0.7490333333333333,
+    "time": 5.249974399999094,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I044",
+    "description": "Explore: proposes a new H2.4 child. Drop easy examples using free per-sample losses from the main net, with no proxy. The committee vetoed I041 for the proxy's cost; this version adds no extra forward passes. On the E023 tip, change the compiled train step to return the per-sample loss (reduction='none', then mean for backward) and scatter it into a GPU loss buffer indexed by sample id. The buffer is created and reset in prepare. From epoch 2 onward, each epoch's shuffled order uses only the 90% of samples with the highest loss in the previous pass (torch.topk on the GPU, then the usual GPU shuffle). The batch stays at 2000 and the ragged remainder is dropped. Total steps fall from 225 to about 205 (1 + 8\u00d70.9 epoch-equivalents). The resolution phases (40/30/30), LR and Lookahead/EMA schedules are fractions of the new total step count. Alternating flip still uses each sample's own pass parity. Warm up the modified step in build with channels_last tensors, with error_on_recompile on. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132."
+  }
+}

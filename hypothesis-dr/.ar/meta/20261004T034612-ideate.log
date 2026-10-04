@@ -1,0 +1,16 @@
+added I106, I107, I108, I109, I110, I111, I112; dropped none. Nothing was left queued: every queued idea was already done or dropped. Several hypotheses were settled by offline gates and need their tree status updated:
+- **Refuted:** H1.6.6 (I075), H1.2.8 (I103), H1.6.1's ramp arm (I104), H1.12.1 (I105), H2.4.8 (I087), H2.4.6 (I095), and H1.2.9 (I098: paired E069−E058 = −0.07 pp).
+- **Supported:** H4.1.2 (I085) and H4.1.7 (I102: reruns are bit-identical).
+
+Because the seeds-0-2 score is deterministic for each config, a change that keeps the math bit-identical keeps E069's 0.7561 exactly. Any other change re-draws, which is close to a coin flip against 0.753. So the top-priority ideas are bit-identical systems cuts:
+- **Prepare-overhead cut (priority 5):** warm cuSOLVER and the caching allocator in build(), and stage data through pinned memory. Prepare averages ~0.12 s and has a ~0.09 s first-use cost on trials 0-1. Expected −1.5%.
+- **Trial-level re-profile (priority 3):** then a bit-identical per-epoch augment cut (one compiled pass, writing only the samples each epoch consumes).
+
+Every change that alters the math is gated offline on seeds 3-12, paired against E069. This keeps the 40-seed official mean safe (H4.3) and screens out ideas with a negative expected effect before they use a seeds-0-2 run:
+- EMA on top of lookahead: the last arm of H1.6.1.
+- max+mean global pool: explore.
+- Late batch ramp to bs 2048 at 0.7 (H1.2.5).
+- Block-1 freeze at 0.75: a new config between the tip's 0.8 and the infeasible 0.7.
+- 18 px first stage: H6.1.2 mechanism test.
+
+That makes 7 queued ideas: about 4 exploit (time cuts) and 3 explore. Nothing was dropped, because no ideas were left queued.

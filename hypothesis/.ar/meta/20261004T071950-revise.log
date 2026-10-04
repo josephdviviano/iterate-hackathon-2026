@@ -1,0 +1,45 @@
+H8.3.1->refuted, H8.3->refuted, H8->refuted, H2.11.7->refuted, H2.20.2->inconclusive, H12.3.1->refuted, H12.3->refuted, H2.18->refuted, H2.18.4->refuted, H2.23->inconclusive, H2.23.1->retired, H11.2->inconclusive, H7.5->retired, H2.21.4->retired, +H14, +H14.1, +H14.1.1, +H14.2, +H14.2.1, +H15, +H15.1, +H15.1.1, +H15.2, +H15.2.1, +H15.3, +H15.3.1, +H12.4, +H12.4.1, +H12.4.2. Revision after E125–E134. Every lever tried since E125 traded at or worse than the measured yardstick (pure cut ~0.054 pp per 1% of time; re-spending time at 32 px buys back ~0.044). I updated the tree to match:
+
+**Closed or downgraded**
+- **Refuted:**
+  - H8.3.1 and H8.3: the 16 px trim cost -0.17 pp at 100 seeds (E132). That test is confounded by the schedule rescale, so a clean version is registered.
+  - H2.11.7: early bs 2048 cost -0.30 pp (E134).
+  - H12.3.1 and H12.3: translate 4 cost about -0.6 pp (E131).
+  - H2.18 and H2.18.4: 3/3/2 cost -0.48 pp (E130).
+- **H8:** its falsifiable predictions both failed, so it is now marked refuted and kept only as a description: adding early training gains nothing, removing it costs.
+- **H2.20.2 (80% freeze):** inconclusive. The marginal rate is ~0.06 pp per 1%, about 1 SE above the 0.044 re-spend rate, so the freeze stays at 85%. The E133 rejection is recorded as a policy decision, not an accuracy refutation.
+- **H2.23.1** is retired because every lever it planned to combine failed, and H2.23 is on hold.
+- **H11 and H11.2** are lowered: losses from removing training are not specific to late phases (E134 and E132 cost as much as or more than E126). H2.11.5 now waits on the E126 confound ablation (H11.2.2).
+- **H7.5 (NorMuon)** is retired on the row-norm argument.
+- **H7.6 (Muon-C)** is corrected per the search: its gains were measured at long budgets, its overhead is ~2x, and E033 shows better-conditioned updates don't bind here.
+- **H2.21.4** is moved, ungated, to a new structural node.
+
+**Restated nodes**
+- **H2:** the live-lever list is pruned, and the yardstick is split into the 0.054 pure-cut and 0.044 re-spend rates.
+- **H2.11:** restated in critical-batch-size terms.
+- **H2.10:** now includes E132.
+- **H4.9:** every scored rerun of the same code counts toward the 3-attempt budget, the floor is a hard policy rule, and submissions/arena must hold E116 code before final submission.
+- **H4.2.4:** E124 and E131 were compared against the wrong baseline (E116 instead of their E100 base), so their true deltas are about 0.09 pp worse.
+- **Search findings added:** support for FreezeOut's BN-eval-while-frozen design (H2.20.6), for the judge-transfer premise (H2.4.3), and for removing averaging, since hiverge uses none (H9, H13).
+
+**New hypotheses**
+- **N_front (Lvl1):** the recipe sits on a frontier where every remaining trade costs about the same rate. Two tests: a clean 16 px trim that keeps the absolute schedule fixed, and an untimed profile of a cheaper 31×31 stage (earlier pool and/or group-1 width 96), with the bar at 0.044 pp per 1%.
+- **N_rescreen (Lvl1):** knobs closed on single 3-seed runs before the large-seed instrument may hide margin. Re-screen at 100 seeds: label smoothing 0.2/0.25, Muon momentum 0.5/0.7, the BN-bias multiplier at 32x/96x, and the activation under Muon.
+- **N_aug_weak (under H12):** test weaker late augmentation: translate 1 or 0, and no flip in the last 32 px epoch.
+
+**Recommended next batch** (all untimed, 100 seeds, against the pooled E116 baseline):
+1. Removal ablations: H9.2.2, H9.2.3 and H13.1.1.
+2. N_aug_weak_1 and N_rs_ls_1.
+3. FreezeOut BN-eval (H2.20.6).
+4. The structural profile (N_front_struct_1).
+added I147, I148, I149, I150, I151, I152; dropped I145. The tip is E116 code: 4.26 s, population mean 0.7521. It sits on a roughly equalized-rate frontier (~0.05 pp per 1%), and only ~0.08 pp of margin remains above the 0.7513 policy floor. That makes zero-time accuracy the main exploit currency, alongside one possible confound-hidden time lever.
+
+New ideas:
+- **H11.2.2 (priority 4):** the E126 confound ablation. Late bs 1536 with the SGD groups not rescaled and the EMA window sample-matched. If the loss is ≤0.05 pp, this banks -2.1% directly; it also decides whether I146 is worth running.
+- **H12.4.1 (priority 4):** translate 1 px in the late phases. The augmentation response is steep and the regime under-fits.
+- **H15.1.1 (priority 3):** LS 0.2 re-screened at 100 seeds.
+- **H15.2.1 (priority 3):** BN-bias SGD multiplier 32x. Never re-tested under Muon.
+- **H14.2.1 (priority 3, explore):** an untimed profile of structural changes to the 31x31 stage: the group-1 pool moved earlier and/or width 96. Accuracy is scored only if a variant projects ≥8% saving.
+- **H14.1.1 (priority 2, explore):** a clean 16 px trim with absolute schedule positions kept, to tell real trim value apart from rescale artifacts.
+
+Dropped I145: its own gate failed, since 3/3/2 lost 0.48 pp. Kept I144 (BN eval mode in the frozen window plus the H2.21.3 measurement) and I146 (late bs 768, best run after H11.2.2). I140 is still running. The queue now holds 8 queued ideas.

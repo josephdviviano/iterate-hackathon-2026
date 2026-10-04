@@ -1,0 +1,28 @@
+{
+  "exp": "E052",
+  "commit": "ce17ae7",
+  "pid": 834603,
+  "start_ticks": 7031147,
+  "started": 1791093906.795219,
+  "tag": "I081",
+  "description": "Exploit, combining two near-misses. Conditional: run only after I075 reports. Base: I075's recipe (group-2 freeze plus a +0.25 epoch top-up) if its 20-seed mean is within 0.03 pp of same-build E036 or above it; otherwise E036. Add E048's loss-based selection exactly as committed in 4ffd290: per-sample losses from the compiled step are scattered into a GPU buffer reset in prepare, and from epoch 2 on each epoch shuffles only the 95% highest-loss samples, with the ragged batch dropped. Also add a further +0.25 true epoch, so the net step count falls by only about 5 steps rather than E048's 11. Resolution, LR triangle, Lookahead, whitening detach and freeze points all stay as fractions of the new step count. Capture the modified variants in build, with error_on_recompile on. Judge on seeds 13\u201332 against the base and E036 in the same build session, plus seeds 0\u20132. This answers W3's crux in its stackable form: does selection beat the dial once the dial's top-up pays for it?",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E052.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7554666666666667,
+    "time": 4.987386771666934,
+    "complete": true
+  },
+  "row": {
+    "exp": "E052",
+    "commit": "ce17ae7",
+    "accuracy": 0.7554666666666667,
+    "time": 4.987386771666934,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I081",
+    "description": "Exploit, combining two near-misses. Conditional: run only after I075 reports. Base: I075's recipe (group-2 freeze plus a +0.25 epoch top-up) if its 20-seed mean is within 0.03 pp of same-build E036 or above it; otherwise E036. Add E048's loss-based selection exactly as committed in 4ffd290: per-sample losses from the compiled step are scattered into a GPU buffer reset in prepare, and from epoch 2 on each epoch shuffles only the 95% highest-loss samples, with the ragged batch dropped. Also add a further +0.25 true epoch, so the net step count falls by only about 5 steps rather than E048's 11. Resolution, LR triangle, Lookahead, whitening detach and freeze points all stay as fractions of the new step count. Capture the modified variants in build, with error_on_recompile on. Judge on seeds 13\u201332 against the base and E036 in the same build session, plus seeds 0\u20132. This answers W3's crux in its stackable form: does selection beat the dial once the dial's top-up pays for it?"
+  }
+}

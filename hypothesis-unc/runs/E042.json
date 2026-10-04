@@ -1,0 +1,28 @@
+{
+  "exp": "E042",
+  "commit": "33a2693",
+  "pid": 748927,
+  "start_ticks": 6403618,
+  "started": 1791087631.5069351,
+  "tag": "I062",
+  "description": "Explore/exploit: staggered FreezeOut, which separates where E037's cliff came from. First read group 1's structure in the code. If, as in airbench, the pool follows group 1's first conv, that conv (24\u2192128 on 31\u00d731 maps) and the pool are the only full-resolution work left once the whitening is detached. On the E036 tip, put only group 1's first conv in its own Muon param group. Its LR follows the global triangle to its peak, then is annealed to 0 by 60% of steps. From 60% on, detach that conv's output (before the pool), so there is no conv1 wgrad and no pool/BN backward on the 31\u00d731 maps. The rest of group 1 keeps E036's annealed freeze at 75%. Capture the conv1-detached variants at 28 px and 32 px in build, with error_on_recompile on. Lookahead still averages every param. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132. If the code shows the pool is not right after conv1, freeze whichever layers run at 31\u00d731 instead, and record which ones.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E042.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7549333333333333,
+    "time": 5.266676663668477,
+    "complete": true
+  },
+  "row": {
+    "exp": "E042",
+    "commit": "33a2693",
+    "accuracy": 0.7549333333333333,
+    "time": 5.266676663668477,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I062",
+    "description": "Explore/exploit: staggered FreezeOut, which separates where E037's cliff came from. First read group 1's structure in the code. If, as in airbench, the pool follows group 1's first conv, that conv (24\u2192128 on 31\u00d731 maps) and the pool are the only full-resolution work left once the whitening is detached. On the E036 tip, put only group 1's first conv in its own Muon param group. Its LR follows the global triangle to its peak, then is annealed to 0 by 60% of steps. From 60% on, detach that conv's output (before the pool), so there is no conv1 wgrad and no pool/BN backward on the 31\u00d731 maps. The rest of group 1 keeps E036's annealed freeze at 75%. Capture the conv1-detached variants at 28 px and 32 px in build, with error_on_recompile on. Lookahead still averages every param. Judge on held-out seeds 3\u201312 as well as seeds 0\u20132. If the code shows the pool is not right after conv1, freeze whichever layers run at 31\u00d731 instead, and record which ones."
+  }
+}

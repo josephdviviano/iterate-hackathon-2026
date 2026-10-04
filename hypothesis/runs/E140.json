@@ -1,0 +1,28 @@
+{
+  "exp": "E140",
+  "commit": "4f70e20",
+  "pid": 999176,
+  "start_ticks": 8019148,
+  "started": 1791103786.8098278,
+  "tag": "I151",
+  "description": "Structural early-stage redesign, profiled untimed before any accuracy run. Base: E116 code. Build three variants in a side script: (a) group 1's max-pool moved from after conv3 to after conv1, so the residual conv2/conv3 run at 15x15x128 instead of 31x31x128; (b) group-1 width 96 instead of 128, with group-2 conv1 input 96 and Muon stacks plus dirac init re-batched; (c) both. Compile and warm every (resolution, batch) x freeze x renorm x whiten-bias-grad shape. Measure ms/step and NVML energy over 20 steps per shape (16/24 px bs 1536, 28/32 px bs 1024, frozen 32 px variant), and project total time over the E116 schedule. Score at 100 seeds against the pooled E116 baseline only the variants projecting \u22658% saving, best projected first. Bar: loss \u22640.044 pp per 1% (fundable by 32 px re-spend). For the scored row, rerun E116 unchanged unless a variant qualifies.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E140.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7255,
+    "time": 3.7855611666697464,
+    "complete": true
+  },
+  "row": {
+    "exp": "E140",
+    "commit": "4f70e20",
+    "accuracy": 0.7255,
+    "time": 3.7855611666697464,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I151",
+    "description": "Structural early-stage redesign, profiled untimed before any accuracy run. Base: E116 code. Build three variants in a side script: (a) group 1's max-pool moved from after conv3 to after conv1, so the residual conv2/conv3 run at 15x15x128 instead of 31x31x128; (b) group-1 width 96 instead of 128, with group-2 conv1 input 96 and Muon stacks plus dirac init re-batched; (c) both. Compile and warm every (resolution, batch) x freeze x renorm x whiten-bias-grad shape. Measure ms/step and NVML energy over 20 steps per shape (16/24 px bs 1536, 28/32 px bs 1024, frozen 32 px variant), and project total time over the E116 schedule. Score at 100 seeds against the pooled E116 baseline only the variants projecting \u22658% saving, best projected first. Bar: loss \u22640.044 pp per 1% (fundable by 32 px re-spend). For the scored row, rerun E116 unchanged unless a variant qualifies."
+  }
+}

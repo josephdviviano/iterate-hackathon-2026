@@ -1,0 +1,28 @@
+{
+  "exp": "E027",
+  "commit": "3735f58",
+  "pid": 684041,
+  "start_ticks": 5787259,
+  "started": 1791081467.9200664,
+  "tag": "I042",
+  "description": "Exploit: spend the margin on the epoch dial, with a branch that depends on I038, which is still running. Base: the current tip E023 (9.0 true epochs), or I038's recipe if I038 is kept. Branch (a): if I038 is kept with a held-out seeds 3\u201312 gain of at least 0.15 pp, cut 0.5 true epoch to 8.5 true epochs (212 steps at batch 2000). This is E020's step count plus I038's averaging. Branch (b): otherwise, cut 0.25 true epoch to 8.75 true epochs (219 steps). In both branches the resolution phases stay fixed fractions of total steps (40/30/30, so the 32 px tail keeps its 30% share), and the LR and Lookahead/EMA schedules stretch to the new step count, as in E008/E020/E023. Compiled shapes are unchanged and error_on_recompile stays on. The step count changes RNG use, so in the same session also run held-out seeds 3\u201312 (benchmark.run --seed 3 --n 10). Keep only if seeds 0\u20132 clear 0.753 and the held-out mean is at least 0.7535. Do not re-roll RNG streams to chase a lucky seeds 0\u20132 draw.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E027.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7547,
+    "time": 5.878078434667259,
+    "complete": true
+  },
+  "row": {
+    "exp": "E027",
+    "commit": "3735f58",
+    "accuracy": 0.7547,
+    "time": 5.878078434667259,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I042",
+    "description": "Exploit: spend the margin on the epoch dial, with a branch that depends on I038, which is still running. Base: the current tip E023 (9.0 true epochs), or I038's recipe if I038 is kept. Branch (a): if I038 is kept with a held-out seeds 3\u201312 gain of at least 0.15 pp, cut 0.5 true epoch to 8.5 true epochs (212 steps at batch 2000). This is E020's step count plus I038's averaging. Branch (b): otherwise, cut 0.25 true epoch to 8.75 true epochs (219 steps). In both branches the resolution phases stay fixed fractions of total steps (40/30/30, so the 32 px tail keeps its 30% share), and the LR and Lookahead/EMA schedules stretch to the new step count, as in E008/E020/E023. Compiled shapes are unchanged and error_on_recompile stays on. The step count changes RNG use, so in the same session also run held-out seeds 3\u201312 (benchmark.run --seed 3 --n 10). Keep only if seeds 0\u20132 clear 0.753 and the held-out mean is at least 0.7535. Do not re-roll RNG streams to chase a lucky seeds 0\u20132 draw."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "exp": "E078",
+  "commit": "d32643f",
+  "pid": 748177,
+  "start_ticks": 6397053,
+  "started": 1791087565.8620715,
+  "tag": "I107",
+  "description": "Trial-level re-profile of E069, then one bit-identical cut to the per-epoch data pipeline. All previous profiles were per step (E003/E016/I101). None covers per-epoch work: augmentation (flip, translate, jitter, antialiased interpolate to 20/28 px), randperm and gather. In E003 that work was ~11 ms/epoch at 32 px, and it now also includes jitter and resizing. Gate in drafts/: profile one full E069 trial with the torch profiler. Report GPU time for (a) per-epoch augment, resize, permute and gather; (b) the split straddling steps at the 50k/75k/175k/270k-sample switches; (c) lookahead syncs; (d) the train and Muon steps. Launch only if (a) totals >=0.05 s per trial. If it does, make one change. Rewrite the per-epoch augment as a single compiled pass that computes exactly the same per-sample ops in the same precision and order. It consumes the same RNG draws, generated for all 50k samples so the stream is unchanged, and writes only the samples the epoch will actually consume: the first 0.75 of the permutation in the final partial epoch, and the per-stage halves of epochs that straddle a resolution switch. Warm it up in build() on synthetic channels_last uint8 inputs. Before launching, require offline seeds-0-2 per-seed accuracy bit-identical to E069. If the fused version is not bit-identical (Inductor rounding), apply only the consumed-samples restriction to the existing kernels.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E078.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7516999999999999,
+    "time": 4.561103781001293,
+    "complete": true
+  },
+  "row": {
+    "exp": "E078",
+    "commit": "d32643f",
+    "accuracy": 0.7516999999999999,
+    "time": 4.561103781001293,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I107",
+    "description": "Trial-level re-profile of E069, then one bit-identical cut to the per-epoch data pipeline. All previous profiles were per step (E003/E016/I101). None covers per-epoch work: augmentation (flip, translate, jitter, antialiased interpolate to 20/28 px), randperm and gather. In E003 that work was ~11 ms/epoch at 32 px, and it now also includes jitter and resizing. Gate in drafts/: profile one full E069 trial with the torch profiler. Report GPU time for (a) per-epoch augment, resize, permute and gather; (b) the split straddling steps at the 50k/75k/175k/270k-sample switches; (c) lookahead syncs; (d) the train and Muon steps. Launch only if (a) totals >=0.05 s per trial. If it does, make one change. Rewrite the per-epoch augment as a single compiled pass that computes exactly the same per-sample ops in the same precision and order. It consumes the same RNG draws, generated for all 50k samples so the stream is unchanged, and writes only the samples the epoch will actually consume: the first 0.75 of the permutation in the final partial epoch, and the per-stage halves of epochs that straddle a resolution switch. Warm it up in build() on synthetic channels_last uint8 inputs. Before launching, require offline seeds-0-2 per-seed accuracy bit-identical to E069. If the fused version is not bit-identical (Inductor rounding), apply only the consumed-samples restriction to the existing kernels."
+  }
+}

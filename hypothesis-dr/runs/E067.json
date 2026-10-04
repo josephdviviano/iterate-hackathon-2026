@@ -1,0 +1,28 @@
+{
+  "exp": "E067",
+  "commit": "ef13cec",
+  "pid": 644686,
+  "start_ticks": 5505537,
+  "started": 1791078650.6956985,
+  "tag": "I086",
+  "description": "Anneal block 1 before an earlier freeze, combining with E061's near-miss (freeze at 0.7, -0.11 pp, infeasible by 0.04). Base: E058 (fb3f626). Make one change: between samples 0.6 and 0.7 of training (162000 \u2192 236250), multiply block 1's per-step lr by a factor that falls linearly from 1 to 0. This applies to both block-1 Muon lrs (the 128x1152 and 128x216 shape groups) and to block-1 BN-bias lrs in the SGD group. Then, from sample 236250, switch to the existing block-1-frozen graph pair (E061's switch point, with the same straddling-step split). Pass the block-1 multiplier as its own 0-d GPU tensor, filled each step, into the batched Muon step and the SGD param group, so nothing recompiles. Every other group keeps its schedule, and momentum buffers keep accumulating. Lookahead is unchanged, so the slow block-1 weights converge onto the now-still fast weights. Reuse E061's partial-shape warmups (channels_last, exact timed layout). Run debug_nan.py on the modified Muon step and compare trial-0 with later-trial times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E067.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7528,
+    "time": 4.5502423699993715,
+    "complete": true
+  },
+  "row": {
+    "exp": "E067",
+    "commit": "ef13cec",
+    "accuracy": 0.7528,
+    "time": 4.5502423699993715,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I086",
+    "description": "Anneal block 1 before an earlier freeze, combining with E061's near-miss (freeze at 0.7, -0.11 pp, infeasible by 0.04). Base: E058 (fb3f626). Make one change: between samples 0.6 and 0.7 of training (162000 \u2192 236250), multiply block 1's per-step lr by a factor that falls linearly from 1 to 0. This applies to both block-1 Muon lrs (the 128x1152 and 128x216 shape groups) and to block-1 BN-bias lrs in the SGD group. Then, from sample 236250, switch to the existing block-1-frozen graph pair (E061's switch point, with the same straddling-step split). Pass the block-1 multiplier as its own 0-d GPU tensor, filled each step, into the batched Muon step and the SGD param group, so nothing recompiles. Every other group keeps its schedule, and momentum buffers keep accumulating. Lookahead is unchanged, so the slow block-1 weights converge onto the now-still fast weights. Reuse E061's partial-shape warmups (channels_last, exact timed layout). Run debug_nan.py on the modified Muon step and compare trial-0 with later-trial times."
+  }
+}

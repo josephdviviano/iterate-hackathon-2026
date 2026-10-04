@@ -1,0 +1,28 @@
+{
+  "exp": "E113",
+  "commit": "5e0f9ed",
+  "pid": 668571,
+  "start_ticks": 5678829,
+  "started": 1791080383.6242785,
+  "tag": "I125",
+  "description": "Calibrate the large-seed paired instrument. Nothing changes in the scored path. In an untimed side script, run the benchmark's own trial code (benchmark/ is not edited) on seeds 3-102 for two arms, one fresh process each. Arm A is unchanged E100 code (176e5ec). Arm B is E100 plus one math-neutral perturbation that does change fp bits: in prepare, compute the normalization as x*inv_std - mean*inv_std instead of (x-mean)*inv_std, which re-draws every seed's trajectory. Log per-seed accuracy, per-seed final-weight checksums and the cuDNN conv kernel names per (layer, shape). Free by-product for H4.5.1: in the same session, cluster the kernel-name sets already logged in E094/E098/E099/E106 against their process means. Store arm A's 100-seed vector as the paired baseline for every later large-seed A/B, so H8.2.2 needs only its treatment arm. Scored row: rerun E100 unchanged, which adds a 4th distinct scored sample.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E113.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7532333333333333,
+    "time": 4.461653423333094,
+    "complete": true
+  },
+  "row": {
+    "exp": "E113",
+    "commit": "5e0f9ed",
+    "accuracy": 0.7532333333333333,
+    "time": 4.461653423333094,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I125",
+    "description": "Calibrate the large-seed paired instrument. Nothing changes in the scored path. In an untimed side script, run the benchmark's own trial code (benchmark/ is not edited) on seeds 3-102 for two arms, one fresh process each. Arm A is unchanged E100 code (176e5ec). Arm B is E100 plus one math-neutral perturbation that does change fp bits: in prepare, compute the normalization as x*inv_std - mean*inv_std instead of (x-mean)*inv_std, which re-draws every seed's trajectory. Log per-seed accuracy, per-seed final-weight checksums and the cuDNN conv kernel names per (layer, shape). Free by-product for H4.5.1: in the same session, cluster the kernel-name sets already logged in E094/E098/E099/E106 against their process means. Store arm A's 100-seed vector as the paired baseline for every later large-seed A/B, so H8.2.2 needs only its treatment arm. Scored row: rerun E100 unchanged, which adds a 4th distinct scored sample."
+  }
+}

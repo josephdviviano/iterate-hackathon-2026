@@ -1,0 +1,17 @@
+round 42 (update): 4/4 members, 3 ideas forecast; scored E038
+added I060, I061, I062, I063, I064, I065, I066; dropped I059. The tip is E036: 5.31 s, held-out 3–12 at 0.7557, fresh seeds 13–22 at 0.7538, pooled 20-seed mean 0.7547. Seeds 0–2 sit near the bar on this build. The official 40-seed margin is about 0.47 pp. Every remaining time cut therefore has to be close to free, or be paired with a booster or top-up.
+
+The new queue targets the cheapest levers found so far:
+1. **Early resolution (priority 5).** Finish the early-resolution dial: 40/0/30/30, with the 24 px bridge replaced by 20 px, for about −0.14 s.
+2. **Non-uniform trim (priority 4).** Cut only 20 px steps (12 steps, about −0.17 s). This tests whether early steps are worth less than late ones (H4.2.5) against the uniform epoch dial.
+3. **Freeze tests (priority 3).** Two single-factor tests pin down E037's cliff:
+   - Freeze only group 1's first conv, the full-resolution layer, at 60% (staggered FreezeOut).
+   - Freeze all of group 1 at 70%, the 28→32 px switch. This is W5's crux.
+4. **BN-stat recalibration (priority 2).** Re-scoped from the vetoed I015 as the last untested time-neutral booster (W3's crux). It costs about 0.04 s, and a gain of at least 0.15 pp funds a trim.
+5. **16 px start (priority 2).** An explore test of whether 20 px is the resolution floor for 100 classes.
+6. **Prepare cleanup (priority 1).** A math-identical cleanup of trial 0's remaining prepare overhead, about −0.025 s on the mean.
+
+Kept: I058, the profiling diagnostic. It answers W2, W3, W5 and W6's cruxes on BN and memory traffic and tells the freeze ideas where the time goes. I057, the BN fold, is still running.
+
+Dropped: I059, Muon → SGD, because the majority forecasts harm and the tip has no margin to spend on it.
+round 43 (forecast): 4/4 members, 7 ideas forecast

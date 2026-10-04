@@ -1,0 +1,36 @@
+round 19 (update): 4/4 members, 6 ideas forecast; scored E016; COUNTEREXAMPLE E016 outside every range (accuracy)
+H1.1.2->retired, H1.3.1->refuted, H1.3.3->retired, H1.3.4->refuted, H1.4.1->retired, H1.5.1->supported, H2->supported, H2.2.2->refuted, H2.3->supported, H2.3.1->refuted, H3->refuted, H3.3->refuted, H3.3.1->refuted, H4->supported, H4.1->supported, H4.1.1->supported, H4.1.2->supported, H4.2.1->retired, +H1.5.3, +H1.5.4, +H1.2.2, +H1.2.3, +H2.3.2, +H2.3.3, +H2.3.4, +H2.5, +H2.5.1, +H2.5.2, +H2.2.4, +H4.2.3, +H4.2.4, +H4.1.3, +H4.3, +H4.3.1. Statuses are now in line with the evidence. Refuted: H1.3.1, H1.3.4, H2.2.2, H2.3.1, H3 (with H3.3 and H3.3.1), since fixed cost is about 1–2% of the run. Supported: H2, H4, H4.1, H4.1.1, H4.1.2 and H1.5.1. H2.3 is reworded to cover both E007, the biggest time win, and E011's accuracy cliff. Retired as no longer able to lower time: H1.1.2, H1.4.1, H1.3.3 and H4.2.1. H4.2.2 and H1.5.2 stay open because their accuracy halves sit within noise. H1.2 is raised to 0.45 but stays open: E006 changed the optimizer and batch size together. H1.2.1 is reset to untested.
+
+How the counterexamples are covered:
+- **E003:** H3.1, the stride guard.
+- **E005:** H1.3, the noisy endpoint of a short CIFAR-100 run.
+- **E006:** the Muon/batch-size confound, tested by the new K_muon_deconf.
+- **E011:** H2.3 reworded, plus new tests on BN/EMA contamination and size-dependent regularization (K_bnrecal_resize, K_resize_reg), and a single-factor resize test (K_resize_single).
+- **E016:** split tests for which weight-decay group drives the gain (K_wd_split, K_wd_sgd), plus a held-out-seed check of the margin (K_e016_holdout).
+
+Other new hypotheses:
+- **Epoch labels:** the tip likely runs about 9.5 true epochs, not 8.5 (K_epochs).
+- **Trimming:** a two-point epoch trim on E016 (K_trim2).
+- **Cheaper Muon:** fewer Newton-Schulz iterations or less frequent filter renormalization (K_ns_cheap).
+- **Architecture FLOP cuts:** a new Lvl2, K_arch, with tests for group-2 width (K_g2width) and depth (K_depth).
+- **Kernel efficiency:** an MFU diagnostic (K_mfu).
+- **Transfer to the PCIe judge:** a new Lvl2, K_judge, with a fresh-build reshuffle test (K_judge_build).
+
+Recommended order: E016 held-out seeds and the epoch-count check first, then the weight-decay split, then the two-point trim, before spending any margin.
+added I029, I030, I031, I032, I033, I034, I035; dropped I022, I024, I027, I028. The tip is E016: 0.7607 accuracy, 6.58 s. That leaves about 0.77 pp of local margin to spend on time. The queue moves from finding accuracy boosters to spending that margin on time cuts, in order of expected time saved per pp lost. Every rebased idea now builds on E016, not E015.
+
+1. **24/32 px swap (priority 5).** The 28 px phase becomes 24 px and the 32 px tail is left untouched. This is the largest cheap cut (about -8%) and tests the committee's shared "tail sets accuracy" crux.
+2. **E016 held-out diagnostic (priority 4).** Runs held-out seeds 3-12 plus a fresh-cache rebuild. Every member's top crux is how much of E016's margin is real.
+3. **Uniform trim of 1.0 true epoch (priority 4).** This gives a second slope point for the epoch dial. E012's per-epoch timing shows 10 epoch loops with a half-length last one, which suggests about 9.5 true epochs (H4.2.3). The step count should be checked in code first.
+4. **Group 2 narrowed to 320 channels (priority 3).** Group 2 holds about half the conv MACs.
+5. **Lower wd on the SGD groups only (priority 3).** A time-neutral booster that targets the BN-bias decay mechanism from the E016 post-mortem.
+6. **Exploration (priority 2):** drop group 1's third conv, and add a 20 px phase over the first 15% of steps with the 30% tail kept. The second test separates E011's two confounded changes.
+
+Dropped:
+- **I022:** a mechanism test with no time payoff.
+- **I027:** Muon momentum; the committee forecasts it flat.
+- **I023, I025, I028:** rewritten on E016. I023 also had its direction stated unambiguously, since its 0.5 conflict came from a member reading it backwards.
+- **I024:** superseded by the swap plus the uniform trim.
+
+BN recalibration and the bs-1250 test stay off the queue under the committee's veto. I021 (the graph-break and profile check) is still running.
+round 20 (forecast): 4/4 members, 7 ideas forecast

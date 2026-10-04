@@ -1,0 +1,22 @@
+round 25 (update): 4/4 members, 3 ideas forecast; scored E021
+added I036, I037, I038, I039, I040, I041; dropped I034. I added six new ideas and dropped I034 (removing the third conv in group 1). With I035 (the 20 px early phase) still queued, that makes seven queued ideas, plus I033 (cutting weight decay on the SGD groups), which is running now.
+
+**Where things stand.** The tip is E017. Its held-out mean is 0.7577, but seeds 0–2 give only about 0.754. Those three seeds sit well off the population mean, and the offset changes whenever the recipe changes how random numbers are used. So any time cut is close to a coin flip on the local 0.753 bar. Two rules follow:
+- Every idea near the bar is also judged on held-out seeds 3–12, not only on seeds 0–2.
+- No idea re-rolls the random-number streams to chase a lucky seeds 0–2 result. That would be overfitting to the three test seeds.
+
+**New ideas, highest priority first:**
+1. **Cut 0.5 epoch (H4.2.4, priority 5).** This is the untested half-epoch point; E020 only tried a full epoch. It goes on top of I033 if I033 is kept. Expected: about −5% time (to about 6.2 s), with a held-out mean of about 0.755–0.757.
+2. **26 px instead of 28 px in the middle phase (priority 3).** This tests one committee member's idea that the accuracy cost of low resolution depends on whether the last feature map ends up 3×3 or 2×2, not on pixel count. Swapping 28 px for 26 px keeps the 3×3 map. Expected: about −4% time; if that idea is right, a loss of 0.15 pp or less.
+3. **Stronger weight averaging (H1.3, priority 3).** Change the averaging ramp exponent from 3 to 2, so averaging pulls harder from mid-run on. It costs no time and could pay for trims, which another member flagged as a key open question.
+4. **Lower label smoothing at low resolution (H2.3.4, priority 2).** Use 0.15 during the 24/28 px phases and keep 0.3 at 32 px. Costs no time.
+5. **Profile each layer (H2.2.4, priority 2).** Diagnostic only, no recipe change. It should explain why narrowing group 2 in E021 saved only half the expected time, and whether a lossless kernel fix exists.
+6. **Hard-example selection with a small proxy net (H2.4.1, priority 1).** This is the one large lever not yet explored, so it is a long shot.
+
+Four of the six are aimed at improving the score (cutting time or buying accuracy to fund cuts). The other two, profiling and hard-example selection, are exploratory.
+
+**Kept and dropped:**
+- **I035 stays queued.** The committee split 2/4 on it, and its result settles another member's question about whether 20 px costs almost no accuracy.
+- **I034 is dropped.** No member expects it to improve the score, and the width cuts so far (E010, E021) traded time for accuracy worse than cutting epochs.
+- **I015 and I026 stay vetoed.** I015 is the BatchNorm-recalibration idea and I026 the batch 1250 idea. I have no evidence against the members' forecasts of harm.
+round 26 (forecast): 4/4 members, 6 ideas forecast; vetoed I041

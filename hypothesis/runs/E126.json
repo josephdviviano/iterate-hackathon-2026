@@ -1,0 +1,28 @@
+{
+  "exp": "E126",
+  "commit": "135904c",
+  "pid": 775191,
+  "start_ticks": 6659283,
+  "started": 1791090188.159,
+  "tag": "I135",
+  "description": "Revert the tip's bs-1024 late phases. Base: E116 code (82e6219). Precondition, free (H4.2.4): log the source hash and a one-line diff against 82e6219. Change only the batch size of the 28 px and 32 px phases, from 1024 to 1536. Keep the sample-indexed schedule (LR warmup/decay, floor-hold, renorm cadence and the 85% freeze point all in samples). Rescale the SGD groups (BN biases, whitening bias, head bias) in those phases by the kilostep rule. Keep the Muon lr x1.25 at 32 px and momentum 0.6. Keep the final-EMA window and lookahead stop pinned to the last 8 steps. Compile static bs-1536 28/32 px graphs and warm every freeze x renorm x whiten-bias-grad variant for the new shapes in build. Verify on a 2-trial dev run with TORCH_LOGS=recompiles that nothing compiles after build. Accuracy is decided untimed through the benchmark trial code on seeds 3-102 in one fresh process, against the pooled ~198-trajectory E116 baseline (SE ~0.032). Add one scored run with per-trial prepare/train logs to measure the real time.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E126.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7474333333333334,
+    "time": 4.172597230009463,
+    "complete": true
+  },
+  "row": {
+    "exp": "E126",
+    "commit": "135904c",
+    "accuracy": 0.7474333333333334,
+    "time": 4.172597230009463,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I135",
+    "description": "Revert the tip's bs-1024 late phases. Base: E116 code (82e6219). Precondition, free (H4.2.4): log the source hash and a one-line diff against 82e6219. Change only the batch size of the 28 px and 32 px phases, from 1024 to 1536. Keep the sample-indexed schedule (LR warmup/decay, floor-hold, renorm cadence and the 85% freeze point all in samples). Rescale the SGD groups (BN biases, whitening bias, head bias) in those phases by the kilostep rule. Keep the Muon lr x1.25 at 32 px and momentum 0.6. Keep the final-EMA window and lookahead stop pinned to the last 8 steps. Compile static bs-1536 28/32 px graphs and warm every freeze x renorm x whiten-bias-grad variant for the new shapes in build. Verify on a 2-trial dev run with TORCH_LOGS=recompiles that nothing compiles after build. Accuracy is decided untimed through the benchmark trial code on seeds 3-102 in one fresh process, against the pooled ~198-trajectory E116 baseline (SE ~0.032). Add one scored run with per-trial prepare/train logs to measure the real time."
+  }
+}

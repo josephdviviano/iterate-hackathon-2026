@@ -1,0 +1,54 @@
+round 63 (update): 4/4 members, 3 ideas forecast; scored E054
+H2.3.3->retired, H2.5->inconclusive, H2.6.9->inconclusive, H2.7->refuted, H2.7.1->refuted, H4.1.5->refuted, H1.7.1->retired, H6.3.1->supported, H6.4->refuted, H6.4.1->refuted, +H7, +H7.1, +H7.1.1, +H4.5, +H4.5.1, +H4.6, +H4.6.1, +H4.4.3, +H2.6.10, +H2.6.11, +H6.5.2, +H6.5.3, +H1.8, +H1.8.1, +H1.5.10. I rebased the tree onto the E049 tip (5.20 s; 20-seed mean 0.7539, measured on seeds that have been reused for many decisions) and applied the review's corrections.
+
+**Verdicts settled**
+- **H2.7 / H2.7.1 refuted.** Loss-based sample selection came in at or below the epoch dial's rate twice (E048, E052).
+- **H4.1.5 refuted (E050).** Dropping CUDA graphs does not remove the build-to-build accuracy spread.
+- **H6.4 / H6.4.1 refuted (E047).** g1.conv1 runs at about 0.45x group-2 efficiency, but it is only 6–9% of the step.
+- **H6.3.1 supported (E043).** Non-GEMM kernels take about 31% of the 32 px step.
+- **H2.3.3 and H1.7.1 retired.** E044 showed BN recalibration adds nothing. Re-costing H1.7.1 with E047's per-layer table gives about +7% time, against its ≤2.5% claim.
+
+**Downgraded because the evidence is within noise**
+- **H2.6.9 → inconclusive (E049).** E049 met both rules only nominally: +0.035 pp with an SE of 0.08, against a baseline from a different build. Its −2.07% time is inside E036's rebuild time spread.
+- **H2.6.8: E053 is confounded.** It moved both the anneal start and the freeze start, so it cannot show a cliff.
+- **H2.5 → inconclusive.** E051 refutes only the stride-2 stem with the current init.
+- **H1.3 and H1:** "local optimum" and "no booster held up" become "nothing ≥0.25 pp detected". Most of those negatives were measured against a baseline that had just been kept on the same seeds.
+
+**Restated mechanisms**
+- **H4:** E049 was kept without a logged gate override. The gate has drifted from 0.7535 to 0.752, 0.7545 and then "within 0.03". Seeds 13–32 are no longer unselected.
+- **H4.1:** Seed 1 was lowest in 14 of 19 runs. Its deficit disappears when only the data order changes, so it is a seed × data-stream effect, not an init effect. H4.1.6's predicted direction is reversed to match.
+- **H4.2:** Fixed the E045 arithmetic: it is about 1.5 s/pp, not 0.7. The dial's slope after the freezes is stale and possibly steeper. H4.2.6 is rebased to fresh seeds.
+- **H5.2:** Narrowed to "cutting per-step cost is cheap only on layers that have finished learning". E051, E053 and E054 contradict the general version.
+- **H6:** Rewritten around memory-bound elementwise traffic. The E028, E046 and E031 time counterexamples are explained through H6.6 (confidence raised to 0.6).
+- **H6.5.1 (ReLU), H1.5.9 (ghost BN), H4.4.1 and H2.3.8:** lowered, since all or most committee members expect them to be refuted.
+- **H1.2 / H1.2.2:** H1.2 lowered and H1.2.2 rebased to the E049 tip and fresh seeds 33–52. The CIFAR-100 PR #3 reports that Muon lost to SGD, which makes H1.2.2 the decisive test.
+- **H5:** Now holds the Muon critical-batch argument from the search: at momentum 0.6 it predicts a larger critical batch.
+- **H2.6.3:** Citation corrected: Hiverge detaches the whitening bias at about 2.6% of steps, not 20%.
+
+**New hypotheses**
+- **N1 (new Lvl1):** time is saved without accuracy cost only on layers that have finished learning. Its test, N1.1.1, is a single instrumented run tracking per-group relative weight change, to pick freeze points.
+- **N2 / N2.1:** measure how much a rebuild moves a 20-seed mean (two fresh builds of E049 on seeds 33–52).
+- **N3 / N3.1:** derive the keep gate from the probability of passing the official 40-seed bar, and re-score E052 and E053 on fresh seeds.
+- **N4:** a winner's-curse test of E049 on seeds 33–52.
+- **N5:** a unit test of E054's alternating step before that branch is closed.
+- **N6:** detach the whitening bias earlier (about 6% of steps).
+- **N7, N8:** BN statistics computed on a subset of each batch, and a check for two-pass BN reductions in the compiled step.
+- **N9 / N9.1:** use CIFAR-100's coarse superclass labels as extra training signal (needs a RULES.md check first).
+- **N10:** check by reading the code whether the port trains the BN scale, which airbench and Hiverge both freeze.
+
+**Lvl1 status:** H1, H2 and H4 are supported. H5, H6 and N1 are open.
+added I088, I089, I090, I091, I092, I093, I094; dropped none. The cut-and-booster levers are close to exhausted: every per-step cut tried since E049 lost ≥0.2 pp on seeds 13–32. The decision that matters most now is the keep gate itself. It has drifted, it has never been tied to the official 40-seed ≥0.75 bar, and it already discarded locally feasible faster runs: E052 (4.99 s), E053 (5.07 s) and E046 (5.08 s). The new queue goes after that first.
+
+**Gate work:**
+- **H4.5.1 (priority 5):** three fresh builds of E049 on new seeds 33–52 to measure the rebuild SD. The same runs give E049's unselected population mean (H4.4.3).
+- **H4.6.1 (priority 5):** freeze a gate before reading any result. Keep a candidate only if the mean minus 1.64 × the total SD is ≥0.75, with the total SD covering seed noise, rebuild noise and judge drift. Then test E052 and E053 on the fresh seeds. The fastest one that passes is confirmed once on reserved seeds 53–72 before it is kept again.
+- **H4.2.6 (priority 4):** re-measures the epoch dial at no code cost. E049 minus 0.25 epoch is exactly E046, which is also a gate candidate.
+
+**Cheap remaining levers:**
+- **H1.8.1 (priority 3):** hierarchical label smoothing using the coarse labels, only if RULES.md allows them. This is a time-neutral structural booster.
+- **H1.5.10 (priority 2):** BN-scale freeze, settled by reading the code first.
+- **H2.6.11 (priority 2):** whitening detach moved from 20% to 6% of steps. This is a near-free cut, judged on per-step timing.
+- **H7.1.1 (priority 2):** an offline run logging per-group update rates, to test whether "learning has finished" predicts which freezes are free.
+
+I086 (ReLU, gated offline first) is still running. I dropped no queued ideas, because nothing else is queued. I deliberately left out tests for H1.2.2 (Muon vs SGD) and the H5 batch-size ideas: the committee forecast harm, and per-step overhead is only about 5%, so they would save little time.
+round 64 (forecast): 4/4 members, 7 ideas forecast

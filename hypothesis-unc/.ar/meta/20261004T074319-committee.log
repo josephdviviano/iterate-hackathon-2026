@@ -1,0 +1,26 @@
+round 69 (update): 4/4 members, 4 ideas forecast; scored E059
+added I095, I096, I097, I098; dropped I094; skipped ideas for unknown/closed H2.7, H2.7. I added six ideas and dropped one. With I093 still running, that leaves six queued: four exploit, two explore.
+
+**Why the queue changed:** E057–E059 change how earlier results should be read.
+- **Build noise is about zero for a 20-seed mean.** E057 showed each rebuild re-draws every seed's outcome independently. So two fresh builds on seeds 33–52 count as 40 independent draws. E049's three builds already give a 60-draw baseline of 0.7534 on those seeds, which makes effects around 0.1 pp measurable. Every new idea uses this design, then the frozen I089 gate on the single committed build, with no rebuild to chase seeds 0–2.
+- **The post-freeze epoch dial is about 0.77 s/pp (E059), not 1.5.** Adding epochs is now a cheap way to buy accuracy back, so a cut is worth keeping if it saves more than about 0.077 s per 0.1 pp lost.
+- **Several discards should be re-priced.** They were judged on seeds 13–32 or 3–12 after those seeds had already selected the tip, which biases challengers low. E052 (loss-based selection) read −0.21 pp on reused seeds but only about −0.10 pp on 40 fresh draws (E058), for −0.21 s. That is about 2 s/pp, far better than the dial. H2.7 should be reopened.
+
+**New ideas, in priority order:**
+1. **E052 + 0.25 epoch** (H2.7, priority 5). Predicted about 5.10 s at about 0.7538, which would beat E049 on both time and accuracy.
+2. **90% selection + 1.0 epoch on E049** (H2.7, priority 4). The dose step; predicted about 5.0 s at about 0.754.
+3. **Drop 12 early 20 px steps on E049** (H4.2.5, priority 4). E041's version of this was discarded on biased seeds; now it likely beats the dial. Predicted −0.15 s.
+4. **Muon → Nesterov SGD on the conv filters** (H1.2.2, priority 3). The largest untested optimizer axis. It saves about 3–4% (the Newton–Schulz cost), and break-even is a loss of about 0.25 pp; PR #3 favours SGD on CIFAR-100.
+5. **Cheaper smooth activation, gated** (H6.5, priority 3). E056 showed ReLU saved 4.8%, so GELU's erf compute costs real time. An offline benchmark of tanh-GELU and SiLU runs first, and the 40-draw test only happens if one projects at least 1.5% saved.
+6. **Batch 3000 in the 20/24 px phases** (H5.1.3 vs H5.2.1, priority 2). Settles that pair at the resolution the 40-draw design now allows.
+
+Cuts that pass their own test should then be stacked with a dial top-up.
+
+**Dropped:** I094. Under Muon, the per-group update size just tracks the learning-rate schedule, so the curves can't separate E028 from E037, and the diagnostic has no path to a better score.
+
+**Tree updates I'd make:**
+- Reopen H2.7 and H2.7.1, since the refutation came from biased seeds.
+- Mark H4.4.3 refuted: E049 read 0.7534 fresh against 0.7539 on reused seeds, within 0.05 pp.
+- Close H7.1.1 as untestable under Muon.
+- Update H4.2 to the 0.77 s/pp dial. This answers W3's crux: no scalar booster is likely to beat the dial, so time has to come from cuts plus top-ups.
+round 70 (forecast): 4/4 members, 4 ideas forecast

@@ -1,0 +1,69 @@
+round 34 (update): 4/4 members, 4 ideas forecast; scored E030; COUNTEREXAMPLE E030 outside every range (accuracy)
+H1.2.1->inconclusive, H1.3.7->refuted, H1.6->inconclusive, H1.6.1->refuted, H2.6->supported, H2.6.1->supported, H3->open, H3.2->open, H3.2.1->open, H4.1.2->inconclusive, H4.2.4->supported, +H2.6.2, +H2.6.3, +H2.6.4, +H2.6.5, +H2.6.6, +H6.3, +H6.3.1. I made 37 updates to the hypothesis tree and added 7 new hypotheses. The biggest shift: E028's FreezeOut-style freeze is now the leading lever, and the open questions are about accuracy margin rather than speed.
+
+**FreezeOut (E028) is now supported.** H2.6 and H2.6.1 are marked supported (confidence about 0.6). E028 cut time 8.8% and lost only 0.01 pp on the held-out seeds 3–12. It was discarded only because seeds 0–2 lost what is close to a coin flip at a population mean sitting at the bar. Two caveats:
+- **Base needs checking.** The idea text says the run was built on E023, while the notebook treats E027 as the base. The per-step arithmetic fits E027 (219 steps). If the base was really E023, the held-out cost would be −0.31 pp, not −0.01. Check commit fcacfc6 before relying on this.
+- **Confound.** The learning-rate re-anneal and the backward truncation changed together, so it isn't known which one keeps accuracy flat.
+
+New children of H2.6:
+- **Next run:** the freeze plus 0.5 epoch on the E027 tip. Predicted time ≤5.75 s and held-out mean ≥0.7540.
+- **Whitening bias:** stop its gradient early, as airbench and Hiverge do.
+- **Earlier freeze:** start at 60% of steps instead of 75%.
+- **Frozen BatchNorm:** switch it to eval mode and fold it into the conv.
+- **Confound test:** freeze abruptly without the learning-rate re-anneal.
+
+**H6 reframed.** E028 also explains a committee counterexample. Removing group 1's backward saved about 27% of a 32 px step, although group 1 is only about 20% of conv MACs. So the step has two inefficient regimes:
+- small maps that underuse the tensor cores (E021, E024);
+- large 31×31 maps where BatchNorm/GELU work is limited by memory bandwidth.
+
+I added that second regime as a new mechanism, with a profiler prediction under it. The profiling hypotheses have been open for about 13 experiments and should run now.
+
+**Noise model corrected.** I recomputed the gap between the seeds 0–2 mean and the held-out mean across all 15 recipes that have held-out runs. It averages about 0 with an RMS of about 0.20 pp, not the 0.3–0.4 pp quoted earlier. That is close to pure sampling noise; only E016 and E017 were outliers. Two other notes went into H4.1:
+- Seed 1 is the lowest of seeds 0–2 in 10 of 18 recipes. This is a weak but persistent effect (about −0.08 pp, ~2σ).
+- Seeds 3–12 have now driven about 10 decisions, so the final candidates need fresh seeds 13–22.
+
+**Keep rule (H4).** A recipe whose true mean is 0.7526 passes the 3-seed bar only about 42% of the time; at 0.7545 it passes about 77% of the time. Keeps should require a held-out mean of about 0.7545. E027 is recorded as kept in breach of its own rule (held-out 0.7526 < 0.7535). H4.3.2 now targets whichever recipe is submitted.
+
+**Status fixes:**
+- **Refuted:** H1.6.1 (E029) and H1.3.7 (E030). E030 shows the airbench Lookahead schedule is a local optimum on both sides.
+- **H1.6:** inconclusive. One null result is not enough to close it.
+- **H1.3:** rewritten. I dropped the per-seed pairing argument and the stale "less frequent resets" candidate. BatchNorm-stat recompute (H1.3.6) goes up to 0.4, because airbench averages BatchNorm buffers along with the weights and a paper measured +0.48 pp from recomputing them on CIFAR-100. I lowered plain EMA (H1.3.5).
+- **H4.1.2 / H4.2.4:** H4.1.2 is now inconclusive (E016 and E017 broke its bound); H4.2.4 is supported.
+- **H4.2:** pooled E016 and E017 as one 9.5-epoch point. The epoch dial is about 0.37 pp per epoch, with an interval.
+- **H2.3:** I wrote the E011, E018 and E024 refutes into its statement. New items can't be given a refuted status, so I added no retroactive children.
+- **H1:** sourced the 59.3 s baseline to the organizer's ResNet9 run (from forks of the competition repo) and updated the tip to E027.
+
+**Muon and batch size downgraded.** H1.2 drops to 0.3, H1.2.1 is now inconclusive and H5 drops to 0.2. E006 changed Muon, batch size and the RNG stream at once, and an outside CIFAR-100 port found "Muon lost to SGD at every size". The direct ablation, H1.2.2, is now a priority. Search also says the reference Muon uses 3 Newton-Schulz steps and renormalises filters every step, which feeds into H1.2.3 and H1.5.4. H5.1.2 (a smaller batch) gets search support.
+
+**H1.5 softened.** Per the review, the earlier "scalars are flat" conclusions (label smoothing, Muon learning rate, LR floor) are now recorded as "not detected at 3-seed power". The weight-decay optimum is unresolved.
+
+**H3 and H3.2 reopened.** They now aim to cut about 0.05 s of fixed cost: trial 0's prepare takes 0.21 s against 0.06 s for the others. That is now about the size of the levers being pursued.
+
+**Committee counterexamples:**
+- E028 is explained by the new memory-bandwidth mechanism under H6.
+- E030 is explained by H1.3.7's refutation.
+- E024 is covered by H6.2 (off-grid tile sizes).
+- E018 and E026 are folded into H2.3.
+- E025's time miss came from forecasting against the wrong base, not from a missing mechanism.
+added I052, I053, I054, I055, I056, I057, I058, I059; dropped I051. The tip is E027: 5.88 s, held-out mean 0.7526, so it is feasible only on lucky seeds. E028's group-1 freeze saves 0.52 s at no cost in population accuracy, the best exchange rate found so far. The plan is to stack that free lever with the cheapest accuracy booster, epochs. The top priority is H2.6.2: freeze plus 9.25 true epochs, predicted at about 5.7 s with held-out about 0.7545.
+
+Next come two near-free cuts:
+- **H3.2.1:** a prepare change on the systems side only, with bit-identical math. It saves about 0.03–0.1 s and also tests W5's crux, whether a change that keeps the math identical keeps the tip's per-seed outcomes.
+- **H2.6.3:** stop the whitening-bias gradient early.
+
+Further cuts to the stem's backward pass:
+- **H2.6.4:** start the freeze earlier, at 60% of steps.
+- **H2.6.5:** during the frozen phase, put group-1 BN in eval mode and fold it into the conv.
+
+H4.3.2 then validates any kept candidate on fresh seeds 13–22, since seeds 3–12 now carry a winner's curse.
+
+Two explore ideas round out the queue:
+- **H6.3.1:** profile kernel classes per layer group. This sets the value of the stem levers and the risk that the SXM4-to-PCIe transfer shifts the time ranking.
+- **H1.2.2:** replace Muon with SGD. This tests whether E006's Muon gain was real or confounded; if it was confounded, dropping Muon saves about 3% for free.
+
+I dropped I050 and I051:
+- **I050 (longer 20 px phase):** the committee gave it 0 improve votes. Its expected loss of about 0.2 pp can't be absorbed at a held-out mean of 0.7526, and the freeze-dose idea is a better time lever.
+- **I051 (per-resolution whitening):** 0 improve votes, it adds time, and the expected effect is flat.
+
+I049 (late label-smoothing removal) is still running.
+round 35 (forecast): 4/4 members, 8 ideas forecast
