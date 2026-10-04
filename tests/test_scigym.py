@@ -46,3 +46,17 @@ def test_rms_vote_and_candidates():
     cands = candidates(s, traj)
     assert len(cands) == 2 * len(s.species) + sum(s.initial[sp] > 0 for sp in s.species)
     assert smape(traj, traj, s.species) == 0.0
+
+
+def test_admission_tolerance_follows_the_environment(monkeypatch):
+    import importlib
+
+    from scigym import model
+
+    monkeypatch.setenv("SCIGYM_EPS", "0.5")
+    try:
+        m = importlib.reload(model)
+        assert m.EPS == 0.5 and m.Hypothesis(reactions=[], laws=[], params={}, errors=[0.4]).admitted
+    finally:
+        monkeypatch.delenv("SCIGYM_EPS")
+        importlib.reload(model)

@@ -1,0 +1,665 @@
+{
+ "system": "BIOMD0000000159",
+ "arm": "committee_fixed",
+ "model": "gptoss",
+ "k": 4,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 3,
+ "n_truth_reactions": 6,
+ "n_members": 4,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": {
+  "precision": 0.3333333333333333,
+  "recall": 0.3333333333333333,
+  "f1": 0.3333333333333333
+ },
+ "rms_majority": {
+  "precision": 0.4,
+  "recall": 0.3333333333333333,
+  "f1": 0.3636363636363636
+ },
+ "rms_best_member": 0.5,
+ "ste_medoid": 0.5357093878420679,
+ "ste_partial": 0.999000999000999,
+ "spread": 0.5468915343915345,
+ "n_distinct": 4,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_5mud set to 0.8067",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 4,
+   "resynthesized": 4,
+   "n_admitted": 0,
+   "spread": 0.1587301587301587,
+   "rms_medoid_f1": 0.1818181818181818,
+   "rms_majority_f1": 0.1818181818181818,
+   "calls": 16
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_5mud set to 8.067",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 4,
+   "resynthesized": 4,
+   "n_admitted": 0,
+   "spread": 0.4702380952380952,
+   "rms_medoid_f1": 0.3333333333333333,
+   "rms_majority_f1": 0.1818181818181818,
+   "calls": 24
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_cue9 set to 1.297",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 4,
+   "resynthesized": 4,
+   "n_admitted": 0,
+   "spread": 0.3015873015873016,
+   "rms_medoid_f1": 0.3333333333333333,
+   "rms_majority_f1": 0.3333333333333333,
+   "calls": 32
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_cue9 set to 12.97",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 4,
+   "resynthesized": 4,
+   "n_admitted": 0,
+   "spread": 0.5468915343915345,
+   "rms_medoid_f1": 0.3333333333333333,
+   "rms_majority_f1": 0.3636363636363636,
+   "calls": 40
+  }
+ ],
+ "calls": 40,
+ "wall_s": 2358.4,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_5mud set to 0.8067",
+  "initial concentration of id_5mud set to 8.067",
+  "initial concentration of id_cue9 set to 1.297",
+  "initial concentration of id_cue9 set to 12.97"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: -> id_5mud ; k0 / (1 + Ki * id_cue9)\nR2: id_5mud -> ; kd1 * id_5mud\nR3: id_5mud -> id_cue9 ; k1 * id_5mud\nR4: id_cue9 -> ; kd2 * id_cue9\nR5: id_cue9 -> id_6m7j ; k2 * id_cue9\nR6: id_6m7j -> ; kd3 * id_6m7j\nparams: k0 = 0.9, Ki = 0.5, kd1 = 0.05, k1 = 0.2, kd2 = 0.03, k2 = 0.04, kd3 = 0.02\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_5mud"
+     ]
+    ],
+    [
+     [
+      "id_5mud"
+     ],
+     []
+    ],
+    [
+     [
+      "id_5mud"
+     ],
+     [
+      "id_cue9"
+     ]
+    ],
+    [
+     [
+      "id_cue9"
+     ],
+     []
+    ],
+    [
+     [
+      "id_cue9"
+     ],
+     [
+      "id_6m7j"
+     ]
+    ],
+    [
+     [
+      "id_6m7j"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.5357093878420679,
+    0.5919127938036026,
+    0.6855363965141658,
+    0.6464462962714655,
+    0.6406880292462116
+   ],
+   "admitted": false
+  },
+  {
+   "text": "```text\nR1: -> id_5mud ; k_prod\nR2: id_5mud -> ; k_deg5 * id_5mud\nR3: id_cue9 -> ; k_deg9 * id_cue9\nR4: id_5mud + id_cue9 -> id_6m7j ; V_max * id_5mud * id_cue9 / (K_5 + id_5mud) / (K_9 + id_cue9)\nR5: id_6m7j -> ; k_deg6 * id_6m7j\n\nparams: k_prod = 0.5, k_deg5 = 0.05, k_deg9 = 0.02, k_deg6 = 0.01, V_max = 1.2, K_5 = 1.0, K_9 = 1.0\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_5mud"
+     ]
+    ],
+    [
+     [
+      "id_5mud"
+     ],
+     []
+    ],
+    [
+     [
+      "id_cue9"
+     ],
+     []
+    ],
+    [
+     [
+      "id_5mud",
+      "id_cue9"
+     ],
+     [
+      "id_6m7j"
+     ]
+    ],
+    [
+     [
+      "id_6m7j"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.9349455751771726,
+    0.9020945466076191,
+    0.8074026949045616,
+    0.7193958042563398,
+    0.5620834247771705
+   ],
+   "admitted": false
+  },
+  {
+   "text": "```text\nR1: -> id_5mud ; k_syn5\nR2: id_5mud -> ; k_deg5 * id_5mud\nR3: -> id_cue9 ; k_synC\nR4: id_cue9 -> ; k_degC * id_cue9\nR5: id_5mud -> id_6m7j ; k5to6 * id_5mud\nR6: id_cue9 -> id_6m7j ; kCto6 * id_cue9\nR7: id_6m7j -> ; k_deg6 * id_6m7j\n\nparams: k_syn5 = 0.5, k_deg5 = 0.05, k_synC = 0.3, k_degC = 0.04, k5to6 = 0.2, kCto6 = 0.1, k_deg6 = 0.02\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_5mud"
+     ]
+    ],
+    [
+     [
+      "id_5mud"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_cue9"
+     ]
+    ],
+    [
+     [
+      "id_cue9"
+     ],
+     []
+    ],
+    [
+     [
+      "id_5mud"
+     ],
+     [
+      "id_6m7j"
+     ]
+    ],
+    [
+     [
+      "id_cue9"
+     ],
+     [
+      "id_6m7j"
+     ]
+    ],
+    [
+     [
+      "id_6m7j"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.5280586373487909,
+    0.6483281940118335,
+    0.6712830764788866,
+    0.5281004957962874,
+    0.4830070740177855
+   ],
+   "admitted": false
+  },
+  {
+   "text": "```text\nR1: id_5mud -> id_cue9 ; k1 * id_5mud\nR1_rev: id_cue9 -> id_5mud ; k1r * id_cue9\nR2: id_cue9 -> id_6m7j ; k2 * id_cue9\nR2_rev: id_6m7j -> id_cue9 ; k2r * id_6m7j\nR3: id_5mud -> ; k3 * id_5mud\nR4: id_6m7j -> ; k4 * id_6m7j\n\nparams: k1 = 0.5, k1r = 0.3, k2 = 0.05, k2r = 0.2, k3 = 0.01, k4 = 0.02\n```",
+   "keys": [
+    [
+     [
+      "id_5mud"
+     ],
+     [
+      "id_cue9"
+     ]
+    ],
+    [
+     [
+      "id_cue9"
+     ],
+     [
+      "id_5mud"
+     ]
+    ],
+    [
+     [
+      "id_cue9"
+     ],
+     [
+      "id_6m7j"
+     ]
+    ],
+    [
+     [
+      "id_6m7j"
+     ],
+     [
+      "id_cue9"
+     ]
+    ],
+    [
+     [
+      "id_5mud"
+     ],
+     []
+    ],
+    [
+     [
+      "id_6m7j"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.999000999000999,
+    0.35033692926542725,
+    0.6736920280638469,
+    0.6029158787440573,
+    0.4635797437286442
+   ],
+   "admitted": false
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.31432451820140195,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.3143223445516158,
+     "admitted": false
+    }
+   ],
+   "wall_s": 17.7
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.23998179500709396,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.24122374174951078,
+     "admitted": false
+    }
+   ],
+   "wall_s": 13.4
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.3161140139675717,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.4174139462073989,
+     "admitted": false
+    }
+   ],
+   "wall_s": 16.5
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.3161184923858489,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 7,
+     "max_error": 0.2981439049161051,
+     "admitted": false
+    }
+   ],
+   "wall_s": 8.5
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.31285296256795975,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "parse_error": "unknown species 'E1' in 'R2: id_5mud -> id_cue9 [E1] ; V12 * id_5mud / (K12 + id_5mud)'"
+    }
+   ],
+   "wall_s": 58.5
+  },
+  {
+   "seed": "Consider competition: two reactions that consume the same species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.29606269333870283,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.29578157750800443,
+     "admitted": false
+    }
+   ],
+   "wall_s": 70.7
+  },
+  {
+   "seed": "Consider inhibition: a species that slows a reaction, written as a divisor in its rate law.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.35033804002369034,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.37248821011305067,
+     "admitted": false
+    }
+   ],
+   "wall_s": 110.1
+  },
+  {
+   "seed": "Consider the species that stay constant: they are catalysts or inputs, not reactants.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.3175500178013582,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.3777466497843307,
+     "admitted": false
+    }
+   ],
+   "wall_s": 62.6
+  },
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.6033862097308522,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.8140686928838902,
+     "admitted": false
+    }
+   ],
+   "wall_s": 77.4
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "unknown species 'E' in 'R2: id_5mud -> id_cue9 [E] ; V1 * id_5mud / (K1 + id_5mud)'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.8229281133048123,
+     "admitted": false
+    }
+   ],
+   "wall_s": 66.4
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.8215274816578636,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.8161727726724131,
+     "admitted": false
+    }
+   ],
+   "wall_s": 129.9
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    }
+   ],
+   "wall_s": 88.1
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.6985218710033022,
+     "admitted": false
+    }
+   ],
+   "wall_s": 164.3
+  },
+  {
+   "seed": "Consider competition: two reactions that consume the same species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.6794204031272016,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    }
+   ],
+   "wall_s": 151.6
+  },
+  {
+   "seed": "Consider inhibition: a species that slows a reaction, written as a divisor in its rate law.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.8156629249661717,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    }
+   ],
+   "wall_s": 210.0
+  },
+  {
+   "seed": "Consider the species that stay constant: they are catalysts or inputs, not reactants.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    }
+   ],
+   "wall_s": 96.1
+  },
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.6855363965141658,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.7206303147386547,
+     "admitted": false
+    }
+   ],
+   "wall_s": 185.3
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "unknown species 'E' in 'R4: id_5mud + id_cue9 -> id_6m7j [E] ; V_max * E * id_5mud * id_cue9 / (K_5 + id_5mud) / (K_9 + id_cue9)'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.9349455751771726,
+     "admitted": false
+    }
+   ],
+   "wall_s": 73.6
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 7,
+     "max_error": 0.6712830764788866,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    }
+   ],
+   "wall_s": 183.8
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 7,
+     "max_error": 0.999000999000999,
+     "admitted": false
+    }
+   ],
+   "wall_s": 181.1
+  }
+ ]
+}

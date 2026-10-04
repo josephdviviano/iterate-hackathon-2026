@@ -2,6 +2,410 @@
  "system": "BIOMD0000000066",
  "arm": "single_fixed",
  "model": "qwen",
- "error": "RuntimeError: reference model failed under Experiment(kind='set', species='id_epud', value=1.0)",
- "trace": "Traceback (most recent call last):\n  File \"/root/scigym/loop.py\", line 126, in _job\n    return run_system(system, arm, model, k, budget, rounds, max_calls)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/scigym/loop.py\", line 81, in run_system\n    traj = env.run(exp)\n           ^^^^^^^^^^^^\n  File \"/root/scigym/env.py\", line 80, in run\n    raise RuntimeError(f\"reference model failed under {exp}\")\nRuntimeError: reference model failed under Experiment(kind='set', species='id_epud', value=1.0)\n"
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 11,
+ "n_truth_reactions": 7,
+ "n_members": 1,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_majority": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_best_member": 0.0,
+ "ste_medoid": 0.8829492713262282,
+ "ste_partial": 0.8897250103219699,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_i7c2 set to 10.07",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 4
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_i7c2 set to 100.7",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 6
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_epud set to 100",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 8
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_ymzq set to 20",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 10
+  }
+ ],
+ "calls": 10,
+ "wall_s": 3917.0,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_i7c2 set to 10.07",
+  "initial concentration of id_i7c2 set to 100.7",
+  "initial concentration of id_epud set to 100",
+  "initial concentration of id_ymzq set to 20"
+ ],
+ "infeasible": [
+  "initial concentration of id_epud set to 1",
+  "initial concentration of id_d53i set to 20",
+  "initial concentration of id_d53i set to 0.2",
+  "initial concentration of id_wx20 set to 1.943",
+  "initial concentration of id_wx20 set to 19.43",
+  "initial concentration of id_h0xe set to 0.005481",
+  "initial concentration of id_h0xe set to 0.05481",
+  "initial concentration of id_rcxi set to 0.1327",
+  "initial concentration of id_rcxi set to 1.327",
+  "initial concentration of id_00sz set to 2.761",
+  "initial concentration of id_00sz set to 27.61",
+  "initial concentration of id_202r set to 0.04997",
+  "initial concentration of id_202r set to 0.4997",
+  "initial concentration of id_nyrm set to 20",
+  "initial concentration of id_nyrm set to 0.2",
+  "initial concentration of id_y1vl set to 10.08",
+  "initial concentration of id_y1vl set to 100.8"
+ ],
+ "members": [
+  {
+   "text": "R1: id_epud + id_d53i -> id_i7c2 ; k1 * id_epud * id_d53i\nR2: id_i7c2 -> id_epud + id_d53i ; k2 * id_i7c2\nR3: id_nyrm -> id_y1vl ; k3 * id_nyrm\nR4: id_ymzq -> id_00sz ; k4 * id_ymzq\nR5: id_wx20 -> id_rcxi ; k5 * id_wx20\nR6: id_202r -> id_h0xe ; k6 * id_202r\nR7: id_i7c2 -> id_wx20 ; k7 * id_i7c2\nR8: id_00sz -> id_202r ; k8 * id_00sz\nR9: -> id_i7c2 ; k9\nR10: id_i7c2 -> ; k10 * id_i7c2\nR11: -> id_epud ; k11\nR12: id_epud -> ; k12 * id_epud\nR13: -> id_d53i ; k13\nR14: id_d53i -> ; k14 * id_d53i\nR15: -> id_wx20 ; k15\nR16: id_wx20 -> ; k16 * id_wx20\nR17: -> id_h0xe ; k17\nR18: id_h0xe -> ; k18 * id_h0xe\nR19: -> id_rcxi ; k19\nR20: id_rcxi -> ; k20 * id_rcxi\nR21: -> id_00sz ; k21\nR22: id_00sz -> ; k22 * id_00sz\nR23: -> id_202r ; k23\nR24: id_202r -> ; k24 * id_202r\nR25: -> id_nyrm ; k25\nR26: id_nyrm -> ; k26 * id_nyrm\nR27: -> id_y1vl ; k27\nR28: id_y1vl -> ; k28 * id_y1vl\nR29: -> id_ymzq ; k29\nR30: id_ymzq -> ; k30 * id_ymzq\nparams: k1 = 0.01, k2 = 0.005, k3 = 0.02, k4 = 0.015, k5 = 0.012, k6 = 0.008, k7 = 0.006, k8 = 0.01, k9 = 0.001, k10 = 0.002, k11 = 0.001, k12 = 0.003, k13 = 0.001, k14 = 0.002, k15 = 0.001, k16 = 0.002, k17 = 0.001, k18 = 0.002, k19 = 0.001, k20 = 0.002, k21 = 0.001, k22 = 0.002, k23 = 0.001, k24 = 0.002, k25 = 0.001, k26 = 0.002, k27 = 0.001, k28 = 0.002, k29 = 0.001, k30 = 0.002",
+   "keys": [
+    [
+     [
+      "id_d53i",
+      "id_epud"
+     ],
+     [
+      "id_i7c2"
+     ]
+    ],
+    [
+     [
+      "id_i7c2"
+     ],
+     [
+      "id_d53i",
+      "id_epud"
+     ]
+    ],
+    [
+     [
+      "id_nyrm"
+     ],
+     [
+      "id_y1vl"
+     ]
+    ],
+    [
+     [
+      "id_ymzq"
+     ],
+     [
+      "id_00sz"
+     ]
+    ],
+    [
+     [
+      "id_wx20"
+     ],
+     [
+      "id_rcxi"
+     ]
+    ],
+    [
+     [
+      "id_202r"
+     ],
+     [
+      "id_h0xe"
+     ]
+    ],
+    [
+     [
+      "id_i7c2"
+     ],
+     [
+      "id_wx20"
+     ]
+    ],
+    [
+     [
+      "id_00sz"
+     ],
+     [
+      "id_202r"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_i7c2"
+     ]
+    ],
+    [
+     [
+      "id_i7c2"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_epud"
+     ]
+    ],
+    [
+     [
+      "id_epud"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_d53i"
+     ]
+    ],
+    [
+     [
+      "id_d53i"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_wx20"
+     ]
+    ],
+    [
+     [
+      "id_wx20"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_h0xe"
+     ]
+    ],
+    [
+     [
+      "id_h0xe"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_rcxi"
+     ]
+    ],
+    [
+     [
+      "id_rcxi"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_00sz"
+     ]
+    ],
+    [
+     [
+      "id_00sz"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_202r"
+     ]
+    ],
+    [
+     [
+      "id_202r"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_nyrm"
+     ]
+    ],
+    [
+     [
+      "id_nyrm"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_y1vl"
+     ]
+    ],
+    [
+     [
+      "id_y1vl"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_ymzq"
+     ]
+    ],
+    [
+     [
+      "id_ymzq"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.776189177582598,
+    0.7939546361637878,
+    0.7946289618119043,
+    0.808336859464137,
+    0.9202739103313057
+   ],
+   "admitted": false
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.7289353406286758,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 8,
+     "max_error": 0.6714695632954635,
+     "admitted": false
+    }
+   ],
+   "wall_s": 9.0
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'R1: id_epud + id_d53i -> id_i7c2 [id_ymzq]'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 8,
+     "max_error": 0.7432161177945378,
+     "admitted": false
+    }
+   ],
+   "wall_s": 78.9
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 30,
+     "max_error": 0.544616948740955,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "parse_error": "unknown species 'E1' in 'R9: -> id_i7c2 [E1] ; V9 * E1 / (K9 + E1)'"
+    }
+   ],
+   "wall_s": 493.6
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 30,
+     "max_error": 0.5498652008525702,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 30,
+     "max_error": 0.5498652008525702,
+     "admitted": false
+    }
+   ],
+   "wall_s": 1017.4
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 30,
+     "max_error": 0.946790094344301,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 30,
+     "max_error": 0.9202739103313057,
+     "admitted": false
+    }
+   ],
+   "wall_s": 1788.7
+  }
+ ]
 }

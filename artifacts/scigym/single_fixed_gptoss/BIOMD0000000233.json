@@ -7,20 +7,24 @@
  "rounds": 2,
  "n_species": 4,
  "n_truth_reactions": 4,
- "n_members": 0,
+ "n_members": 1,
  "n_admitted": 0,
  "any_admitted": false,
- "rms_medoid": null,
+ "rms_medoid": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
  "rms_majority": {
   "precision": 0.0,
   "recall": 0.0,
   "f1": 0.0
  },
- "rms_best_member": null,
- "ste_medoid": 1.0,
+ "rms_best_member": 0.0,
+ "ste_medoid": 0.3219470292809407,
  "ste_partial": 0.324745165027671,
- "spread": null,
- "n_distinct": 0,
+ "spread": 0.0,
+ "n_distinct": 1,
  "steps": [
   {
    "t": 1,
@@ -67,16 +71,16 @@
    "disagreement_at_choice": null,
    "survivors": 0,
    "refuted": 1,
-   "resynthesized": 0,
+   "resynthesized": 1,
    "n_admitted": 0,
-   "spread": null,
-   "rms_medoid_f1": null,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
    "rms_majority_f1": 0.0,
    "calls": 10
   }
  ],
  "calls": 10,
- "wall_s": 310.1,
+ "wall_s": 276.3,
  "experiments": [
   "baseline, no perturbation",
   "initial concentration of id_1t80 set to 10",
@@ -84,7 +88,42 @@
   "initial concentration of id_ijk0 set to 10",
   "initial concentration of id_ijk0 set to 0.1"
  ],
- "members": [],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: -> id_ijk0 [id_1t80] ; V0 * id_1t80 / (K0 + id_1t80)\nR2: id_ijk0 -> id_bnxy [id_1t80] ; V1 * id_1t80 * id_ijk0 / (K1 + id_ijk0)\nR3: id_bnxy -> ; V2 * id_1t80 * id_bnxy / (K2 + id_bnxy)\n\nparams: V0 = 1.0, K0 = 0.1, V1 = 0.5, K1 = 0.2, V2 = 0.4, K2 = 0.3\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_ijk0"
+     ]
+    ],
+    [
+     [
+      "id_ijk0"
+     ],
+     [
+      "id_bnxy"
+     ]
+    ],
+    [
+     [
+      "id_bnxy"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.3272564474663945,
+    0.48626129728568723,
+    0.3872548532078305,
+    0.2951024894218354,
+    0.4313523856386017
+   ],
+   "admitted": false
+  }
+ ],
  "synthesis": [
   {
    "seed": "Prefer the simplest mass-action network that explains the data.",
@@ -92,35 +131,35 @@
     {
      "round": 1,
      "n_reactions": 2,
-     "max_error": 0.2276843059219372,
+     "max_error": 0.3615415660668528,
      "admitted": false
     },
     {
      "round": 2,
      "n_reactions": 3,
-     "max_error": 0.22768688142203083,
+     "max_error": 0.22768730779921437,
      "admitted": false
     }
    ],
-   "wall_s": 8.2
+   "wall_s": 14.6
   },
   {
    "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
    "rounds": [
     {
      "round": 1,
-     "n_reactions": 3,
-     "max_error": 0.47497036064327447,
+     "n_reactions": 4,
+     "max_error": 0.43628086354243245,
      "admitted": false
     },
     {
      "round": 2,
-     "n_reactions": 3,
-     "max_error": 0.3853862748738661,
+     "n_reactions": 4,
+     "max_error": 0.47796891866872215,
      "admitted": false
     }
    ],
-   "wall_s": 52.5
+   "wall_s": 52.3
   },
   {
    "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
@@ -128,49 +167,53 @@
     {
      "round": 1,
      "n_reactions": 4,
-     "max_error": 0.4786666285917458,
+     "max_error": 0.47675244400517536,
      "admitted": false
     },
     {
      "round": 2,
      "n_reactions": 4,
-     "max_error": 0.2892632127258781,
+     "max_error": 0.3936154819466354,
      "admitted": false
     }
    ],
-   "wall_s": 89.2
+   "wall_s": 63.3
   },
   {
    "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
    "rounds": [
     {
      "round": 1,
-     "n_reactions": 4,
-     "max_error": 0.486335433216857,
+     "n_reactions": 2,
+     "max_error": 0.4958626676435738,
      "admitted": false
     },
     {
      "round": 2,
      "n_reactions": 2,
-     "max_error": 0.47364111395549846,
+     "max_error": 0.47364089416218375,
      "admitted": false
     }
    ],
-   "wall_s": 112.4
+   "wall_s": 56.7
   },
   {
    "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
    "rounds": [
     {
      "round": 1,
-     "parse_error": "rate law does not parse: '[id_1t80] ; k2 * id_1t80 * id_bnxy'"
+     "n_reactions": 3,
+     "max_error": 0.48626129728568723,
+     "admitted": false
     },
     {
      "round": 2,
-     "parse_error": "rate law does not parse: '[id_1t80] ; k2 * id_1t80 * id_bnxy'"
+     "n_reactions": 2,
+     "max_error": 0.49013901546756766,
+     "admitted": false
     }
    ],
-   "wall_s": 6.5
+   "wall_s": 67.0
   }
  ]
 }

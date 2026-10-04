@@ -54,10 +54,10 @@
    "disagreement_at_choice": null,
    "survivors": 0,
    "refuted": 1,
-   "resynthesized": 0,
+   "resynthesized": 1,
    "n_admitted": 0,
-   "spread": null,
-   "rms_medoid_f1": null,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
    "rms_majority_f1": 0.0,
    "calls": 8
   },
@@ -66,17 +66,17 @@
    "experiment": "initial concentration of id_aoua set to 9.399e-06",
    "disagreement_at_choice": null,
    "survivors": 0,
-   "refuted": 0,
+   "refuted": 1,
    "resynthesized": 0,
    "n_admitted": 0,
    "spread": null,
    "rms_medoid_f1": null,
    "rms_majority_f1": 0.0,
-   "calls": 8
+   "calls": 10
   }
  ],
- "calls": 8,
- "wall_s": 134.8,
+ "calls": 10,
+ "wall_s": 355.1,
  "experiments": [
   "baseline, no perturbation",
   "initial concentration of id_q3gg set to 8.379e-07",
@@ -84,6 +84,7 @@
   "initial concentration of id_aoua set to 9.399e-07",
   "initial concentration of id_aoua set to 9.399e-06"
  ],
+ "infeasible": [],
  "members": [],
  "synthesis": [
   {
@@ -92,17 +93,15 @@
     {
      "round": 1,
      "n_reactions": 4,
-     "max_error": 0.15829907985570824,
+     "max_error": 0.15656670328309233,
      "admitted": false
     },
     {
      "round": 2,
-     "n_reactions": 4,
-     "max_error": 0.15829907985570824,
-     "admitted": false
+     "parse_error": "unknown species 'E' in 'R4: -> id_7l07 [E] ; V4 * E / (K4 + E)'"
     }
    ],
-   "wall_s": 11.4
+   "wall_s": 4.9
   },
   {
    "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
@@ -114,11 +113,11 @@
     {
      "round": 2,
      "n_reactions": 6,
-     "max_error": 0.501018101308908,
+     "max_error": 0.2794243770297645,
      "admitted": false
     }
    ],
-   "wall_s": 18.8
+   "wall_s": 32.3
   },
   {
    "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
@@ -130,14 +129,30 @@
     {
      "round": 2,
      "n_reactions": 8,
-     "max_error": 0.4775881003176654,
+     "max_error": 0.4705701783790252,
      "admitted": false
     }
    ],
-   "wall_s": 58.8
+   "wall_s": 109.7
   },
   {
    "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "unknown species 'id_aoua <' in 'R4: id_q3gg + id_aoua <-> id_7l07 ; k4 * id_q3gg * id_aoua - k5 * id_7l07'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 9,
+     "max_error": 0.5959387090543791,
+     "admitted": false
+    }
+   ],
+   "wall_s": 96.3
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
    "rounds": [
     {
      "round": 1,
@@ -145,10 +160,10 @@
     },
     {
      "round": 2,
-     "parse_error": "not a reaction line: 'R1: -> id_7l07'"
+     "parse_error": "unknown species 'E' in 'R4: id_q3gg + id_aoua -> id_7l07 [E] ; V4 * E * id_q3gg * id_aoua / (K4 + id_q3gg * id_aoua)'"
     }
    ],
-   "wall_s": 2.0
+   "wall_s": 2.4
   }
  ]
 }

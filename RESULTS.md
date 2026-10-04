@@ -3030,3 +3030,80 @@ Reading:
 | Baseline | Round 1 (R34) on the same rows; the passive arm |
 | Command | `uv run python -m committee.cegis GAME --level L --train-frac 0.4 --source-condition committee_opine_devin --condition cegis_opine_devin --runs 8 --backend devin --parallel 4` (add `--object-diff --condition cegisobj_opine_devin` for the object-diff arm); `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --train-n N --seeded --frame-out --backend devin --condition passive_opine_devin --runs 8 --parallel 4` with N = train plus probes; report: `uv run python -m committee.cegis GAME --level L --train-frac 0.4 --report --conditions cegis_opine_devin,cegisobj_opine_devin --passive-condition passive_opine_devin`; live: `uv run python -m committee.live ar25 --level 3 --resynth-from artifacts/ar25/live/ar25_L3_f40_committee_opine_devin_seed0.json --through 70 --source-condition committee_opine_devin --round-condition cegis_opine_devin --condition live_opine_devin --backend devin --runs 8 --parallel 4`, then `... --steps 75 --brief --members-dir ar25/L3_f40_probe0_live70/live_opine_devin` |
 | Commit | this commit |
+
+## B5. SciGym reaction discovery: the committee loop on a bio benchmark, 30 systems, two open-weight models
+
+SciGym (Duan et al., 2025) hides the reactions of a BioModels network and
+scores an agent that runs experiments on a simulator. Members are reaction
+networks proposed in text, built into SBML, fitted by least squares to every
+observed trajectory, and admitted when the fitted model reproduces every
+experiment within SMAPE 0.15. Three arms on the same 30 smallest systems,
+k 4, budget 4 experiments, 2 synthesis rounds per member, at most 40 calls
+per system: the committee that chooses the experiment where admitted members'
+predicted trajectories diverge most (`committee_probe`), the same committee
+on a fixed experiment order (`committee_fixed`), and one member on the fixed
+order (`single_fixed`). Scored as the paper: reaction-matching F1 and the
+trajectory SMAPE on held-out perturbations (STE); 27 systems finished in
+every arm for each model and are the paired set. Modal CPU containers run
+the fits; the models are vLLM servers on Modal (Qwen3-Coder-30B FP8,
+gpt-oss-120b).
+
+| Model | Arm | n | RMS F1 medoid [95% CI] | best member | STE [CI] (empty model) | members admitted | calls | AUROC spread vs F1 < 0.5 |
+|---|---|---|---|---|---|---|---|---|
+| Qwen | committee_probe | 27 | 0.235 [0.157, 0.320] | 0.316 | 0.577 [0.497, 0.650] (0.515) | 0.00 | 35 | 0.85 |
+| Qwen | committee_fixed | 27 | 0.213 [0.138, 0.293] | 0.269 | 0.436 [0.357, 0.523] (0.515) | 0.05 | 33 | 0.64 |
+| Qwen | single_fixed | 27 | 0.234 [0.160, 0.307] | 0.234 | 0.454 [0.380, 0.533] (0.515) | 0.07 | 9 | none |
+| gpt-oss | committee_probe | 27 | 0.189 [0.115, 0.266] | 0.302 | 0.457 [0.374, 0.539] (0.531) | 0.03 | 34 | 0.62 |
+| gpt-oss | committee_fixed | 27 | 0.214 [0.133, 0.293] | 0.316 | 0.393 [0.309, 0.477] (0.531) | 0.08 | 32 | 0.67 |
+| gpt-oss | single_fixed | 27 | 0.175 [0.108, 0.245] | 0.175 | 0.432 [0.343, 0.542] (0.531) | 0.07 | 9 | none |
+
+Paired probe minus fixed, RMS F1: Qwen +0.022 [-0.033, +0.084] (wins 12,
+losses 6, ties 9); gpt-oss -0.025 [-0.094, +0.038] (8, 7, 12). The paper's
+frontier rows on all 137 small systems after 20 iterations: Gemini-2.5-Pro
+0.18 F1 and 0.32 STE, GPT-4.1 0.17 and 0.46, Claude-3.7-Sonnet 0.17 and
+0.36, Claude-3.5-Haiku 0.05 and 0.63; different systems and budget, given
+as the external reference only.
+
+Offline ablations on the same runs (`scigym.ablations`):
+
+| Measure | Qwen probe | Qwen fixed | Qwen single | gpt-oss probe | gpt-oss fixed | gpt-oss single |
+|---|---|---|---|---|---|---|
+| Members admitted at tolerance 0.15 / 0.3 / 0.5 | 0.00 / 0.05 / 0.25 | 0.06 / 0.15 / 0.37 | 0.08 / 0.12 / 0.31 | 0.03 / 0.10 / 0.37 | 0.09 / 0.15 / 0.45 | 0.07 / 0.11 / 0.48 |
+| Survivors per experiment, steps 1 to 4 | 0.37, 0.07, 0.04, 0.04 | 0.67, 0.44, 0.22, 0.19 | 0.19, 0.07, 0.11, 0.07 | 0.56, 0.19, 0.04, 0.04 | 1.15, 0.74, 0.41, 0.30 | 0.19, 0.15, 0.07, 0.07 |
+| F1 of the medoid after steps 1 to 4 | 0.21, 0.22, 0.27, 0.24 | 0.19, 0.20, 0.22, 0.21 | 0.19, 0.22, 0.18, 0.23 | 0.22, 0.18, 0.21, 0.19 | 0.19, 0.23, 0.22, 0.21 | 0.18, 0.22, 0.23, 0.18 |
+| Selective by spread: F1 all, most agreed half, lowest-spread quarter, highest-spread quarter | 0.235, 0.348, 0.473, 0.051 | 0.213, 0.245, 0.235, 0.184 | | 0.189, 0.206, 0.179, 0.100 | 0.214, 0.233, 0.251, 0.290 | |
+
+Reading:
+
+1. Question 1 on this benchmark: the committee's answer is not more
+   accurate than one member at 4 experiments. Every arm sits at 0.17 to
+   0.24 F1 with overlapping intervals, and the paired probe-minus-fixed
+   difference crosses zero for both models. The committee costs 3.7 times
+   the calls.
+2. Question 3 transfers where the experiments were chosen by disagreement.
+   On the Qwen probe arm the spread among members ranks the systems the
+   committee gets wrong at AUROC 0.85: the lowest-spread quarter has F1
+   0.47 and the highest-spread quarter 0.05, so a user who acts only on the
+   agreed half gets 0.35 instead of 0.24. On the fixed arms and on gpt-oss
+   the signal is weak (0.62 to 0.67).
+3. The loop ran in one regime only. At tolerance 0.15 no member of the Qwen
+   probe arm was ever admitted and at most one member survived an
+   experiment, so every step resynthesized the whole committee and the
+   selection half of the method (keep survivors, probe where they split)
+   never operated; F1 is flat across the four steps. At tolerance 0.5 about
+   40 percent of members would have been admitted. The tolerance arms (B6)
+   rerun the three arms there.
+4. Trajectory error: the probe arm's STE is worse than the fixed arm's on
+   both models (0.58 against 0.44 on Qwen). The disagreement-chosen
+   experiments are the extreme perturbations (knockouts, far initial
+   concentrations), and a network fitted to them transfers less well to the
+   paper's held-out perturbations than one fitted to the default order.
+
+| Item | Value |
+|---|---|
+| Metric | RMS reaction F1 and STE as Duan et al. (2025); AUROC of committee spread against F1 < 0.5 |
+| Runs | 3 arms x 2 models x 30 systems, 27 paired per model; about 2,000 s of CPU per committee system |
+| Split | 30 smallest systems of the 137; held-out perturbations as the paper |
+| Baseline | `single_fixed` (one member, the paper's setting) and `committee_fixed` (same committee, no probe choice); the paper's frontier rows as the external reference |
+| Command | `uv run modal run -m scigym.modal_app --arm committee_probe,committee_fixed,single_fixed --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40` (and `--model gptoss`); `uv run python -m scigym.report --model qwen`; `uv run python -m scigym.ablations --model qwen` |
+| Commit | this commit (artifacts `artifacts/scigym/<arm>_<model>/`) |

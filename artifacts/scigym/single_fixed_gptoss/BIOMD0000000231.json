@@ -7,20 +7,24 @@
  "rounds": 2,
  "n_species": 6,
  "n_truth_reactions": 4,
- "n_members": 0,
+ "n_members": 1,
  "n_admitted": 0,
  "any_admitted": false,
- "rms_medoid": null,
+ "rms_medoid": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
  "rms_majority": {
   "precision": 0.0,
   "recall": 0.0,
   "f1": 0.0
  },
- "rms_best_member": null,
- "ste_medoid": 1.0,
+ "rms_best_member": 0.0,
+ "ste_medoid": 0.35373416782842343,
  "ste_partial": 0.5146153617064552,
- "spread": null,
- "n_distinct": 0,
+ "spread": 0.0,
+ "n_distinct": 1,
  "steps": [
   {
    "t": 1,
@@ -54,10 +58,10 @@
    "disagreement_at_choice": null,
    "survivors": 0,
    "refuted": 1,
-   "resynthesized": 0,
+   "resynthesized": 1,
    "n_admitted": 0,
-   "spread": null,
-   "rms_medoid_f1": null,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
    "rms_majority_f1": 0.0,
    "calls": 3
   },
@@ -66,17 +70,17 @@
    "experiment": "initial concentration of id_wcye set to 25.6",
    "disagreement_at_choice": null,
    "survivors": 0,
-   "refuted": 0,
-   "resynthesized": 0,
+   "refuted": 1,
+   "resynthesized": 1,
    "n_admitted": 0,
-   "spread": null,
-   "rms_medoid_f1": null,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
    "rms_majority_f1": 0.0,
-   "calls": 3
+   "calls": 5
   }
  ],
- "calls": 3,
- "wall_s": 65.1,
+ "calls": 5,
+ "wall_s": 228.8,
  "experiments": [
   "baseline, no perturbation",
   "initial concentration of id_rxlu set to 1",
@@ -84,33 +88,106 @@
   "initial concentration of id_wcye set to 2560",
   "initial concentration of id_wcye set to 25.6"
  ],
- "members": [],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: id_wcye -> id_htjx ; k1 * id_wcye\nR2: id_htjx -> id_1k2r ; k2 * id_htjx\nR3: id_1k2r -> id_9fvo ; k3 * id_1k2r\nR4: id_wcye -> id_jkjx ; k4 * id_wcye\nR5: id_jkjx -> ; k5 * id_jkjx\nparams: k1 = 0.001, k2 = 0.05, k3 = 0.1, k4 = 0.0005, k5 = 0.02\n```",
+   "keys": [
+    [
+     [
+      "id_wcye"
+     ],
+     [
+      "id_htjx"
+     ]
+    ],
+    [
+     [
+      "id_htjx"
+     ],
+     [
+      "id_1k2r"
+     ]
+    ],
+    [
+     [
+      "id_1k2r"
+     ],
+     [
+      "id_9fvo"
+     ]
+    ],
+    [
+     [
+      "id_wcye"
+     ],
+     [
+      "id_jkjx"
+     ]
+    ],
+    [
+     [
+      "id_jkjx"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.36235159834460456,
+    0.36235159834460456,
+    0.36235159834460456,
+    0.4782739640288078,
+    0.17591786314831404
+   ],
+   "admitted": false
+  }
+ ],
  "synthesis": [
   {
    "seed": "Prefer the simplest mass-action network that explains the data.",
    "rounds": [
     {
      "round": 1,
-     "n_reactions": 4,
-     "max_error": 0.13475794551125675,
+     "n_reactions": 5,
+     "max_error": 0.13469077696593987,
      "admitted": true
     }
    ],
-   "wall_s": 12.9
+   "wall_s": 6.5
   },
   {
    "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
    "rounds": [
     {
      "round": 1,
-     "parse_error": "unknown species 'E_htjx' in 'R1: id_wcye -> id_htjx [E_htjx] ; V_htjx * E_htjx * id_wcye / (K_htjx + id_wcye)'"
+     "n_reactions": 8,
+     "max_error": 0.4339738548004069,
+     "admitted": false
     },
     {
      "round": 2,
-     "parse_error": "not a reaction line: 'k1_f = 3.2e-4,   k1_r = 1.0e-5,'"
+     "parse_error": "not a reaction line: 'V2 = 5e-5, K2 = 0.02, V2b = 1e-6, K2b = 0.5,'"
     }
    ],
-   "wall_s": 24.6
+   "wall_s": 68.0
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.4782739640288078,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.5242195653479679,
+     "admitted": false
+    }
+   ],
+   "wall_s": 105.8
   }
  ]
 }

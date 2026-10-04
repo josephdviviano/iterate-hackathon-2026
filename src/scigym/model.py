@@ -17,6 +17,7 @@ not on a guessed constant.
 from __future__ import annotations
 
 import math
+import os
 import re
 from dataclasses import dataclass, field
 
@@ -28,7 +29,9 @@ from scipy.optimize import least_squares
 from .data import Reaction, System
 from .env import Experiment, Trajectory, simulate, smape
 
-EPS = 0.15          # admission: SMAPE at or below this on every observed experiment (set from a six-system pilot, B5)
+# admission: SMAPE at or below this on every observed experiment (0.15 from a six-system pilot, B5;
+# SCIGYM_EPS overrides it for the tolerance arms)
+EPS = float(os.environ.get("SCIGYM_EPS", "0.15"))
 FIT_STEPS = 200     # candidates are simulated on this grid during fitting; observations are interpolated onto it
 N_FIT_POINTS = 40
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")

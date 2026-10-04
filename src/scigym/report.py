@@ -17,8 +17,8 @@ PAPER = {"Gemini-2.5-Pro": (0.1817, 0.3212), "GPT-4.1": (0.1740, 0.4611), "Claud
          "Claude-3.5-Haiku": (0.0530, 0.6281)}  # RMS F1, STE on the 137 small systems, 20 iterations (Duan et al., 2025)
 
 
-def load(arm: str, model: str) -> list[dict]:
-    d = ART / f"{arm}_{model}"
+def load(arm: str, model: str, tag: str = "") -> list[dict]:
+    d = ART / f"{arm}_{model}{tag}"
     rows = [json.loads(p.read_text()) for p in sorted(d.glob("*.json"))] if d.exists() else []
     return [r for r in rows if "error" not in r]
 
@@ -53,12 +53,13 @@ def summarise(rows: list[dict]) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="gptoss")
+    ap.add_argument("--tag", default="", help="directory suffix of a tolerance arm, e.g. _eps50 (set SCIGYM_EPS to match)")
     a = ap.parse_args()
     out = {}
     print("| Arm | n | RMS F1 medoid [CI] | majority | best member | STE [CI] | STE of the partial model | any admitted | admitted share | calls | AUROC spread vs F1<0.5 | unanimous n, F1 | split n, F1 |")
     print("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     common = None
-    per_arm = {arm: load(arm, a.model) for arm in ARMS}
+    per_arm = {arm: load(arm, a.model, a.tag) for arm in ARMS}
     for rows in per_arm.values():
         ids = {r["system"] for r in rows}
         common = ids if common is None else common & ids
@@ -90,7 +91,7 @@ def main() -> None:
         out["paired_probe_minus_fixed_f1"] = {"mean": float(d.mean()), "ci": [lo, hi], "wins": int((d > 0).sum()), "losses": int((d < 0).sum())}
         print(f"\npaired, probe minus fixed, RMS F1: {d.mean():+.3f} [{lo:+.3f}, {hi:+.3f}], wins {int((d > 0).sum())}, losses {int((d < 0).sum())}, ties {int((d == 0).sum())}")
     print("\npaper, 137 small systems, 20 iterations (RMS F1, STE):", ", ".join(f"{k} {v[0]:.2f}/{v[1]:.2f}" for k, v in PAPER.items()))
-    (ART / f"summary_{a.model}.json").write_text(json.dumps(out, indent=1))
+    (ART / f"summary_{a.model}{a.tag}.json").write_text(json.dumps(out, indent=1))
 
 
 if __name__ == "__main__":

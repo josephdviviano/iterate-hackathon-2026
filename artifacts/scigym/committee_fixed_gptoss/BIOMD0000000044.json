@@ -1,0 +1,7 @@
+{
+ "system": "BIOMD0000000044",
+ "arm": "committee_fixed",
+ "model": "gptoss",
+ "error": "ValueError: could not convert string to float: '1e'",
+ "trace": "Traceback (most recent call last):\n  File \"/root/scigym/loop.py\", line 133, in _job\n    return run_system(system, arm, model, k, budget, rounds, max_calls)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/scigym/loop.py\", line 101, in run_system\n    h = synth(len(members) * (t + 1) + j, counterexample_text(m, system, exp, traj))\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/scigym/loop.py\", line 59, in synth\n    h, rec = synthesize(system, observed, backend, SEEDS[seed_i % len(SEEDS)], rounds=rounds, max_tokens=max_tokens,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/scigym/synth.py\", line 98, in synthesize\n    h = parse(text, system)\n        ^^^^^^^^^^^^^^^^^^^\n  File \"/root/scigym/model.py\", line 79, in parse\n    params[k] = float(v)\n                ^^^^^^^^\nValueError: could not convert string to float: '1e'\n"
+}
