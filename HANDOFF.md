@@ -44,7 +44,7 @@ dies, `committee.recover` collects its Devin sessions. What is done and left:
   Claude Doc https://claude.ai/code/artifact/84ea4a4a-2162-4457-9525-1702a9026886
   (read it first; the HTML page is superseded); commit the round artifacts
   (run directories, not the logs, which hold absolute paths); the user
-  merges jdv into main. Budget used: 141 Devin sessions of 133 plus 32.
+  merges jdv into main. Budget used: 134 Devin sessions of the 133 planned (plus 32 contingent).
   Not run: ka59 passive, P4 batch variance, Q reward hacking.
 
 Earlier update, 2026-10-03 23:50 BST (session iterate-62). Everything below this

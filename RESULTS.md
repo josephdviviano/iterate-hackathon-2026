@@ -2947,3 +2947,80 @@ Reading:
 | Baseline | R22 (objects mode, four levels) |
 | Command | `uv run python -m committee.calibrate --levels ar25:3,m0r0:3,sk48:2,ar25:7,ls20:3,ka59:2,g50t:1 --condition committee_opine_devin --out artifacts/calibration_opine.json` |
 | Commit | e20b07f |
+
+## R36. The counterexample round in OPINE-World's environment: active, passive and object-diff arms, and the live round
+
+R24, R30 and R31 rerun on the R34 committees of the three levels under 0.95
+(m0r0 L3, ka59 L2, sk48 L2), plus the live loop of R26 on ar25 L3. Round 1
+is the R34 committee. The explorer probes the held-out row with the most
+disagreement among the surviving members, drops every member the observed
+transition refutes, and stops when no member survives; the probes join the
+training set and 8 new programs are synthesized with the counterexample
+stated at the mechanism level (R31) in every seed (`cegis_opine_devin`).
+The object-diff arm states the same probe as an object diff (R24 wording,
+`cegisobj_opine_devin`). The passive arm trains on the same number of
+held-out rows taken in time order with no counterexample
+(`passive_opine_devin`). Every arm is scored on the rows no arm trained on.
+
+| Level (held out) | Probes until no member survives | Arm | Admitted | Vote | Members (mean, best) | AUROC | Unanimous n (error) | Split n (error) | Behaviours |
+|---|---|---|---|---|---|---|---|---|---|
+| m0r0 L3 (11) | 33: step 117 first, then 85 to 116 in order | round 1 | 8 | 0.273 | 0.216, 0.273 | 0.52 | 5 (0.80) | 6 (0.67) | 4 |
+| | | mechanism | 8 of 8 | 0.909 | 0.909, 0.909 | 0.50 | 11 (0.09) | 0 | 1 |
+| | | passive, 33 rows | 7 of 8 | 1.000 | 1.000, 1.000 | none | 11 (0.00) | 0 | 1 |
+| ka59 L2 (42) | 2: steps 79, 101 | round 1 | 7 | 0.833 | 0.769, 0.857 | 0.64 | 32 (0.13) | 10 (0.30) | 6 |
+| | | mechanism | 8 of 8 | 0.857 | 0.857, 0.881 | 0.66 | 39 (0.10) | 3 (0.67) | 4 |
+| sk48 L2 (42) | 25: step 118 first, then 63 to 87 in order | round 1 | 8 | 0.571 | 0.625, 0.952 | 0.84 | 18 (0.00) | 24 (0.75) | 6 |
+| | | mechanism | 7 of 8 | 0.976 | 0.963, 0.976 | 0.48 | 40 (0.03) | 2 (0.00) | 2 |
+| | | object diff | 8 of 8 | 0.929 | 0.952, 0.976 | 0.83 | 40 (0.03) | 2 (1.00) | 2 |
+| | | passive, 25 rows | 8 of 8 | 1.000 | 0.964, 1.000 | none | 39 (0.00) | 3 (0.00) | 2 |
+
+Live round, ar25 L3, local engine, explorer policy, 75 moves, seed 0:
+
+| Committee | Vote | AUROC | Unanimous n (error) | Split n (error) | First move every member gets wrong |
+|---|---|---|---|---|---|
+| Round 1 (R34, 7 members) | 0.84 | 0.92 | 65 (0.03) | 10 (1.00) | 63 (one HUD cell at (63,63)) |
+| Live round: 29 recorded + 71 live rows, mechanism counterexample, 7 of 8 admitted | 1.00 | none | 75 (0.00) | 0 | none |
+
+Reading:
+
+1. Question 4 (does resynthesis after the probes help): yes on every
+   level with errors. m0r0 0.27 to 0.91, ka59 0.83 to 0.86, sk48 0.57 to
+   0.98 on the rows no arm saw, and the live committee goes from 0.84 to
+   1.00 over 75 fresh moves with no refutation. The sk48 case is the one
+   the loop is for: nine shared errors from a mechanic that first appears
+   at step 87 (blocks carried by the arm); disagreement was silent on it
+   (R34), the explorer reached it by the time-order fallback at the 25th
+   probe, every surviving member was refuted there, and the next committee
+   has it.
+2. The passive control reaches 1.000 on both levels where it ran, above
+   the mechanism arm (0.909 and 0.976). On these two levels the probe set
+   is the time-order set up to one row, because the frame_out committees
+   are unanimous almost everywhere after the first probe and the explorer
+   falls back to time order. So the control isolates the counterexample
+   text, not the probe policy: the lift comes from the observations the
+   loop collected, and the text adds nothing to it here. ka59 is the one
+   level where the probes (steps 79 and 101) differ from time order, and
+   its lift is one row; no passive arm ran there.
+3. Question 5 (does naming the mechanism help more): no. Mechanism 0.976
+   against object diff 0.929 on sk48 is within one admitted member, and
+   both sit under the passive 1.000. The counterexample text narrows the
+   committee: one behaviour on m0r0 (all eight share the same wrong rule
+   on one row), two on sk48, and the mechanism arm's disagreement AUROC
+   falls to 0.48 to 0.50 where the object-diff arm keeps 0.83. A stated
+   repair is a prior that every seed takes; it costs the diversity the
+   flag runs on. In the objects contract (R31) the statement lifted ar25
+   L3 from 0.925 to 1.000; in this environment the programs no longer
+   need it.
+4. The numbers are small: 11 held-out rows on m0r0, 42 on ka59 and sk48,
+   one live trajectory. The direction is consistent across them and with
+   R24 to R31 in the objects contract: refutation plus resynthesis lifts;
+   the wording of the counterexample is not the active ingredient.
+
+| Item | Value |
+|---|---|
+| Metric | Vote accuracy and member accuracy on the held-out rows shared by every arm; live: vote accuracy over 75 moves |
+| Runs | 8 sessions per arm: mechanism on three levels, passive on two, object diff on one, live round on one; 56 sessions, 54 admitted |
+| Split | Temporal 40 percent, then the probes until no member survives join train; passive takes the same count in time order |
+| Baseline | Round 1 (R34) on the same rows; the passive arm |
+| Command | `uv run python -m committee.cegis GAME --level L --train-frac 0.4 --source-condition committee_opine_devin --condition cegis_opine_devin --runs 8 --backend devin --parallel 4` (add `--object-diff --condition cegisobj_opine_devin` for the object-diff arm); `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --train-n N --seeded --frame-out --backend devin --condition passive_opine_devin --runs 8 --parallel 4` with N = train plus probes; report: `uv run python -m committee.cegis GAME --level L --train-frac 0.4 --report --conditions cegis_opine_devin,cegisobj_opine_devin --passive-condition passive_opine_devin`; live: `uv run python -m committee.live ar25 --level 3 --resynth-from artifacts/ar25/live/ar25_L3_f40_committee_opine_devin_seed0.json --through 70 --source-condition committee_opine_devin --round-condition cegis_opine_devin --condition live_opine_devin --backend devin --runs 8 --parallel 4`, then `... --steps 75 --brief --members-dir ar25/L3_f40_probe0_live70/live_opine_devin` |
+| Commit | this commit |

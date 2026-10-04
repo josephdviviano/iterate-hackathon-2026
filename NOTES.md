@@ -412,3 +412,33 @@
     - Frame-mode live play on the engine (live inherits the mode from the committee; untested).
   ABANDONED:
     - The frame half-step (frame as input, objects as output) as the environment: eleven identical programs at 0.82 on ka59; returning the frame is what mattered.
+
+- [jdv] - SciGym reaction discovery: the full committee loop on a bio benchmark (B5, in progress) - uncommitted, base 3f9c0ca
+  User's call after B4: BioProt cannot host the OPINE half of the method (no state, no verifier, no environment); SciGym (Duan et al., NeurIPS 2025 D&B) can. Built and launched, runs not yet reported.
+  DONE:
+    - `src/scigym`: data (HF parquet into cache/), env (roadrunner dry lab: observe, set initial concentration, knockout), model (reaction text format, SBML builder, log-space multi-start least-squares fit, SMAPE verifier, admission 0.15 set from a six-system pilot), synth (repair loop, 8 seed hints), committee (candidates, probe by trajectory disagreement, refutation, medoid and majority vote, SciGym's RMS and STE), loop (arms committee_probe, committee_fixed, single_fixed), modal_app (one app per model, results also written to the Volume `scigym-results`), report. 3 tests, mutant-checked; README section with commands and credits.
+    - Verifier check: the true structure from generic parameter values fits to SMAPE 0.0002 to 0.13 on six pilot systems; a wrong structure is rejected.
+    - Runs: 30 small systems, k 4, budget 4, rounds 2, max 40 calls per system. Stored at the usage cut-off: Qwen probe 20, fixed 24, single 29; gpt-oss probe 20, fixed 19, single 30 (gpt-oss run still in flight). Early reading from Qwen: at tolerance 0.15 members are rarely admitted once two experiments are observed (as R2 on ARC), so refutation removes most members every round; RMS F1 of the probe arm's medoid 0.0 to 0.73 on the first nine systems, single member 0.24 mean.
+  NEXT (for the next session):
+    1. Warm the servers (`bioprot-llm-qwen`, `bioprot-llm-gptoss` are Modal apps; they scale to zero), then `uv run modal run -m scigym.modal_app --model qwen --collect` and `--model gptoss --collect` to pull results the containers stored, then the same command without `--collect` to resume missing systems.
+    2. `uv run python -m scigym.report --model qwen` and `--model gptoss`; write RESULTS B5 from the tables (arms side by side, paired probe-minus-fixed, the informative-systems subset, the paper's frontier rows), the README results paragraph, the CLAUDE.md bio row.
+    3. Stop the two model apps when done (`uv run modal app stop --yes <app>`).
+  ABANDONED:
+    - Running the loop on this laptop: fits are CPU-bound; Modal CPU containers instead (rule 5).
+    - Three separate `modal run` clients per model: Modal's app-create rate limit and a local network drop killed them; one app per model with Volume-backed results replaces that.
+
+- [jdv] - The night plan in OPINE's environment: P1 to P3, the outage and the recovery (R34 to R36) - this commit
+  Every build committed in one commit per build; the seven-level rerun, calibration and the counterexample rounds under the environment port; the five-question story.
+  DONE:
+    - Eight grouped commits of every build (environment port, reward hacking, Hoeffding, ONC, BioProt, SciGym, idea filter, docs); `external/conceptualizer` and eight logs with absolute paths left out.
+    - P1: 3 single and 8 seeded members on seven levels in frame_out (R34). Vote 0.895 against single 0.843 mean over levels; pooled disagreement AUROC 0.76; unanimous error 0.05 against split 0.34.
+    - R35: vote-share ECE 0.04 pooled (0.22 in the objects contract); conformal coverage 0.95 pooled at a 0.90 target on every level; the leave-one-level-out isotonic map hurts and is dropped.
+    - R36: counterexample rounds on m0r0, ka59, sk48 with passive and object-diff arms, and the live round on ar25 L3 (0.84 to 1.00 over 75 moves). Resynthesis lifts on every level; the passive control lifts as much, so the counterexample wording is not the active ingredient.
+    - A 20 minute DNS outage on the hotspot at 22:50 killed every runner; `committee.recover` (new) matched the 14 orphaned Devin sessions to their runs by the seed text in each prompt. The Devin client retries over transport errors; one failed run no longer ends its condition; `--start` continues the seed batch.
+    - `committee.summary` (one table for questions 1 and 3); the mechanism statement names the refuting frame cells and files fully predicted new objects as right; the live round starts from any stored committee.
+    - 134 Devin sessions, no quota refusal.
+  DEFERRED:
+    - ka59 passive arm, P4 batch variance, the reward-hacking grid (Q): budget held for the arms that attribute the sk48 lift.
+    - A live round on sk48, where every live error is unanimous: the explorer finds no disagreement to probe there; the time-order fallback is the only route.
+  ABANDONED:
+    - Reading the live counterexample as an object diff: in frame_out the refutation was one HUD cell the object view does not show; the mechanism statement now carries the frame cells.
