@@ -11,7 +11,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 9.0,
+    "epochs": 10.0,
     "batch_size": 1024,
     "lr": 9.0,
     "momentum": 0.85,
