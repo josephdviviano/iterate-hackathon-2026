@@ -1,0 +1,38 @@
+schema_version: '2.0'
+finding_id: F-080
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'C5 (local dev stack, 10 seeds per cell) on a faithful CIFAR-100 port of hiverge''s cifar10-speedrun
+  record (research/comparators/hiverge_port: their network, vectorised Muon, augmentation and schedules;
+  single-view evaluation, per-trial statistics, no sleeps): native 64/256/256 at 7.65 epochs 67.16% at
+  1.93 s; 128/512/512 at 10 / 14 epochs 72.46 / 73.25% at 7.67 / 10.46 s; 128/384/640 at 10 / 14 epochs
+  71.31 / 72.76% at 7.11 / 9.57 s; 192/512/768 at 12 epochs 73.42% at 13.87 s. Our submission: about 75.25%
+  at about 4.1 s on the same GPUs.'
+interpretation: 'hiverge''s method does not reach 75% single-view CIFAR-100 at any tested budget, up to
+  3.4x our time; its accuracy saturates (10 -> 14 epochs adds 0.8-1.5 pp), so reaching 75% would need
+  well over 20 s locally: our method is at least 5x faster on this task. Its CIFAR-10 record relies on
+  selective test-time augmentation (banned here) and a 6 s sleep between runs; its components (vectorised
+  Muon, SiLU, colour jitter) were each rejected on CIFAR-100 earlier (S21, S22).'
+decision_implication: No change; hiverge's approach is inferior for this task.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: workflow_comparator
+  disposition: supported
+  rationale: fair port under the same harness, rules and GPUs; the only removed component is test-time
+    augmentation, which the rules ban
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: c5-hiverge-frontier-table.csv
+  locator: research/evidence/T-019/c5-hiverge-frontier-table.csv
+  sha256: f346131177b839079f44950c21798b3f9d3df5bd64a4381addf487e38796e391
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Ours is at least 5x faster to 75%.

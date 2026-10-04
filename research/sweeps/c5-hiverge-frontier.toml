@@ -1,0 +1,29 @@
+# C5: method comparison against hiverge's cifar10-speedrun record (faithful CIFAR-100 port,
+# research/comparators/hiverge_port; single view, per-trial statistics, no sleeps). Width x epochs
+# frontier to find the method's time to 75%; compare with our submission (about 4.1 s local,
+# about 75.25%). 10 seeds per cell, both GPUs.
+name = "c5-hiverge-frontier"
+submission = "research/comparators/hiverge_port"
+python = ".venv-blackwell/bin/python"
+seeds = [8400, 8401, 8402, 8403, 8404, 8405, 8406, 8407, 8408, 8409]
+devices = [0, 1]
+slots_per_device = 1
+
+[[configs]]                                   # hiverge native
+widths = [64, 256, 256]
+epochs = 7.65
+[[configs]]
+widths = [128, 512, 512]
+epochs = 10.0
+[[configs]]
+widths = [128, 512, 512]
+epochs = 14.0
+[[configs]]
+widths = [128, 384, 640]
+epochs = 10.0
+[[configs]]
+widths = [128, 384, 640]
+epochs = 14.0
+[[configs]]
+widths = [192, 512, 768]
+epochs = 12.0

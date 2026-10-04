@@ -593,6 +593,13 @@
 - **Interpretation:** The 1x1 stage-1 residual saves a confirmed 4.3% for about -0.10 to -0.15 pp, a net gain at the exchange rate (4.3% is worth about 0.23 pp), but it spends the margin the stage-2 skip restored: expected accuracy would fall from about 75.25% to about 75.15%, raising P(official mean < 75%) from about 0.05% to about 0.4% centrally (about 3% under the pessimistic stack offset).
 - **Decision consequence:** Not adopted by default: a risk-tolerance decision for the user, best paired with an official-equivalent A100 run that would measure the real margin.
 
+### F-080 — resolved, material
+
+- **Observation:** C5 (local dev stack, 10 seeds per cell) on a faithful CIFAR-100 port of hiverge's cifar10-speedrun record (research/comparators/hiverge_port: their network, vectorised Muon, augmentation and schedules; single-view evaluation, per-trial statistics, no sleeps): native 64/256/256 at 7.65 epochs 67.16% at 1.93 s; 128/512/512 at 10 / 14 epochs 72.46 / 73.25% at 7.67 / 10.46 s; 128/384/640 at 10 / 14 epochs 71.31 / 72.76% at 7.11 / 9.57 s; 192/512/768 at 12 epochs 73.42% at 13.87 s. Our submission: about 75.25% at about 4.1 s on the same GPUs.
+- **Interpretation:** hiverge's method does not reach 75% single-view CIFAR-100 at any tested budget, up to 3.4x our time; its accuracy saturates (10 -> 14 epochs adds 0.8-1.5 pp), so reaching 75% would need well over 20 s locally: our method is at least 5x faster on this task. Its CIFAR-10 record relies on selective test-time augmentation (banned here) and a 6 s sleep between runs; its components (vectorised Muon, SiLU, colour jitter) were each rejected on CIFAR-100 earlier (S21, S22).
+- **Decision consequence:** No change; hiverge's approach is inferior for this task.
+- **Resolution:** Ours is at least 5x faster to 75%.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
