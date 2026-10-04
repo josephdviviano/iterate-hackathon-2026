@@ -25,6 +25,7 @@ HYP = {
     "translate": 2,
     "whiten_images": 5000,
     "compile": True,
+    "ema_every": 5,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -167,6 +168,19 @@ def augment(padded, flip_mask, epoch, translate, generator=None):
     return out
 
 
+class Lookahead:
+    """airbench-style lookahead: every k steps, pull the net toward an EMA copy and reset it there."""
+
+    def __init__(self, model):
+        tensors = [*model.parameters(), *model.buffers()]
+        self.live = [t.data for t in tensors if t.is_floating_point()]
+        self.ema = [t.clone() for t in self.live]
+
+    def update(self, decay):
+        torch._foreach_lerp_(self.ema, self.live, 1 - decay)
+        torch._foreach_copy_(self.live, self.ema)
+
+
 def train_step(model, optimizer, x, y, label_smoothing):
     out = model(x)
     loss = F.cross_entropy(out, y, label_smoothing=label_smoothing, reduction="none").sum()
@@ -237,6 +251,9 @@ def train(state) -> nn.Module:
         np.arange(1 + total_steps), [0, int(0.23 * total_steps), total_steps], [0.2, 1.0, 0.07]
     )
     whiten_bias_steps = hyp["whiten_bias_epochs"] * steps_per_epoch
+    ema_every = hyp["ema_every"]
+    alpha = 0.95**5 * (np.arange(total_steps + 1) / total_steps) ** 3
+    lookahead = Lookahead(state.model) if ema_every else None
     step = 0
     for epoch in range(math.ceil(hyp["epochs"])):
         epoch_images = augment(state.padded, state.flip_mask, epoch, hyp["translate"])
@@ -254,5 +271,9 @@ def train(state) -> nn.Module:
             y = epoch_labels[i * bs : (i + 1) * bs]
             train_step(model, opt, x, y, hyp["label_smoothing"])
             step += 1
+            if lookahead is not None and step % ema_every == 0:
+                lookahead.update(float(alpha[step]))
+    if lookahead is not None:
+        lookahead.update(1.0)
     state.padded = None
     return state.model
