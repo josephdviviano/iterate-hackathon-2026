@@ -11,7 +11,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 9.25,
+    "epochs": 9.5,
     "batch_size": 2000,
     "lr": 9.0,
     "momentum": 0.85,
@@ -35,6 +35,9 @@ HYP = {
     # FreezeOut-style: the stem (whitening bias + group 1) LR decays to 0 at this fraction of
     # steps, after which its backward and updates are skipped. 0 disables.
     "freeze_stem_at": 0.75,
+    # Group 2 follows the main schedule to 75%, anneals to 0 by this fraction, then is frozen
+    # (its output detached) like the stem. 0 disables.
+    "freeze_g2_at": 0.9,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -96,7 +99,7 @@ class Net(nn.Module):
         self.head = nn.Linear(widths[2], num_classes, bias=False)
         self.scaling_factor = scaling_factor
 
-    def forward(self, x, freeze_stem=False, freeze_whiten=False):
+    def forward(self, x, freeze_stem=False, freeze_whiten=False, freeze_g2=False):
         # Inputs are float [0, 1] RGB; normalization lives in the model.
         x = ((x - self.mean) / self.std).to(self.whiten.weight.dtype)
         x = x.contiguous(memory_format=torch.channels_last)
@@ -105,7 +108,9 @@ class Net(nn.Module):
             x = F.gelu(self.whiten(x))
         with torch.set_grad_enabled(grad and not freeze_stem):
             x = self.groups[0](x)
-        x = self.groups[2](self.groups[1](x))
+        with torch.set_grad_enabled(grad and not freeze_g2):
+            x = self.groups[1](x)
+        x = self.groups[2](x)
         x = F.adaptive_max_pool2d(x, 1).flatten(1)
         return (self.head(x) * self.scaling_factor).float()
 
@@ -212,15 +217,19 @@ def make_optimizer(model, hyp, batch_size):
     lr_biases = lr * hyp["bias_scaler"]
     named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
     stem = lambda n: n.startswith("groups.0.")  # noqa: E731
-    norm_biases = [p for n, p in named if "norm" in n and not stem(n)]
+    g2 = lambda n: n.startswith("groups.1.")  # noqa: E731
+    norm_biases = [p for n, p in named if "norm" in n and not stem(n) and not g2(n)]
+    g2_norm_biases = [p for n, p in named if "norm" in n and g2(n)]
+    g2_filters = [p for n, p in named if p.ndim == 4 and g2(n)]
     stem_norm_biases = [p for n, p in named if "norm" in n and stem(n)]
     whiten_bias = [model.whiten.bias]
-    filters = [p for n, p in named if p.ndim == 4 and not stem(n)]
+    filters = [p for n, p in named if p.ndim == 4 and not stem(n) and not g2(n)]
     stem_filters = [p for n, p in named if p.ndim == 4 and stem(n)]
     other = [p for n, p in named if "norm" not in n and not n.startswith("whiten.") and p.ndim != 4]
     groups = [
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=stem_norm_biases, lr=lr_biases, weight_decay=wd / lr_biases, stem=True),
+        dict(params=g2_norm_biases, lr=lr_biases, weight_decay=wd / lr_biases, g2=True),
         dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases, whiten=True, stem=True),
         dict(params=other, lr=lr, weight_decay=wd / lr),
     ]
@@ -229,7 +238,9 @@ def make_optimizer(model, hyp, batch_size):
     muon = Muon(filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], compiled=cuda)
     stem_muon = Muon(stem_filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], compiled=cuda)
     stem_muon.param_groups[0]["stem"] = True
-    opt = Optimizers([sgd, muon, stem_muon])
+    g2_muon = Muon(g2_filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], compiled=cuda)
+    g2_muon.param_groups[0]["g2"] = True
+    opt = Optimizers([sgd, muon, stem_muon, g2_muon])
     for g in opt.param_groups:
         g["base_lr"] = g["lr"]
     return opt
@@ -264,8 +275,9 @@ class Lookahead:
         torch._foreach_copy_(self.live, self.ema)
 
 
-def train_step(model, optimizer, x, y, label_smoothing, freeze_stem=False, freeze_whiten=False):
-    out = model(x, freeze_stem=freeze_stem, freeze_whiten=freeze_whiten)
+def train_step(model, optimizer, x, y, label_smoothing, freeze_stem=False, freeze_whiten=False,
+               freeze_g2=False):
+    out = model(x, freeze_stem=freeze_stem, freeze_whiten=freeze_whiten, freeze_g2=freeze_g2)
     loss = F.cross_entropy(out, y, label_smoothing=label_smoothing, reduction="none").sum()
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
@@ -300,6 +312,9 @@ def build(context: BuildContext):
         if hyp["freeze_stem_at"]:
             for _ in range(3):
                 train_step(compiled, opt, x, y, hyp["label_smoothing"], True, True)
+        if hyp["freeze_g2_at"]:
+            for _ in range(3):
+                train_step(compiled, opt, x, y, hyp["label_smoothing"], True, True, True)
         # One short synthetic trial warms prepare's and train's first-call costs (transfer,
         # eigh, padding, gathers, interpolation, lookahead). prepare resets it all.
         fake = TrainingData(
@@ -359,6 +374,13 @@ def train(state) -> nn.Module:
     stem_schedule = np.interp(
         np.arange(1 + total_steps), [0, peak, freeze_step, total_steps + 1], [0.2, 1.0, 0.0, 0.0]
     )
+    g2_step = int(hyp["freeze_g2_at"] * total_steps) if hyp["freeze_g2_at"] else total_steps + 1
+    g2_schedule = np.interp(
+        np.arange(1 + total_steps),
+        [0, freeze_step, g2_step, total_steps + 1],
+        [schedule[0], schedule[min(freeze_step, total_steps)], 0.0, 0.0],
+    )
+    g2_schedule[: freeze_step + 1] = schedule[: freeze_step + 1]
     ema_every = hyp["ema_every"]
     alpha = 0.95**5 * (np.arange(total_steps + 1) / total_steps) ** 3
     lookahead = Lookahead(state.model) if ema_every else None
@@ -385,7 +407,8 @@ def train(state) -> nn.Module:
             if step >= total_steps:
                 break
             for g in opt.param_groups:
-                g["lr"] = g["base_lr"] * (stem_schedule if g.get("stem") else schedule)[step]
+                sched = stem_schedule if g.get("stem") else g2_schedule if g.get("g2") else schedule
+                g["lr"] = g["base_lr"] * sched[step]
             if step >= whiten_bias_steps:
                 for g in opt.param_groups:
                     if g.get("whiten"):
@@ -393,7 +416,8 @@ def train(state) -> nn.Module:
             x = versions[resolution[step]][i * bs : (i + 1) * bs]
             y = epoch_labels[i * bs : (i + 1) * bs]
             train_step(
-                model, opt, x, y, hyp["label_smoothing"], step >= freeze_step, step >= whiten_bias_steps
+                model, opt, x, y, hyp["label_smoothing"], step >= freeze_step, step >= whiten_bias_steps,
+                step >= g2_step,
             )
             step += 1
             if lookahead is not None and step % ema_every == 0:
