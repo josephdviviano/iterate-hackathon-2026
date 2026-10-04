@@ -17,7 +17,7 @@ MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
-    epochs=8,
+    epochs=9,
     batch_size=512,
     lr=11.5,  # per 1024 examples (summed loss)
     momentum=0.85,
@@ -34,8 +34,8 @@ DEFAULTS = dict(
     lr_peak=0.23,
     lr_start=0.2,
     lr_end=0.0,
-    low_res=20,  # train the first low_res_epochs at this resolution
-    low_res_epochs=4,
+    low_res=18,  # train the first low_res_epochs at this resolution
+    low_res_epochs=5,
 )
 
 
