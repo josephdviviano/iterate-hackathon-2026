@@ -39,7 +39,8 @@ def _set_shares(step: dict, q: float) -> list[float]:
 
 
 def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
-             baseline: str = "baseline", committee: str = "committee", lam: float = 0.0, top: int = 3) -> None:
+             baseline: str = "baseline", committee: str = "committee", lam: float = 0.0, top: int = 3, round_condition: str = "cegis_devin", passive_condition: str = "passive_devin",
+             round_conditions: list[str] | None = None) -> None:
     transitions = build_buffer(game)
     train, test = temporal_split(transitions, level, train_frac, test_level)
     where = f"level {level}" + (f", tested on level {test_level}" if test_level else "")
@@ -136,7 +137,8 @@ def run_demo(game: str, level: int, train_frac: float, test_level: int | None,
     base0 = condition_dir(game, level, train_frac, committee)
     if test_level is None and any(base0.parent.parent.glob(f"{base0.parent.name}_probe*")):
         from .cegis import report
-        rounds = report(game, level, train_frac, committee, "cegis_devin", "passive_devin", ["cegis_devin", "mech_devin"])
+        rounds = report(game, level, train_frac, committee, round_condition, passive_condition,
+                        round_conditions or ["cegis_devin", "mech_devin"])
         print(f"\n[7] Closing the loop: observe the probe that refutes every member, resynthesize on the "
               f"counterexample, score on the {rounds['n_common']} transitions no round observed.")
         for name, r in rounds["arms"].items():
@@ -156,9 +158,13 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lam", type=float, default=0.0, help="MDL prior strength; 0 = equal weights")
     parser.add_argument("--baseline", default="baseline_devin", help="condition name of the single-program runs")
     parser.add_argument("--committee", default="committee_devin", help="condition name of the seeded runs")
+    parser.add_argument("--round-condition", default="cegis_devin", help="condition name of the counterexample rounds")
+    parser.add_argument("--passive-condition", default="passive_devin", help="condition name of the passive controls")
+    parser.add_argument("--round-conditions", default="cegis_devin,mech_devin", help="round conditions to report, comma separated")
     args = parser.parse_args(argv)
     run_demo(args.game, args.level, args.train_frac, args.test_level, baseline=args.baseline,
-             committee=args.committee, lam=args.lam)
+             committee=args.committee, lam=args.lam, round_condition=args.round_condition,
+             passive_condition=args.passive_condition, round_conditions=args.round_conditions.split(","))
 
 
 if __name__ == "__main__":
