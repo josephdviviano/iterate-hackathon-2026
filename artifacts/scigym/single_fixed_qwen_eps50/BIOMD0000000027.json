@@ -1,0 +1,117 @@
+{
+ "system": "BIOMD0000000027",
+ "arm": "single_fixed",
+ "model": "qwen",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 5,
+ "n_truth_reactions": 4,
+ "n_members": 0,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": null,
+ "rms_majority": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_best_member": null,
+ "ste_medoid": 1.0,
+ "ste_partial": 0.4507164826301908,
+ "spread": null,
+ "n_distinct": 0,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_bya5 set to 5000",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_bya5 set to 50",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 1
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_eyok set to 49.41",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 1
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_eyok set to 494.1",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": null,
+   "rms_medoid_f1": null,
+   "rms_majority_f1": 0.0,
+   "calls": 3
+  }
+ ],
+ "calls": 3,
+ "wall_s": 48.3,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_bya5 set to 5000",
+  "initial concentration of id_bya5 set to 50",
+  "initial concentration of id_eyok set to 49.41",
+  "initial concentration of id_eyok set to 494.1"
+ ],
+ "infeasible": [],
+ "members": [],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.09432933184250271,
+     "admitted": true
+    }
+   ],
+   "wall_s": 1.6
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'R1: id_bya5 -> id_eyok'"
+    },
+    {
+     "round": 2,
+     "parse_error": "unknown species 'E' in 'R5: id_bya5 + id_eyok -> id_i3vs [E] ; V5 * E * id_bya5 * id_eyok / (K5 + id_bya5 * id_eyok)'"
+    }
+   ],
+   "wall_s": 2.8
+  }
+ ]
+}

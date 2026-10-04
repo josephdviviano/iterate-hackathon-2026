@@ -1,0 +1,133 @@
+{
+ "system": "BIOMD0000000084",
+ "arm": "single_fixed",
+ "model": "qwen",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 8,
+ "n_truth_reactions": 8,
+ "n_members": 0,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": null,
+ "rms_majority": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_best_member": null,
+ "ste_medoid": 1.0,
+ "ste_partial": 0.6461932224975213,
+ "spread": null,
+ "n_distinct": 0,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_bctn set to 5",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 3
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_bctn set to 0.05",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 3
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_n7qc set to 10",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": null,
+   "rms_medoid_f1": null,
+   "rms_majority_f1": 0.0,
+   "calls": 5
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_n7qc set to 0.1",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": null,
+   "rms_medoid_f1": null,
+   "rms_majority_f1": 0.0,
+   "calls": 5
+  }
+ ],
+ "calls": 5,
+ "wall_s": 264.4,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_bctn set to 5",
+  "initial concentration of id_bctn set to 0.05",
+  "initial concentration of id_n7qc set to 10",
+  "initial concentration of id_n7qc set to 0.1"
+ ],
+ "infeasible": [],
+ "members": [],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.43580034312409405,
+     "admitted": true
+    }
+   ],
+   "wall_s": 2.1
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'R1: id_bctn + id_n7qc -> id_7u44 [id_02ia]'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 8,
+     "max_error": 0.7073926366835048,
+     "admitted": false
+    }
+   ],
+   "wall_s": 53.0
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'R1: id_bctn + id_n7qc -> id_7u44 [id_svcw]'"
+    },
+    {
+     "round": 2,
+     "parse_error": "not a reaction line: 'R'"
+    }
+   ],
+   "wall_s": 24.7
+  }
+ ]
+}

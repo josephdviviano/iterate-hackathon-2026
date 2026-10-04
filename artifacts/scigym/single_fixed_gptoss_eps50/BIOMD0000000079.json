@@ -1,0 +1,173 @@
+{
+ "system": "BIOMD0000000079",
+ "arm": "single_fixed",
+ "model": "gptoss",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 3,
+ "n_truth_reactions": 6,
+ "n_members": 1,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": {
+  "precision": 0.6,
+  "recall": 0.5,
+  "f1": 0.5454545454545454
+ },
+ "rms_majority": {
+  "precision": 0.6,
+  "recall": 0.5,
+  "f1": 0.5454545454545454
+ },
+ "rms_best_member": 0.5454545454545454,
+ "ste_medoid": 0.3438264165477051,
+ "ste_partial": 0.3344008314929208,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_26b9 set to 5.5",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5454545454545454,
+   "rms_majority_f1": 0.5454545454545454,
+   "calls": 3
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_26b9 set to 0.055",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5454545454545454,
+   "rms_majority_f1": 0.5454545454545454,
+   "calls": 3
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_htu0 set to 8",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5454545454545454,
+   "rms_majority_f1": 0.5454545454545454,
+   "calls": 3
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_htu0 set to 0.08",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5454545454545454,
+   "rms_majority_f1": 0.5454545454545454,
+   "calls": 3
+  }
+ ],
+ "calls": 3,
+ "wall_s": 149.3,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_26b9 set to 5.5",
+  "initial concentration of id_26b9 set to 0.055",
+  "initial concentration of id_htu0 set to 8",
+  "initial concentration of id_htu0 set to 0.08"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: id_26b9 -> ; k1 * id_26b9\nR2: id_26b9 -> id_htu0 ; V2 * id_26b9 / (K2 + id_26b9)\nR3: id_26b9 -> id_j073 [id_htu0] ; V3 * id_htu0 * id_26b9 / (K3 + id_26b9)\nR4: id_j073 -> ; k4 * id_j073\nR5: id_htu0 -> ; k5 * id_htu0\n\nparams: k1 = 0.12, V2 = 0.08, K2 = 0.5, V3 = 0.04, K3 = 0.3, k4 = 0.02, k5 = 0.001\n```",
+   "keys": [
+    [
+     [
+      "id_26b9"
+     ],
+     []
+    ],
+    [
+     [
+      "id_26b9"
+     ],
+     [
+      "id_htu0"
+     ]
+    ],
+    [
+     [
+      "id_26b9"
+     ],
+     [
+      "id_j073"
+     ]
+    ],
+    [
+     [
+      "id_j073"
+     ],
+     []
+    ],
+    [
+     [
+      "id_htu0"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.1887444451777213,
+    0.6038211217623018,
+    0.35778787426895464,
+    0.5981303754718131,
+    0.4725500786475872
+   ],
+   "admitted": false
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.1917326275731401,
+     "admitted": true
+    }
+   ],
+   "wall_s": 3.2
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.5557610598328808,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.7979961859708754,
+     "admitted": false
+    }
+   ],
+   "wall_s": 75.8
+  }
+ ]
+}

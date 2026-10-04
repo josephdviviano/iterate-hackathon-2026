@@ -57,10 +57,10 @@ def main() -> None:
         ax.bar(xs, ys, w, color=ARM_STYLE[arm][1], label=ARM_STYLE[arm][0], yerr=[lo, hi], capsize=2, error_kw={"linewidth": 0.8})
     ax.set_xticks(x, [f"{'Qwen3-Coder-30B' if m == 'qwen' else 'gpt-oss-120b'}\n{lab}" for m, t, lab in groups], fontsize=8.5)
     ax.axhline(0.18, color=GREY, linestyle=":", linewidth=1)
-    ax.text(-0.4, 0.19, "paper's frontier models (137 systems, 20 iterations): 0.17 to 0.18", ha="left", va="bottom", fontsize=7.5, color=GREY)
+    ax.text(-0.4, 0.47, "dotted line: paper's frontier models (137 systems, 20 iterations): 0.17 to 0.18", ha="left", va="bottom", fontsize=7.5, color=GREY)
     ax.set_ylim(0, 0.5)
     _style(ax, "Reaction F1 per arm (B5, B7), 95% bootstrap intervals", "RMS F1 of the committee's answer")
-    ax.legend(frameon=False, fontsize=8, loc="upper right")
+    ax.legend(frameon=False, fontsize=8, loc="upper right", bbox_to_anchor=(1, 0.93))
     # (b) system level: share right by agreement quartile
     ax = axes[1]
     for m, mk in (("qwen", "o"), ("gptoss", "s")):

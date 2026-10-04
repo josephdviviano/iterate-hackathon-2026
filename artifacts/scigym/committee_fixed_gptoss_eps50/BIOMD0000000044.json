@@ -1,0 +1,356 @@
+{
+ "system": "BIOMD0000000044",
+ "arm": "committee_fixed",
+ "model": "gptoss",
+ "k": 4,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 4,
+ "n_truth_reactions": 8,
+ "n_members": 4,
+ "n_admitted": 4,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.42857142857142855,
+  "recall": 0.375,
+  "f1": 0.39999999999999997
+ },
+ "rms_majority": {
+  "precision": 0.6666666666666666,
+  "recall": 0.25,
+  "f1": 0.36363636363636365
+ },
+ "rms_best_member": 0.42857142857142855,
+ "ste_medoid": 0.22577440524587597,
+ "ste_partial": 0.4872029074256147,
+ "spread": 0.7075396825396827,
+ "n_distinct": 4,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_f307 set to 3.6",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.7075396825396827,
+   "rms_medoid_f1": 0.39999999999999997,
+   "rms_majority_f1": 0.36363636363636365,
+   "calls": 4
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_f307 set to 0.036",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.7075396825396827,
+   "rms_medoid_f1": 0.39999999999999997,
+   "rms_majority_f1": 0.36363636363636365,
+   "calls": 4
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_jrpy set to 0.9373",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.7075396825396827,
+   "rms_medoid_f1": 0.39999999999999997,
+   "rms_majority_f1": 0.36363636363636365,
+   "calls": 4
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_jrpy set to 9.373",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.7075396825396827,
+   "rms_medoid_f1": 0.39999999999999997,
+   "rms_majority_f1": 0.36363636363636365,
+   "calls": 4
+  }
+ ],
+ "calls": 4,
+ "wall_s": 376.3,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_f307 set to 3.6",
+  "initial concentration of id_f307 set to 0.036",
+  "initial concentration of id_jrpy set to 0.9373",
+  "initial concentration of id_jrpy set to 9.373"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: id_f307 -> id_jrpy ; k1 * id_f307\nR2: id_jrpy -> id_f307 ; k2 * id_jrpy\nR3: id_f307 -> id_vgm1 ; k3 * id_f307\nR4: id_vgm1 -> id_f307 ; k4 * id_vgm1\nparams: k1 = 0.5, k2 = 0.3, k3 = 0.2, k4 = 0.1\n```",
+   "keys": [
+    [
+     [
+      "id_f307"
+     ],
+     [
+      "id_jrpy"
+     ]
+    ],
+    [
+     [
+      "id_jrpy"
+     ],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [
+      "id_f307"
+     ],
+     [
+      "id_vgm1"
+     ]
+    ],
+    [
+     [
+      "id_vgm1"
+     ],
+     [
+      "id_f307"
+     ]
+    ]
+   ],
+   "errors": [
+    0.3195277173519677,
+    0.2691328155880901,
+    0.44178938491619607,
+    0.2365132048742935,
+    0.4674931124500914
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: id_f307 -> id_jrpy [id_hqon] ; V1 * id_hqon * id_f307 / (K1 + id_f307)\nR2: id_jrpy -> id_f307 [id_hqon] ; V2 * id_hqon * id_jrpy / (K2 + id_jrpy)\nR3: id_f307 -> ; k3 * id_f307\nR4: -> id_f307 ; k4\nR5: id_jrpy -> id_vgm1 [id_hqon] ; V5 * id_hqon * id_jrpy / (K5 + id_jrpy)\nR6: id_vgm1 -> ; k6 * id_vgm1\nparams: V1 = 1.2, K1 = 0.5, V2 = 0.8, K2 = 0.3, k3 = 0.05, k4 = 0.01, V5 = 0.9, K5 = 0.4, k6 = 0.02\n```",
+   "keys": [
+    [
+     [
+      "id_f307"
+     ],
+     [
+      "id_jrpy"
+     ]
+    ],
+    [
+     [
+      "id_jrpy"
+     ],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [
+      "id_f307"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [
+      "id_jrpy"
+     ],
+     [
+      "id_vgm1"
+     ]
+    ],
+    [
+     [
+      "id_vgm1"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.2126476190281677,
+    0.21185335930922677,
+    0.2189940108927602,
+    0.21399401756339392,
+    0.21376845002686284
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: -> id_f307 ; k_f_prod\nR2: id_f307 -> ; k_f_deg * id_f307\nR3: -> id_jrpy ; k_j_prod\nR4: id_jrpy -> ; k_j_deg * id_jrpy\nR5: -> id_vgm1 ; k_v_prod\nR6: id_vgm1 -> ; k_v_deg * id_vgm1\nparams: k_f_prod = 0.5, k_f_deg = 0.1, k_j_prod = 0.2, k_j_deg = 0.05, k_v_prod = 0.3, k_v_deg = 0.07\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [
+      "id_f307"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_jrpy"
+     ]
+    ],
+    [
+     [
+      "id_jrpy"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_vgm1"
+     ]
+    ],
+    [
+     [
+      "id_vgm1"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.20111580425691705,
+    0.22616302982678324,
+    0.20542736185958582,
+    0.2192758208592659,
+    0.24368426877284216
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: id_f307 -> id_jrpy ; k1 * id_f307\nR2: id_jrpy -> id_f307 ; k2 * id_jrpy\nR3: id_f307 -> id_vgm1 ; k3 * id_f307\nR4: id_vgm1 -> id_f307 ; k4 * id_vgm1\nR5: -> id_f307 [id_hqon] ; V5 * id_hqon / (K5 + id_f307)\nR6: -> id_jrpy [id_hqon] ; V6 * id_hqon / (K6 + id_jrpy)\nR7: -> id_vgm1 [id_hqon] ; V7 * id_hqon / (K7 + id_vgm1)\n\nparams: k1 = 0.2, k2 = 0.15, k3 = 0.05, k4 = 0.04, V5 = 1.0, K5 = 10, V6 = 0.8, K6 = 8, V7 = 0.6, K7 = 5\n```",
+   "keys": [
+    [
+     [
+      "id_f307"
+     ],
+     [
+      "id_jrpy"
+     ]
+    ],
+    [
+     [
+      "id_jrpy"
+     ],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [
+      "id_f307"
+     ],
+     [
+      "id_vgm1"
+     ]
+    ],
+    [
+     [
+      "id_vgm1"
+     ],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_jrpy"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_vgm1"
+     ]
+    ]
+   ],
+   "errors": [
+    0.21066282780221463,
+    0.2868080424166552,
+    0.2135821885439283,
+    0.21653317026077815,
+    0.45777837782862985
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.3002814805181397,
+     "admitted": true
+    }
+   ],
+   "wall_s": 11.1
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.3851697220667857,
+     "admitted": true
+    }
+   ],
+   "wall_s": 13.7
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.20111580425691705,
+     "admitted": true
+    }
+   ],
+   "wall_s": 9.2
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 7,
+     "max_error": 0.21066282780221463,
+     "admitted": true
+    }
+   ],
+   "wall_s": 17.7
+  }
+ ]
+}

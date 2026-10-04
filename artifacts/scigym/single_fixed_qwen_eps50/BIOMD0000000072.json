@@ -1,0 +1,232 @@
+{
+ "system": "BIOMD0000000072",
+ "arm": "single_fixed",
+ "model": "qwen",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 7,
+ "n_truth_reactions": 7,
+ "n_members": 1,
+ "n_admitted": 1,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.18181818181818182,
+  "recall": 0.2857142857142857,
+  "f1": 0.2222222222222222
+ },
+ "rms_majority": {
+  "precision": 0.18181818181818182,
+  "recall": 0.2857142857142857,
+  "f1": 0.2222222222222222
+ },
+ "rms_best_member": 0.2222222222222222,
+ "ste_medoid": 0.42253906625124493,
+ "ste_partial": 0.6441126558455713,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_st6s set to 3e+04",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_st6s set to 300",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2105263157894737,
+   "rms_majority_f1": 0.2105263157894737,
+   "calls": 3
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_xbdo set to 3e+04",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2105263157894737,
+   "rms_majority_f1": 0.2105263157894737,
+   "calls": 3
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_xbdo set to 300",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2222222222222222,
+   "rms_majority_f1": 0.2222222222222222,
+   "calls": 5
+  }
+ ],
+ "calls": 5,
+ "wall_s": 352.1,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_st6s set to 3e+04",
+  "initial concentration of id_st6s set to 300",
+  "initial concentration of id_xbdo set to 3e+04",
+  "initial concentration of id_xbdo set to 300"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "R1: id_st6s + id_xbdo -> id_pco5 ; k1 * id_st6s * id_xbdo\nR2: id_pco5 -> id_kbdu ; k2 * id_pco5\nR3: id_kbdu -> id_k8sn ; k3 * id_kbdu\nR4: id_5sv8 -> id_st6s ; k4 * id_5sv8\nR5: id_5sv8 -> id_xbdo ; k5 * id_5sv8\nR6: id_st6s -> ; k6 * id_st6s\nR7: id_xbdo -> ; k7 * id_xbdo\nR8: id_pco5 -> ; k8 * id_pco5\nR9: id_kbdu -> ; k9 * id_kbdu\nR10: id_k8sn -> ; k10 * id_k8sn\nR11: id_5sv8 -> ; k11 * id_5sv8\nparams: k1 = 0.0005, k2 = 0.001, k3 = 0.0008, k4 = 0.0002, k5 = 0.00015, k6 = 0.0001, k7 = 0.00008, k8 = 0.00012, k9 = 0.00006, k10 = 0.00003, k11 = 0.00001",
+   "keys": [
+    [
+     [
+      "id_st6s",
+      "id_xbdo"
+     ],
+     [
+      "id_pco5"
+     ]
+    ],
+    [
+     [
+      "id_pco5"
+     ],
+     [
+      "id_kbdu"
+     ]
+    ],
+    [
+     [
+      "id_kbdu"
+     ],
+     [
+      "id_k8sn"
+     ]
+    ],
+    [
+     [
+      "id_5sv8"
+     ],
+     [
+      "id_st6s"
+     ]
+    ],
+    [
+     [
+      "id_5sv8"
+     ],
+     [
+      "id_xbdo"
+     ]
+    ],
+    [
+     [
+      "id_st6s"
+     ],
+     []
+    ],
+    [
+     [
+      "id_xbdo"
+     ],
+     []
+    ],
+    [
+     [
+      "id_pco5"
+     ],
+     []
+    ],
+    [
+     [
+      "id_kbdu"
+     ],
+     []
+    ],
+    [
+     [
+      "id_k8sn"
+     ],
+     []
+    ],
+    [
+     [
+      "id_5sv8"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.39149978307213534,
+    0.39585627812622864,
+    0.4102219712847348,
+    0.4225201564935276,
+    0.41374531909195905
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.4480659495178586,
+     "admitted": true
+    }
+   ],
+   "wall_s": 2.3
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'R1: id_st6s + id_xbdo -> id_pco5'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 12,
+     "max_error": 0.606124633665024,
+     "admitted": false
+    }
+   ],
+   "wall_s": 45.7
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 12,
+     "max_error": 0.6461090570123141,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 11,
+     "max_error": 0.4225201564935276,
+     "admitted": true
+    }
+   ],
+   "wall_s": 199.9
+  }
+ ]
+}

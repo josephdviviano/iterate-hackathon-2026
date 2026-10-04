@@ -1,0 +1,202 @@
+{
+ "system": "BIOMD0000000029",
+ "arm": "single_fixed",
+ "model": "qwen",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 6,
+ "n_truth_reactions": 7,
+ "n_members": 1,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": {
+  "precision": 0.3333333333333333,
+  "recall": 0.2857142857142857,
+  "f1": 0.30769230769230765
+ },
+ "rms_majority": {
+  "precision": 0.3333333333333333,
+  "recall": 0.2857142857142857,
+  "f1": 0.30769230769230765
+ },
+ "rms_best_member": 0.30769230769230765,
+ "ste_medoid": 0.575738608881552,
+ "ste_partial": 0.59497637676773,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_f7wg set to 150.5",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.36363636363636365,
+   "rms_majority_f1": 0.36363636363636365,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_f7wg set to 1505",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.36363636363636365,
+   "rms_majority_f1": 0.36363636363636365,
+   "calls": 1
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_ktlm set to 1000",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.3333333333333333,
+   "rms_majority_f1": 0.3333333333333333,
+   "calls": 3
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_ktlm set to 10",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.30769230769230765,
+   "rms_majority_f1": 0.30769230769230765,
+   "calls": 5
+  }
+ ],
+ "calls": 5,
+ "wall_s": 145.7,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_f7wg set to 150.5",
+  "initial concentration of id_f7wg set to 1505",
+  "initial concentration of id_ktlm set to 1000",
+  "initial concentration of id_ktlm set to 10"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "R1: id_f7wg + id_ktlm -> id_umui ; k1 * id_f7wg * id_ktlm\nR2: id_umui -> id_k8vr ; k2 * id_umui\nR3: id_k8vr -> id_j9t2 ; k3 * id_k8vr\nR4: id_f7wg -> id_hkj3 ; k4 * id_f7wg\nR5: id_hkj3 -> id_ktlm ; k5 * id_hkj3\nR6: id_ktlm -> id_f7wg ; k6 * id_ktlm\nparams: k1 = 0.001, k2 = 0.01, k3 = 0.005, k4 = 0.002, k5 = 0.003, k6 = 0.004",
+   "keys": [
+    [
+     [
+      "id_f7wg",
+      "id_ktlm"
+     ],
+     [
+      "id_umui"
+     ]
+    ],
+    [
+     [
+      "id_umui"
+     ],
+     [
+      "id_k8vr"
+     ]
+    ],
+    [
+     [
+      "id_k8vr"
+     ],
+     [
+      "id_j9t2"
+     ]
+    ],
+    [
+     [
+      "id_f7wg"
+     ],
+     [
+      "id_hkj3"
+     ]
+    ],
+    [
+     [
+      "id_hkj3"
+     ],
+     [
+      "id_ktlm"
+     ]
+    ],
+    [
+     [
+      "id_ktlm"
+     ],
+     [
+      "id_f7wg"
+     ]
+    ]
+   ],
+   "errors": [
+    0.4844583412713637,
+    0.42464707166267873,
+    0.3270331019747035,
+    0.5946489167014478,
+    0.7242231578479211
+   ],
+   "admitted": false
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.4608831468455766,
+     "admitted": true
+    }
+   ],
+   "wall_s": 1.4
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "unknown species 'E' in 'R5: id_f7wg -> id_ktlm + id_hkj3 [E] ; V5 * E * id_f7wg / (K5 + id_f7wg)'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.8560417470054554,
+     "admitted": false
+    }
+   ],
+   "wall_s": 39.3
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'R1: id_f7wg + id_ktlm -> id_umui'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.7242231578479211,
+     "admitted": false
+    }
+   ],
+   "wall_s": 48.0
+  }
+ ]
+}

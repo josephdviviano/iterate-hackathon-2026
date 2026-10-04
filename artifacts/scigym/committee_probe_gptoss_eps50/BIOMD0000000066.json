@@ -1,0 +1,259 @@
+{
+ "system": "BIOMD0000000066",
+ "arm": "committee_probe",
+ "model": "gptoss",
+ "k": 4,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 11,
+ "n_truth_reactions": 7,
+ "n_members": 0,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": null,
+ "rms_majority": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_best_member": null,
+ "ste_medoid": 1.0,
+ "ste_partial": 0.8897250103219699,
+ "spread": null,
+ "n_distinct": 0,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "knockout of id_epud (initial concentration 0, held at 0)",
+   "disagreement_at_choice": 0.7151562109522245,
+   "survivors": 2,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 8
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_i7c2 set to 10.07",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 2,
+   "resynthesized": 2,
+   "n_admitted": 0,
+   "spread": 0.681210272056954,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 12
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_epud set to 100",
+   "disagreement_at_choice": 0.7131040157859978,
+   "survivors": 0,
+   "refuted": 3,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 18
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_i7c2 set to 100.7",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": null,
+   "rms_medoid_f1": null,
+   "rms_majority_f1": 0.0,
+   "calls": 20
+  }
+ ],
+ "calls": 20,
+ "wall_s": 2412.3,
+ "experiments": [
+  "baseline, no perturbation",
+  "knockout of id_epud (initial concentration 0, held at 0)",
+  "initial concentration of id_i7c2 set to 10.07",
+  "initial concentration of id_epud set to 100",
+  "initial concentration of id_i7c2 set to 100.7"
+ ],
+ "infeasible": [],
+ "members": [],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 10,
+     "max_error": 0.4686890499813131,
+     "admitted": true
+    }
+   ],
+   "wall_s": 21.0
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 11,
+     "max_error": 0.6511651502729864,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 15,
+     "max_error": 0.6382020747154035,
+     "admitted": false
+    }
+   ],
+   "wall_s": 53.1
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 22,
+     "max_error": 0.3604024601161341,
+     "admitted": true
+    }
+   ],
+   "wall_s": 25.4
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "unknown species 'id_epud <' in 'R1: id_epud <-> id_i7c2 ; k1_f * id_epud - k1_r * id_i7c2'"
+    },
+    {
+     "round": 2,
+     "parse_error": "not a reaction line: 'k5 = 0.02, k6 = 0.015, k7 = 0.01, k8 = 0.008, k9 = 0.005, k10 = 0.001'"
+    }
+   ],
+   "wall_s": 18.9
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 10,
+     "max_error": 0.7769294082786415,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 12,
+     "max_error": 0.6880643569650644,
+     "admitted": false
+    }
+   ],
+   "wall_s": 271.9
+  },
+  {
+   "seed": "Consider inhibition: a species that slows a reaction, written as a divisor in its rate law.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 12,
+     "max_error": 0.5508340285171741,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 12,
+     "max_error": 0.6561582421144925,
+     "admitted": false
+    }
+   ],
+   "wall_s": 461.9
+  },
+  {
+   "seed": "Consider the species that stay constant: they are catalysts or inputs, not reactants.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 10,
+     "max_error": 0.5875101495119313,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 13,
+     "max_error": 0.7022000958620422,
+     "admitted": false
+    }
+   ],
+   "wall_s": 366.4
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'V5=0.0003, K5=5, V6=0.0003, K6=5, V7=0.02, k8=0.0001,'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 11,
+     "max_error": 0.6377405708465042,
+     "admitted": false
+    }
+   ],
+   "wall_s": 358.4
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'k_syn_i = 0.01, k_epi = 0.001, k_deg_i = 0.0005,'"
+    },
+    {
+     "round": 2,
+     "parse_error": "not a reaction line: 'k_syn_i = 0.01'"
+    }
+   ],
+   "wall_s": 17.1
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "unknown species 'id_i7c2 <' in 'R2: id_i7c2 <-> id_wx20 ; k2f * id_i7c2 - k2r * id_wx20'"
+    },
+    {
+     "round": 2,
+     "parse_error": "not a reaction line: 'k5f = 0.08, k5r = 0.02, k6f = 0.06, k6r = 0.015, k7f = 0.14, k7r = 0.07,'"
+    }
+   ],
+   "wall_s": 11.8
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'k_rcxi_00sz = 0.03, k_rcxi_202r = 0.01, k_i7c2_y1vl = 0.12,'"
+    },
+    {
+     "round": 2,
+     "parse_error": "not a reaction line: 'k_rcxi_00sz = 0.03, k_rcxi_202r = 0.01, k_i7c2_y1vl = 0.12,'"
+    }
+   ],
+   "wall_s": 12.0
+  }
+ ]
+}

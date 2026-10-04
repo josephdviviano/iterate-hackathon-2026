@@ -1,0 +1,209 @@
+{
+ "system": "BIOMD0000000184",
+ "arm": "single_fixed",
+ "model": "gptoss",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 3,
+ "n_truth_reactions": 7,
+ "n_members": 1,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": {
+  "precision": 0.6,
+  "recall": 0.42857142857142855,
+  "f1": 0.5
+ },
+ "rms_majority": {
+  "precision": 0.6,
+  "recall": 0.42857142857142855,
+  "f1": 0.5
+ },
+ "rms_best_member": 0.5,
+ "ste_medoid": 0.24691650044381455,
+ "ste_partial": 0.29589403881515697,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_hura set to 1",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.4,
+   "rms_majority_f1": 0.4,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_hura set to 0.01",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5333333333333333,
+   "rms_majority_f1": 0.6153846153846153,
+   "calls": 3
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_0e6o set to 1",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.18181818181818182,
+   "rms_majority_f1": 0.18181818181818182,
+   "calls": 5
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_0e6o set to 0.01",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 7
+  }
+ ],
+ "calls": 7,
+ "wall_s": 634.4,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_hura set to 1",
+  "initial concentration of id_hura set to 0.01",
+  "initial concentration of id_0e6o set to 1",
+  "initial concentration of id_0e6o set to 0.01"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```\nR1: -> id_hura ; k_syn_h\nR2: id_hura -> id_0e6o ; k1 * id_hura\nR3: -> id_0e6o ; k_syn_e\nR4: id_0e6o -> id_v92z ; k2 * id_0e6o\nR5: id_v92z -> ; k3 * id_v92z\nparams: k_syn_h = 0.02, k1 = 0.6, k_syn_e = 0.03, k2 = 0.9, k3 = 0.25\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_hura"
+     ]
+    ],
+    [
+     [
+      "id_hura"
+     ],
+     [
+      "id_0e6o"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_0e6o"
+     ]
+    ],
+    [
+     [
+      "id_0e6o"
+     ],
+     [
+      "id_v92z"
+     ]
+    ],
+    [
+     [
+      "id_v92z"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.06798882684589865,
+    0.24566077862678812,
+    0.6769842040538426,
+    0.706418679613857,
+    0.6714340754428956
+   ],
+   "admitted": false
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.08289422095488397,
+     "admitted": true
+    }
+   ],
+   "wall_s": 4.6
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 8,
+     "max_error": 0.676311141418037,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.6774343261386665,
+     "admitted": false
+    }
+   ],
+   "wall_s": 231.8
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.6136058586129903,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.7599162368869932,
+     "admitted": false
+    }
+   ],
+   "wall_s": 153.9
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.7068511233527239,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.706418679613857,
+     "admitted": false
+    }
+   ],
+   "wall_s": 143.5
+  }
+ ]
+}

@@ -1,0 +1,197 @@
+{
+ "system": "BIOMD0000000079",
+ "arm": "single_fixed",
+ "model": "qwen",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 3,
+ "n_truth_reactions": 6,
+ "n_members": 1,
+ "n_admitted": 0,
+ "any_admitted": false,
+ "rms_medoid": {
+  "precision": 0.6666666666666666,
+  "recall": 0.6666666666666666,
+  "f1": 0.6666666666666666
+ },
+ "rms_majority": {
+  "precision": 0.6666666666666666,
+  "recall": 0.6666666666666666,
+  "f1": 0.6666666666666666
+ },
+ "rms_best_member": 0.6666666666666666,
+ "ste_medoid": 0.3722189212938697,
+ "ste_partial": 0.3344008314929208,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_26b9 set to 5.5",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 3
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_26b9 set to 0.055",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.5,
+   "rms_majority_f1": 0.5,
+   "calls": 3
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_htu0 set to 8",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.6666666666666666,
+   "rms_majority_f1": 0.6666666666666666,
+   "calls": 5
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_htu0 set to 0.08",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 0,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.6666666666666666,
+   "rms_majority_f1": 0.6666666666666666,
+   "calls": 5
+  }
+ ],
+ "calls": 5,
+ "wall_s": 320.4,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_26b9 set to 5.5",
+  "initial concentration of id_26b9 set to 0.055",
+  "initial concentration of id_htu0 set to 8",
+  "initial concentration of id_htu0 set to 0.08"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "R1: id_26b9 + id_htu0 -> id_j073 ; k1 * id_26b9 * id_htu0\nR2: id_j073 -> id_26b9 + id_htu0 ; k2 * id_j073\nR3: id_j073 -> ; k3 * id_j073\nR4: -> id_26b9 ; k4\nR5: -> id_htu0 ; k5\nR6: -> id_j073 ; k6\nparams: k1 = 0.5, k2 = 0.1, k3 = 0.2, k4 = 0.05, k5 = 0.02, k6 = 0.15",
+   "keys": [
+    [
+     [
+      "id_26b9",
+      "id_htu0"
+     ],
+     [
+      "id_j073"
+     ]
+    ],
+    [
+     [
+      "id_j073"
+     ],
+     [
+      "id_26b9",
+      "id_htu0"
+     ]
+    ],
+    [
+     [
+      "id_j073"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_26b9"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_htu0"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_j073"
+     ]
+    ]
+   ],
+   "errors": [
+    0.3165348927924702,
+    0.5942948755383948,
+    0.3538309941671785,
+    0.5478633223002407,
+    0.3412261960859481
+   ],
+   "admitted": false
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.18304055454860824,
+     "admitted": true
+    }
+   ],
+   "wall_s": 2.0
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "not a reaction line: 'R1: id_26b9 + id_htu0 -> id_j073 [id_26b9]'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 6,
+     "max_error": 0.6418308586581362,
+     "admitted": false
+    }
+   ],
+   "wall_s": 41.7
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.5942948755383948,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.617831107367591,
+     "admitted": false
+    }
+   ],
+   "wall_s": 138.5
+  }
+ ]
+}

@@ -1,0 +1,151 @@
+{
+ "system": "BIOMD0000000224",
+ "arm": "single_fixed",
+ "model": "gptoss",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 4,
+ "n_truth_reactions": 6,
+ "n_members": 1,
+ "n_admitted": 1,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.25,
+  "recall": 0.16666666666666666,
+  "f1": 0.2
+ },
+ "rms_majority": {
+  "precision": 0.25,
+  "recall": 0.16666666666666666,
+  "f1": 0.2
+ },
+ "rms_best_member": 0.2,
+ "ste_medoid": 0.2987596280535142,
+ "ste_partial": 0.6576694698198597,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_n242 set to 0.5",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2,
+   "rms_majority_f1": 0.2,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_n242 set to 0.005",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2,
+   "rms_majority_f1": 0.2,
+   "calls": 1
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_wa3f set to 1",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2,
+   "rms_majority_f1": 0.2,
+   "calls": 1
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_wa3f set to 0.01",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.2,
+   "rms_majority_f1": 0.2,
+   "calls": 1
+  }
+ ],
+ "calls": 1,
+ "wall_s": 47.4,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_n242 set to 0.5",
+  "initial concentration of id_n242 set to 0.005",
+  "initial concentration of id_wa3f set to 1",
+  "initial concentration of id_wa3f set to 0.01"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: id_9t4b -> id_n242 ; k1 * id_9t4b\nR2: id_n242 -> id_wa3f ; k2 * id_n242\nR3: id_wa3f -> id_y40m ; k3 * id_wa3f\nR4: id_y40m -> ; k4 * id_y40m\nparams: k1 = 0.01, k2 = 0.5, k3 = 0.8, k4 = 0.05\n```",
+   "keys": [
+    [
+     [
+      "id_9t4b"
+     ],
+     [
+      "id_n242"
+     ]
+    ],
+    [
+     [
+      "id_n242"
+     ],
+     [
+      "id_wa3f"
+     ]
+    ],
+    [
+     [
+      "id_wa3f"
+     ],
+     [
+      "id_y40m"
+     ]
+    ],
+    [
+     [
+      "id_y40m"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.28383157712457335,
+    0.350940440709855,
+    0.2938596454798525,
+    0.2923914668914594,
+    0.29423441238035924
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.28380749297003693,
+     "admitted": true
+    }
+   ],
+   "wall_s": 4.2
+  }
+ ]
+}

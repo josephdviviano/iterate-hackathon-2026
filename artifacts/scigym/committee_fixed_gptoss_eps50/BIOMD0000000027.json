@@ -1,0 +1,294 @@
+{
+ "system": "BIOMD0000000027",
+ "arm": "committee_fixed",
+ "model": "gptoss",
+ "k": 4,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 5,
+ "n_truth_reactions": 4,
+ "n_members": 4,
+ "n_admitted": 4,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.3333333333333333,
+  "recall": 0.25,
+  "f1": 0.28571428571428575
+ },
+ "rms_majority": {
+  "precision": 0.3333333333333333,
+  "recall": 0.25,
+  "f1": 0.28571428571428575
+ },
+ "rms_best_member": 0.28571428571428575,
+ "ste_medoid": 0.24208102321495728,
+ "ste_partial": 0.4507164826301908,
+ "spread": 0.6190476190476191,
+ "n_distinct": 3,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_bya5 set to 5000",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.6190476190476191,
+   "rms_medoid_f1": 0.28571428571428575,
+   "rms_majority_f1": 0.28571428571428575,
+   "calls": 4
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_bya5 set to 50",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.6190476190476191,
+   "rms_medoid_f1": 0.28571428571428575,
+   "rms_majority_f1": 0.28571428571428575,
+   "calls": 4
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_eyok set to 49.41",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.6190476190476191,
+   "rms_medoid_f1": 0.28571428571428575,
+   "rms_majority_f1": 0.28571428571428575,
+   "calls": 4
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_eyok set to 494.1",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.6190476190476191,
+   "rms_medoid_f1": 0.28571428571428575,
+   "rms_majority_f1": 0.28571428571428575,
+   "calls": 4
+  }
+ ],
+ "calls": 4,
+ "wall_s": 223.8,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_bya5 set to 5000",
+  "initial concentration of id_bya5 set to 50",
+  "initial concentration of id_eyok set to 49.41",
+  "initial concentration of id_eyok set to 494.1"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: id_bya5 -> id_eyok ; k1 * id_bya5\nR2: id_eyok -> id_346h ; k2 * id_eyok\nR3: id_346h -> ; k3 * id_346h\nparams: k1 = 0.0012, k2 = 0.0003, k3 = 0.00005\n```",
+   "keys": [
+    [
+     [
+      "id_bya5"
+     ],
+     [
+      "id_eyok"
+     ]
+    ],
+    [
+     [
+      "id_eyok"
+     ],
+     [
+      "id_346h"
+     ]
+    ],
+    [
+     [
+      "id_346h"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.057901538387379325,
+    0.14004043794210816,
+    0.07140738706591761,
+    0.17834670753390536,
+    0.33002583491922666
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: id_bya5 -> id_eyok [id_i3vs] ; V1 * id_i3vs * id_bya5 / (K1 + id_bya5)\nR2: id_eyok -> id_346h [id_nmyo] ; V2 * id_nmyo * id_eyok / (K2 + id_eyok)\nR3: id_346h -> ; k3 * id_346h\nparams: V1 = 0.12, K1 = 200, V2 = 0.08, K2 = 30, k3 = 0.005\n```",
+   "keys": [
+    [
+     [
+      "id_bya5"
+     ],
+     [
+      "id_eyok"
+     ]
+    ],
+    [
+     [
+      "id_eyok"
+     ],
+     [
+      "id_346h"
+     ]
+    ],
+    [
+     [
+      "id_346h"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.05355973425700379,
+    0.24465950087681118,
+    0.15579375498957754,
+    0.2548233442109961,
+    0.21213657384661336
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: -> id_eyok ; k1\nR2: id_eyok -> ; k2 * id_eyok\nR3: id_bya5 -> ; k3 * id_bya5\nR4: -> id_346h ; k4\nR5: id_346h -> ; k5 * id_346h\nparams: k1 = 0.05, k2 = 0.001, k3 = 0.001, k4 = 0.02, k5 = 0.001\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_eyok"
+     ]
+    ],
+    [
+     [
+      "id_eyok"
+     ],
+     []
+    ],
+    [
+     [
+      "id_bya5"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_346h"
+     ]
+    ],
+    [
+     [
+      "id_346h"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.02929118433931935,
+    0.2724279750706013,
+    0.3334192144324078,
+    0.3005881368942864,
+    0.3451803261690619
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: id_bya5 -> id_eyok ; k1 * id_bya5\nR2: id_eyok -> id_bya5 ; k2 * id_eyok\nR3: id_eyok -> id_346h [id_i3vs] ; V3 * id_i3vs * id_eyok / (K3 + id_eyok)\nparams: k1 = 0.001, k2 = 0.0002, V3 = 0.05, K3 = 20\n```",
+   "keys": [
+    [
+     [
+      "id_bya5"
+     ],
+     [
+      "id_eyok"
+     ]
+    ],
+    [
+     [
+      "id_eyok"
+     ],
+     [
+      "id_bya5"
+     ]
+    ],
+    [
+     [
+      "id_eyok"
+     ],
+     [
+      "id_346h"
+     ]
+    ]
+   ],
+   "errors": [
+    0.07268467999288777,
+    0.2418905425327938,
+    0.18293172859448334,
+    0.1413295399305421,
+    0.42255476334859887
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.057901538387379325,
+     "admitted": true
+    }
+   ],
+   "wall_s": 7.5
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.05355973425700379,
+     "admitted": true
+    }
+   ],
+   "wall_s": 14.8
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.008768908772959041,
+     "admitted": true
+    }
+   ],
+   "wall_s": 8.0
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.07268467999288777,
+     "admitted": true
+    }
+   ],
+   "wall_s": 8.1
+  }
+ ]
+}

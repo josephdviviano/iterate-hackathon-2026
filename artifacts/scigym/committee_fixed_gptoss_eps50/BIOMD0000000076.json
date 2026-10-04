@@ -1,0 +1,290 @@
+{
+ "system": "BIOMD0000000076",
+ "arm": "committee_fixed",
+ "model": "gptoss",
+ "k": 4,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 3,
+ "n_truth_reactions": 2,
+ "n_members": 4,
+ "n_admitted": 4,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_majority": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_best_member": 0.5,
+ "ste_medoid": 0.04026106938100419,
+ "ste_partial": 0.333000333000333,
+ "spread": 0.6666666666666666,
+ "n_distinct": 3,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_pham set to 5.9",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.5,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 4
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_pham set to 0.059",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.5,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 4
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_p5hv set to 151",
+   "disagreement_at_choice": null,
+   "survivors": 2,
+   "refuted": 2,
+   "resynthesized": 2,
+   "n_admitted": 4,
+   "spread": 0.6666666666666666,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 6
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_p5hv set to 1.51",
+   "disagreement_at_choice": null,
+   "survivors": 2,
+   "refuted": 2,
+   "resynthesized": 2,
+   "n_admitted": 4,
+   "spread": 0.6666666666666666,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 8
+  }
+ ],
+ "calls": 8,
+ "wall_s": 378.0,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_pham set to 5.9",
+  "initial concentration of id_pham set to 0.059",
+  "initial concentration of id_p5hv set to 151",
+  "initial concentration of id_p5hv set to 1.51"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: -> id_4g8t ; k_prod\nR2: id_4g8t -> ; k_deg * id_4g8t\nparams: k_prod = 0.4565, k_deg = 1.0\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_4g8t"
+     ]
+    ],
+    [
+     [
+      "id_4g8t"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.0001140607720094503,
+    0.12440924559793125,
+    0.2266684164260426,
+    0.2266684164260426,
+    0.2266684164260426
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: id_p5hv -> id_4g8t [id_pham] ; Vf * id_pham * id_p5hv / (Kf + id_p5hv)\nR2: id_4g8t -> id_p5hv [id_pham] ; Vr * id_pham * id_4g8t / (Kr + id_4g8t)\nparams: Vf = 0.03, Kf = 5, Vr = 0.02, Kr = 0.5\n```",
+   "keys": [
+    [
+     [
+      "id_p5hv"
+     ],
+     [
+      "id_4g8t"
+     ]
+    ],
+    [
+     [
+      "id_4g8t"
+     ],
+     [
+      "id_p5hv"
+     ]
+    ]
+   ],
+   "errors": [
+    8.462872716872159e-06,
+    0.1231151596285664,
+    0.205702453600081,
+    0.20571213630612287,
+    0.20560564601865947
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: -> id_4g8t [id_pham] ; Vmax * id_pham / (K + id_pham)\nparams: Vmax = 0.87, K = 0.53\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_4g8t"
+     ]
+    ]
+   ],
+   "errors": [
+    0.09993234688904175,
+    0.11262646469993019,
+    0.179469476107014,
+    0.179469476107014,
+    0.179469476107014
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: -> id_4g8t [id_pham] ; Vmax * id_pham / (Km + id_pham)\nR2: id_4g8t -> ; k_deg * id_4g8t\nparams: Vmax = 1.165, Km = 0.915, k_deg = 1.0\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_4g8t"
+     ]
+    ],
+    [
+     [
+      "id_4g8t"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.02160280760843405,
+    0.020810096638608985,
+    0.05471149781363684,
+    0.05471149781363684,
+    0.05471149781363684
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.0001140607720094503,
+     "admitted": true
+    }
+   ],
+   "wall_s": 6.9
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.00011405780404929275,
+     "admitted": true
+    }
+   ],
+   "wall_s": 13.7
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.00011405839124021264,
+     "admitted": true
+    }
+   ],
+   "wall_s": 10.3
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 8.462872716872159e-06,
+     "admitted": true
+    }
+   ],
+   "wall_s": 7.2
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 1,
+     "max_error": 0.2942831389859679,
+     "admitted": true
+    }
+   ],
+   "wall_s": 26.2
+  },
+  {
+   "seed": "Consider competition: two reactions that consume the same species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.04637935053736303,
+     "admitted": true
+    }
+   ],
+   "wall_s": 53.7
+  },
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 1,
+     "max_error": 0.179469476107014,
+     "admitted": true
+    }
+   ],
+   "wall_s": 41.3
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.05471149781363684,
+     "admitted": true
+    }
+   ],
+   "wall_s": 64.1
+  }
+ ]
+}

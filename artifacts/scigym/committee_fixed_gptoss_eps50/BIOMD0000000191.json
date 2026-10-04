@@ -1,0 +1,282 @@
+{
+ "system": "BIOMD0000000191",
+ "arm": "committee_fixed",
+ "model": "gptoss",
+ "k": 4,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 3,
+ "n_truth_reactions": 5,
+ "n_members": 4,
+ "n_admitted": 4,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.3333333333333333,
+  "recall": 0.2,
+  "f1": 0.25
+ },
+ "rms_majority": {
+  "precision": 0.3333333333333333,
+  "recall": 0.2,
+  "f1": 0.25
+ },
+ "rms_best_member": 0.4444444444444445,
+ "ste_medoid": 0.40853474526908323,
+ "ste_partial": 0.661507328318263,
+ "spread": 0.525,
+ "n_distinct": 4,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_qdet set to 10",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.525,
+   "rms_medoid_f1": 0.25,
+   "rms_majority_f1": 0.25,
+   "calls": 4
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_qdet set to 0.1",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.525,
+   "rms_medoid_f1": 0.25,
+   "rms_majority_f1": 0.25,
+   "calls": 4
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_9456 set to 3300",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.525,
+   "rms_medoid_f1": 0.25,
+   "rms_majority_f1": 0.25,
+   "calls": 4
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_9456 set to 33",
+   "disagreement_at_choice": null,
+   "survivors": 4,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 4,
+   "spread": 0.525,
+   "rms_medoid_f1": 0.25,
+   "rms_majority_f1": 0.25,
+   "calls": 4
+  }
+ ],
+ "calls": 4,
+ "wall_s": 478.6,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_qdet set to 10",
+  "initial concentration of id_qdet set to 0.1",
+  "initial concentration of id_9456 set to 3300",
+  "initial concentration of id_9456 set to 33"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: -> id_qdet ; k0\nR2: id_qdet -> id_htec [id_9456] ; k1 * id_9456 * id_qdet\nparams: k0 = 4.2, k1 = 4.07e-5\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_qdet"
+     ]
+    ],
+    [
+     [
+      "id_qdet"
+     ],
+     [
+      "id_htec"
+     ]
+    ]
+   ],
+   "errors": [
+    0.13731807416908545,
+    0.13449298515041505,
+    0.1377459840833911,
+    0.4572416352750559,
+    0.4293237268152051
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: -> id_qdet [id_9456] ; V1*id_9456/(K1 + id_qdet)\nR2: id_qdet -> ; k1*id_qdet\nR3: id_qdet -> id_htec [id_9456] ; V2*id_9456*id_qdet/(K2 + id_qdet)\nparams: V1 = 500, K1 = 100, k1 = 0.1, V2 = 0.05, K2 = 150\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_qdet"
+     ]
+    ],
+    [
+     [
+      "id_qdet"
+     ],
+     []
+    ],
+    [
+     [
+      "id_qdet"
+     ],
+     [
+      "id_htec"
+     ]
+    ]
+   ],
+   "errors": [
+    0.41279790579295916,
+    0.41246720153438793,
+    0.412851148681475,
+    0.35117555928758054,
+    0.3937551288287695
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: -> id_qdet [id_9456] ; V1 * id_9456 / (K1 + id_9456)\nR2: id_qdet -> ; k2 * id_qdet\nR3: -> id_htec [id_9456] ; V3 * id_9456 / (K3 + id_9456)\nR4: id_htec -> ; k4 * id_htec\nparams: V1 = 10, K1 = 100, k2 = 0.02, V3 = 30, K3 = 100, k4 = 0.015\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_qdet"
+     ]
+    ],
+    [
+     [
+      "id_qdet"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_htec"
+     ]
+    ],
+    [
+     [
+      "id_htec"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.005443942480119072,
+    0.0054179072361352,
+    0.005588452566356423,
+    0.33943953548796846,
+    0.4305382694872038
+   ],
+   "admitted": true
+  },
+  {
+   "text": "```text\nR1: -> id_qdet [id_9456] ; V1 * id_9456 / (K1 + id_9456)\nR2: id_qdet -> ; k2 * id_qdet\nR3: id_qdet -> id_htec [id_9456] ; V3 * id_9456 * id_qdet / (K3 + id_qdet)\nR4: id_htec -> id_qdet [id_9456] ; V4 * id_9456 * id_htec / (K4 + id_htec)\n\nparams: V1 = 5, K1 = 10, k2 = 0.01, V3 = 0.8, K3 = 20, V4 = 0.2, K4 = 200\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_qdet"
+     ]
+    ],
+    [
+     [
+      "id_qdet"
+     ],
+     []
+    ],
+    [
+     [
+      "id_qdet"
+     ],
+     [
+      "id_htec"
+     ]
+    ],
+    [
+     [
+      "id_htec"
+     ],
+     [
+      "id_qdet"
+     ]
+    ]
+   ],
+   "errors": [
+    0.020745816523115638,
+    0.02024035180086101,
+    0.02080790104313902,
+    0.32451338491601783,
+    0.3526785910600248
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 2,
+     "max_error": 0.1367957688308844,
+     "admitted": true
+    }
+   ],
+   "wall_s": 8.9
+  },
+  {
+   "seed": "Consider that some species act as enzymes or regulators: put them in brackets with saturating kinetics.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.09725310771077278,
+     "admitted": true
+    }
+   ],
+   "wall_s": 11.1
+  },
+  {
+   "seed": "Consider synthesis from nothing and degradation to nothing for species whose level changes without a visible partner.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.00544359886039299,
+     "admitted": true
+    }
+   ],
+   "wall_s": 7.3
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 4,
+     "max_error": 0.16663891132088493,
+     "admitted": true
+    }
+   ],
+   "wall_s": 13.8
+  }
+ ]
+}

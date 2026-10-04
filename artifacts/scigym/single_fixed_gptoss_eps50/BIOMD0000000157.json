@@ -1,0 +1,157 @@
+{
+ "system": "BIOMD0000000157",
+ "arm": "single_fixed",
+ "model": "gptoss",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 3,
+ "n_truth_reactions": 6,
+ "n_members": 1,
+ "n_admitted": 1,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.2,
+  "recall": 0.16666666666666666,
+  "f1": 0.1818181818181818
+ },
+ "rms_majority": {
+  "precision": 0.2,
+  "recall": 0.16666666666666666,
+  "f1": 0.1818181818181818
+ },
+ "rms_best_member": 0.1818181818181818,
+ "ste_medoid": 0.34804777745235793,
+ "ste_partial": 0.6236273473563895,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_x8lp set to 8",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.1818181818181818,
+   "rms_majority_f1": 0.1818181818181818,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_x8lp set to 0.08",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.1818181818181818,
+   "rms_majority_f1": 0.1818181818181818,
+   "calls": 1
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_ddfe set to 1",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.1818181818181818,
+   "rms_majority_f1": 0.1818181818181818,
+   "calls": 1
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_ddfe set to 0.01",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.1818181818181818,
+   "rms_majority_f1": 0.1818181818181818,
+   "calls": 1
+  }
+ ],
+ "calls": 1,
+ "wall_s": 108.3,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_x8lp set to 8",
+  "initial concentration of id_x8lp set to 0.08",
+  "initial concentration of id_ddfe set to 1",
+  "initial concentration of id_ddfe set to 0.01"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: id_x8lp -> id_ddfe ; k1 * id_x8lp\nR2: id_ddfe -> id_y5nu ; k2 * id_ddfe\nR3: id_y5nu -> id_x8lp ; k3 * id_y5nu\nR4: -> id_x8lp ; k0\nR5: id_y5nu -> ; k4 * id_y5nu\nparams: k0 = 0.05, k1 = 0.8, k2 = 0.7, k3 = 0.6, k4 = 0.1\n```",
+   "keys": [
+    [
+     [
+      "id_x8lp"
+     ],
+     [
+      "id_ddfe"
+     ]
+    ],
+    [
+     [
+      "id_ddfe"
+     ],
+     [
+      "id_y5nu"
+     ]
+    ],
+    [
+     [
+      "id_y5nu"
+     ],
+     [
+      "id_x8lp"
+     ]
+    ],
+    [
+     [],
+     [
+      "id_x8lp"
+     ]
+    ],
+    [
+     [
+      "id_y5nu"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.3383760940489426,
+    0.4835098987441448,
+    0.3392277187489274,
+    0.06089025231888065,
+    0.36232478225229664
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 5,
+     "max_error": 0.33259658149116916,
+     "admitted": true
+    }
+   ],
+   "wall_s": 3.8
+  }
+ ]
+}

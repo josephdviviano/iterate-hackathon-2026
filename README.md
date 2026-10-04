@@ -25,6 +25,15 @@ every cell matches). Seven levels of six ARC-AGI-3 games, temporal 40% split,
 | 4. Does resynthesis after the probes help? | Yes on two of three levels and live: m0r0 0.64 to 0.91 and sk48 0.83 to 0.98 on rows no arm saw, live ar25 L3 0.84 to 1.00 over 75 moves; ka59 loses, 0.95 to 0.86, where round 1 was already right on 40 of 42 rows. A passive control with the same rows in time order and no counterexample lifts as much (1.000 on both lifting levels), so the gain is from the observations the loop collects. | R36 |
 | 5. Does naming the new mechanism help more? | No: mechanism statement 0.976, object diff 0.929, no counterexample 1.000 on sk48; 0.909 against 1.000 on m0r0. The statement narrows the committee to 1 or 2 behaviours and its disagreement AUROC falls (0.48 against 0.83). | R36 |
 
+The same committee across the four environments, one row each (RESULTS.md
+R34, O9, O10, B4, B5): score against a single program, whether disagreement
+predicts error, and the error rate when the committee agrees.
+`uv run python -m committee.headline` draws it from the rows of
+`uv run python -m committee.table` (`artifacts/uncertainty_table.{md,csv}`,
+every committee result with the same columns), so both follow new results.
+
+![A committee of programs across four environments](artifacts/figures/headline.png)
+
 Figures for the five questions, the ablations and the frame examples:
 `uv run python -m committee.figures` writes `artifacts/figures/*.png`.
 `uv run python -m committee.summary` and `uv run python -m committee.calibrate
@@ -262,7 +271,30 @@ P(signal), P(driver) per feature and p(y | x). Disagreement over driver sets
 decides when to buy more data and when to stop. Post-outcome features are
 filtered before any hypothesis sees the data. Rewards: the benchmark score per
 episode, a Brier calibration term and the potential-based drop in disagreement.
-See RESULTS.md entries O1 to O9. Toy and generated worlds are not benchmark
+
+The ARC synthesizer runs on the same worlds (`onc.synth`): for each world a
+code model (Qwen3-Coder-30B on Modal) writes K seeded hypothesis programs, each
+a `design(feats) -> Design` function with the same contract as the eight
+templates. A checker compiles the program in a restricted namespace, runs it on
+the data and on a training fold, and sends its report back for repair (three
+rounds). Admitted programs enter the same committee: cross-validated log loss
+decides admission, likelihood weights the vote, and the regression is fitted
+outside the program, so a program chooses what to fit and cannot tabulate
+predictions. Programs are cached per world under `artifacts/onc/synth`, so the
+evaluation replays without model calls. Conditions: `synth:K:MODEL` (K
+programs with the null hypothesis), `both:K:MODEL` (programs and templates),
+`synth:1:MODEL` (one program, the single-model arm).
+
+Result on the released worlds (O9, O10): the template committee scores
+Discovery Score 0.44 on the benchmark's first-pass set of 120 full-access
+worlds, against 0.37 for the best benchmark baseline, 0.29 for the published
+GPT 6 Luna run and 0.15 for a committee of eight Qwen-written programs; on
+all 995 worlds it scores 0.39. Devin-written programs reach 0.30 on 30
+worlds, and four seeds score as one because they converge on one design.
+Mixing programs into the template committee lowers the score through
+restraint on null worlds: cross-validated log loss admits a program that
+predicts well, and a predictive design is not a causal claim.
+See RESULTS.md entries O1 to O10. Toy and generated worlds are not benchmark
 results. The benchmark worlds are release downloads of ONC-AGI v1.0.0rc3, not
 tracked files; fetch them once into the ignored store directory:
 
@@ -284,7 +316,10 @@ uv run python -m onc.train --store artifacts/onc/dev --arm all --iterations 12  
 uv run python -m onc.evaluate --store artifacts/onc/benchmark/full-access --mode full --weighting likelihood --first 120 --out artifacts/onc/eval_bench --tag first120   # committee on the benchmark's first-pass set (O9)
 uv run python -m onc.evaluate --store artifacts/onc/benchmark/full-access --mode full --weighting likelihood --out artifacts/onc/eval_bench --tag all           # committee on all 995 full-access worlds (O9)
 uv run python -m onc.baselines --store artifacts/onc/benchmark/full-access --first 120 --out artifacts/onc/baselines_bench_first120_full-access               # the benchmark's baselines and cheaters on the same set (O9)
-uv run pytest tests/test_onc_committee.py tests/test_onc_rewards.py tests/test_onc_worlds.py tests/test_onc_policy.py tests/test_onc_arc_lookup.py
+uv run python -m onc.synth --store artifacts/onc/benchmark/full-access --first 120 --k 8 --model qwen --workers 16                                        # synthesize 8 programs per world (O10)
+uv run python -m committee.table                                                                                                                 # one table of every committee result, same columns per benchmark (artifacts/uncertainty_table.md)
+uv run python -m onc.evaluate --store artifacts/onc/benchmark/full-access --mode full --weighting likelihood --first 120 --members synth:8:qwen,both:8:qwen,synth:1:qwen --out artifacts/onc/eval_bench --tag synth_first120   # synthesized committees and the single program (O10)
+uv run pytest tests/test_onc_committee.py tests/test_onc_rewards.py tests/test_onc_worlds.py tests/test_onc_policy.py tests/test_onc_arc_lookup.py tests/test_onc_synth.py
 ```
 
 Credits for this part:
@@ -432,8 +467,10 @@ the systems the committee gets wrong at AUROC 0.85, and acting on the agreed
 half gives F1 0.35 instead of 0.24. At the admission tolerance 0.15 at most
 one member survived an experiment, so the loop resynthesized the whole
 committee at every step; `scigym.ablations` shows about 40 percent would be
-admitted at 0.5, and `--eps 0.5` reruns the arms there (not run before the
-deadline).
+admitted at 0.5. At 0.5 (B7) two to three members survive the first
+experiment, the probe committee is highest on both models (0.22 against 0.18
+to 0.19 for one member) with overlapping intervals, and removing the
+counterexample text drops the probe arm to 0.17 on Qwen.
 
 ```
 uv run modal run -m scigym.modal_app --arm committee_probe --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40

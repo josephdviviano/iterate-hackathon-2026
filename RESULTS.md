@@ -2299,7 +2299,23 @@ of P(driver) 0.57 (mean list 2.9 features against 2.15 true; the committee
 lists extra features at high probability, as on the dev worlds). No leaks.
 Find is 1 on 41 of 98 signal worlds and 0 on 30.
 
-All 995 full-access worlds: pending (see the row below when it lands).
+All 995 full-access worlds, one run, 1,609 s:
+
+| Agent, 995 full-access worlds (796 signal, 199 null) | DS | 95% | Find | Restraint | Abstain on signal | Restrain on null | Leak |
+|---|---|---|---|---|---|---|---|
+| committee (ours) | 0.391 | [0.35, 0.43] | 0.50 | 0.78 | 0.11 | 0.89 | 0.00 |
+
+The score is stable across the seven cohort sources: Find on signal worlds
+0.46 (TCGA pan-cancer) to 0.55 (METABRIC, NHANES), restraint on nulls 0.83
+to 0.93. Per role, Find on signal worlds is 0.59 to 0.71 on module,
+generating, mediator, leak, confounder, shift and hidden cause; 0.52 on wrong
+type; 0.29 to 0.33 on collider and interaction; 0.21 on mixture and 0.16 on
+effect modifier, where the committee abstains on a third of the worlds.
+Collider nulls are restrained only 0.56 of the time. ECE of P(signal) 0.08,
+of P(driver) 0.58. The benchmark's baselines were not rerun on the 995; the
+first-pass table above is the like-for-like comparison. Command: the
+first-pass command without `--first 120`, `--tag all`; output
+`artifacts/onc/eval_bench_all_full-access.{json,md}`.
 
 Runs: 1 per agent, deterministic. Split: public_train only. Baseline: the
 benchmark's baselines and cheaters on the same 120 worlds and scorer.
@@ -2311,7 +2327,121 @@ artifacts/onc/benchmark/full-access --mode full --weighting likelihood
 `artifacts/onc/eval_bench_first120_full-access.{json,md}`,
 `artifacts/onc/baselines_bench_first120_full-access.{json,md}`. The world
 store is a release download (README, ONC section). Commit: uncommitted,
-base add7c5b.
+base 03607c4.
+
+## O10. The ARC synthesizer on the benchmark worlds: committees of model-written hypothesis programs
+
+Method (`onc.synth`). For each world a model writes K seeded hypothesis
+programs, each a `design(feats) -> Design` function with the contract of the
+eight templates (drivers claimed, columns, products and loadings to fit). The
+model sees the world card, per-feature statistics of the revealed baseline
+data (Welch t, p, AUC, correlated pairs) and one seed hypothesis (analyst,
+direct, sparse, confounder, upstream, interaction, block, skeptic). A checker
+compiles the program in a restricted namespace (whitelisted builtins and
+imports, no file or process access), runs it on all patients and on a 60
+percent fold, validates the Design (ids in the data, at most 4 drivers, at
+most 12 terms) and returns its report for repair, three rounds at most. The
+admitted programs enter the committee of O2 unchanged: cross-validated log
+loss admits, likelihood weights, one vote per distinct driver set, the leak
+filter, the same submission rule. The regression is fitted outside the
+program and inside each fold, so a program chooses what to fit and cannot
+tabulate predictions. Programs are cached per world
+(`artifacts/onc/synth/<model>/<world>/<seed>.json`), so every evaluation
+below replays without a model call.
+
+Synthesis. Qwen3-Coder-30B-A3B-FP8 (vLLM, one H100 on Modal, 16 workers):
+first 120 full-access worlds, 8 seeds, 958 programs in 20 minutes (the
+process was stopped with two `upstream` programs unfinished: a runaway
+program held the checker), 691 admissible (0.72; interaction 0.89, direct
+0.88, confounder 0.82, skeptic 0.81, sparse, upstream and analyst 0.62, block
+0.51), 1.9 rounds and 19 s per program, 5.8 M prompt and 1.6 M completion
+tokens. Every world has 2 to 8 admissible programs (median 6). Devin (one
+session per program, the data attached as CSV, structured output, 2 ACU cap,
+10 sessions at a time): first 30 worlds, 4 seeds, 120 programs in 25 minutes,
+all 120 admissible at the first return, 94 to 141 s per session. Common
+rejections: more than 12 design terms (24), more than 4 drivers (13), a
+raised exception (3).
+
+Discovery Score, first 120 full-access worlds (98 signal, 22 null), scorer
+`scorer-1.0+473dec6f`:
+
+| Condition | DS | 95% | Find | Restraint | Abstain on signal | Restrain on null | List length | ECE P(sig) | ECE P(drv) | Members / world | Weight on programs |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| templates, committee of 8 (O9) | 0.438 | [0.33, 0.54] | 0.54 | 0.81 | 0.10 | 0.91 | 2.9 | 0.08 | 0.57 | | 0.00 |
+| templates and 8 Qwen programs | 0.285 | [0.17, 0.41] | 0.52 | 0.55 | 0.04 | 0.59 | 2.9 | 0.08 | 0.60 | 6.0 | 0.31 |
+| 8 Qwen programs | 0.147 | [0.08, 0.22] | 0.30 | 0.49 | 0.19 | 0.68 | 2.6 | 0.16 | 0.66 | 4.3 | 0.77 |
+| 1 Qwen program (analyst) | 0.053 | [0.02, 0.09] | 0.15 | 0.36 | 0.64 | 1.00 | 3.4 | 0.52 | 0.80 | 1.5 | 0.31 |
+| forward_score, best benchmark baseline (O9) | 0.373 | [0.27, 0.48] | 0.51 | 0.73 | 0.22 | 0.95 | | | | | |
+
+First 30 full-access worlds (23 signal, 7 null), the Devin arm:
+
+| Condition | DS | 95% | Find | Restraint | Abstain on signal | Restrain on null | List length | ECE P(drv) | Members / world | Weight on programs |
+|---|---|---|---|---|---|---|---|---|---|---|
+| templates, committee of 8 | 0.472 | [0.29, 0.65] | 0.54 | 0.87 | 0.13 | 1.00 | 3.0 | 0.43 | 3.4 | 0.00 |
+| templates and 4 Devin programs | 0.406 | [0.18, 0.68] | 0.56 | 0.73 | 0.13 | 0.86 | 2.5 | 0.38 | 4.3 | 0.31 |
+| 4 Devin programs | 0.299 | [0.09, 0.50] | 0.47 | 0.64 | 0.22 | 0.86 | 1.8 | 0.31 | 2.2 | 0.66 |
+| 1 Devin program (analyst) | 0.298 | [0.10, 0.52] | 0.47 | 0.64 | 0.22 | 0.86 | 1.9 | 0.35 | 1.7 | 0.61 |
+| templates and 8 Qwen programs | 0.240 | [0.00, 0.52] | 0.56 | 0.43 | 0.00 | 0.43 | 2.6 | 0.48 | 6.0 | 0.33 |
+| 4 Qwen programs | 0.122 | [0.02, 0.24] | 0.30 | 0.41 | 0.30 | 0.71 | 2.4 | 0.65 | 3.2 | 0.68 |
+| 8 Qwen programs | 0.061 | [-0.05, 0.21] | 0.29 | 0.21 | 0.22 | 0.43 | 2.3 | 0.62 | 4.4 | 0.75 |
+| 1 Qwen program (analyst) | 0.064 | [0.01, 0.15] | 0.18 | 0.35 | 0.65 | 1.00 | 3.0 | 0.67 | 1.7 | 0.25 |
+
+Reading. The synthesizer transfers mechanically and not in score. (1) The
+hand-written templates beat every committee of model-written programs: 0.44
+against 0.15 for eight Qwen programs on 120 worlds, and 0.47 against 0.30
+for four Devin programs on 30. (2) The committee over programs does not
+repair a weak synthesizer. One Qwen program abstains on 64 percent of signal
+worlds, because against the null hypothesis it rarely wins the likelihood
+weight; eight programs lift Find from 0.15 to 0.30 and cost restraint on
+nulls (1.00 to 0.68). (3) With a stronger synthesizer the committee adds
+nothing: the four Devin seeds collapse to about two distinct driver sets per
+world (all four write a forward selection with a likelihood-ratio test and a
+correlation filter), so four programs score as one (0.299 against 0.298).
+The ARC committee's gain came from members that disagree; seeds do not make
+Devin disagree on these worlds. (4) Mixing programs into the template
+committee lowers the score (0.44 to 0.29 with Qwen, 0.47 to 0.41 with
+Devin) through restraint on nulls (0.91 to 0.59 and 1.00 to 0.86) while Find
+holds or rises (0.54 to 0.52 and 0.56). The cause is the admission rule:
+cross-validated log loss admits a program whose design predicts the outcome,
+and a program that fits many columns predicts a null world's outcome as well
+as the null hypothesis does, is admitted within tolerance, and votes for
+signal with a driver list. The templates were built so that a design's
+columns are its claimed drivers and the null wins when no column helps; the
+programs separate what they fit from what they claim. Predictive admission
+is not causal admission. This is the reward-design finding of the build:
+the committee's reward must score the claim, not the fit, before
+model-written members can be trusted. (5) Devin programs alone are within
+the interval of the benchmark's best baseline (forward_score 0.37 on 120)
+and above every other baseline; Qwen programs are not. (6) No condition
+leaks a post-outcome feature: the leak filter is applied to the input, not
+learned, and holds for model-written members.
+
+Runs: 1 per condition, deterministic given the cache (seed 0). Synthesis:
+1 run per program, temperature 0.7 (Qwen). Split: public_train only, no
+tuning on these worlds (the checker's limits were set on the toy worlds).
+Baselines: the template committee (O9) and the benchmark's baselines on the
+same worlds and scorer. Commands: `uv run python -m onc.synth --store
+artifacts/onc/benchmark/full-access --first 120 --k 8 --model qwen --workers
+16`; `... --first 30 --k 4 --model devin --workers 10`; `uv run python -m
+onc.evaluate --store artifacts/onc/benchmark/full-access --mode full
+--weighting likelihood --first 120 --members synth:8:qwen,both:8:qwen,synth:1:qwen
+--out artifacts/onc/eval_bench --tag synth_first120`; `... --first 30 --members
+disagreement,synth:8:qwen,synth:4:qwen,synth:1:qwen,synth:4:devin,synth:1:devin,both:4:devin,both:8:qwen
+--tag synth_first30`. Outputs `artifacts/onc/eval_bench_synth_first{120,30}_full-access.{json,md}`,
+`artifacts/onc/synth/{qwen,devin}/`, logs `artifacts/onc/synth_bench_*.log`.
+Every template, Qwen seed and Devin seed was also run alone with the null
+hypothesis (`single:*` conditions, outputs
+`artifacts/onc/eval_bench_singles_first{120,30}_full-access.json`): on the
+first 120, single templates score 0.02 to 0.35 (mean 0.18, best 0.35), single
+Qwen programs 0.01 to 0.13 (mean 0.05); on the first 30, single Devin programs
+0.24 to 0.30 (mean 0.27). `committee.table` collects these rows with every
+other benchmark's committee in one table, the same columns throughout
+(`artifacts/uncertainty_table.{md,csv}`): the template committee gains 0.26
+over its mean single template and 0.09 over the best; disagreement predicts a
+wrong world at AUROC 0.51 on the first 120 and 0.60 on all 995, against 0.76
+on ARC and 0.69 to 0.77 on BioProt; the four Devin programs reach 0.69.
+Tests: `tests/test_onc_synth.py` (checker admits and rejects; a cached program
+votes), both mutant-checked. Commit: uncommitted, base 03607c4.
 
 ## IF1. Idea-filter committee, backtest on the speedrun programme's evaluated ideas
 
@@ -3229,3 +3359,63 @@ Reading:
 | Baseline | The single member (no spread); the ARC committee on the same measures (R35) |
 | Command | `uv run python -m scigym.calibration --model qwen` and `--model gptoss` (writes `artifacts/scigym/calibration_<model>.json`) |
 | Commit | this commit |
+
+## B7. SciGym at admission tolerance 0.5: the regime where members survive, and the no-counterexample control
+
+B5's arms rerun with `--eps 0.5` (same 30 systems, k 4, budget 4, 2 rounds,
+40 calls), plus `committee_probe_nocx` on Qwen: the probe arm with refuted
+members resynthesized on the data alone, no counterexample text. Systems
+that hit the 5,400 s container limit are missing (Qwen probe 4, no-cx 3,
+fixed 1); the paired set is 30 (gpt-oss) and 26 (Qwen).
+
+| Model | Arm | RMS F1 [95% CI] | best member | STE (empty 0.50 to 0.54) | systems with an admitted member | survivors after experiment 1 / 4 | calls | AUROC spread vs wrong |
+|---|---|---|---|---|---|---|---|---|
+| gpt-oss | committee, probe | 0.219 [0.140, 0.306] | 0.313 | 0.438 | 0.53 | 2.23 / 0.97 | 21 | 0.70 |
+| gpt-oss | committee, fixed | 0.187 [0.109, 0.273] | 0.285 | 0.371 | 0.70 | 2.83 / 2.17 | 14 | 0.50 |
+| gpt-oss | single member | 0.191 [0.117, 0.275] | 0.191 | 0.353 | 0.60 | | 3 | none |
+| Qwen | committee, probe | 0.215 [0.142, 0.289] | 0.298 | 0.495 | 0.42 | 2.12 / 0.58 | 23 | 0.69 |
+| Qwen | committee, fixed | 0.190 [0.122, 0.264] | 0.276 | 0.348 | 0.58 | 2.81 / 1.58 | 16 | 0.72 |
+| Qwen | single member | 0.184 [0.102, 0.269] | 0.184 | 0.512 | 0.35 | | 5 | none |
+| Qwen | committee, probe, no counterexample | 0.171 [0.103, 0.241] | 0.254 | 0.509 | 0.38 | 2.15 / 0.81 | 24 | 0.61 |
+
+Paired probe minus fixed, RMS F1: gpt-oss +0.033 [-0.033, +0.104] (7 wins,
+8 losses, 15 ties); Qwen +0.025 [-0.024, +0.079] (8, 5, 13). Probe minus
+no-counterexample on Qwen: 0.215 against 0.171.
+
+Calibration (`scigym.calibration --tag _eps50`): AUROC of spread against a
+wrong answer 0.69 to 0.75 on Qwen, 0.70 (probe) and 0.50 (fixed) on gpt-oss;
+conformal coverage 0.93 to 0.98 at target 0.90, with 75 to 98 percent
+abstention. Reaction level: AUROC 0.50 to 0.65; unanimous reactions right 9
+to 31 percent of the time.
+
+Reading:
+
+1. The regime changed as intended: two to three of four members survive the
+   first experiment (none at 0.15), so selection operates and the probe arm
+   refutes faster than the fixed arm (survivors after four experiments 0.6 to
+   1.0 against 1.6 to 2.2), which is the disagreement probe doing its job.
+2. Question 1, again: the probe committee is highest on both models (0.215
+   to 0.219 against 0.184 to 0.191 for one member) and its best member
+   reaches 0.30 to 0.31, but every interval overlaps and the paired
+   differences cross zero. Not established at 26 to 30 systems.
+3. Question 5 analog: the counterexample text helps here, unlike ARC (R36).
+   With the same probe policy, removing it drops Qwen from 0.215 to 0.171,
+   below the single member. On SciGym the text names the species whose
+   trajectory the member missed; on the ARC frame contract the observations
+   alone carried the repair. One model, one batch, overlapping intervals:
+   a direction, not a result.
+4. Question 3 holds weakly at the system level (0.69 to 0.75 except gpt-oss
+   fixed) and stays weak per reaction, as in B6.
+5. Trajectory error is worse for the probe arms on both models (0.44 to 0.50
+   against 0.35 to 0.37 fixed), as at 0.15: experiments chosen at the
+   extremes fit models that transfer less to the paper's held-out
+   perturbations.
+
+| Item | Value |
+|---|---|
+| Metric | As B5 and B6 |
+| Runs | 7 arms x 30 systems; 26 to 30 finished per arm |
+| Split | As B5 |
+| Baseline | Single member; the same committee on a fixed order; B5 at tolerance 0.15 |
+| Command | `uv run modal run -m scigym.modal_app --arm committee_probe,committee_fixed,single_fixed,committee_probe_nocx --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40 --eps 0.5` (gpt-oss without `_nocx`); `SCIGYM_EPS=0.5 uv run python -m scigym.report --model qwen --tag _eps50`; `... scigym.calibration ... --tag _eps50` |
+| Commit | this commit (artifacts `artifacts/scigym/*_eps50/`) |

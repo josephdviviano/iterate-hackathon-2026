@@ -1,0 +1,164 @@
+{
+ "system": "BIOMD0000000044",
+ "arm": "single_fixed",
+ "model": "gptoss",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 4,
+ "n_truth_reactions": 8,
+ "n_members": 1,
+ "n_admitted": 1,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.5,
+  "recall": 0.375,
+  "f1": 0.42857142857142855
+ },
+ "rms_majority": {
+  "precision": 0.5,
+  "recall": 0.375,
+  "f1": 0.42857142857142855
+ },
+ "rms_best_member": 0.42857142857142855,
+ "ste_medoid": 0.21541803870717446,
+ "ste_partial": 0.4872029074256147,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_f307 set to 3.6",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.42857142857142855,
+   "rms_majority_f1": 0.42857142857142855,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_f307 set to 0.036",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.42857142857142855,
+   "rms_majority_f1": 0.42857142857142855,
+   "calls": 1
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_jrpy set to 0.9373",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.42857142857142855,
+   "rms_majority_f1": 0.42857142857142855,
+   "calls": 1
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_jrpy set to 9.373",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.42857142857142855,
+   "rms_majority_f1": 0.42857142857142855,
+   "calls": 1
+  }
+ ],
+ "calls": 1,
+ "wall_s": 83.9,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_f307 set to 3.6",
+  "initial concentration of id_f307 set to 0.036",
+  "initial concentration of id_jrpy set to 0.9373",
+  "initial concentration of id_jrpy set to 9.373"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```text\nR1: id_f307 -> id_jrpy ; k1 * id_f307\nR2: id_jrpy -> id_f307 ; k2 * id_jrpy\nR3: id_f307 -> ; k3 * id_f307\nR4: -> id_f307 ; k4\nR5: id_f307 + id_hqon -> id_vgm1 ; k5 * id_f307 * id_hqon\nR6: id_vgm1 -> ; k6 * id_vgm1\nparams: k1 = 0.3, k2 = 0.2, k3 = 0.05, k4 = 0.1, k5 = 0.001, k6 = 0.07\n```",
+   "keys": [
+    [
+     [
+      "id_f307"
+     ],
+     [
+      "id_jrpy"
+     ]
+    ],
+    [
+     [
+      "id_jrpy"
+     ],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [
+      "id_f307"
+     ],
+     []
+    ],
+    [
+     [],
+     [
+      "id_f307"
+     ]
+    ],
+    [
+     [
+      "id_f307",
+      "id_hqon"
+     ],
+     [
+      "id_vgm1"
+     ]
+    ],
+    [
+     [
+      "id_vgm1"
+     ],
+     []
+    ]
+   ],
+   "errors": [
+    0.20580147551641892,
+    0.2310171996991801,
+    0.2106057315381646,
+    0.224300369748669,
+    0.2481704659634252
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.20580147551641892,
+     "admitted": true
+    }
+   ],
+   "wall_s": 6.3
+  }
+ ]
+}

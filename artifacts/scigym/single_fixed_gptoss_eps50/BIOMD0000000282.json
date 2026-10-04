@@ -1,0 +1,191 @@
+{
+ "system": "BIOMD0000000282",
+ "arm": "single_fixed",
+ "model": "gptoss",
+ "k": 1,
+ "budget": 4,
+ "rounds": 2,
+ "n_species": 6,
+ "n_truth_reactions": 3,
+ "n_members": 1,
+ "n_admitted": 1,
+ "any_admitted": true,
+ "rms_medoid": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_majority": {
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0
+ },
+ "rms_best_member": 0.0,
+ "ste_medoid": 0.45842280931566914,
+ "ste_partial": 0.5323039664343282,
+ "spread": 0.0,
+ "n_distinct": 1,
+ "steps": [
+  {
+   "t": 1,
+   "experiment": "initial concentration of id_2vrt set to 0.7397",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "experiment": "initial concentration of id_2vrt set to 7.397",
+   "disagreement_at_choice": null,
+   "survivors": 1,
+   "refuted": 0,
+   "resynthesized": 0,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 1
+  },
+  {
+   "t": 3,
+   "experiment": "initial concentration of id_rt7u set to 1",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 3
+  },
+  {
+   "t": 4,
+   "experiment": "initial concentration of id_rt7u set to 10",
+   "disagreement_at_choice": null,
+   "survivors": 0,
+   "refuted": 1,
+   "resynthesized": 1,
+   "n_admitted": 1,
+   "spread": 0.0,
+   "rms_medoid_f1": 0.0,
+   "rms_majority_f1": 0.0,
+   "calls": 5
+  }
+ ],
+ "calls": 5,
+ "wall_s": 525.9,
+ "experiments": [
+  "baseline, no perturbation",
+  "initial concentration of id_2vrt set to 0.7397",
+  "initial concentration of id_2vrt set to 7.397",
+  "initial concentration of id_rt7u set to 1",
+  "initial concentration of id_rt7u set to 10"
+ ],
+ "infeasible": [],
+ "members": [
+  {
+   "text": "```\nR1: -> id_2vrt ; k_syn\nR2: id_2vrt -> id_k4l1 [id_rt7u] ; V_k * id_rt7u * id_2vrt / (K_k + id_2vrt)\nR3: id_k4l1 -> ; k_deg * id_k4l1\nR4: id_2vrt -> id_pp0g [id_rt7u] ; V_pp * id_rt7u * id_2vrt / (K_pp + id_2vrt)\nR5: id_2vrt -> id_sxhf [id_rt7u] ; V_sx * id_rt7u * id_2vrt / (K_sx + id_2vrt)\nparams: k_syn = 0.74, V_k = 0.02, K_k = 0.5, k_deg = 0.02, V_pp = 0.05, K_pp = 0.5, V_sx = 0.03, K_sx = 0.5\n```",
+   "keys": [
+    [
+     [],
+     [
+      "id_2vrt"
+     ]
+    ],
+    [
+     [
+      "id_2vrt"
+     ],
+     [
+      "id_k4l1"
+     ]
+    ],
+    [
+     [
+      "id_k4l1"
+     ],
+     []
+    ],
+    [
+     [
+      "id_2vrt"
+     ],
+     [
+      "id_pp0g"
+     ]
+    ],
+    [
+     [
+      "id_2vrt"
+     ],
+     [
+      "id_sxhf"
+     ]
+    ]
+   ],
+   "errors": [
+    0.4623455940466445,
+    0.4366861912672609,
+    0.3876843395205393,
+    0.3855322436074054,
+    0.45890577263760274
+   ],
+   "admitted": true
+  }
+ ],
+ "synthesis": [
+  {
+   "seed": "Prefer the simplest mass-action network that explains the data.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 3,
+     "max_error": 0.16105877475581412,
+     "admitted": true
+    }
+   ],
+   "wall_s": 6.3
+  },
+  {
+   "seed": "Consider reversible pairs: a forward and a backward reaction between two species.",
+   "rounds": [
+    {
+     "round": 1,
+     "parse_error": "unknown species 'id_2vrt <' in 'R1: id_2vrt <-> id_k4l1 [id_rt7u] ; kf1 * id_rt7u * id_2vrt - kb1 * id_rt7u * id_k4l1'"
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.47032531676189837,
+     "admitted": true
+    }
+   ],
+   "wall_s": 117.5
+  },
+  {
+   "seed": "Consider a conversion chain A -> B -> C that follows the order in which species rise and fall.",
+   "rounds": [
+    {
+     "round": 1,
+     "n_reactions": 6,
+     "max_error": 0.5703085671576456,
+     "admitted": false
+    },
+    {
+     "round": 2,
+     "n_reactions": 5,
+     "max_error": 0.4623455940466445,
+     "admitted": true
+    }
+   ],
+   "wall_s": 299.6
+  }
+ ]
+}
