@@ -28,6 +28,8 @@ HYP = {
     "ema_every": 5,
     "muon_lr": 0.24,
     "muon_momentum": 0.6,
+    # Progressive resizing: (start fraction of training, resolution); last entry wins.
+    "resolutions": [[0.0, 24], [0.4, 28], [0.7, 32]],
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -263,7 +265,7 @@ def build(context: BuildContext):
     # Training runs through the compiled module; evaluation uses the eager one (same parameters).
     compiled = model
     if context.device.type == "cuda" and hyp["compile"]:
-        compiled = torch.compile(model, mode="max-autotune-no-cudagraphs")
+        compiled = torch.compile(model, mode="max-autotune-no-cudagraphs", dynamic=False)
     state = SimpleNamespace(model=model, compiled=compiled, context=context, hyp=hyp)
     # Warm up kernels and cuDNN autotuning on synthetic data; everything is reset in prepare.
     device = context.device
@@ -271,12 +273,13 @@ def build(context: BuildContext):
     if device.type == "cuda":
         opt = make_optimizer(model, hyp, bs)
         # Same layout as training batches (channels_last slices); compile guards on strides.
-        x = torch.rand(bs, 3, 32, 32, device=device, dtype=torch.float16)
-        x = x.contiguous(memory_format=torch.channels_last)
         y = torch.randint(0, context.num_classes, (bs,), device=device)
         model.train()
-        for _ in range(3):
-            train_step(compiled, opt, x, y, hyp["label_smoothing"])
+        for _, res in hyp["resolutions"]:
+            x = torch.rand(bs, 3, res, res, device=device, dtype=torch.float16)
+            x = x.contiguous(memory_format=torch.channels_last)
+            for _ in range(3):
+                train_step(compiled, opt, x, y, hyp["label_smoothing"])
         model.eval()
         with torch.inference_mode():
             for b in (1, 784, 1024):
@@ -324,6 +327,11 @@ def train(state) -> nn.Module:
     step = 0
     for epoch in range(math.ceil(hyp["epochs"])):
         epoch_images = augment(state.padded, state.flip_mask, epoch, hyp["translate"])
+        res = [r for start, r in hyp["resolutions"] if epoch >= start * hyp["epochs"]][-1]
+        if res != epoch_images.shape[-1]:
+            epoch_images = F.interpolate(
+                epoch_images, size=(res, res), mode="bilinear", antialias=True, align_corners=False
+            )
         perm = torch.randperm(n, device=state.padded.device)
         epoch_images = epoch_images[perm].contiguous(memory_format=torch.channels_last)
         epoch_labels = state.labels[perm]
