@@ -121,10 +121,17 @@ one behaviour is the warning sign.
 
 ## Demo
 
+The final results, sk48 level 2 in OPINE-World's environment (R34 to R36):
+single programs, the committee and its flag, the effect rows, exploration,
+the conformal sets, and the counterexample round against its passive and
+object-diff controls. Offline, from cached artifacts, about 2 seconds.
+
 ```
 uv sync
-uv run python -m committee.demo
+uv run python -m committee.demo --game sk48 --level 2 --train-frac 0.4 --baseline baseline_opine_devin --committee committee_opine_devin --round-condition cegis_opine_devin --passive-condition passive_opine_devin --round-conditions cegis_opine_devin,cegisobj_opine_devin
 ```
+
+The object-contract demo (R3 to R31) is `uv run python -m committee.demo`.
 
 ## Commands
 

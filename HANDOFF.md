@@ -38,7 +38,13 @@ dies, `committee.recover` collects its Devin sessions. What is done and left:
   `uv run python -m committee.live ar25 --level 3 --steps 75 --brief
   --members-dir ar25/L3_f40_probe0_live70/live_opine_devin` and compare
   with `artifacts/ar25/live/ar25_L3_f40_committee_opine_devin_seed0.json`.
-- LEFT: write R36 (rounds, passive, object-diff, live round) and the NOTES.md
+- DONE at 00:50: R36, the NOTES.md entry, README results and demo command,
+  the CLAUDE.md track table, the report doc rewritten by the five questions
+  (https://claude.ai/code/artifact/84ea4a4a-2162-4457-9525-1702a9026886, rev
+  19), every run directory committed. The demo for the pitch is the sk48 L2
+  frame_out command in README.md (2.3 s). LEFT: the user merges jdv into
+  main; the video and the submission text.
+- Earlier LEFT list, kept for the record: write R36 (rounds, passive, object-diff, live round) and the NOTES.md
   entry for this session; update README results and the CLAUDE.md track
   table to R34 to R36; rewrite the report by the five questions in the
   Claude Doc https://claude.ai/code/artifact/84ea4a4a-2162-4457-9525-1702a9026886
