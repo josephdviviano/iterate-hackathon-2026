@@ -33,3 +33,10 @@ def test_split_error_pools_the_non_unanimous_bins_by_count():
     rel = [{"bin": "unanimous", "n": 36, "error_rate": 0.1}, {"bin": "low", "n": 3, "error_rate": 0.0},
            {"bin": "medium", "n": 1, "error_rate": 1.0}, {"bin": "high", "n": 0, "error_rate": None}]
     assert split_stats(rel) == (36, 4, 0.1, 0.25)
+
+
+def test_ksweep_summary_splits_unanimous_from_split_rows():
+    from committee.ksweep import summarise
+
+    s = summarise([(0.0, False, True), (0.0, True, False), (0.5, True, True), (0.5, True, True)])
+    assert s["unanimous_error"] == 0.5 and s["split_error"] == 1.0 and s["oracle_accuracy"] == 0.75 and s["unanimous_share"] == 0.5
