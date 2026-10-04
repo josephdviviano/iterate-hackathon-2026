@@ -15,7 +15,7 @@ HYP = {
     "batch_size": 2000,
     "lr": 9.0,
     "momentum": 0.85,
-    "weight_decay": 0.012,
+    "weight_decay": 0.006,
     "bias_scaler": 64.0,
     "label_smoothing": 0.3,
     "whiten_bias_epochs": 3,
