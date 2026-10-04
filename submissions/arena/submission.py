@@ -292,6 +292,16 @@ def build(context: BuildContext):
         if hyp["freeze_stem_at"]:
             for _ in range(3):
                 train_step(compiled, opt, x, y, hyp["label_smoothing"], freeze_stem=True)
+        # One short synthetic trial warms prepare's and train's first-call costs (transfer,
+        # eigh, padding, gathers, interpolation, lookahead). prepare resets it all.
+        fake = TrainingData(
+            torch.randint(0, 256, (50000, 3, 32, 32), dtype=torch.uint8),
+            torch.randint(0, context.num_classes, (50000,)),
+        )
+        prepare(state, fake, 0)
+        state.hyp = {**hyp, "epochs": 1.0}
+        train(state)
+        state.hyp = hyp
         model.eval()
         with torch.inference_mode():
             for b in (1, 784, 1024):
