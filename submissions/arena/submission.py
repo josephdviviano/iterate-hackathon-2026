@@ -36,6 +36,7 @@ DEFAULTS = {
     "warmup": 0.23,  # fraction of steps spent ramping the learning rate up
     "final_lr": 0.07,  # learning-rate multiplier reached at the last step
     "muon_final_lr": 0.05,  # same, for the Muon groups
+    "muon_lr_32px": 1.25,  # Muon LR multiplier during the 32 px phase
     "decay_end": 0.96,  # fraction of steps at which the LR reaches its floor (then held)
     "tail_steps": 8,  # last steps use a light final EMA instead of the lookahead
     "tail_every": 4,
@@ -512,6 +513,8 @@ def _fit(state, total_steps, size=None, batch_size=None):
                 else:
                     frac = min(1.0, (seen - warmup) / (decay_end - warmup))
                     scale = (1 - frac) + final_lr * frac
+                if isinstance(opt, Muon) and step_size == 32:
+                    scale *= hyp["muon_lr_32px"]
                 for group in opt.param_groups:
                     group["lr"] = group["initial_lr"] * scale
                 if isinstance(opt, Muon):
