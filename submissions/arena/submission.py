@@ -25,8 +25,9 @@ DEFAULTS = dict(
     weight_decay=0.0153,
     bias_scaler=16.0,
     label_smoothing=0.2,
-    widths=(256, 768, 1024),
+    widths=(256, 512, 768),
     whiten_kernel=2,
+    depth=3,
     bn_momentum=0.6,
     scaling_factor=0.25,
     translate=2,
@@ -68,8 +69,12 @@ class Conv(nn.Conv2d):
 
 
 class ConvGroup(nn.Module):
-    def __init__(self, cin, cout, bn_momentum):
+    def __init__(self, cin, cout, bn_momentum, depth=2):
         super().__init__()
+        self.depth = depth
+        if depth == 3:
+            self.conv3 = Conv(cout, cout)
+            self.norm3 = BatchNorm(cout, bn_momentum)
         self.conv1 = Conv(cin, cout)
         self.pool = nn.MaxPool2d(2)
         self.norm1 = BatchNorm(cout, bn_momentum)
@@ -79,12 +84,17 @@ class ConvGroup(nn.Module):
 
     def forward(self, x):
         x = self.activ(self.norm1(self.pool(self.conv1(x))))
+        if self.depth == 3:
+            x0 = x
+            x = self.activ(self.norm2(self.conv2(x)))
+            x = self.activ(self.norm3(self.conv3(x)))
+            return x + x0
         x = self.activ(self.norm2(self.conv2(x)))
         return x
 
 
 class Net(nn.Module):
-    def __init__(self, widths, bn_momentum, scaling_factor, num_classes, whiten_kernel=2):
+    def __init__(self, widths, bn_momentum, scaling_factor, num_classes, whiten_kernel=2, depth=2):
         super().__init__()
         self.register_buffer("mean", MEAN.view(1, 3, 1, 1).clone(), persistent=False)
         self.register_buffer("std", STD.view(1, 3, 1, 1).clone(), persistent=False)
@@ -92,9 +102,9 @@ class Net(nn.Module):
         self.whiten = Conv(3, whiten_width, kernel_size=whiten_kernel, padding=0, bias=True)
         self.whiten.weight.requires_grad = False
         self.layers = nn.Sequential(
-            ConvGroup(whiten_width, widths[0], bn_momentum),
-            ConvGroup(widths[0], widths[1], bn_momentum),
-            ConvGroup(widths[1], widths[2], bn_momentum),
+            ConvGroup(whiten_width, widths[0], bn_momentum, depth),
+            ConvGroup(widths[0], widths[1], bn_momentum, depth),
+            ConvGroup(widths[1], widths[2], bn_momentum, depth),
         )
         self.head = nn.Linear(widths[2], num_classes, bias=False)
         self.scaling_factor = scaling_factor
@@ -152,7 +162,7 @@ def build(context: BuildContext):
     hyp = make_hyp(context.parameters)
     device = context.device
     torch.backends.cudnn.benchmark = hyp["cudnn_benchmark"]
-    model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes, hyp["whiten_kernel"])
+    model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes, hyp["whiten_kernel"], hyp["depth"])
     model = model.to(device).to(memory_format=torch.channels_last)
     use_cuda = device.type == "cuda"
     step_fn = torch.compile(model.features, mode=hyp["compile_mode"], dynamic=False) if use_cuda else model.features
