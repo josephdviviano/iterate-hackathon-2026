@@ -489,3 +489,12 @@
     - Baselines on all 995: not rerun; the first-pass table is the like-for-like comparison.
     - A claim-scoring admission rule for synthesized members (O10 point 4): a new feature, past the freeze.
     - The checker runs a program in-process; a runaway program held the last two Qwen syntheses. A subprocess time limit would fix it.
+
+- [jdv] - Committee size sweep and the ONC Devin runs - this commit
+  The user chose a K sweep over a memory system for the shared blind spot, and asked for the ONC stores not yet run on Devin, the K sweep first.
+  DONE:
+    - R37: 8 more seeded and 8 unseeded Devin members on the seven R34 levels (112 sessions, 111 admitted); `committee.ksweep` pools 200 random K-subsets per K over the seven levels. AUROC 0.68 to 0.92 from K 2 to 16, unanimous error 0.12 to 0.007, vote accuracy flat at 0.88. Compute-matched at K 8: seeded 0.88 against unseeded 0.86 AUROC.
+    - ONC Devin synthesis launched for the sequential, expressive-full-access and expressive-sequential stores (first 30 worlds, 4 seeds) and seeds 5 to 8 on full access (O11 when evaluated).
+  DEFERRED:
+    - Memory of agreed-but-wrong refutations: the user preferred the K sweep, which shows the blind spot shrinking with K.
+    - ONC full-access worlds 31 to 120 on Devin (360 sessions): not before the deadline.
