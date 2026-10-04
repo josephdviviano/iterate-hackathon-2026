@@ -22,6 +22,7 @@ HYP = {
     "momentum": 0.85,
     "weight_decay": 0.012,
     "bias_scaler": 8.0,
+    "head_lr_scale": 0.5,  # lr multiplier for the remaining SGD group (the head weight)
     "label_smoothing": 0.4,
     "whiten_bias_epochs": 2,  # afterwards the whitening output is detached
     "translate": 2,
@@ -414,7 +415,7 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     groups = [
         dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
-        dict(params=other, lr=lr, weight_decay=wd / lr),
+        dict(params=other, lr=lr * hyp["head_lr_scale"], weight_decay=wd / (lr * hyp["head_lr_scale"])),
     ]
     state.optimizer = torch.optim.SGD(groups, momentum=momentum, nesterov=True)
     for g in state.optimizer.param_groups:
