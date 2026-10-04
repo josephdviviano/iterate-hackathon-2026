@@ -1,0 +1,32 @@
+{
+ "world_id": "pt-seq-x-0-19640-jio94i8r",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "def design(feats):\n    X, y = feats.x, feats.y\n    n, p = X.shape\n    pos = y.astype(bool)\n    n1 = pos.sum()\n    if n1 == 0 or n1 == n:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    d = X[pos].mean(0) - X[~pos].mean(0)\n    v = X[pos].var(0, ddof=1) / n1 + X[~pos].var(0, ddof=1) / (n - n1)\n    t = d / np.sqrt(v + 1e-12)\n    pv = 2 * stats.t.sf(np.abs(t), n - 2)\n    order = np.argsort(-np.abs(t))\n    sig = [i for i in order if pv[i] < 0.05 / p]\n    sel = set()\n    pool = sorted(set(sig) | set(order[:15].tolist()))\n    try:\n        from sklearn.linear_model import LogisticRegressionCV\n        lr = LogisticRegressionCV(Cs=10, penalty=\"l1\", solver=\"liblinear\",\n                                  cv=5, max_iter=2000, scoring=\"roc_auc\")\n        lr.fit(X[:, pool], y)\n        sel = set(pool[i] for i in np.flatnonzero(np.abs(lr.coef_[0]) > 1e-8))\n    except Exception:\n        pass\n\n    def rho(i, j):\n        return abs(np.corrcoef(X[:, i], X[:, j])[0, 1])\n\n    keep, members = [], {}\n    for i in sorted(sig, key=lambda i: -abs(t[i])):\n        # drop Bonferroni hits fully explained by a selected feature\n        if sel and i not in sel and any(rho(i, j) >= 0.5 for j in sel):\n            continue\n        host = next((k for k in keep if rho(i, k) >= 0.6), None)\n        if host is None:\n            keep.append(i); members[i] = [i]\n        else:\n            members[host].append(i)\n\n    # interaction scan: unconditional product screen, then conditional LRT\n    pm = []\n    for i in range(p):\n        P = X[:, i, None] * X[:, i + 1:]\n        pt = np.abs((P[pos].mean(0) - P[~pos].mean(0)) /\n                    np.sqrt(P[pos].var(0, ddof=1) / n1\n                            + P[~pos].var(0, ddof=1) / (n - n1) + 1e-12))\n        pm += [(pt[k], i, i + 1 + k) for k in np.flatnonzero(pt > 4.5)]\n    pm.sort(reverse=True)\n    from sklearn.linear_model import LogisticRegression\n    from sklearn.metrics import log_loss\n    def ll(cols):\n        A = np.column_stack(cols)\n        m = LogisticRegression(C=1e9, max_iter=300).fit(A, y)\n        return -log_loss(y, m.predict_proba(A), normalize=False)\n    pairs = []\n    for _, i, j in pm[:30]:\n        if any(rho(i, a) >= 0.6 and rho(j, b) >= 0.6 for a, b in pairs):\n            continue\n        base = sorted(set(keep) | {i, j})\n        lrt = 2 * (ll([X[:, k] for k in base] + [X[:, i] * X[:, j]])\n                   - ll([X[:, k] for k in base]))\n        if stats.chi2.sf(max(lrt, 0), 1) < 0.1 / (p * (p - 1) // 2):\n            pairs.append((i, j))\n    for i, j in pairs:\n        for k in (i, j):\n            if k not in keep and not any(rho(k, m) >= 0.6 for m in keep):\n                keep.append(k); members[k] = [k]\n    if not keep:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    keep.sort(key=lambda i: -abs(t[i]))\n    drv = keep[:MAX_DRIVERS]\n    extra = sorted({k for pr in pairs for k in pr} - set(drv),\n                   key=lambda i: -abs(t[i]))\n    big = max(members.values(), key=len)\n    loadings = ({feats.ids[i]: float(np.sign(t[i])) for i in big}\n                if len(big) >= 3 else {})\n    return Design(drivers=tuple(feats.ids[i] for i in drv),\n                  columns=tuple(feats.ids[i] for i in drv + extra),\n                  products=tuple((feats.ids[i], feats.ids[j]) for i, j in pairs),\n                  loadings=loadings)\n",
+ "meta": {
+  "backend": "devin",
+  "rounds": 2,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3361
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3361
+   }
+  ],
+  "attachment": true,
+  "session_id": "devin-e293c844535a4d4dadcfcb1d140444c7",
+  "session_url": "https://app.devin.ai/sessions/e293c844535a4d4dadcfcb1d140444c7",
+  "status": "working",
+  "wall_s": 476.2
+ }
+}

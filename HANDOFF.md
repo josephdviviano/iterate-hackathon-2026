@@ -54,6 +54,14 @@ dies, `committee.recover` collects its Devin sessions. What is done and left:
      members on each level, from the K sweep's runs (no new sessions). Report
      vote, best member chosen by shortest program, AUROC and unanimous error
      side by side; this answers "seeds or committee".
+  Status 14:40: 1 and 2 done (R37). 3b was already done by another session
+  (O11). 3a and 3c synthesized (120 Devin programs each, 79 of 80 and 119 of
+  120 admissible) and 3d synthesized up to 200 of 240 programs; all are
+  cached in `artifacts/onc/synth/devin/` but NOT scored: `onc.evaluate`
+  scores model-written members in full-access mode only, so 3a and 3c need
+  the sequential evaluator to accept `synth:K:devin` members (new code). 3d
+  can be scored now with `--members synth:8:devin,synth:4:devin` on the
+  full-access store, first 30.
   3. ONC-AGI on Devin, the stores not yet run there (O10 ran Devin on the
      first 30 full-access worlds only, 4 seeds). Use `onc.synth` with
      `--model devin --workers 10` (about 25 minutes per 120 sessions), then
