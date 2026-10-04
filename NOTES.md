@@ -455,3 +455,17 @@
   DEFERRED:
     - The tolerance-0.5 arms (B6): launched at 09:20 BST, but the vLLM servers were cold (503 for every call), the empty results were removed from the volume, and at 09:37 the 90 minute run could not finish before the 11:00 deadline. Command ready: `uv run modal run -m scigym.modal_app --arm committee_probe,committee_fixed,single_fixed --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40 --eps 0.5`, then `SCIGYM_EPS=0.5 uv run python -m scigym.report --model qwen --tag _eps50`. Warm the servers first.
     - Learned-ensemble baselines in frame_out: `committee.baselines` pairs objects and cannot read predicted frames; the baseline panel is labelled object contract.
+
+- [jdv] - SciGym: B5 written, questions 2 and 3 (B6), the tolerance regime and the no-counterexample control - this commit
+  The user asked which ARC analyses SciGym lacked and for questions 2 and 3 "for sure"; the deadline is 15:00 BST, so the tolerance arms fit.
+  DONE:
+    - B5 from the stored 30-system runs, two models, with `scigym.ablations` (admission against tolerance, selective by spread, per-step curves).
+    - B6, `scigym.calibration`: one minus the spread as confidence, ECE and Brier, the R22 wrapper (split conformal over systems and the online rule), and the reaction-level share against truth. The wrapper keeps coverage and spends it on rejections; the reaction-level flag is weak (unanimous reactions right 11 to 26 percent of the time).
+    - `committee_probe_nocx`: resynthesis of refuted members on the data alone (the ARC passive control's analog for the counterexample text); `chooses_probe` and `uses_counterexample` read the arm name; test mutant-checked.
+    - `SCIGYM_EPS` override with tagged directories (`--eps`, `--tag`); the container sets the environment before importing the model module (the first launch would have run at 0.15 silently).
+    - Tolerance-0.5 arms launched 09:47 BST for both models (Qwen also runs the no-counterexample arm); B7 when they land.
+    - `scigym.figures`: F1 per arm and tolerance, agreement against right, reaction share against truth (`artifacts/figures/scigym.png`).
+  DEFERRED:
+    - A random experiment order arm, an unseeded arm, K 8, budget 8 to 20, a second batch per arm: each a 90 minute Modal run; listed in the handoff.
+  ABANDONED:
+    - A first launch of the tolerance arms at 09:20 hit cold vLLM servers (503 on every call, zero members); the empty results were removed from the volume and the servers warmed by polling before the relaunch.

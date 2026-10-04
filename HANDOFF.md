@@ -38,6 +38,13 @@ dies, `committee.recover` collects its Devin sessions. What is done and left:
   `uv run python -m committee.live ar25 --level 3 --steps 75 --brief
   --members-dir ar25/L3_f40_probe0_live70/live_opine_devin` and compare
   with `artifacts/ar25/live/ar25_L3_f40_committee_opine_devin_seed0.json`.
+- 10:25 BST, 2026-10-04: SciGym B5 and B6 written; the tolerance-0.5 arms
+  (three arms on gpt-oss, four on Qwen with `committee_probe_nocx`) are
+  running on Modal, results in `artifacts/scigym/*_eps50/`; report with
+  `SCIGYM_EPS=0.5 uv run python -m scigym.report --model qwen --tag _eps50`
+  and write B7. Post-deadline SciGym arms, each a 90 minute Modal run after
+  warming the vLLM servers: random experiment order, unseeded members, K 8,
+  budget 8 to 20, a second batch per arm.
 - DONE at 00:50: R36, the NOTES.md entry, README results and demo command,
   the CLAUDE.md track table, the report doc rewritten by the five questions
   (https://claude.ai/code/artifact/84ea4a4a-2162-4457-9525-1702a9026886, rev
