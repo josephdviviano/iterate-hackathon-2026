@@ -91,10 +91,10 @@ points to an entry in RESULTS.md.
 
 | Requirement | What we show | Evidence |
 |---|---|---|
-| Does science | A committee of programs: hypothesize (K seeded programs), predict, probe where they disagree, accept refutation, resynthesize on the counterexample. Hoeffding's problem is the second science task, certified in exact arithmetic. | R4, R23, R24 (CEGIS, in progress), H2 |
-| Flags what it does not know | Disagreement on effect rows never seen in train, where count-based ontology error is undefined. Conformal sets that abstain. | R4, R13, R22 |
-| Calibrated uncertainty | AUROC of vote entropy against error. Vote share is not a probability (ECE 0.22). Adaptive conformal sets hold 0.90 coverage on four levels. Self-reported confidence on Hoeffding scored by Brier. | R10, R22, H3 |
-| Falsification | Exact replay admits members. The first disagreement probe refutes every member on every level. Round 2 resynthesizes on the counterexample and is scored against a passive control. | R4, R23, R24 |
+| Does science | A committee of programs: hypothesize (K seeded programs), predict, probe where they disagree, accept refutation, resynthesize on the probes. Rerun in OPINE-World's environment on seven levels, with the loop closed on three levels and live. Hoeffding's problem is the second science task, certified in exact arithmetic. | R34, R36, H2 |
+| Flags what it does not know | Disagreement on effect rows never seen in train, where count-based ontology error is undefined. Conformal sets that abstain. Unanimous error 0.05 against split error 0.34 over seven levels. | R34, R35 (R4, R13, R22 in the earlier object contract) |
+| Calibrated uncertainty | AUROC of vote entropy against error, 0.76 pooled. In OPINE's environment the vote share is close to a probability (ECE 0.04; 0.22 in the object contract). Adaptive conformal sets hold 0.90 coverage on seven levels (pooled 0.95). Self-reported confidence on Hoeffding scored by Brier. | R34, R35, H3 |
+| Falsification | Exact replay admits members. Probes drop refuted members until none survives. Round 2 resynthesizes on the probes and lifts every level with errors; the passive control lifts as much, so the gain is from the observations, not the counterexample wording. | R34, R36 |
 | Reward design | The reward is exact replay with anti-tabulation checks (`committee.verify`). Disagreement is the exploration signal. An abstain channel in the task text. Exact certification, not float scores, on Hoeffding. | RH1, H2, H12 |
 | Knows when it reward hacks (track header), supporting evidence only | Injected-contradiction 2x2 across Claude and open-weight synthesizers. Held-out gap, literal-mass and MDL-ratio detectors. One hack found in our own artifacts. Demoted by the user on 2026-10-03: one line in the pitch, no further sessions unless everything else is done. | RH1 to RH5 |
 | Sub-track 1 | Not entered. The 2x2 is evidence for the header, not a 2.1 submission. | RH1, RH3, RH5 |
@@ -103,7 +103,10 @@ points to an entry in RESULTS.md.
 
 Known gaps, to state in the pitch and not hide: reward design is spread over
 three builds and must be told as one design; live play is one game and one
-level (R25, R26); the bio evidence is one benchmark (B1 to B4). The pitch
+level (R25, R26, R36); the bio evidence is one benchmark (B1 to B4); the
+counterexample wording is not the active ingredient of the repair, the
+observations are (R36); shared blind spots are silent to disagreement (sk48
+L2, R34). The pitch
 leads with 2.3, epistemic uncertainty; the results align with that aim, and
 reward hacking is supporting evidence (user decision, 2026-10-03 22:55).
 

@@ -11,6 +11,33 @@ RESULTS.md for every reported number.
 
 ## Results
 
+Final results, OPINE-World's environment (`frame_out`: the program takes the
+object list and the before frame and returns the next frame, admitted when
+every cell matches). Seven levels of six ARC-AGI-3 games, temporal 40% split,
+3 unseeded single programs and 8 seeded members per level, synthesizer Devin
+(RESULTS.md R34 to R36). The five questions the project answers:
+
+| Question | Answer | Entry |
+|---|---|---|
+| 1. Does a committee beat a single program? | By a small margin: vote 0.895 against single 0.843 mean over levels; wins on 5 levels, ties 1, loses 1 by one transition. The vote equals the best member on 5 of 7 levels. | R34 |
+| 2. Are the conformal sets calibrated? | Yes: coverage 0.886 to 1.000 per level at a 0.90 target, pooled 0.952; set size 1.0 to 2.3; abstains on 2% (ar25) to 65% (g50t) of steps. Vote-share ECE 0.04 pooled. | R35 |
+| 3. Is disagreement higher when the committee is wrong? | Yes: unanimous error 0.046 (n 302) against split error 0.338 (n 74), AUROC 0.76 [0.68, 0.84]. Exception sk48 L2, whose 9 errors are shared by every member (AUROC 0.32). | R34 |
+| 4. Does resynthesis after the probes help? | Yes on every level with errors: m0r0 0.27 to 0.91, ka59 0.83 to 0.86, sk48 0.57 to 0.98 on rows no arm saw; live ar25 L3 0.84 to 1.00 over 75 moves. A passive control with the same rows in time order and no counterexample lifts as much (1.000 on both levels), so the gain is from the observations the loop collects. | R36 |
+| 5. Does naming the new mechanism help more? | No: mechanism statement 0.976, object diff 0.929, no counterexample 1.000 on sk48; 0.909 against 1.000 on m0r0. The statement narrows the committee to 1 or 2 behaviours and its disagreement AUROC falls (0.48 against 0.83). | R36 |
+
+`uv run python -m committee.summary` and `uv run python -m committee.calibrate
+--condition committee_opine_devin` regenerate questions 1 to 3;
+`uv run python -m committee.cegis GAME --level L --train-frac 0.4 --report
+--conditions cegis_opine_devin,cegisobj_opine_devin --passive-condition
+passive_opine_devin` regenerates 4 and 5 for one level.
+
+### Earlier results in the object contract (R3 to R33, superseded)
+
+The object contract (a program maps the object list to the next object list)
+hid walls, floors and hazards from the programs; the same committees sat at
+0.48 to 0.82 there, and the environment, not the synthesizer, held those
+numbers down (R33). The entries below are kept for the record.
+
 ar25 level 3, trained on the first 40% of the level, tested on the rest
 (RESULTS.md R3 and R4, backend Devin):
 
