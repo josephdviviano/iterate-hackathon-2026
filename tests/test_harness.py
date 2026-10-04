@@ -420,13 +420,14 @@ class TestCommittee(HypothesisBase):
         self.run_idea(1)
         led = [json.loads(line) for line in open(os.path.join(self.ws, "committee", "ledger.jsonl"))]
         self.assertEqual(sorted(led[-1]["counterexample"]), ["loss", "time"])
+        self.wait_for(os.path.join(self.ws, "lit", "digests", "D001.md"))  # its own background process
         req = json.load(open(os.path.join(self.ws, "lit", "requests", "R001.json")))
         self.assertEqual((req["from"], req["status"]), ("committee", "done"))
         self.assertIn("none of our forecasters predicted", req["question"])
         self.run_idea(2)
         kinds = [m["kind"] for m in self.results_of("meta.tsv")]
         self.assertIn("literature", kinds)
-        self.assertEqual(kinds[-4:], ["committee", "revise", "ideate", "committee"])
+        self.assertEqual([k for k in kinds if k != "literature"][-4:], ["committee", "revise", "ideate", "committee"])
         revise = [c for c in self.calls() if c["role"] == "revise"][-1]
         self.assertTrue(revise["has_committee"] and revise["has_literature"])
         self.assertIn("veto inactive", self.ok("research.py", "unc"))  # the ranges keep missing

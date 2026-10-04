@@ -1085,16 +1085,15 @@ def run_committee_chain():
         journal("committee-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
     kind, why = meta_due(read_tsv(HYPO_FILE, HYPO_COLS), read_tsv(IDEAS_FILE, IDEA_COLS), read_tsv(META_FILE, META_COLS))
     q = committee.lit_question() if lit_mode() == "triggered" else None
-    if q:
+    if q:  # its own background process: the meta-steps below do not wait for the digest
         import lit
 
         req = lit.new_request(q, [], [], [], "committee", last_exp())
-        try:
-            did = lit.run_request(req)
-            cost = (read_json(os.path.join(lit.REQ_DIR, f"{req['id']}.json")) or {}).get("cost", 0.0)
-            journal("literature", float(cost), f"{req['id']} -> {did}: counterexample {last_exp()}")
-        except Exception as exc:
-            journal("literature-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
+        os.makedirs(META_DIR, exist_ok=True)
+        log = open(os.path.join(META_DIR, f"{time.strftime('%Y%m%dT%H%M%S')}-literature.log"), "w")
+        subprocess.Popen([sys.executable, os.path.abspath(__file__), "meta", "_lit", req["id"]], cwd=ROOT,
+                         stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)  # fmt: skip
+        print(f"literature request {req['id']} started in the background", flush=True)
     if kind == "revise":
         print(run_revise(), flush=True)
     if kind:
@@ -1111,7 +1110,25 @@ def cmd_unc(args):
     print(read_text(committee.REPORT_FILE))
 
 
+def run_literature(rid):
+    """One committee literature request, in its own background process; journaled when done."""
+    import lit
+
+    req = read_json(os.path.join(lit.REQ_DIR, f"{rid}.json"))
+    try:
+        did = lit.run_request(req)
+        cost = (read_json(os.path.join(lit.REQ_DIR, f"{rid}.json")) or {}).get("cost", 0.0)
+        journal("literature", float(cost), f"{rid} -> {did}: {req['question'][:200]}")
+    except Exception as exc:
+        req.update(status="failed", error=f"{type(exc).__name__}: {exc}"[:400])
+        lit.save_request(req)
+        journal("literature-failed", 0.0, f"{rid}: {type(exc).__name__}: {exc}"[:400])
+
+
 def cmd_meta(args):
+    if args.action == "_lit":
+        run_literature(args.kind)
+        return
     if args.action == "_run":  # the background process
         kind = args.kind
         try:
@@ -1204,8 +1221,8 @@ def build_parser():
     s.add_argument("--force", action="store_true")
     s.set_defaults(fn=cmd_log)
     s = sub.add_parser("meta")
-    s.add_argument("action", choices=["wait", "_run"])
-    s.add_argument("kind", nargs="?", choices=["ideate", "revise", "deepresearch", "committee"])
+    s.add_argument("action", choices=["wait", "_run", "_lit"])
+    s.add_argument("kind", nargs="?", help=argparse.SUPPRESS)  # internal: the meta-step (or request id) to run
     s.add_argument("--max", type=float, default=540)
     s.set_defaults(fn=cmd_meta)
     sub.add_parser("snapshot").set_defaults(fn=cmd_snapshot)
