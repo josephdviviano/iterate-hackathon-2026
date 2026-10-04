@@ -30,12 +30,12 @@ DEFAULTS = dict(
     translate=2,
     whiten_bias_epochs=3,
     compile_mode=None,
+    cudnn_benchmark=True,
     lookahead=False,
     lr_peak=0.23,
     lr_start=0.2,
     lr_end=0.0,
-    low_res=18,  # train the first low_res_epochs at this resolution
-    low_res_epochs=5,
+    res_schedule=((18, 5),),  # (resolution, epochs) stages before full 32px training
 )
 
 
@@ -135,12 +135,14 @@ def make_hyp(parameters):
     hyp = dict(DEFAULTS)
     hyp.update(parameters or {})
     hyp["widths"] = tuple(hyp["widths"])
+    hyp["res_schedule"] = tuple(tuple(x) for x in hyp["res_schedule"])
     return hyp
 
 
 def build(context: BuildContext):
     hyp = make_hyp(context.parameters)
     device = context.device
+    torch.backends.cudnn.benchmark = hyp["cudnn_benchmark"]
     model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes)
     model = model.to(device).to(memory_format=torch.channels_last)
     use_cuda = device.type == "cuda"
@@ -155,9 +157,9 @@ def build(context: BuildContext):
         )
         prepare(state, fake, 0)
         train(state, max_steps=3 * (50000 // hyp["batch_size"]) // 2)
-        if hyp["low_res"] != 32:
+        if hyp["res_schedule"]:
             bs = hyp["batch_size"]
-            for res in (hyp["low_res"], 32):
+            for res in [r for r, _ in hyp["res_schedule"]] + [32]:
                 x = torch.randn(bs, 3, res, res, device=device, dtype=torch.bfloat16)
                 x = x.contiguous(memory_format=torch.channels_last)
                 for _ in range(2):
@@ -252,8 +254,13 @@ def train(state, max_steps=None) -> nn.Module:
             epoch_images = batch_crop(images, crop, gen)
         else:
             epoch_images = images
-        if epoch < hyp["low_res_epochs"]:
-            res = hyp["low_res"]
+        res, stage_end = 32, 0
+        for r, e in hyp["res_schedule"]:
+            stage_end += e
+            if epoch < stage_end:
+                res = r
+                break
+        if res != 32:
             epoch_images = F.interpolate(epoch_images.float(), size=(res, res), mode="bilinear", antialias=True)
             epoch_images = epoch_images.to(torch.bfloat16)
         epoch += 1
