@@ -60,3 +60,10 @@ def test_admission_tolerance_follows_the_environment(monkeypatch):
     finally:
         monkeypatch.delenv("SCIGYM_EPS")
         importlib.reload(model)
+
+
+def test_arm_names_set_probe_choice_and_counterexample_use():
+    from scigym.loop import chooses_probe, uses_counterexample
+
+    assert chooses_probe("committee_probe_nocx") and chooses_probe("committee_probe") and not chooses_probe("committee_fixed")
+    assert uses_counterexample("committee_probe") and uses_counterexample("committee_fixed") and not uses_counterexample("committee_probe_nocx")

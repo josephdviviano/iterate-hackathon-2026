@@ -20,7 +20,7 @@ NOTES.md should contain log entries with the following structure:
 ## Status
 
 - Track: 2.3 Epistemological agents, selected 2026-10-03. See DESIGN_DOC.md.
-- Deadline: approximately 2026-10-04 11:00 BST. Replace with the official time.
+- Deadline: 2026-10-04 15:00 BST (official, per the user at 09:40 BST). No new feature after 12:00.
 - Repository: private. The papers in research/pdfs are open access. Do not raise licence or privacy caveats about them.
 
 ## External Resources

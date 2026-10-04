@@ -27,7 +27,18 @@ from .model import EPS, fit
 from .synth import SEEDS, render_trajectory, synthesize
 
 ART = Path(__file__).resolve().parents[2] / "artifacts" / "scigym"
-ARMS = ("committee_probe", "committee_fixed", "single_fixed")
+ARMS = ("committee_probe", "committee_fixed", "single_fixed", "committee_probe_nocx")
+
+
+def chooses_probe(arm: str) -> bool:
+    """The committee arms that pick the experiment where admitted members' predictions diverge most."""
+    return arm.startswith("committee_probe")
+
+
+def uses_counterexample(arm: str) -> bool:
+    """The `_nocx` arms resynthesize a refuted member on the data alone, with no counterexample text:
+    the control that separates the observations from the statement."""
+    return not arm.endswith("_nocx")
 MAX_TOKENS = {"gptoss": 6000}
 
 
@@ -72,7 +83,7 @@ def run_system(system: System, arm: str, model: str, k: int, budget: int, rounds
     t = 0
     while t < budget:
         pool = [m for m in members if m.admitted] or members
-        if arm == "committee_probe" and len(pool) > 1:
+        if chooses_probe(arm) and len(pool) > 1:
             exp, score = choose_probe(pool, system, cands, used)
         else:
             exp = next((c for c in cands if c not in used), None)
@@ -98,7 +109,7 @@ def run_system(system: System, arm: str, model: str, k: int, budget: int, rounds
         for j, m in enumerate(refuted):
             if calls >= max_calls:
                 break
-            h = synth(len(members) * (t + 1) + j, counterexample_text(m, system, exp, traj))
+            h = synth(len(members) * (t + 1) + j, counterexample_text(m, system, exp, traj) if uses_counterexample(arm) else None)
             if h is not None:
                 new.append(h)
         members = survivors + new + [m for m in refuted if calls >= max_calls and m not in refuted[:len(new)]]

@@ -1,6 +1,6 @@
 # Handoff: the night plan, written 2026-10-03 22:00 BST
 
-Deadline about 2026-10-04 11:00 BST. No new features after 08:00; those
+Deadline 2026-10-04 15:00 BST (official). No new features after 12:00; those
 hours go to repairs, the video, README.md and the submission. Read
 CLAUDE.md first; then RESULTS.md (R3 to R33), NOTES.md and this file. The
 write-up page is https://claude.ai/artifact/RZK96oVH1iZXjRnY4ndH8C (private,

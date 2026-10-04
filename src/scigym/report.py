@@ -61,6 +61,8 @@ def main() -> None:
     common = None
     per_arm = {arm: load(arm, a.model, a.tag) for arm in ARMS}
     for rows in per_arm.values():
+        if not rows:  # an arm that was not run does not empty the paired set
+            continue
         ids = {r["system"] for r in rows}
         common = ids if common is None else common & ids
     from .model import EPS
