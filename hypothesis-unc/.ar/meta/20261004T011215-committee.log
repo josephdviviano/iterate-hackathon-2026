@@ -1,0 +1,47 @@
+round 6 (update): 4/4 members, 1 ideas forecast; scored E005; COUNTEREXAMPLE E005 outside every range (time, accuracy)
+H1->supported, H1.1->supported, H1.1.1->refuted, H1.3->supported, H1.3.2->supported, H2.1->retired, H2.2->supported, H2.2.1->supported, H3.1->supported, H3.1.1->retired, H3.2->refuted, +H1.3.3, +H1.3.4, +H1.3.5, +H1.3.6, +H1.5, +H1.5.1, +H1.5.2, +H4.2.2, +H4.1.2, +H2.2.3, +H3.3, +H3.3.1. Changes to the tree:
+
+**Closed or changed by evidence**
+- **H1.1.1 refuted (E001).** The 9-epoch run reached 0.7430, below the pre-registered 0.745 threshold.
+- **Compile speedup supported (E004).**
+  - H2.2.1 gets E004+, which overrides E003~: −14% time with bit-identical accuracy.
+  - H2.2 is marked supported, and H2's confidence goes up.
+- **H3.1 supported and reworded (E003).** It now covers stride, layout, dtype and requires_grad guards, not only shapes. This explains the E003 counterexample: warm-up used NCHW tensors while training used channels_last, so a ~9 s recompile happened inside the timed region.
+- **H3.2 refuted.** Measured prepare is 0.06–0.21 s, about 1–2% of a trial.
+  - H3.2.1 and H3.1.1 are retired.
+  - H3 is lowered to 0.2 and reworded to the only place left for fixed cost: one-time costs inside train().
+- **Lookahead/EMA result (E005).**
+  - H1.3 and H1.3.2 are supported: +0.97 pp, every seed moved the same way.
+  - H1.3.2 drops the "9 epochs fixed" premise. E005 most likely ran at 10 epochs on the E004 base.
+  - H1 and H1.1 are supported: about 6.5x faster than the ResNet9 baseline.
+- **H4.2.1 token changed to E002~.** E002 tested 9→10 epochs, not 8.5→9. Excluding E001's seed-1 outlier, the gain is only about 0.28 pp.
+- **H2.1 and H2.1.1 retired.** The GPU data pipeline was bundled into E001 and cannot be tested in isolation.
+
+**Lowered by search**
+- H1.2 (Muon) goes to 0.25. The PR #3 precedent on this benchmark reports that Muon lost to SGD.
+- H2.4 (proxy data filtering) goes to 0.2. Its only evidence is a 45-epoch, 96% CIFAR-10 regime.
+- H2.2.2 (CUDA graphs) goes to 0.3. Fable found the training was not launch-bound.
+
+**H2.3 (progressive resizing)**
+All four committee members expect it to fail, but search shows about 10% savings on CIFAR-10. I reworded H2.3.1 into a decisive test: global max-pool head, each resolution compiled with static shapes and channels_last warm-up, and an explicit no-recompile guard.
+
+**Noise model (H4.1)**
+Compiled runs are deterministic per seed, so re-running a recipe measures no accuracy noise. Mean differences under about 0.3 pp are treated as noise. H1.3.1's threshold is raised to 0.3 pp to match.
+
+**New hypotheses**
+- **Why E005 worked (the second counterexample).** Four tests that separate the possible mechanisms:
+  - N1: decaying LR to 0 without EMA.
+  - N2: EMA plus decay to 0.
+  - N3: plain end-of-run EMA without Lookahead resets.
+  - N4: BatchNorm statistic recalibration after averaging.
+- **N5: CIFAR-10 settings may not suit CIFAR-100.** Children: N5a (lr×wd grid) and N5b (width 576→512).
+- **N6:** the epoch-trim slope measured on the EMA recipe, which is what the next epoch cuts depend on.
+- **N7:** an offline check on held-out seeds 3–12 for the 40-seed margin.
+- **N8:** graph breaks in the compiled train step.
+- **N9 and N9a:** first-epoch overhead inside train.
+
+**Suggested next steps**
+1. Read E005's actual epoch count from its commit.
+2. N1/N2: LR decay to 0. These are cheap and may add margin.
+3. N6: trim epochs from E005.
+4. N5b and H2.3.1 to cut per-epoch cost, using the TORCH_LOGS=recompiles check before each run.

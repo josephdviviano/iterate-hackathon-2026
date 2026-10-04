@@ -1,0 +1,28 @@
+{
+  "exp": "E014",
+  "commit": "c68743c",
+  "pid": 358096,
+  "start_ticks": 3660332,
+  "started": 1791060198.6459112,
+  "tag": "I012",
+  "description": "Corrected version of I007 that changes only one thing. On the E002 recipe (bs 1024, 9 epochs, same schedule shape), optimize the 4D conv filters (all except the frozen whitening conv) with Muon: Nesterov momentum 0.6, lr about 0.24, 5 Newton-Schulz quintic steps in bf16, with the update scaled by sqrt(max(1, out/in)) on the flattened [out, in*k*k] matrix. BatchNorm biases and the head stay on the existing Nesterov SGD with the same lr/wd. Keep lookahead. Compile the NS loop in build(). Log the optimizer step time separately.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E014.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7680666666666667,
+    "time": 9.178059158999531,
+    "complete": true
+  },
+  "row": {
+    "exp": "E014",
+    "commit": "c68743c",
+    "accuracy": 0.7680666666666667,
+    "time": 9.178059158999531,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I012",
+    "description": "Corrected version of I007 that changes only one thing. On the E002 recipe (bs 1024, 9 epochs, same schedule shape), optimize the 4D conv filters (all except the frozen whitening conv) with Muon: Nesterov momentum 0.6, lr about 0.24, 5 Newton-Schulz quintic steps in bf16, with the update scaled by sqrt(max(1, out/in)) on the flattened [out, in*k*k] matrix. BatchNorm biases and the head stay on the existing Nesterov SGD with the same lr/wd. Keep lookahead. Compile the NS loop in build(). Log the optimizer step time separately."
+  }
+}

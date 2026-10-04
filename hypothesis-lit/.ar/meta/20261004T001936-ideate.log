@@ -1,0 +1,18 @@
+added I081, I082, I083, I084, I085; dropped none. The current tip is E067 (4.85 s). Its official score is 0.7544 on 3 seeds, its dev mean on seeds 3-12 is 0.7573, and on held-out seeds 13-22 it scores 0.7562, about 0.3 pp of expected margin over 0.753.
+
+That margin is too thin to bank E066's group-2 width cut to 320 channels. That cut saves 0.28 s but costs about 0.32 pp, which would land the expected accuracy on the bar. So the queue goes after margin first and time second.
+
+**Ideas added (5):**
+- **Head lr ×2 (priority 5).** This is the contingency E068 pre-registered: halving the head lr cost 0.35 pp, so the opposite direction may add margin at no time cost.
+- **Stack group-2 width 320 (priority 4).** It runs only once a kept tip reaches a dev mean of at least 0.7590.
+- **Profile, then remove overhead (priority 3).** A profiler pass looks for un-graphed per-epoch augmentation and Lookahead work. The largest item over 1% of train time gets removed with bit-identical results; if nothing reaches 1%, there is no run.
+- **Gram Newton-Schulz (priority 3, explore).** It goes to an official run only if it passes an offline fp16 check on real gradient matrices.
+- **SGD-group momentum 0.825 (priority 2).** This closes the last un-swept knob in that group.
+
+**Still queued (2):**
+- I078: a third Newton-Schulz step after AOL, testing whether orthogonalization quality is saturated.
+- I079: Cutout only in the 24/28 px phases, testing whether input regularization helps given the 21 pp train-test gap.
+
+**Dropped:** none. Both queued ideas still test open hypotheses.
+
+That leaves 7 queued ideas: 3 exploit and 4 explore. All of them use the same keep rule: dev mean at least 0.7558 and official at least 0.753. Held-out seeds 13-22 stay reserved for the final check.

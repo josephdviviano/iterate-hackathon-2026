@@ -1,0 +1,34 @@
+H2.10->refuted, H2.10.5->refuted, H2.11->supported, H2.11.3->supported, H2.11.4->supported, H2.14.4->supported, H2.15->retired, H2.15.2->refuted, H2.17->refuted, H2.17.1->refuted, H4.2.6->inconclusive, H4.4->supported, H4.4.1->supported, H6.5->inconclusive, H6.7->retired, H6.8->refuted, H6.8.1->refuted, +H11, +H11.1, +H11.1.1, +H11.2, +H11.2.1, +H10.2, +H10.2.1, +H2.11.5, +H2.14.5, +H2.18, +H2.18.1, +H2.4.3, +H4.2.7. Revised the tree after the E088-E095 batch and the review. The main correction: E090 (4.46 s) is feasible only by luck. Its keep counted the bit-identical E091 rerun, and its distinct scored and off-seed samples average ~0.7524, below 0.753. The E084/E085/E095 family (0.7549 at ~4.70 s) is the only robustly feasible config. H4 and H4.2 now record this as a fourth instance of the near-gate luck failure, with a stricter keep rule (>=2 non-bit-identical samples, mean >=0.7535) and a move to seeds 3-26 for off-seed checks (new NCAL).
+
+Refuted: H2.10.5 (32 px trim, E089) and H2.10 (no schedule trims left). H2.17 and H2.17.1 are refuted: the equal-step 28 px substitution lost ~0.25 pp, the same rate as the trim, so H10's corollary was removed. Also refuted: H6.8 and H6.8.1 (lookahead removal) and H2.15.2 (earlier bias freeze). H2.15 and H2.15.1 are retired because the detach was already in the code. Statuses that contradicted the results were corrected: H2.11, H2.11.3, H2.11.4, H2.14.4, H4.4 and H4.4.1 are now supported. H4.2.6, H6.5 and H6.5.3 are now inconclusive. H4.5 was lowered to 0.15. H6.7 and H6.7.1 are retired.
+
+H2 was rewritten around the E090 vs E095 pair, with the stale provenance language and the already-banked levers removed. H6 stays open only narrowly, for the BN-buffer averaging test (H6.5.4), whose prior search raised. H7.1.3 and H10.1.1 were rebased onto the mixed-batch tip.
+
+New items:
+- A Lvl1 (NL1): late training at test resolution binds accuracy. Under it, a resolution-statistics adaptation mechanism with a later/never whitening-bias freeze test, and a placement rival to H10.1.
+- Under H10, a Muon path-length mechanism with a zero-time 32 px-only Muon lr test (search).
+- Under H2.11, a bs-768-at-32-px arm.
+- Under H2.14, cudnn.benchmark_limit=0 as a math-neutral time lever (search).
+- Under H2, a depth-cut mechanism, gated on an untimed profile first.
+- Under H2.4, a projection of judge (300 W PCIe) time from existing NVML logs, used only to break ties.
+
+Open Lvl1s: H2, H4, H6, H10 and NL1. Priority: calibrate the tip baselines on seeds 3-26, then find about +0.1-0.15 pp at zero or low time cost before any further cut.
+added I109, I110, I111, I112, I113, I114; dropped I108. The tip, E090, runs at about 4.46 s but is feasible by luck: its distinct-sample mean is about 0.7524, below the 0.753 gate. The only robustly feasible config is E095 at about 4.70 s. Every way of shrinking the 32 px phase costs about 0.05-0.065 pp per 1% of time saved, so further gains must come from math-neutral speedups or from accuracy added at zero time.
+
+**New ideas (6), by priority:**
+- **Priority 5, H4.2.7:** run E090 and E095 on seeds 3-26 (untimed). This is the calibration step: it decides whether E090 is robust and provides the paired baseline for every later off-seed test. It also logs cuDNN kernel names for free (H4.5.1).
+- **Priority 5, H2.14.5:** set `cudnn.benchmark_limit=0` in the untimed build. It is the last untested math-neutral time lever. Expected about -0.3% to -1.5% time.
+- **Priority 4, H10.2.1:** raise the Muon lr by 1.25x in the 32 px phase only. I moved this onto E090 instead of E086 so it reuses the seeds 3-26 baseline and is bankable right away. If Muon's gain comes from total filter movement rather than step count, this recovers accuracy at zero time.
+- **Priority 3, H11.1.1:** move the whitening-bias freeze from about 41% to about 70% of samples, testing whether the net needs to adapt after each resolution switch. Expected cost +0.3% to +0.8% time.
+- **Priority 3, H6.5.4:** a 20-step final EMA that also averages the BN buffers. This decides between the two end-of-run averaging explanations; if neither shows an effect, H6 closes.
+- **Priority 2, H2.18.1:** an untimed profile of removing one conv layer, which only gets a scored run if the projected saving is at least 6%.
+
+**Kept in the queue:**
+- **I104** (H10.1.1 / H11.2.1): one run tests both rival hypotheses about whether added low-res steps help.
+- **I105** (H7.1.3): global Muon lr; it ranks below the 32 px-only test.
+
+**Dropped:** I108. Its comparison baseline (E083) was measured on older code with only seeds 3-10, so it can't cleanly separate the two averaging explanations. The new H6.5.4 idea replaces it.
+
+**Deferred:** H2.11.5 (bs 768 at 28/32 px). Its likely exchange rate only matches the trim rate, so it cannot pay for a net time cut. H2.4.3 (the projection to the 300 W PCIe judge) is only a tie-breaker.
+
+The queue now has 8 queued ideas plus I102 running.

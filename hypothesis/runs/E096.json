@@ -1,0 +1,28 @@
+{
+  "exp": "E096",
+  "commit": "545b6d0",
+  "pid": 517739,
+  "start_ticks": 4685716,
+  "started": 1791070452.4939632,
+  "tag": "I102",
+  "description": "I100 rebased onto the current tip. Base: E090 code (48b13a7): 2@16 + 1.25@24 at bs 1536, then 1.25@28 + 2.75@32 at bs 1024, with pinned staging and the Fable tail. Because the tip indexes by samples, the final-EMA window and the lookahead stop cover the same sample count as the bs-1536 tip, which is ~12 steps at bs 1024 (~3 EMA updates). Change only this: pin both to step counts measured from the end, so the final EMA covers the last 8 steps (lerp 0.3 every 4 steps, ~2 updates) and lookahead stops 8 steps before the end. The floor-hold point stays sample-indexed and unchanged. This is a host-side step-index change only and nothing recompiles. Precondition, untimed: log the source hash and a one-line diff against 48b13a7. Decide with an off-seed run on seeds 3-10 against the tip off-seed distinct mean (~0.7526, sd ~0.09 pp, E094), plus two scored runs. If it is accepted, use the pinned window in every later bs-1024-tail arm.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E096.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7539333333333333,
+    "time": 4.4671269899990875,
+    "complete": true
+  },
+  "row": {
+    "exp": "E096",
+    "commit": "545b6d0",
+    "accuracy": 0.7539333333333333,
+    "time": 4.4671269899990875,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "keep",
+    "tag": "I102",
+    "description": "I100 rebased onto the current tip. Base: E090 code (48b13a7): 2@16 + 1.25@24 at bs 1536, then 1.25@28 + 2.75@32 at bs 1024, with pinned staging and the Fable tail. Because the tip indexes by samples, the final-EMA window and the lookahead stop cover the same sample count as the bs-1536 tip, which is ~12 steps at bs 1024 (~3 EMA updates). Change only this: pin both to step counts measured from the end, so the final EMA covers the last 8 steps (lerp 0.3 every 4 steps, ~2 updates) and lookahead stops 8 steps before the end. The floor-hold point stays sample-indexed and unchanged. This is a host-side step-index change only and nothing recompiles. Precondition, untimed: log the source hash and a one-line diff against 48b13a7. Decide with an off-seed run on seeds 3-10 against the tip off-seed distinct mean (~0.7526, sd ~0.09 pp, E094), plus two scored runs. If it is accepted, use the pinned window in every later bs-1024-tail arm."
+  }
+}

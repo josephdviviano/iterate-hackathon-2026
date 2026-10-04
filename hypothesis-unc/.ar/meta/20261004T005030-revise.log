@@ -1,0 +1,43 @@
++H1, +H1.1, +H1.1.1, +H1.1.2, +H1.2, +H1.2.1, +H1.3, +H1.3.1, +H1.3.2, +H1.4, +H1.4.1, +H2, +H2.1, +H2.1.1, +H2.2, +H2.2.1, +H2.2.2, +H2.3, +H2.3.1, +H2.4, +H2.4.1, +H3, +H3.1, +H3.1.1, +H3.2, +H3.2.1, +H4, +H4.1, +H4.1.1, +H4.2, +H4.2.1. The tree was empty and there are no results yet, so I seeded it with 4 Lvl1 hypotheses on different directions. Each has Lvl2 mechanisms and Lvl3 predictions with numeric thresholds.
+
+- **H1, epochs to target:** the main lever is cutting the number of epochs needed for 75%. Mechanisms:
+  - an airbench96-style backbone with whitening and Dirac init;
+  - Muon for the conv filters;
+  - label smoothing 0.3 plus Lookahead/EMA;
+  - alternating flip, which should matter more because test-time augmentation is banned.
+- **H2, cost per epoch:**
+  - keep data on the GPU and augment there, which matters a lot with only 4 CPU cores;
+  - a vectorised optimizer, compiled step, fp16 with channels_last, and CUDA graphs;
+  - progressive resizing 24→28→32 px;
+  - hard-example filtering with a proxy model (low prior).
+- **H3, fixed timed overhead:**
+  - compile or autotune leaking out of build when a shape wasn't warmed up;
+  - the cost of prepare() itself.
+- **H4, accuracy margin:**
+  - seed and time noise; a 3-seed mean below about 0.756 is fragile for the 40-seed judgment;
+  - near 9 epochs, epoch count trades smoothly against margin.
+
+Suggested order of experiments:
+1. Run the unmodified template twice to measure noise (H4.1.1).
+2. Test GPU-resident data on the template (H2.1.1), so data-pipeline gains aren't mixed up with architecture changes.
+3. Port the airbench96-style net at 9 epochs with LS 0.3 (H1.1.1). The PR's reference to beat is about 8.1 s, but at 75.29% it is below our 0.753 bar.
+4. Only then try Muon, progressive resizing and systems work, one change per run.
+
+Every run needs a compliance check: eval timed at B = 1, 7, 512 and 1024, no real data used in build, and every training shape warmed up in build. Treat time differences under about 2× the measured noise as inconclusive, since the judging card is an A100 PCIe rather than the SXM4 used here.
+added I001, I002, I003, I004, I005, I006, I007, I008; dropped none. So far there is only the template baseline: accuracy 0.012 at 0.14 s, so the harness adds almost no fixed cost. The queue was empty, so I'm adding 8 ideas and dropping none.
+
+**Run first (priority 5):** port an airbench96-style recipe to test H1.1.1. It keeps the data on the GPU and uses patch-whitening, Dirac init, Nesterov SGD, label smoothing 0.3, alternating flip and 9 epochs. Every other idea builds on this port.
+
+**Exploit ideas:**
+- **H4.2.1, priority 4:** change only the epoch count. Go to 8.5 if the port clears 0.753 with margin, or to 10 if it misses.
+- **H2.2.1, priority 4:** compile the train step in build and use a fused optimizer.
+- **H1.3.2, priority 3:** add Lookahead/EMA of the weights.
+- **H4.1.1, priority 3:** re-run the same recipe unchanged to measure seed and timing noise, which sets the safety margin.
+- **H3.1.1, priority 3:** drop the ragged last batch so no recompiles happen inside the timed region.
+
+**Explore ideas, priority 2:**
+- **H1.2.1:** switch the conv filters to the Muon optimizer.
+- **H2.3.1:** train early epochs at lower resolution (progressive resizing).
+
+No uncertainty-committee forecasts were provided, so none of the ideas were reshaped to settle member disagreements.
+round 1 (forecast): 4/4 members, 8 ideas forecast

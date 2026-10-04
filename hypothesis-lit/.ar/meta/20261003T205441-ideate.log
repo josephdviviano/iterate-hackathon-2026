@@ -1,0 +1,9 @@
+added I029, I030, I031, I032, I033, I034; dropped I028. The incumbent is E021: progressive resizing (5 epochs at 24 px + 5.75 at 32 px), a 2/3/3 net, Muon at batch 1536 and a CUDA-graphed step, giving 0.7552 @ 7.62 s with only +0.22 pp of margin. Epoch trims and the batch axis are closed, so I'm proposing per-step cuts that keep accuracy, plus margin-building tweaks:
+- Turbo-Muon preconditioning with 2 Newton-Schulz steps (H2.5, about -1.5%).
+- A 24/28/32 px three-stage schedule (H2.3.1, about -1.5 to -2.5%).
+- Lighter regularization in the 24 px phase only, per EfficientNetV2 (H2.3, +0.1-0.25 pp to spend on epochs).
+- Cutting group 1 to 1 conv with +0.5 epoch, rebased onto E021, with a profiler check of H2.4.1.
+- A salted noise replicate on E021 (H4.1.1).
+- An explore run of airbench94_muon weight renormalization (H1.7).
+
+I027 and I028 are dropped because they were tied to the superseded E018 base; their rebased versions are among the ideas above.

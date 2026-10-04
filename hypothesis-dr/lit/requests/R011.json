@@ -1,0 +1,37 @@
+{
+  "id": "R011",
+  "from": "auto",
+  "after": "E038",
+  "question": "On the Muon + lookahead tip (bs 1024, 6.5 epochs, ~49 steps/epoch, CIFAR-100), can the batch size be raised to 1536-2048 without losing accuracy per epoch? Fewer steps would cut the per-step Muon and lookahead overhead and give larger GEMMs (H1.2.3, untested). The search should find what the literature says about the critical batch size of orthogonalized and normalized-update optimizers (Muon, Shampoo/SOAP-like) compared with SGD. It should also cover how lr, momentum, weight decay and averaging horizon should be rescaled when the batch size grows at a fixed epoch budget in short, data-limited training. That evidence decides whether to run the batch-size experiment next and how to set the SGD-group lr/wd and the lookahead schedule for it.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791064156.8634207,
+  "digest": "D011",
+  "plan": {
+    "question": "On the Muon + lookahead tip (bs 1024, 6.5 epochs, ~49 steps/epoch, CIFAR-100), can the batch size be raised to 1536-2048 without losing accuracy per epoch? Fewer steps would cut the per-step Muon and lookahead overhead and give larger GEMMs (H1.2.3, untested). The search should find what the literature says about the critical batch size of orthogonalized and normalized-update optimizers (Muon, Shampoo/SOAP-like) compared with SGD. It should also cover how lr, momentum, weight decay and averaging horizon should be rescaled when the batch size grows at a fixed epoch budget in short, data-limited training. That evidence decides whether to run the batch-size experiment next and how to set the SGD-group lr/wd and the lookahead schedule for it.",
+    "queries": [
+      "Muon optimizer critical batch size",
+      "orthogonalized optimizer large batch scaling learning rate momentum",
+      "critical batch size Shampoo SOAP versus SGD Adam",
+      "batch size scaling weight averaging EMA horizon",
+      "learning rate scaling batch size fixed epoch budget short training",
+      "Muon hyperparameter transfer batch size weight decay"
+    ],
+    "rubric": [
+      "Reports how accuracy or loss at a fixed number of samples/epochs changes when the batch size varies, for Muon or another orthogonalized or preconditioned optimizer, ideally compared with SGD or Adam.",
+      "Gives concrete scaling rules for lr, momentum, weight decay or EMA/averaging horizon when batch size changes (e.g. sqrt or linear scaling, or the batch-size invariance of a normalized update).",
+      "Covers a short-horizon or data-limited regime (a few epochs, small image datasets or small models), or states explicitly whether its findings transfer to that regime.",
+      "Reports wall-clock or step-count tradeoffs, not just final accuracy after long training."
+    ],
+    "exclude": [
+      "Methods that need pretrained weights, external data or distillation from a pretrained teacher (forbidden by RULES.md)",
+      "Test-time augmentation or anything that uses the test set (forbidden)",
+      "Multi-GPU or distributed data-parallel communication papers whose gains come from communication, not optimization",
+      "LLM-pretraining-only results at billions of tokens that have no transfer analysis",
+      "Re-testing ideas already refuted here: label smoothing 0.3, decaying lr to zero, BN recalibration, frequency-wise Muon, CUDA-graphing the Muon step"
+    ]
+  },
+  "cost": 0.8897
+}

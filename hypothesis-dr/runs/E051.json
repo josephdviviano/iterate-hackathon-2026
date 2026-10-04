@@ -1,0 +1,28 @@
+{
+  "exp": "E051",
+  "commit": "9f17acf",
+  "pid": 474810,
+  "start_ticks": 4494031,
+  "started": 1791068535.6422322,
+  "tag": "I069",
+  "description": "Lengthen the 28 px middle stage on the E048 tip. The tip is commit dc07126: bs 1536; 20 px bilinear antialiased whole images for epochs 0-1.5, 28 px for 1.5-3.0, 32 px for the last 3.75 epochs, 6.75 total; SGD-group lr x1.5; head lr x2 with wd halved; Muon lr 0.16, mom 0.8, NS3; lookahead 0.97^5; brightness/contrast jitter; whitening bias trained in epoch 1 only. If I066 (head x3) is kept first, use its commit instead. Make one change: move the 28 -> 32 px switch from 3.0 to 3.5 epochs, so 28 px runs for 2.0 epochs and 32 px for the last 3.25. Total epochs, bs, the sample stream and every step-indexed schedule stay unchanged. The switch now falls mid-epoch (sample 175000, inside a bs-1536 step). Train the first part of that epoch's permutation at 28 px and the rest at 32 px, splitting the straddling step into the two partial shapes, as the existing switches do. In build(), warm up every new partial-batch shape at the 3.5-epoch switch for the 28 px and 32 px graphs (no whitening-bias grad), using channels_last tensors in the exact timed layout (E035 lesson). Keep build under ~450 s. Run debug_nan.py on any new shape and compare trial-0 with later-trial train times. Rationale: E048 showed that 1.5 epochs at 28 px cost ~0.0-0.2 pp for -5.2%, an exchange rate of ~0.05 pp per 1%, cheaper than any other lever left. E043 warned that low-fidelity steps cost more past the lr peak, but 28 px keeps far more detail than 24 px. This run prices the next half-epoch.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E051.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7541333333333333,
+    "time": 4.926264633667112,
+    "complete": true
+  },
+  "row": {
+    "exp": "E051",
+    "commit": "9f17acf",
+    "accuracy": 0.7541333333333333,
+    "time": 4.926264633667112,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I069",
+    "description": "Lengthen the 28 px middle stage on the E048 tip. The tip is commit dc07126: bs 1536; 20 px bilinear antialiased whole images for epochs 0-1.5, 28 px for 1.5-3.0, 32 px for the last 3.75 epochs, 6.75 total; SGD-group lr x1.5; head lr x2 with wd halved; Muon lr 0.16, mom 0.8, NS3; lookahead 0.97^5; brightness/contrast jitter; whitening bias trained in epoch 1 only. If I066 (head x3) is kept first, use its commit instead. Make one change: move the 28 -> 32 px switch from 3.0 to 3.5 epochs, so 28 px runs for 2.0 epochs and 32 px for the last 3.25. Total epochs, bs, the sample stream and every step-indexed schedule stay unchanged. The switch now falls mid-epoch (sample 175000, inside a bs-1536 step). Train the first part of that epoch's permutation at 28 px and the rest at 32 px, splitting the straddling step into the two partial shapes, as the existing switches do. In build(), warm up every new partial-batch shape at the 3.5-epoch switch for the 28 px and 32 px graphs (no whitening-bias grad), using channels_last tensors in the exact timed layout (E035 lesson). Keep build under ~450 s. Run debug_nan.py on any new shape and compare trial-0 with later-trial train times. Rationale: E048 showed that 1.5 epochs at 28 px cost ~0.0-0.2 pp for -5.2%, an exchange rate of ~0.05 pp per 1%, cheaper than any other lever left. E043 warned that low-fidelity steps cost more past the lr peak, but 28 px keeps far more detail than 24 px. This run prices the next half-epoch."
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "R016",
+  "from": "auto",
+  "after": "E047",
+  "question": "E047 is the current tip: bs 1536, a 20 px warmup stage, then 32 px, 6.75 epochs, 5.27 s, 0.7550. E040, E043 and E047 show that cheap, low-fidelity steps cost almost nothing during the warmup phase but cost accuracy once the lr peaks. Raising the batch size from 1024 to 1536 for the whole run saved ~5% of time but cost ~0.2 pp, and a higher Muon lr did not win it back (E041, E046). The question is whether batch size should be scheduled across training phases. In short training runs, does the critical batch size grow over training, so that the batch can be ramped up (for example 1024 early to 2048-3072 late, or larger during the low-res stage)? How should the lr and momentum be adjusted at each switch, especially with orthogonalized or normalized optimizers like Muon? Would such a ramp cut the number of steps without the accuracy loss of a fixed large batch? Is the opposite (large batch early during the cheap low-res warmup, smaller later) better supported?",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791067525.8120604,
+  "digest": "D016",
+  "plan": {
+    "question": "E047 is the current tip: bs 1536, a 20 px warmup stage, then 32 px, 6.75 epochs, 5.27 s, 0.7550. E040, E043 and E047 show that cheap, low-fidelity steps cost almost nothing during the warmup phase but cost accuracy once the lr peaks. Raising the batch size from 1024 to 1536 for the whole run saved ~5% of time but cost ~0.2 pp, and a higher Muon lr did not win it back (E041, E046). The question is whether batch size should be scheduled across training phases. In short training runs, does the critical batch size grow over training, so that the batch can be ramped up (for example 1024 early to 2048-3072 late, or larger during the low-res stage)? How should the lr and momentum be adjusted at each switch, especially with orthogonalized or normalized optimizers like Muon? Would such a ramp cut the number of steps without the accuracy loss of a fixed large batch? Is the opposite (large batch early during the cheap low-res warmup, smaller later) better supported?",
+    "queries": [
+      "critical batch size increases during training",
+      "batch size warmup schedule ramp training efficiency",
+      "Muon optimizer critical batch size scaling",
+      "don't decay the learning rate increase the batch size",
+      "progressive resizing batch size schedule fast image classification",
+      "adaptive batch size gradient noise scale schedule"
+    ],
+    "rubric": [
+      "Studies a batch size that changes during training (ramp, warmup or adaptive), or measures how the critical batch size or gradient noise scale changes over training, with time or step savings measured at matched final accuracy.",
+      "Gives a concrete rule for adjusting lr, momentum or warmup when the batch size changes (e.g. sqrt or linear scaling, keeping the noise scale lr*N/B), ideally for normalized or orthogonalized updates such as Muon, LARS or LAMB, or for SGD with Nesterov momentum.",
+      "Covers short training runs (roughly 10 epochs or fewer, or the early-training regime) on image classification such as CIFAR or ImageNet, or gives phase-wise evidence that carries over to small ConvNets.",
+      "Preferably discusses how batch size interacts with progressive resizing or resolution curricula, or with weight averaging (EMA or lookahead)."
+    ],
+    "exclude": [
+      "methods that require pretrained weights, distillation from pretrained teachers, or external or extra data",
+      "test-time augmentation or anything using the test set during training or for model selection",
+      "multi-GPU or distributed-only systems tricks with no single-GPU equivalent (e.g. gradient compression, pipeline parallelism)",
+      "LLM-only batch-size scaling-law papers with no schedule or lr rule that carries over to ConvNets",
+      "methods that need new packages beyond PyTorch 2.4.0 / torchvision 0.19.0, or that change clocks or GPU power",
+      "data pruning or coreset methods that need a pretrained or separately trained proxy model"
+    ]
+  },
+  "cost": 0.9413
+}

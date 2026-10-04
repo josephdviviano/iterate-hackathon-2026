@@ -1,0 +1,28 @@
+{
+  "exp": "E050",
+  "commit": "0a6bef5",
+  "pid": 454140,
+  "start_ticks": 4304426,
+  "started": 1791066639.585055,
+  "tag": "I058",
+  "description": "Exploit, extending the FreezeOut-style cut. On the current tip (idea A's stack if kept, else E038 plus the pooling cut), also freeze the first group-1 conv block (whitening-output -> 128 conv, pool, BN, GELU) during the 2 epochs at 28 px, exactly as already done at 32 px. In the 28 px graph, detach the block's output before the second group-1 conv. Drop that conv's weight and BN affine params from the 28 px phase's Muon/SGD lists, or zero their lr. BN stays in train mode. Recapture the 28 px graph in build; the graph count is unchanged. conv1 is then trained only in the 5 epochs at 20/24 px. Evaluate dev seeds 3-12 alongside the official run. Log ms/step per phase.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E050.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7523666666666666,
+    "time": 6.429294671332173,
+    "complete": true
+  },
+  "row": {
+    "exp": "E050",
+    "commit": "0a6bef5",
+    "accuracy": 0.7523666666666666,
+    "time": 6.429294671332173,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I058",
+    "description": "Exploit, extending the FreezeOut-style cut. On the current tip (idea A's stack if kept, else E038 plus the pooling cut), also freeze the first group-1 conv block (whitening-output -> 128 conv, pool, BN, GELU) during the 2 epochs at 28 px, exactly as already done at 32 px. In the 28 px graph, detach the block's output before the second group-1 conv. Drop that conv's weight and BN affine params from the 28 px phase's Muon/SGD lists, or zero their lr. BN stays in train mode. Recapture the 28 px graph in build; the graph count is unchanged. conv1 is then trained only in the 5 epochs at 20/24 px. Evaluate dev seeds 3-12 alongside the official run. Log ms/step per phase."
+  }
+}

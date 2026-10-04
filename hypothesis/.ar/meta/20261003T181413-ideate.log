@@ -1,0 +1,19 @@
+added I048, I049, I050, I051, I052, I053; dropped none. I'm proposing 6 new ideas and dropping none of the queued ones. The queue now holds 8: I040 (power sampling, priority 1), I047 (bs 1536, priority 2) and the 6 below.
+
+**Where things stand:** the tip is E035 at 0.7572 and 5.472 s. The tip family's true accuracy is about 0.756. None of these single-run gaps are resolvable below about 0.4 pp, and the run-to-run sd of a 3-seed mean is about 0.15 pp.
+
+**What is now closed:** every Muon hyperparameter (momentum, lr, NS iteration count, NS coefficients), label smoothing and the low-res operator. Two hypotheses can be resolved without new runs:
+- H7.1.1 is effectively supported by E030 (momentum 0.5 gave 0.7550, below its 0.7574 bar).
+- H7.2.2 is effectively refuted by E031 (2 NS steps cost 1.8 pp) and E033's spectrum analysis (3-step Polar-Express coefficients do worse than the fixed ones on the real spectra).
+
+**Exploit (about 2/3):**
+- **Priority 4, H2.8:** E029's 3@16 + 1@24 schedule moved onto the E035 base. This combines two near-misses: E029 missed feasibility by 0.0007, and E035 may have added +0.18 pp. Expected about 5.2 s at 0.752-0.756; a new tip only under the H4 rule.
+- **Priority 4, H2.8:** a cheaper bridge, 2@16 + 2@20 + 4@32. Expected -3 to -4% time for a loss of up to about 0.3 pp.
+- **Priority 2, H7.2:** bs 2048 in the 16/24 px phases only, where Muon's fixed per-step cost is the largest share of epoch time.
+
+**Explore (about 1/3):**
+- **Priority 3, H4.3.1:** a determinism ablation. Muon compiled in default mode, but cuDNN benchmarking kept on. If seed 0 then reproduces bit for bit, later comparisons can be paired by seed, roughly halving decision noise.
+- **Priority 2, H7:** move the classifier head to Muon. This is a new accuracy source specific to CIFAR-100's 100-way head.
+- **Priority 1, H2.8.2:** a 12 px first epoch with a cost measurement. It probably closes the sub-16 px line.
+
+H2.10.1 (4@16 + 4.5@32) is not proposed. With E032's -0.68 pp, it would land at about 0.751 for about 5.4 s, which is dominated by the tip.

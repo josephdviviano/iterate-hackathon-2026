@@ -1,0 +1,28 @@
+{
+  "exp": "E040",
+  "commit": "d6bffdc",
+  "pid": 263362,
+  "start_ticks": 2829973,
+  "started": 1791051895.0566068,
+  "tag": "I048",
+  "description": "On the E035 tip (compiled batched Muon with renorm every 2+int(15*progress) steps, 2@16 + 2@24 + 4@32 px, 8.0 epochs), change only the schedule to 3@16 + 1@24 + 4@32 px, so epoch 2 moves from 24 px to 16 px. This is E029's schedule moved onto the newer base. Use the same operator (flip + translate-2 at 32 px, then antialiased bilinear downsample) and AdaptiveMaxPool2d(1). The step count is unchanged, so the LR/EMA/lookahead/renorm schedules are unchanged. All shapes are already warmed up in build. This combines two near-misses: E029 (-0.27 s for -0.31 pp, infeasible by 0.0007) and E035's possible +0.18 pp. It does not rerun E029 unchanged (H4.2).",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E040.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7522333333333333,
+    "time": 5.216384407999915,
+    "complete": true
+  },
+  "row": {
+    "exp": "E040",
+    "commit": "d6bffdc",
+    "accuracy": 0.7522333333333333,
+    "time": 5.216384407999915,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I048",
+    "description": "On the E035 tip (compiled batched Muon with renorm every 2+int(15*progress) steps, 2@16 + 2@24 + 4@32 px, 8.0 epochs), change only the schedule to 3@16 + 1@24 + 4@32 px, so epoch 2 moves from 24 px to 16 px. This is E029's schedule moved onto the newer base. Use the same operator (flip + translate-2 at 32 px, then antialiased bilinear downsample) and AdaptiveMaxPool2d(1). The step count is unchanged, so the LR/EMA/lookahead/renorm schedules are unchanged. All shapes are already warmed up in build. This combines two near-misses: E029 (-0.27 s for -0.31 pp, infeasible by 0.0007) and E035's possible +0.18 pp. It does not rerun E029 unchanged (H4.2)."
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "R003",
+  "from": "agent",
+  "after": "E019",
+  "question": "In short-schedule CNN training, how much accuracy does progressive resizing (training early epochs at lower resolution, e.g. 24px of 32px or 128 of 224) cost at matched epochs, what schedule of resolutions and what fraction of low-res epochs works best, and how is the train-test resolution discrepancy (BN statistics, FixRes) best handled?",
+  "hypotheses": [
+    "H2.3"
+  ],
+  "must_have": [
+    "reports an accuracy or time comparison for training with lower-resolution images in early epochs (progressive resizing / mixed-resolution / FixRes) on an image classification benchmark"
+  ],
+  "exclude": [
+    "detection/segmentation only; super-resolution; papers without training-time experiments"
+  ],
+  "status": "done",
+  "created": 1791060521.06671,
+  "digest": "D003",
+  "plan": {
+    "question": "In short-schedule CNN training (about 10 epochs or fewer, CIFAR-scale 32px or ImageNet-scale fast runs), how much top-1 accuracy does progressive resizing cost at matched epochs? Here progressive resizing means training early epochs at lower resolution (e.g. 24px of 32px, 128 of 224) and finishing at full resolution. Which resolution schedule works best (number of stages, step vs smooth ramp, fraction of epochs at low resolution, when to switch to full resolution)? How is the train-test resolution discrepancy best handled: BN statistic recalibration, FixRes-style final fine-tuning at test resolution, ending with enough full-res epochs, and crop/scale augmentation coupled to resolution? Context: in our runs, 50% of epochs at 24px cut time 12-21% but lost 0.4-0.8 pp, and adding epochs did not fully recover it (E011, E015).",
+    "queries": [
+      "progressive resizing image classification fast training",
+      "FixRes train test resolution discrepancy",
+      "progressive learning image size regularization EfficientNetV2",
+      "mixed resolution training budgeted CNN low resolution early epochs",
+      "fast ImageNet training progressive resizing low resolution schedule",
+      "batch normalization statistics recalibration resolution change"
+    ],
+    "rubric": [
+      "Trains an image classifier from scratch with lower-resolution inputs in early epochs (progressive resizing, multi-stage or mixed resolution) and reports top-1 accuracy and/or wall-clock time against a fixed-resolution baseline at matched epochs or compute",
+      "Specifies or ablates the resolution schedule: the low-res sizes used, the fraction of epochs at low resolution, the timing of the final full-resolution phase, or step vs gradual ramp",
+      "Addresses the train-test resolution discrepancy, e.g. FixRes fine-tuning at test resolution, BN statistic recalibration, adapting augmentation strength or crop scale to resolution, or a final full-res phase",
+      "Preferably covers short or budgeted schedules (fast-training/speedrun regimes, <=~20 epochs, or a fixed time budget) on CIFAR, ImageNet or similar benchmarks"
+    ],
+    "exclude": [
+      "Detection- or segmentation-only papers",
+      "Super-resolution or image restoration",
+      "Papers without training-time experiments (pure inference or test-time resolution analysis with no retraining)",
+      "Methods that depend on pretrained weights or external data",
+      "Methods that rely on test-time augmentation or multi-scale test-time ensembles (TTA is banned)",
+      "Methods that use the test set for BN recalibration or tuning"
+    ]
+  },
+  "cost": 0.5811
+}

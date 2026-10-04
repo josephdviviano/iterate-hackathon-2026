@@ -1,0 +1,34 @@
+H2.4.2->refuted, H2.12->retired, H2.14->supported, H2.14.1->supported, H2.14.2->supported, H2.10.2->retired, H2.11.2->retired, H6.4->inconclusive, H6.4.1->inconclusive, H7.2.4->retired, H8.1.2->retired, +H2.10.3, +H7.3.2, +H7.3.3, +H6.5.2, +H2.15, +H2.15.1, +H2.16, +H2.16.1, +H2.16.2, +H4.5, +H4.5.1, +H4.2.4. Re-baselined the tree on the pooled tip-family mean of 0.7533. That is five runs of the same math (E046, E048, E052, E053, E056) with sd ~0.15 pp, which replaces the lucky single-draw 0.7548. The local margin is about 0. The math-neutral speedups are confirmed (H2.14, H2.14.1, H2.14.2 supported: static shapes -2.0%, max(dim).values pool another -2.9%, 4.718 s), and the E056 code is now the base. They can only be banked with ~+0.1-0.2 pp of zero-time accuracy.
+
+Changes after re-baselining:
+- E051 becomes noise: H6.4.1 and H6.4 are inconclusive, H8.1.2 is retired, and H8 drops to 0.2.
+- E049 (head Muon lr 0.5x) is now the best zero-cost signal at +0.25 pp. H7.3 is reframed around head update scale, and a two-run replicate on the E056 base is added.
+- E047's schedule may beat the 3@16 swap at equal time; an equal-time test on the E056 base is added under H2.10.
+- E050's width cut now trades like a schedule trim, so H2.13 is inconclusive and gated on the per-layer profile.
+- The head-on-Muon gain is revised down to ~+0.15 pp.
+
+E052 (98% busy at 16 px) refutes the launch-bound reading. H2.4.2 is refuted, H2.12 and its children are retired, H2.4 is rewritten as occupancy-bound, and the MUD finding led to retiring H7.2.4. H4 gets a stricter promotion rule: pooled >=0.7540 over >=3 non-bit-identical runs, or >=2 runs each >=0.7545, plus provenance logging.
+
+New directions:
+- Whitening-bias freeze after 20% of steps (Fable/hiverge/airbench): a FLOP lever that drops group-1 conv1's dgrad.
+- Fused BN/GELU elementwise kernels (~30% of GPU time), profile first.
+- Fable floor-held tail + short final EMA.
+- Decoupled wd on the Muon head.
+- A run-level cuDNN-pick offset under H4, with weak current support.
+- A provenance/pool-gradient check.
+
+Recommended next step: a 2x2 of head lr 0.5x × the E047 schedule on the E056 base, two runs per arm, each judged against the pooled 0.7533.
+added I069, I070, I071, I072, I073, I074, I075; dropped none. The current state: the E057 tip runs at 4.717 s, and its same-math family now pools to about 0.7531 over 8 runs, right at the 0.753 gate. E060's prepare speedup (-0.9%) is math-neutral and bankable, so every new idea builds on the E060 code. Banking any speedup needs about +0.1-0.2 pp of accuracy at no extra time, or math-neutral time cuts that keep accuracy in the noise band. The queue is 7 ideas: 4 exploit and 3 explore.
+
+Exploit:
+- Head Muon LR at 0.5x, scored twice (H7.3.2). The best single zero-cost signal so far is E049.
+- Freezing the whitening bias with requires_grad=False after 20% of steps (H2.15.1). This is a FLOP lever that drops group-1 conv1's input gradient, and it doubles as a test of H8.1. It replaces the queued I068, which ran on the stale E046 base and saved no compute.
+- E047's equal-time 2@16 + 1.5@24 + 4@32 reshuffle on the current base (H2.10.3).
+- Inductor coordinate-descent and pointwise autotuning aimed at the BN/GELU elementwise kernels, which take about 30% of GPU time (H2.16.2).
+
+Explore:
+- A profile of passes over each activation and per-layer cost (H2.16.1, also feeding H2.13.2). Its scored row is an extra variance sample, with weight checksums and cuDNN kernel names logged for H4.4.1 and H4.5.1.
+- Fable's floor-held tail plus a light final EMA (H6.5.2).
+- Muon filter LR 0.28 on the bs-1536 regime (H7.1.3).
+
+Every accuracy lever is scored twice and judged against the pooled 0.7531 mean, following the H4 promotion rule.

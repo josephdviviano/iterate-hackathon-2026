@@ -1,0 +1,28 @@
+{
+  "exp": "E053",
+  "commit": "f9be5f5",
+  "pid": 518384,
+  "start_ticks": 4692668,
+  "started": 1791070522.0080278,
+  "tag": "I072",
+  "description": "Raise the batch size only in the cheap low-res stages, as D016's 'cheaper variant' and C0235 suggest. The tip is E048, commit dc07126: bs 1536; 20 px bilinear antialiased whole images for epochs 0-1.5, 28 px for 1.5-3.0, then 32 px for the last 3.75; 6.75 epochs total; SGD-group lr x1.5; head lr x2 with wd halved; Muon lr 0.16, mom 0.8, NS3; lookahead 0.97^5; jitter; whitening bias trained in epoch 1 only. If I067 (16 px) or I069 is kept first, use that successor and leave its stage boundaries unchanged. Make one change: use bs 2048 for the first 3.0 epochs (150000 samples, the 20 px and 28 px stages) and keep bs 1536 for the 32 px stage. The stage boundaries in samples (75000, 150000) and the whitening-bias freeze at 50000 samples stay where they are. Index every schedule by samples seen, not by step index: the lr warmup/decay, the Muon lr multiplier and the lookahead (t/T)^3 ramp. The lr multiplier at a given progress fraction is then unchanged. Per-step lrs in the bs-2048 stages: - Muon lr stays 0.16 and momentum stays 0.8. C0218 says don't rescale at switches; C0210/C0212 say never raise momentum at a switch. - The SGD group's per-step lr is multiplied by 2048/1536 with wd unchanged, the noise-scale rule used in E041. Lookahead still syncs every 5 steps. Where a switch falls inside a step, split the straddling step into the two partial shapes, as the existing switches do. In build(), warm up with channels_last tensors in the exact timed layout (E035): - the bs-2048 20 px graph with and without whitening-bias grad; - the bs-2048 28 px graph; - every new partial-batch shape at the 50000, 75000 and 150000 boundaries. Keep build under ~450 s. Run debug_nan.py on the new shapes under max-autotune-no-cudagraphs, and compare trial-0 with later-trial train times. Eval is unchanged.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E053.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7497,
+    "time": 4.826594700331043,
+    "complete": true
+  },
+  "row": {
+    "exp": "E053",
+    "commit": "f9be5f5",
+    "accuracy": 0.7497,
+    "time": 4.826594700331043,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I072",
+    "description": "Raise the batch size only in the cheap low-res stages, as D016's 'cheaper variant' and C0235 suggest. The tip is E048, commit dc07126: bs 1536; 20 px bilinear antialiased whole images for epochs 0-1.5, 28 px for 1.5-3.0, then 32 px for the last 3.75; 6.75 epochs total; SGD-group lr x1.5; head lr x2 with wd halved; Muon lr 0.16, mom 0.8, NS3; lookahead 0.97^5; jitter; whitening bias trained in epoch 1 only. If I067 (16 px) or I069 is kept first, use that successor and leave its stage boundaries unchanged. Make one change: use bs 2048 for the first 3.0 epochs (150000 samples, the 20 px and 28 px stages) and keep bs 1536 for the 32 px stage. The stage boundaries in samples (75000, 150000) and the whitening-bias freeze at 50000 samples stay where they are. Index every schedule by samples seen, not by step index: the lr warmup/decay, the Muon lr multiplier and the lookahead (t/T)^3 ramp. The lr multiplier at a given progress fraction is then unchanged. Per-step lrs in the bs-2048 stages: - Muon lr stays 0.16 and momentum stays 0.8. C0218 says don't rescale at switches; C0210/C0212 say never raise momentum at a switch. - The SGD group's per-step lr is multiplied by 2048/1536 with wd unchanged, the noise-scale rule used in E041. Lookahead still syncs every 5 steps. Where a switch falls inside a step, split the straddling step into the two partial shapes, as the existing switches do. In build(), warm up with channels_last tensors in the exact timed layout (E035): - the bs-2048 20 px graph with and without whitening-bias grad; - the bs-2048 28 px graph; - every new partial-batch shape at the 50000, 75000 and 150000 boundaries. Keep build under ~450 s. Run debug_nan.py on the new shapes under max-autotune-no-cudagraphs, and compare trial-0 with later-trial train times. Eval is unchanged."
+  }
+}

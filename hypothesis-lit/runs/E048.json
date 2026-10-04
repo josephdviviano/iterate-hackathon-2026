@@ -1,0 +1,28 @@
+{
+  "exp": "E048",
+  "commit": "76baf37",
+  "pid": 447694,
+  "start_ticks": 4234232,
+  "started": 1791065937.6468613,
+  "tag": "I056",
+  "description": "Exploit by stacking two near-misses. On E038 (2x20+3x24+2x28+4x32 px, 2/3/3, Muon with AOL plus 2 NS steps, conv1 block frozen at 32 px, ls 0.4; 6.68 s), make two changes. (1) Re-apply E042's pooling cut: replace the head's AdaptiveMaxPool2d(1) with x.flatten(2).max(dim=2).values at every resolution and in eval. Use the indices-based backward, not amax, because amax crashed in E041. (2) Add E043's end-of-train BN re-estimation with 4 batches instead of 6. After the final Lookahead sync, reset all BN running stats. Re-estimate them with momentum=None from 4 forward-only batches of 1536 un-augmented 32 px training images, drawn with the trial-seeded generator, under no_grad, fp16 and channels_last. Then restore BN momentum. Put the re-estimation pass in a small graph or compiled function warmed up in build on synthetic data. Recapture all 4 train graphs in build. Check that eval gives finite [B,100] logits for B in {1, 7, 513, 1024}. Besides the official run, evaluate the same code on dev seeds 3-12 outside the official command, so the BN-re-estimation gain is measured against E046's 10-seed baseline of 0.7534 with SE about 0.09 pp, not against a single draw.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E048.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7511666666666666,
+    "time": 6.549229322331182,
+    "complete": true
+  },
+  "row": {
+    "exp": "E048",
+    "commit": "76baf37",
+    "accuracy": 0.7511666666666666,
+    "time": 6.549229322331182,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I056",
+    "description": "Exploit by stacking two near-misses. On E038 (2x20+3x24+2x28+4x32 px, 2/3/3, Muon with AOL plus 2 NS steps, conv1 block frozen at 32 px, ls 0.4; 6.68 s), make two changes. (1) Re-apply E042's pooling cut: replace the head's AdaptiveMaxPool2d(1) with x.flatten(2).max(dim=2).values at every resolution and in eval. Use the indices-based backward, not amax, because amax crashed in E041. (2) Add E043's end-of-train BN re-estimation with 4 batches instead of 6. After the final Lookahead sync, reset all BN running stats. Re-estimate them with momentum=None from 4 forward-only batches of 1536 un-augmented 32 px training images, drawn with the trial-seeded generator, under no_grad, fp16 and channels_last. Then restore BN momentum. Put the re-estimation pass in a small graph or compiled function warmed up in build on synthetic data. Recapture all 4 train graphs in build. Check that eval gives finite [B,100] logits for B in {1, 7, 513, 1024}. Besides the official run, evaluate the same code on dev seeds 3-12 outside the official command, so the BN-re-estimation gain is measured against E046's 10-seed baseline of 0.7534 with SE about 0.09 pp, not against a single draw."
+  }
+}

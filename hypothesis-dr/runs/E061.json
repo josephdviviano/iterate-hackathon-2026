@@ -1,0 +1,28 @@
+{
+  "exp": "E061",
+  "commit": "77e1f60",
+  "pid": 584486,
+  "start_ticks": 5081369,
+  "started": 1791074409.021614,
+  "tag": "I079",
+  "description": "Move the block-1 freeze earlier, from 0.8 to 0.7 of training samples. The tip is E058 (commit fb3f626): bs 1536; 20 px for epochs 0-1.5 and 28 px for 1.5-3.5, both without translate; 32 px with translate-2 for 3.5-6.75; jitter in every stage; SGD-group lr x1.5; head lr x2 with wd halved; Muon lr 0.16, mom 0.8, NS3; lookahead 0.97^5; whitening bias trained in epoch 1 only; block 1 frozen from 5.4 epochs. If I077 or I078 is kept first, use that successor. Make one change: switch to the existing block-1-frozen graph pair 0.675 epoch earlier, at sample 236250 (4.725 epochs) instead of 270000. That pair is the 32 px train step with block 1's output detached, plus the Muon variant without the 128x1152 group, with block-1 BN biases skipped in the SGD group. Block 1 still runs forward in train mode, so its BN running stats keep updating, and lookahead keeps blending it. Total epochs, stage boundaries, bs, the sample stream and every schedule stay unchanged. The switch falls inside step ~153, so split that straddling step into the two partial shapes, as the existing switches do. In build(), warm up both new partial shapes (unfrozen and frozen 32 px graphs) with channels_last tensors in the exact timed layout (E035). Run debug_nan.py on the new shapes and compare trial-0 with later-trial train times. Rationale: E058 priced the last 20% at ~0.02 pp per 1% of time, the cheapest lever found so far (D025 C0237/C0246: early layers converge first). This run prices the next 10%.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E061.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7526333333333334,
+    "time": 4.56531021566722,
+    "complete": true
+  },
+  "row": {
+    "exp": "E061",
+    "commit": "77e1f60",
+    "accuracy": 0.7526333333333334,
+    "time": 4.56531021566722,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I079",
+    "description": "Move the block-1 freeze earlier, from 0.8 to 0.7 of training samples. The tip is E058 (commit fb3f626): bs 1536; 20 px for epochs 0-1.5 and 28 px for 1.5-3.5, both without translate; 32 px with translate-2 for 3.5-6.75; jitter in every stage; SGD-group lr x1.5; head lr x2 with wd halved; Muon lr 0.16, mom 0.8, NS3; lookahead 0.97^5; whitening bias trained in epoch 1 only; block 1 frozen from 5.4 epochs. If I077 or I078 is kept first, use that successor. Make one change: switch to the existing block-1-frozen graph pair 0.675 epoch earlier, at sample 236250 (4.725 epochs) instead of 270000. That pair is the 32 px train step with block 1's output detached, plus the Muon variant without the 128x1152 group, with block-1 BN biases skipped in the SGD group. Block 1 still runs forward in train mode, so its BN running stats keep updating, and lookahead keeps blending it. Total epochs, stage boundaries, bs, the sample stream and every schedule stay unchanged. The switch falls inside step ~153, so split that straddling step into the two partial shapes, as the existing switches do. In build(), warm up both new partial shapes (unfrozen and frozen 32 px graphs) with channels_last tensors in the exact timed layout (E035). Run debug_nan.py on the new shapes and compare trial-0 with later-trial train times. Rationale: E058 priced the last 20% at ~0.02 pp per 1% of time, the cheapest lever found so far (D025 C0237/C0246: early layers converge first). This run prices the next 10%."
+  }
+}

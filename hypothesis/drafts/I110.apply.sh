@@ -1,0 +1,1 @@
+sed -i 's/^    torch.backends.cudnn.benchmark = True$/    torch.backends.cudnn.benchmark = True\n    torch.backends.cudnn.benchmark_limit = 0  # try every cuDNN algorithm for each shape (untimed, in build)/' submissions/arena/submission.py

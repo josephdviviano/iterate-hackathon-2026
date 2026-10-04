@@ -1,0 +1,28 @@
+{
+  "exp": "E024",
+  "commit": "c32e159",
+  "pid": 375858,
+  "start_ticks": 3741964,
+  "started": 1791061014.9629974,
+  "tag": "I029",
+  "description": "Exploit, cheapening the per-step Muon cost (~2 ms/step of GPU time per the E018 profile, the same at 24 and 32 px). On the E021 incumbent (2/3/3 net, Muon at batch 1536 with lr 0.205 and momentum 0.655, CUDA-graphed step, 5 epochs at 24 px + 5.75 at 32 px, 0.7552 @ 7.62 s), replace the 3-step Newton-Schulz with Turbo-Muon-style almost-orthogonal preconditioning followed by 2 NS steps (C0008/C0009). Before NS, rescale X's columns by 1/sqrt of the row sums of |X^T X|, inside the batched NS call. Keep the same NS coefficients for the 2 remaining steps, and keep lr, momentum and everything else fixed. Recapture both CUDA graphs in build. Log ms/step per phase.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E024.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7556333333333334,
+    "time": 7.471328441664809,
+    "complete": true
+  },
+  "row": {
+    "exp": "E024",
+    "commit": "c32e159",
+    "accuracy": 0.7556333333333334,
+    "time": 7.471328441664809,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I029",
+    "description": "Exploit, cheapening the per-step Muon cost (~2 ms/step of GPU time per the E018 profile, the same at 24 and 32 px). On the E021 incumbent (2/3/3 net, Muon at batch 1536 with lr 0.205 and momentum 0.655, CUDA-graphed step, 5 epochs at 24 px + 5.75 at 32 px, 0.7552 @ 7.62 s), replace the 3-step Newton-Schulz with Turbo-Muon-style almost-orthogonal preconditioning followed by 2 NS steps (C0008/C0009). Before NS, rescale X's columns by 1/sqrt of the row sums of |X^T X|, inside the batched NS call. Keep the same NS coefficients for the 2 remaining steps, and keep lr, momentum and everything else fixed. Recapture both CUDA graphs in build. Log ms/step per phase."
+  }
+}

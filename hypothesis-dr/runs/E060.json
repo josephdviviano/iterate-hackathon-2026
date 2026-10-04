@@ -1,0 +1,28 @@
+{
+  "exp": "E060",
+  "commit": "10c865e",
+  "pid": 583014,
+  "start_ticks": 5061177,
+  "started": 1791074207.096917,
+  "tag": "I078",
+  "description": "Test whether the early whitening-bias freeze limits the cheap curriculum. On the tip (E052, or I072's successor if kept), make one change: keep training the whitening-conv bias until the end of the 28 px stage (3.5 epochs, sample 175000) instead of until the end of epoch 1. This needs a 28 px train-step variant WITH whitening-bias grad, compiled and warmed up in build() (full batch and every partial shape at the 1.5- and 3.5-epoch switches), with channels_last tensors in the exact timed layout (E035). The 32 px stage keeps the frozen-bias graph. Lr for the whitening bias follows its existing schedule. Run debug_nan.py on the new graph and compare trial-0 with later-trial train times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E060.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7523333333333333,
+    "time": 4.718076077998073,
+    "complete": true
+  },
+  "row": {
+    "exp": "E060",
+    "commit": "10c865e",
+    "accuracy": 0.7523333333333333,
+    "time": 4.718076077998073,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I078",
+    "description": "Test whether the early whitening-bias freeze limits the cheap curriculum. On the tip (E052, or I072's successor if kept), make one change: keep training the whitening-conv bias until the end of the 28 px stage (3.5 epochs, sample 175000) instead of until the end of epoch 1. This needs a 28 px train-step variant WITH whitening-bias grad, compiled and warmed up in build() (full batch and every partial shape at the 1.5- and 3.5-epoch switches), with channels_last tensors in the exact timed layout (E035). The 32 px stage keeps the frozen-bias graph. Lr for the whitening bias follows its existing schedule. Run debug_nan.py on the new graph and compare trial-0 with later-trial train times."
+  }
+}

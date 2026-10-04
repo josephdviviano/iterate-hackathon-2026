@@ -1,0 +1,28 @@
+{
+  "exp": "E052",
+  "commit": "447a7db",
+  "pid": 478819,
+  "start_ticks": 4546263,
+  "started": 1791069057.9561467,
+  "tag": "I070",
+  "description": "Weaker augmentation only in the low-resolution stages, following D014 C0193: small images want weaker augmentation, as in EfficientNetV2's progressive learning. This replaces the all-stage translate removal, I063. On the tip (E048, or I066's successor if it is kept), make one change: turn off translate-2 during the 20 px and 28 px stages (epochs 0-3.0) and keep it in the 32 px stage. The alternating flip and brightness/contrast jitter stay in every stage. Translate is pad-and-random-crop inside the compiled augment, so use a separate augment variant for the low-res stages and pick it in Python by stage. Never put a data-dependent branch in the graph. Tensor shapes are unchanged. Warm up the new augment variant in build() with channels_last tensors of the exact timed layout. The RNG stream for flips and jitter should stay as is where possible; note in the run log whether the translate draws are skipped, since skipping them shifts the downstream RNG. Eval is unchanged.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E052.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7545666666666666,
+    "time": 4.928187876665713,
+    "complete": true
+  },
+  "row": {
+    "exp": "E052",
+    "commit": "447a7db",
+    "accuracy": 0.7545666666666666,
+    "time": 4.928187876665713,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "keep",
+    "tag": "I070",
+    "description": "Weaker augmentation only in the low-resolution stages, following D014 C0193: small images want weaker augmentation, as in EfficientNetV2's progressive learning. This replaces the all-stage translate removal, I063. On the tip (E048, or I066's successor if it is kept), make one change: turn off translate-2 during the 20 px and 28 px stages (epochs 0-3.0) and keep it in the 32 px stage. The alternating flip and brightness/contrast jitter stay in every stage. Translate is pad-and-random-crop inside the compiled augment, so use a separate augment variant for the low-res stages and pick it in Python by stage. Never put a data-dependent branch in the graph. Tensor shapes are unchanged. Warm up the new augment variant in build() with channels_last tensors of the exact timed layout. The RNG stream for flips and jitter should stay as is where possible; note in the run log whether the translate draws are skipped, since skipping them shifts the downstream RNG. Eval is unchanged."
+  }
+}

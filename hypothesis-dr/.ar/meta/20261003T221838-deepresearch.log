@@ -1,0 +1,19 @@
+harvest: openalex_search('Muon optimizer critical batch size scaling') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('batch size scaling learning rate momentum orthogonalized optimizer') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('batch size warmup ramp schedule fewer steps accuracy') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('large batch short training momentum scaling rule samples') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('weight averaging EMA batch size scaling horizon') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('critical batch size data-limited training epochs') failed: HTTP Error 429: Too Many Requests
+R013 -> D013
+added I060; dropped none; skipped ideas for unknown/closed H3.1.1. The tip is E042: bs 1536, the first 1.5 of 6.75 epochs at 24 px, jitter, 5.449 s at 0.7549. That leaves a 0.19 pp margin over the 0.753 gate, so pure epoch trims are off the table until an accuracy gain is banked.
+
+**Queue after this step:** 8 queued ideas, plus I052 (the 28 px middle stage), which is running. Nothing was dropped: none of the queued ideas' hypotheses has been settled.
+- **Exploit (accuracy recovery at bs 1536):** I053 head lr x2, I056 Muon lr 0.20, I059 ghost BN.
+- **Exploit (time):** I057 bs 2048, plus the 2 new ideas below.
+- **Explore:** I054 (NS pre-scaling, H1.9.1) and I058 (denser lookahead, H1.6.1).
+
+**New ideas:**
+1. **20 px warmup stage (H2.3, priority 3).** E040 and E043 together show that low-res steps cost almost nothing during the warmup phase, but cost accuracy after it. So the remaining lever in that phase is cheaper steps, not more of them. This keeps the 1.5-epoch boundary and replaces 24 px with 20 px. Expected: about -2.8% time and about -0.12 pp accuracy, which is borderline feasible. It pairs naturally with whichever accuracy gain lands first (I053 or I056).
+2. **Math-identical prepare() trim (H3.1.1, priority 2).** Prepare is now about 2% of a 5.4 s trial and has never been optimized. It is gated by a 10-repeat timing in drafts/ and keeps accuracy bit-identical, so a gain of about 1% can be trusted even though it is below single-run jitter.
+
+**Note for the experimenter:** I053 is written against the E040 tip. It should run on the current tip (E042, bs 1536), with the head lr doubled on top of the x1.5 SGD-group scaling. Suggested order: I053 and I056 first, to rebuild margin. Then the 20 px stage and I057 (bs 2048) can cash that margin in.

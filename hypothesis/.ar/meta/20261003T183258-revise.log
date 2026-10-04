@@ -1,0 +1,54 @@
+H7.1.1->supported, H7.1.2->refuted, H7.1->supported, H7.2.1->refuted, H7.2.2->retired, H7.2.3->supported, H7.2->supported, H7->supported, H6.3.1->refuted, H6.3->refuted, H4.2->supported, +H2.11, +H2.11.1, +H2.11.2, +H2.12, +H2.12.1, +H2.4.2, +H6.4, +H6.4.1, +H6.5, +H6.5.1, +H2.13, +H2.13.1, +H4.2.3, +H4.3.2, +H7.2.4. I brought the tree in line with the evidence, the review and the search.
+
+**Status fixes against the pre-registered bars:**
+- Supported: H7.1.1 (E030) and H7.2.3 (E038, confirmed by the rerun E039).
+- Refuted: H7.1.2 (E034), H7.2.1 (E035: time saving too small) and H6.3.1/H6.3 (E037).
+- Retired: H7.2.2. The E033 spectrum analysis shows that 3-step Polar-Express coefficients are already worse than the fixed ones, so 2 steps would be worse still.
+- H5 keeps its refuted status. Its E020+/E024+ evidence tokens follow the opposite sign convention, which is noted in the reason; I could not edit the tokens themselves.
+
+**Restated hypotheses:**
+- **H7** keeps its main claim: Muon was the optimizer lever (supported, confidence lowered to 0.55). Its "the hyperparameters still have room" clause is closed. Momentum, LR, Newton-Schulz step count and label smoothing each came back flat, and E035's gain turned out to be noise. **H7.2** now says only cutting the step count reduces Muon's per-step cost. The momentum buffer is too small for an fp16 buffer to save measurable time.
+- **H2.4** now admits that the power-cap model fails in the 16/24 px phases (E038 saved ~2 ms per removed step). It also records that gains coming from per-step overhead are at higher risk of not carrying over to the 300 W PCIe judging card than gains from cutting FLOPs.
+- **H2.8** drops the "diminishing returns" claim. Once E026's lucky run is averaged out, the cost per 16 px epoch looks roughly linear. E041 is re-read as inconclusive rather than refuted.
+- **H2.10** and H2.10.1 are lowered. The measured costs make "move epochs to 16 px and spend the savings on more 32 px training" roughly break-even or worse.
+- **H4** now uses E038/E039 as a second rerun pair, notes that its noise estimate rests on only n=2 pairs, and flags that the seeds 3-10 margin check has not been redone on the bs 1536 tip.
+- **H4.2** is supported: E040 replicated E029 almost exactly, and E035's apparent gain disappeared.
+
+**New hypotheses:**
+- **N1:** per-phase batch size (fast.ai, OLMo), with N1a (bs 2048 at low resolution, 1024 at 32 px) and N1b (bs 3072 at low resolution after a short small-batch start).
+- **N2:** CUDA-graphing the step for the low-res shapes only (N2a), gated on N2b, a per-phase CUDA-event timing under H2.4.
+- **N3/N3a:** warmup retune at ~256 steps.
+- **N4/N4a:** LR floor under Muon.
+- **N5/N5a:** a group-2 width retest under Muon (a FLOP-reducing lever).
+- **N6:** seeds 3-10 margin check on the E038 tip.
+- **N7:** the unbundled determinism probe.
+- **N8:** an offline check of AOL preconditioning before any scored run.
+
+**Suggested order before any further cuts:**
+1. Run N6, N7 and H2.4.1/N2b, which are cheap and untimed.
+2. Confirm whether E038's parent commit includes E035's renorm change.
+3. Run N1a, the most promising lever.
+
+Open Lvl1 hypotheses: H2, H4, H6.
+Traceback (most recent call last):
+  File "/home/jovyan/work/arena3/hypothesis/research.py", line 996, in <module>
+    main()
+  File "/home/jovyan/work/arena3/hypothesis/research.py", line 992, in main
+    args.fn(args)
+  File "/home/jovyan/work/arena3/hypothesis/research.py", line 918, in cmd_meta
+    print(run_ideate(), flush=True)
+          ^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis/research.py", line 496, in run_ideate
+    out, cost = llm("ideate", prompt, IDEATE_SCHEMA)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis/research.py", line 459, in llm
+    p = subprocess.run(cmd, cwd=empty, capture_output=True, text=True, timeout=META_TIMEOUT)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/conda/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+OSError: [Errno 7] Argument list too long: 'claude'

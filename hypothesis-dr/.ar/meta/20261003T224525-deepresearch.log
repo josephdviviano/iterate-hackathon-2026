@@ -1,0 +1,21 @@
+harvest: openalex_search('critical batch size increases during training') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('batch size warmup schedule ramp training efficiency') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('Muon optimizer critical batch size scaling') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search("don't decay the learning rate increase the batch size") failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('progressive resizing batch size schedule fast image classification') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('adaptive batch size gradient noise scale schedule') failed: HTTP Error 429: Too Many Requests
+R016 -> D016
+added I069, I070, I071; dropped I058, I063. The tip is E048 at 5.00 s, accuracy 0.7552, with a 0.22 pp margin over 0.753. The cheapest time cuts left price accuracy at ~0.05-0.08 pp per 1% of time: the low-res stages, bs 1536 to 2048, and a 16 px first stage. Cutting epochs costs ≥0.12 pp per 1%, so it is a worse trade. The queue therefore alternates small time cuts with accuracy-margin builders.
+
+New ideas:
+- **Longer 28 px stage (H2.3, priority 4).** Move the 28 → 32 px switch from 3.0 to 3.5 epochs. Expected about -1.9% time for about -0.12 pp.
+- **No translate in the low-res stages only (H1.8.2, priority 3).** Backed by D014 C0193; replaces I063.
+- **NS2 with AOL preconditioning (H2.4.5, priority 1).** Runs only if a drafts/ timing check shows at least 0.3 ms/step saved. This is the only open Lvl3 hypothesis with no test yet.
+
+Dropped:
+- I058 (denser lookahead): the averaging axis is flat and its expected gain is below noise.
+- I063 (no translate in any stage): superseded by the low-res-only version.
+
+Queued after this update (8): I064, I054, I057, I067, I068 and the three new ideas. I066 (head x3) is still running.
+
+Run order: I066's result decides whether there is margin to spend. If it, I064 or the low-res augmentation change adds about 0.2 pp or more, spend it on the cheapest cut: the longer 28 px stage, then I067 (16 px), then I057 (bs 2048). I068 should run early, because it measures re-draw noise, and that sets how to grade the recent ~0.15-0.2 pp keeps.

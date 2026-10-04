@@ -1,0 +1,28 @@
+{
+  "exp": "E039",
+  "commit": "a4b84c7",
+  "pid": 423696,
+  "start_ticks": 4052611,
+  "started": 1791064121.4354377,
+  "tag": "I044",
+  "description": "On the tip (E028 commit e95ff94: Muon NS3 batched and compiled, lr 0.16, momentum 0.8, lookahead 0.97^5, LS 0.2, SiLU, 6.5 epochs; or I037's successor if it is kept), make one change: halve the head (final linear layer) lr in the SGD group. If the code expresses the head lr as a multiple of the group's base lr, halve that multiple; otherwise halve the head param-group lr. Keep lr*wd constant for the head, which means doubling its wd so the decay per step is unchanged. BN-bias lr x64, the whitening-bias lr, Muon, lookahead, LS, augmentation and epochs all stay identical. Background: the head lr was inherited from CIFAR-10 SGD airbench (lr 9). That setting faced 10 outputs over ~10 epochs. Here the 100-way head trains against Muon-normalized features over 6.5 epochs, so the head may be overshooting. This is a pure hyperparameter change, so no new compiled shapes are needed. If the lr is passed as a 0-d tensor, nothing recompiles.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E039.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7510333333333333,
+    "time": 5.89889374133539,
+    "complete": true
+  },
+  "row": {
+    "exp": "E039",
+    "commit": "a4b84c7",
+    "accuracy": 0.7510333333333333,
+    "time": 5.89889374133539,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I044",
+    "description": "On the tip (E028 commit e95ff94: Muon NS3 batched and compiled, lr 0.16, momentum 0.8, lookahead 0.97^5, LS 0.2, SiLU, 6.5 epochs; or I037's successor if it is kept), make one change: halve the head (final linear layer) lr in the SGD group. If the code expresses the head lr as a multiple of the group's base lr, halve that multiple; otherwise halve the head param-group lr. Keep lr*wd constant for the head, which means doubling its wd so the decay per step is unchanged. BN-bias lr x64, the whitening-bias lr, Muon, lookahead, LS, augmentation and epochs all stay identical. Background: the head lr was inherited from CIFAR-10 SGD airbench (lr 9). That setting faced 10 outputs over ~10 epochs. Here the 100-way head trains against Muon-normalized features over 6.5 epochs, so the head may be overshooting. This is a pure hyperparameter change, so no new compiled shapes are needed. If the lr is passed as a 0-d tensor, nothing recompiles."
+  }
+}

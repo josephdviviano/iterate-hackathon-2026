@@ -1,0 +1,38 @@
+exp	commit	accuracy	time	complete	feasible	improved	status	tag	description
+E000	bdf584f	0.012166666666666668	0.1042682356661923	True	no	yes	keep		baseline: unchanged template
+E001	5eb496c	0.7610333333333333	31.89942073066777	True	yes	yes	keep		ResNet9 w64 bf16 compile, 30ep bs512 SGD lr.4 ls.1
+E002	c043f1f	0.7610333333333333	30.620313944666123	True	yes	yes	keep		fix warmup dtype (bf16) to avoid recompile in trial 1
+E003	4454ba2	0.7590666666666667	26.485714200999308	True	yes	yes	keep		pool-first conv->pool->BN->ReLU, full synthetic warmup trial in build
+E004	c7bb15f	0.7590666666666667	26.904691751999053	True	yes	no	discard		sync once per epoch (removes first-trial slowdown)
+E005	ca7c520	0.762	25.090500785999513	True	yes	yes	keep		CUDA graph whole step (fwd+bwd+manual foreach SGD), per-epoch sync
+E006	8f1180e	0.7585	20.072588409665816	True	yes	yes	keep		epochs 30->24
+E007	50da999	0.7525	15.076802455332654	True	no	no	discard		epochs 24->18
+E008	298c0ea	0.7559	15.05449628333372	True	yes	yes	keep		18 epochs + label smoothing 0.2
+E009	9263829	0.7539666666666667	15.060009704998569	True	yes	no	discard		label smoothing 0.3
+E010	35dafd9	0.7585666666666667	15.06492798399995	True	yes	no	discard		weight decay 5e-4 -> 1e-3
+E011	72bb496	0.7576333333333334	13.402961633000814	True	yes	yes	keep		wd 1e-3 + epochs 16
+E012	1442e57	0.7509333333333333	11.723179683998751	True	no	no	discard		wd 2e-3 + epochs 14
+E013	c6917c6	0.7545	11.509668707333427	True	yes	yes	keep		alt flips + amax global pool, epochs 16->14
+E014	bfa8a78	0.7539333333333333	10.8658094746667	True	yes	yes	keep		widths [32,128,256,512] (first conv 64->32)
+E015	e9e54c5	0.7578333333333334	8.565002377665223	True	yes	yes	keep		Muon for conv filters (lr .12 mom .6, weight renorm), epochs 14->10
+E016	c940051	0.7576666666666667	7.9135438679998815	True	yes	yes	keep		batch 512->768, muon_lr .14, sgd lr .5
+E017	9cd54dc	0.7542	7.758500017334882	True	yes	yes	keep		wider late stages [32,128,320,640], epochs 10->8
+E018	d5be8f6	0.7563333333333334	7.380631805665568	True	yes	yes	keep		progressive resize [[24,4],[32,5]]
+E019	2cc8cdf	0.7587333333333334	7.037561100331611	True	yes	yes	keep		pad 2 (translate +-2) + stages [[24,5],[32,4]]
+E020	19efcf7	0.7566333333333333	6.705113127332879	True	yes	yes	keep		stages [[24,6],[32,3]]
+E021	1c006af			False	no	no	crash		overlap: amax backward NaN under inductor in tail segment
+E022	16efba3	0.7542	6.497041227665856	True	yes	yes	keep		Muon overlap (2 segments) + max-with-indices global pool
+E023	7d360a6	0.7555	6.273071956333297	True	yes	yes	keep		stages [[16,1],[24,5],[32,3]]
+E024	0e15b7c	0.7562666666666666	6.161079397000624	True	yes	yes	keep		stages [[16,4],[24,3],[32,3]]
+E025	2c2d578	0.7538	6.134909819666063	True	yes	yes	keep		tail segment includes 320->640 conv (more Muon overlap)
+E026	c61d746	0.755	6.022867940333526	True	yes	yes	keep		freeze first 3 blocks at 32px (no-grad stem), stages [[16,4],[24,3],[32,4]]
+E027	258b3d3	0.7546333333333333	5.950189825665196	True	yes	yes	keep		progressive freezing [[16,4,0],[24,1,1],[24,2,2],[32,1,2],[32,3,3]]
+E028	0ae1ce6	0.7504666666666667	5.762920979335225	True	no	no	discard		torch.backends.cudnn.benchmark = True
+E029	17f8b8a	0.7568666666666667	5.832866024664933	True	yes	yes	keep		cudnn.benchmark + stages [[16,4,0],[24,3,1],[32,1,2],[32,3,3]]
+E030	0e47a16	0.758	5.763445205331664	True	yes	yes	keep		inductor coordinate_descent_tuning
+E031	0f080f0	0.7523666666666667	5.270006854999035	True	no	no	discard		third stage 320->256 channels
+E032	826e9a6	0.7535	5.587917776999045	True	yes	yes	keep		third stage 256ch + 5 epochs at 16px
+E033	b30123d	0.7523333333333334	5.4181630836683325	True	no	no	discard		last stage 640->576ch, 6 epochs at 16px
+E034	b046a15	0.7558333333333334	5.499223820331584	True	yes	yes	keep		stem Muon updates batched into one zero-padded NS
+E035	381a511	0.7528666666666667	5.329581587667538	True	no	no	discard		higher lrs (sgd .8, muon .17) + 576ch last stage + 6 epochs at 16px
+E036	2979b7a	0.7559333333333333	5.048774442667006	True	yes	yes	keep		no warmup + sgd lr 1.2 + muon lr .17 + 576ch last stage

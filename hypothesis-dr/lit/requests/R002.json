@@ -1,0 +1,38 @@
+{
+  "id": "R002",
+  "from": "auto",
+  "after": "E001",
+  "question": "E001 cleared the bar on its first try: 0.7584 at 10 epochs in 9.28 s. That leaves about 0.5 pp of slack, so the next gains have to come from fewer epochs at the same accuracy. The open lever with the most potential and the most uncertainty is H1.2 (confidence 0.5): replacing Nesterov SGD on the conv filters of a small CNN with Muon, with or without a larger batch. The search should answer two things. Does Muon (or a related orthogonalized or second-order-lite optimizer) cut the epochs and wall-clock time needed to reach a fixed accuracy for short-budget CNN training on CIFAR-scale data, by how much, and with which hyperparameters (lr, momentum, Newton-Schulz steps, batch size, which parameters get Muon)? And is the per-step overhead small enough to keep a net time gain in a run of about 10 s?",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791058618.069854,
+  "digest": "D002",
+  "plan": {
+    "question": "E001 cleared the bar on its first try: 0.7584 at 10 epochs in 9.28 s. That leaves about 0.5 pp of slack, so the next gains have to come from fewer epochs at the same accuracy. The open lever with the most potential and the most uncertainty is H1.2 (confidence 0.5): replacing Nesterov SGD on the conv filters of a small CNN with Muon, with or without a larger batch. The search should answer two things. Does Muon (or a related orthogonalized or second-order-lite optimizer) cut the epochs and wall-clock time needed to reach a fixed accuracy for short-budget CNN training on CIFAR-scale data, by how much, and with which hyperparameters (lr, momentum, Newton-Schulz steps, batch size, which parameters get Muon)? And is the per-step overhead small enough to keep a net time gain in a run of about 10 s?",
+    "queries": [
+      "Muon optimizer orthogonalized momentum convolutional network CIFAR",
+      "Newton-Schulz orthogonalization optimizer fast training small batch budget",
+      "airbench CIFAR-10 speedrun optimizer epochs to target accuracy",
+      "Muon optimizer empirical study convergence speed vision",
+      "Shampoo SOAP optimizer CNN wall-clock time to accuracy CIFAR",
+      "large batch short schedule CNN training few epochs CIFAR-100"
+    ],
+    "rubric": [
+      "Trains CNNs (ResNet- or airbench-style) from scratch on CIFAR-10/100 or similar small images, and reports epochs, steps or wall-clock time needed to reach a fixed accuracy, not just final accuracy after long training.",
+      "Compares Muon or another orthogonalized or preconditioned optimizer against a tuned SGD or Nesterov baseline under a short budget (roughly 50 epochs or fewer).",
+      "Gives concrete hyperparameters (lr, momentum, batch size, NS iterations, which parameter groups use the optimizer) or reports per-step compute overhead, so the result can be turned into an experiment.",
+      "Ideally covers interactions with lookahead/EMA, label smoothing, or BatchNorm-bias learning-rate scaling as used in airbench recipes."
+    ],
+    "exclude": [
+      "Methods that rely on pretrained weights, transfer learning, distillation from a pretrained teacher, or any external data (forbidden by RULES.md)",
+      "Test-time augmentation or any use of the test set during training or selection (forbidden)",
+      "LLM/transformer-only optimizer results with no CNN or vision evidence",
+      "Results that only report final accuracy after 100+ epochs, with no time-to-accuracy data",
+      "Methods requiring package installs beyond PyTorch 2.4.0 / torchvision 0.19.0, or multi-GPU/distributed-only techniques",
+      "Hardware clock or power manipulation"
+    ]
+  },
+  "cost": 0.5
+}

@@ -1,0 +1,18 @@
+R008 -> D008
+added I044, I045; dropped none. I added two ideas and dropped none. With them the queue holds 8 ideas, plus I037 running. None of the queued hypotheses (H1.6.5, H1.7.2, H5.1.1, H2.4.4, H1.2.3, H1.8.1) is settled yet, so nothing qualifies for dropping.
+
+**Where things stand.** The best feasible run is E028: 6.5 epochs, 6.08 s, with only 0.16 pp of margin over the gate. Several tuning directions are now closed:
+- Muon tail lr floor, both lower (E025) and higher (E033)
+- Muon warmup (E031)
+- lookahead decay 0.95^5 vs 0.97^5 (E028)
+- block-3 width (E029)
+- conv shapes (E032)
+- frequency-wise Muon (E030)
+
+**What is left.** Remaining gains have to come from two places:
+- **Accuracy per epoch:** BN recalibration (I038), LS 0.1 (I039), brightness/contrast jitter (I043), and now head lr x0.5 for H1.7.1, the untested inherited SGD-group lr/wd settings.
+- **Systems cuts that leave the math unchanged:** whitening-bias freeze (I037, running), CUDA-graphing the Muon step (I041), and now Muon weight-norm projection on only some steps for H2.4.3. The H2.4.3 run only launches if a drafts/ timing check shows the projection costs at least 0.15 ms/step.
+
+**Explore share.** About a third of the queue is exploratory: the block-1 depth for epochs trade (I040), batch size 1536 (I042) and jitter (I043).
+
+**Plan once margin is banked.** Any accuracy gain of 0.2 pp or more should be spent right away as a 6.25-epoch run. The aim is to reach the ≤5.8 s target by combining several small gains.

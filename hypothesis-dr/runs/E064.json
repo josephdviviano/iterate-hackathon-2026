@@ -1,0 +1,28 @@
+{
+  "exp": "E064",
+  "commit": "acc857e",
+  "pid": 605882,
+  "start_ticks": 5220022,
+  "started": 1791075795.547487,
+  "tag": "I082",
+  "description": "Partial freezing by update thinning, as an explore against a hard earlier freeze. On the tip (E058 or its successor), make one change: during the 32 px stage before the existing freeze (samples 175000-270000, epochs 3.5-5.4), run the existing block-1-frozen graph pair (detached block-1 output, and the Muon variant without the 128x1152 group) on every odd step, and the normal graph pair on even steps. On frozen steps block 1 gets no gradient: its Muon momentum buffer is not updated and its BN biases are skipped in SGD, while its BN running stats still update. The lr schedules are unchanged, so block 1 takes half as many rotations in that window, each from a full-batch gradient. Pick the variant in Python by step parity, with no data-dependent branch. No new graphs are needed, since both variants already exist at 32 px. Warm up any new partial shape at the 3.5-epoch and 5.4-epoch switches with both variants in the exact timed layout (E035). Compare trial-0 with later-trial times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E064.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7483,
+    "time": 4.496233194666274,
+    "complete": true
+  },
+  "row": {
+    "exp": "E064",
+    "commit": "acc857e",
+    "accuracy": 0.7483,
+    "time": 4.496233194666274,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I082",
+    "description": "Partial freezing by update thinning, as an explore against a hard earlier freeze. On the tip (E058 or its successor), make one change: during the 32 px stage before the existing freeze (samples 175000-270000, epochs 3.5-5.4), run the existing block-1-frozen graph pair (detached block-1 output, and the Muon variant without the 128x1152 group) on every odd step, and the normal graph pair on even steps. On frozen steps block 1 gets no gradient: its Muon momentum buffer is not updated and its BN biases are skipped in SGD, while its BN running stats still update. The lr schedules are unchanged, so block 1 takes half as many rotations in that window, each from a full-batch gradient. Pick the variant in Python by step parity, with no data-dependent branch. No new graphs are needed, since both variants already exist at 32 px. Warm up any new partial shape at the 3.5-epoch and 5.4-epoch switches with both variants in the exact timed layout (E035). Compare trial-0 with later-trial times."
+  }
+}

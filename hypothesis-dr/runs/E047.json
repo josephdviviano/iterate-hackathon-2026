@@ -1,0 +1,28 @@
+{
+  "exp": "E047",
+  "commit": "3d6a396",
+  "pid": 460845,
+  "start_ticks": 4344925,
+  "started": 1791067044.579168,
+  "tag": "I060",
+  "description": "Make the warmup-phase resolution stage cheaper. On the current tip (E042 commit 2b85e5e: bs 1536, 24 px bilinear antialiased whole images for the first 1.5 epochs then 32 px, 6.75 epochs total, SGD-group lr x1.5, Muon lr 0.16 mom 0.8, lookahead 0.97^5, jitter, whitening bias trained in epoch 1 only; or I052's successor if it is kept, in which case change only its first stage), make one change: the first stage's resolution goes from 24 px to 20 px (F.interpolate, antialias=True, inside the compiled GPU augment after flip/translate/jitter). The stage boundary (1.5 epochs), total epochs, bs and every step-indexed schedule stay unchanged, so the sample stream and lr values are identical. Rationale: E040 vs E043 show low-res steps are roughly free during the warmup phase but cost accuracy after it, so the cheapest lever left in that phase is to make its steps cheaper rather than more numerous. In drafts/, first print the per-block spatial sizes at 20 px input (expected: whitening 19, block1 19 -> pool 9, block2 9 -> pool 4, block3 4 -> pool 2, final map 2x2) and set the 20 px graph's final pool to F.max_pool2d with a static kernel equal to that final map size. Do NOT use amax or flatten().max (E009 Inductor bug). In build(), warm up the 20 px train step with and without whitening-bias grad at bs 1536, plus every partial-batch shape at the 1.5-epoch switch, using channels_last tensors in the exact timed layout (E035 lesson). Run debug_nan.py on the new graphs under max-autotune-no-cudagraphs and compare trial-0 vs later-trial train times. Eval stays the 32 px graph.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E047.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7549666666666667,
+    "time": 5.272802727665597,
+    "complete": true
+  },
+  "row": {
+    "exp": "E047",
+    "commit": "3d6a396",
+    "accuracy": 0.7549666666666667,
+    "time": 5.272802727665597,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I060",
+    "description": "Make the warmup-phase resolution stage cheaper. On the current tip (E042 commit 2b85e5e: bs 1536, 24 px bilinear antialiased whole images for the first 1.5 epochs then 32 px, 6.75 epochs total, SGD-group lr x1.5, Muon lr 0.16 mom 0.8, lookahead 0.97^5, jitter, whitening bias trained in epoch 1 only; or I052's successor if it is kept, in which case change only its first stage), make one change: the first stage's resolution goes from 24 px to 20 px (F.interpolate, antialias=True, inside the compiled GPU augment after flip/translate/jitter). The stage boundary (1.5 epochs), total epochs, bs and every step-indexed schedule stay unchanged, so the sample stream and lr values are identical. Rationale: E040 vs E043 show low-res steps are roughly free during the warmup phase but cost accuracy after it, so the cheapest lever left in that phase is to make its steps cheaper rather than more numerous. In drafts/, first print the per-block spatial sizes at 20 px input (expected: whitening 19, block1 19 -> pool 9, block2 9 -> pool 4, block3 4 -> pool 2, final map 2x2) and set the 20 px graph's final pool to F.max_pool2d with a static kernel equal to that final map size. Do NOT use amax or flatten().max (E009 Inductor bug). In build(), warm up the 20 px train step with and without whitening-bias grad at bs 1536, plus every partial-batch shape at the 1.5-epoch switch, using channels_last tensors in the exact timed layout (E035 lesson). Run debug_nan.py on the new graphs under max-autotune-no-cudagraphs and compare trial-0 vs later-trial train times. Eval stays the 32 px graph."
+  }
+}

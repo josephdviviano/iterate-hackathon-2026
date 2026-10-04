@@ -1,0 +1,28 @@
+{
+  "exp": "E047",
+  "commit": "356cba2",
+  "pid": 444165,
+  "start_ticks": 4194530,
+  "started": 1791065540.6275818,
+  "tag": "I053",
+  "description": "Exploit, a kernel-efficiency cut in the most expensive phase. On E038, during the 4 epochs at 32 px, switch the frozen first group-1 block's BatchNorm to eval mode: it uses fixed running stats, gets no batch-stat reductions and no stat updates. Before entering the 32 px phase, re-estimate that one BN's running stats from 2 forward-only 32 px training batches (cumulative average), so its fixed affine matches the 32 px input distribution. Fold it into a per-channel scale/shift fused after the conv if inductor allows. Capture the modified 32 px graph and the tiny re-estimation pass in build. Change nothing else.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E047.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7534666666666666,
+    "time": 6.660121027998684,
+    "complete": true
+  },
+  "row": {
+    "exp": "E047",
+    "commit": "356cba2",
+    "accuracy": 0.7534666666666666,
+    "time": 6.660121027998684,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I053",
+    "description": "Exploit, a kernel-efficiency cut in the most expensive phase. On E038, during the 4 epochs at 32 px, switch the frozen first group-1 block's BatchNorm to eval mode: it uses fixed running stats, gets no batch-stat reductions and no stat updates. Before entering the 32 px phase, re-estimate that one BN's running stats from 2 forward-only 32 px training batches (cumulative average), so its fixed affine matches the 32 px input distribution. Fold it into a per-channel scale/shift fused after the conv if inductor allows. Capture the modified 32 px graph and the tiny re-estimation pass in build. Change nothing else."
+  }
+}

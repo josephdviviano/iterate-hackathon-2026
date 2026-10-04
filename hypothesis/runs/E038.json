@@ -1,0 +1,28 @@
+{
+  "exp": "E038",
+  "commit": "d944796",
+  "pid": 257422,
+  "start_ticks": 2765804,
+  "started": 1791051253.370565,
+  "tag": "I047",
+  "description": "On the E026 tip, raise the batch size from 1024 to 1536 (2@16 + 2@24 + 4@32 px, still 8.0 epochs). Scale the SGD param groups (BN/bias/head) by the E010 kilostep rule. Keep Muon lr 0.24 and momentum 0.6. Rescale the LR warmup/decay, EMA and lookahead schedules to the new step count (~256 steps). Compile and warm up the 1536-batch shapes at 16/24/32 px in build. The remaining Muon cost is per step (~1 ms), so a third fewer steps cuts it directly. E022 showed Muon tolerates large batches (-0.25 pp at bs 2000).",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E038.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7541666666666667,
+    "time": 5.215509457334217,
+    "complete": true
+  },
+  "row": {
+    "exp": "E038",
+    "commit": "d944796",
+    "accuracy": 0.7541666666666667,
+    "time": 5.215509457334217,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I047",
+    "description": "On the E026 tip, raise the batch size from 1024 to 1536 (2@16 + 2@24 + 4@32 px, still 8.0 epochs). Scale the SGD param groups (BN/bias/head) by the E010 kilostep rule. Keep Muon lr 0.24 and momentum 0.6. Rescale the LR warmup/decay, EMA and lookahead schedules to the new step count (~256 steps). Compile and warm up the 1536-batch shapes at 16/24/32 px in build. The remaining Muon cost is per step (~1 ms), so a third fewer steps cuts it directly. E022 showed Muon tolerates large batches (-0.25 pp at bs 2000)."
+  }
+}

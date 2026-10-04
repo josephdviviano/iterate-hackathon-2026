@@ -1,0 +1,28 @@
+{
+  "exp": "E013",
+  "commit": "04e09da",
+  "pid": 198463,
+  "start_ticks": 2052293,
+  "started": 1791044118.257753,
+  "tag": "I014",
+  "description": "Start from A1a (E001 tip) and add progressive resizing with a long full-res tail. Total 9.0 epochs (LR/EMA/lookahead schedules rescaled to the step count as the recipe already does). Train at 26 px for steps 0-30%, 28 px for 30-60% and 32 px for the last 40%. Low-res batches are made by applying the existing flip + translate-2 at 32 px, then F.interpolate(mode='bilinear', antialias=True) to 26/28 px. No random-resized crop. The final group pool must still end at 3x3 (26->25->12->6->3, 28->27->13->6->3). In build, compile and warm up all 3 train shapes plus eval at 32 px, so nothing recompiles in timed code. Instrumentation only: log a hash of the first batch's augmentation parameters per trial.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E013.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7505666666666666,
+    "time": 6.664866660000068,
+    "complete": true
+  },
+  "row": {
+    "exp": "E013",
+    "commit": "04e09da",
+    "accuracy": 0.7505666666666666,
+    "time": 6.664866660000068,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I014",
+    "description": "Start from A1a (E001 tip) and add progressive resizing with a long full-res tail. Total 9.0 epochs (LR/EMA/lookahead schedules rescaled to the step count as the recipe already does). Train at 26 px for steps 0-30%, 28 px for 30-60% and 32 px for the last 40%. Low-res batches are made by applying the existing flip + translate-2 at 32 px, then F.interpolate(mode='bilinear', antialias=True) to 26/28 px. No random-resized crop. The final group pool must still end at 3x3 (26->25->12->6->3, 28->27->13->6->3). In build, compile and warm up all 3 train shapes plus eval at 32 px, so nothing recompiles in timed code. Instrumentation only: log a hash of the first batch's augmentation parameters per trial."
+  }
+}

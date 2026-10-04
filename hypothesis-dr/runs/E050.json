@@ -1,0 +1,28 @@
+{
+  "exp": "E050",
+  "commit": "283aba5",
+  "pid": 472663,
+  "start_ticks": 4468162,
+  "started": 1791068276.95295,
+  "tag": "I067",
+  "description": "Make the warmup-phase stage cheaper again, the next step after E047 (24 -> 20 px saved 3.5% at -0.18 pp). On the tip (E047, or I061's successor if it is kept, in which case change only its first stage), make one change: the first stage's resolution drops from 20 px to 16 px (F.interpolate, antialias=True, inside the compiled GPU augment after flip/translate/jitter). The stage boundary (1.5 epochs, in samples), total epochs, bs 1536 and every step-indexed schedule stay unchanged, so the sample stream and lr values are identical. In drafts/, first print the per-block spatial sizes at 16 px input. Expected: whitening 15, block1 15 -> pool 7, block2 7 -> pool 3, block3 3 -> pool 1, final map 1x1. The 16 px graph's final pool can then be a reshape/flatten of the 1x1 map, or F.max_pool2d with a static kernel equal to the final map size. Do NOT use amax or flatten().max (E009 Inductor bug). In build(), warm up the 16 px train step with and without whitening-bias grad at bs 1536, plus every partial-batch shape at the 1.5-epoch switch, using channels_last tensors in the exact timed layout (E035 lesson). Check that total build time stays under ~450 s. Run debug_nan.py on the new graphs under max-autotune-no-cudagraphs, and compare trial-0 with later-trial train times. Eval stays the 32 px graph.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E050.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7411,
+    "time": 4.96180507333338,
+    "complete": true
+  },
+  "row": {
+    "exp": "E050",
+    "commit": "283aba5",
+    "accuracy": 0.7411,
+    "time": 4.96180507333338,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I067",
+    "description": "Make the warmup-phase stage cheaper again, the next step after E047 (24 -> 20 px saved 3.5% at -0.18 pp). On the tip (E047, or I061's successor if it is kept, in which case change only its first stage), make one change: the first stage's resolution drops from 20 px to 16 px (F.interpolate, antialias=True, inside the compiled GPU augment after flip/translate/jitter). The stage boundary (1.5 epochs, in samples), total epochs, bs 1536 and every step-indexed schedule stay unchanged, so the sample stream and lr values are identical. In drafts/, first print the per-block spatial sizes at 16 px input. Expected: whitening 15, block1 15 -> pool 7, block2 7 -> pool 3, block3 3 -> pool 1, final map 1x1. The 16 px graph's final pool can then be a reshape/flatten of the 1x1 map, or F.max_pool2d with a static kernel equal to the final map size. Do NOT use amax or flatten().max (E009 Inductor bug). In build(), warm up the 16 px train step with and without whitening-bias grad at bs 1536, plus every partial-batch shape at the 1.5-epoch switch, using channels_last tensors in the exact timed layout (E035 lesson). Check that total build time stays under ~450 s. Run debug_nan.py on the new graphs under max-autotune-no-cudagraphs, and compare trial-0 with later-trial train times. Eval stays the 32 px graph."
+  }
+}

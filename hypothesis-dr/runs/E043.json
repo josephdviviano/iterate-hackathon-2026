@@ -1,0 +1,28 @@
+{
+  "exp": "E043",
+  "commit": "3d31e4b",
+  "pid": 446209,
+  "start_ticks": 4215876,
+  "started": 1791065754.083155,
+  "tag": "I051",
+  "description": "Move the resolution boundary later on the E040 tip (commit 18ce8ac: Muon NS3 batched, lr 0.16, mom 0.8, lookahead 0.97^5, LS 0.2, SiLU, whitening bias trained only in epoch 1, 24 px bilinear antialiased whole images for 1.5 epochs then 32 px for 5.25, 6.75 epochs total). Make one change: train at 24 px for the first 2.25 epochs and at 32 px for the last 4.5, keeping 6.75 epochs total, bs 1024 and the same step-indexed lr, Muon and lookahead schedules, which do not change because the total step count is unchanged. If the switch now falls mid-epoch, take the first part of that epoch's permutation at 24 px and the rest at 32 px, so the sample stream is unchanged. The whitening-bias freeze stays at the end of epoch 1. Before launching, check that every shape used in the timed path is warmed up in build(): 24 px with and without whitening-bias grad, 32 px without it, and any new partial-batch shape at the switch. Warm up with channels_last tensors of the exact timed layout (E035 lesson). Run debug_nan.py on any new graph, and compare trial-0 and later-trial train times. Risk to note: E040's 1.5 low-res epochs covered roughly the warmup phase (~23% of steps). This change pushes low-res into the peak-lr phase, where full-res steps may matter more.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E043.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7511333333333333,
+    "time": 5.178028846336626,
+    "complete": true
+  },
+  "row": {
+    "exp": "E043",
+    "commit": "3d31e4b",
+    "accuracy": 0.7511333333333333,
+    "time": 5.178028846336626,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I051",
+    "description": "Move the resolution boundary later on the E040 tip (commit 18ce8ac: Muon NS3 batched, lr 0.16, mom 0.8, lookahead 0.97^5, LS 0.2, SiLU, whitening bias trained only in epoch 1, 24 px bilinear antialiased whole images for 1.5 epochs then 32 px for 5.25, 6.75 epochs total). Make one change: train at 24 px for the first 2.25 epochs and at 32 px for the last 4.5, keeping 6.75 epochs total, bs 1024 and the same step-indexed lr, Muon and lookahead schedules, which do not change because the total step count is unchanged. If the switch now falls mid-epoch, take the first part of that epoch's permutation at 24 px and the rest at 32 px, so the sample stream is unchanged. The whitening-bias freeze stays at the end of epoch 1. Before launching, check that every shape used in the timed path is warmed up in build(): 24 px with and without whitening-bias grad, 32 px without it, and any new partial-batch shape at the switch. Warm up with channels_last tensors of the exact timed layout (E035 lesson). Run debug_nan.py on any new graph, and compare trial-0 and later-trial train times. Risk to note: E040's 1.5 low-res epochs covered roughly the warmup phase (~23% of steps). This change pushes low-res into the peak-lr phase, where full-res steps may matter more."
+  }
+}

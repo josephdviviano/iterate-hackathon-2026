@@ -1,0 +1,38 @@
+{
+  "id": "R012",
+  "from": "auto",
+  "after": "E041",
+  "question": "E041 raised the batch size from 1024 to 1536 at 6.5 epochs (about 319 to about 212 steps). Time fell 8% (5.89 to 5.42 s), but accuracy fell 0.18 pp to 0.7533, at the gate with no margin. That is now the main lever, and the E040 resolution curriculum is waiting to stack on top of it. The next experiments need to know three things. (1) With a Muon-style orthogonalized optimizer, how should lr, momentum, warmup fraction and weight averaging (lookahead or EMA horizon and sync interval) scale with batch size, so that accuracy per epoch holds when the run has only about 200 steps? (2) Is bs 1536-2048 still below Muon's critical batch size for a small CNN on a 50k-image dataset? (3) Which accuracy-recovery tricks for large batches would win back about 0.2 pp at a fixed epoch count? Candidates are ghost BN, a momentum or lr re-tune, the averaging rate scaled per sample rather than per step, and a shorter warmup. The answers decide whether to tune bs 1536, push to bs 2048, or go back to 1024 and combine with the curriculum instead.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791065314.8745327,
+  "digest": "D012",
+  "plan": {
+    "question": "E041 raised the batch size from 1024 to 1536 at 6.5 epochs (about 319 to about 212 steps). Time fell 8% (5.89 to 5.42 s), but accuracy fell 0.18 pp to 0.7533, at the gate with no margin. That is now the main lever, and the E040 resolution curriculum is waiting to stack on top of it. The next experiments need to know three things. (1) With a Muon-style orthogonalized optimizer, how should lr, momentum, warmup fraction and weight averaging (lookahead or EMA horizon and sync interval) scale with batch size, so that accuracy per epoch holds when the run has only about 200 steps? (2) Is bs 1536-2048 still below Muon's critical batch size for a small CNN on a 50k-image dataset? (3) Which accuracy-recovery tricks for large batches would win back about 0.2 pp at a fixed epoch count? Candidates are ghost BN, a momentum or lr re-tune, the averaging rate scaled per sample rather than per step, and a shorter warmup. The answers decide whether to tune bs 1536, push to bs 2048, or go back to 1024 and combine with the curriculum instead.",
+    "queries": [
+      "Muon optimizer critical batch size scaling",
+      "batch size scaling learning rate momentum orthogonalized optimizer",
+      "critical batch size data-limited short training",
+      "EMA weight averaging batch size scaling rule",
+      "ghost batch normalization large batch generalization gap",
+      "large batch training few steps CIFAR accuracy recovery"
+    ],
+    "rubric": [
+      "Reports how accuracy or loss at a fixed epoch/sample budget changes with batch size (critical batch size, or a measured step-vs-batch tradeoff), ideally for Muon/Shampoo/orthogonalized or normalized-update optimizers",
+      "Gives a concrete scaling rule or ablation for at least one of: lr, momentum/beta, warmup length, EMA/lookahead decay or averaging horizon, as batch size changes",
+      "Experiments in a short-horizon or small-data regime (e.g. CIFAR-scale images, <=~2000 steps, or a compute-limited speedrun), not only large-scale LLM pretraining at fixed tokens",
+      "Proposes a remedy for the large-batch accuracy drop that costs no or almost no extra compute per step (e.g. ghost BN, hyperparameter rescaling, averaging schedule)"
+    ],
+    "exclude": [
+      "Methods relying on pretrained weights, distillation from a pretrained teacher, or external/extra data (forbidden by RULES.md)",
+      "Test-time augmentation or any use of the test set for tuning or calibration",
+      "Multi-GPU/distributed-communication-only contributions (single A100 here)",
+      "Methods needing packages beyond PyTorch 2.4.0 / torchvision 0.19.0",
+      "Pure LLM/transformer token-scaling studies with no transferable batch-size or averaging rule",
+      "Results that depend only on very long training (>=100 epochs) with no short-horizon evidence"
+    ]
+  },
+  "cost": 0.9947
+}

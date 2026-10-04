@@ -1,0 +1,28 @@
+{
+  "exp": "E007",
+  "commit": "52204ad",
+  "pid": 337426,
+  "start_ticks": 3568604,
+  "started": 1791059281.3645904,
+  "tag": "I011",
+  "description": "Target conv throughput: cuDNN conv kernels are about 75% of GPU time but run at only about 30% of bf16 peak. On the E002 recipe at 9 epochs, set torch.backends.cudnn.benchmark=True before warmup in build() and compile the model step with mode='max-autotune-no-cudagraphs', so Inductor benchmarks its Triton conv/GEMM templates against cuDNN for every shape (full batch, partial batch, eval) on synthetic inputs. All autotuning stays in untimed build(). If the base already has one of these settings, add only the missing one.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E007.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7541666666666667,
+    "time": 8.257354511333688,
+    "complete": true
+  },
+  "row": {
+    "exp": "E007",
+    "commit": "52204ad",
+    "accuracy": 0.7541666666666667,
+    "time": 8.257354511333688,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I011",
+    "description": "Target conv throughput: cuDNN conv kernels are about 75% of GPU time but run at only about 30% of bf16 peak. On the E002 recipe at 9 epochs, set torch.backends.cudnn.benchmark=True before warmup in build() and compile the model step with mode='max-autotune-no-cudagraphs', so Inductor benchmarks its Triton conv/GEMM templates against cuDNN for every shape (full batch, partial batch, eval) on synthetic inputs. All autotuning stays in untimed build(). If the base already has one of these settings, add only the missing one."
+  }
+}

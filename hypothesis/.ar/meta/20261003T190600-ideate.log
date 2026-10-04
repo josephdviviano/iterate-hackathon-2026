@@ -1,0 +1,26 @@
+added I054, I055, I056, I057, I058, I059, I060, I061; dropped I053. I've added 8 new ideas and dropped I053; I040 is still marked running. E044 (classifier head moved to Muon) gave 0.7574 at 5.237 s, about 0.44 pp above the 0.753 bar, so the queue now focuses on spending that margin.
+
+**Spending the margin (two cuts):**
+- **Third 16 px epoch, priority 5.** Port the 3@16 + 1@24 + 4@32 schedule onto E044. This was a near-miss in E029/E040. Expected about 5.00 s (around -4.5%) at 0.7525-0.755, so it is roughly a coin flip on feasibility.
+- **Fractional trim, priority 4 (H2.10).** Remove half of the 24 px phase with a step-indexed switch, giving 7.5 epochs. Expected similar time to the swap above, with a possibly smaller loss (0.754-0.756), because it also removes Muon steps.
+
+**Making sure the margin is real:**
+- **Margin check, priority 3 (H4.2.3, rebased onto E044).** An identical rerun of E044 plus a side run on seeds 3-10. E044's +0.32 pp gain comes from a single run, and the noise on a difference between two runs is about 0.2 pp.
+
+**Zero-cost accuracy knobs:**
+- **Head Muon learning rate at 0.5x, priority 3 (H7).** The head's update size was copied from the conv filters without tuning, and E044 just showed the head is a real accuracy lever.
+- **Halved warmup, priority 2 (H6.4.1, rebased onto E044).**
+
+**Cuts that should carry over to the official 300 W PCIe GPU:**
+- **Group 2 width 352, priority 3 (H2.13.1).** It reduces compute, so it should hold up on the slower judging GPU. With Muon's flatter epoch slope it may now trade at 0.06 pp or less per 1% of time.
+- **Faster prepare, priority 2 (H2.4).** Prepare's ~60 ms is ~1% of the run and is no longer hidden behind power-capped training.
+
+**Measurement:**
+- **Per-phase profiling, priority 2 (H2.4.2).** It splits each phase into augmentation, forward/backward, optimizer and idle gaps. The result decides whether CUDA graphs (H2.12.1) or pre-downsampling the data for the low-res phases are worth running.
+
+**Dropped:** I053. Its base (E035 at bs 1024) is out of date, its best case saves under 1.6%, and the profiling run measures the same small-map cost floor anyway.
+
+**Deliberately left out:**
+- **Muon LR floor (H6.5.1):** a low prior, since lowering the LR floor didn't help under SGD (E015).
+- **Muon tuning:** already closed (momentum, LR, Newton-Schulz count and label smoothing all gave nothing usable).
+- **Batch-size changes:** exhausted (E043).

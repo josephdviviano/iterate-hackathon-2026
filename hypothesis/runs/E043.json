@@ -1,0 +1,28 @@
+{
+  "exp": "E043",
+  "commit": "ebf997f",
+  "pid": 275875,
+  "start_ticks": 2985665,
+  "started": 1791053451.9821534,
+  "tag": "I051",
+  "description": "On the E035 tip, use bs 2048 for the low-res phases only (the 2 epochs at 16 px and the 2 at 24 px) and keep bs 1024 for the 4@32 px tail. The goal is to halve the number of fixed-cost Muon/launch steps exactly where they are the largest share of epoch time: 16 px epochs are ~0.27 s with ~49 steps at ~1 ms of Muon each. Drive the LR/EMA/lookahead/renorm schedules by samples seen (progress = examples/total), not by step index. For the bs 2048 steps, scale the SGD groups (BN/bias/head) by the E010 kilostep rule and keep Muon lr 0.24 and momentum 0.6 (E022: Muon tolerates bs 2000). Compile and warm up the 2048-batch 16/24 px shapes in build. Run this independently of the global bs 1536 idea, since it targets the phase-local overhead.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E043.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7493333333333333,
+    "time": 5.159198441999858,
+    "complete": true
+  },
+  "row": {
+    "exp": "E043",
+    "commit": "ebf997f",
+    "accuracy": 0.7493333333333333,
+    "time": 5.159198441999858,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I051",
+    "description": "On the E035 tip, use bs 2048 for the low-res phases only (the 2 epochs at 16 px and the 2 at 24 px) and keep bs 1024 for the 4@32 px tail. The goal is to halve the number of fixed-cost Muon/launch steps exactly where they are the largest share of epoch time: 16 px epochs are ~0.27 s with ~49 steps at ~1 ms of Muon each. Drive the LR/EMA/lookahead/renorm schedules by samples seen (progress = examples/total), not by step index. For the bs 2048 steps, scale the SGD groups (BN/bias/head) by the E010 kilostep rule and keep Muon lr 0.24 and momentum 0.6 (E022: Muon tolerates bs 2000). Compile and warm up the 2048-batch 16/24 px shapes in build. Run this independently of the global bs 1536 idea, since it targets the phase-local overhead."
+  }
+}

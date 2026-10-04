@@ -1,0 +1,28 @@
+{
+  "exp": "E031",
+  "commit": "9b2f012",
+  "pid": 400179,
+  "start_ticks": 3846700,
+  "started": 1791062062.3264542,
+  "tag": "I034",
+  "description": "Muon's updates have a fixed magnitude (an orthogonalized step against a weight-norm projection), so the SGD-style warmup (23% of steps ramping from 0.2x) may waste early steps for the conv filters. On the current tip, change only the Muon group's lr multiplier during warmup: hold it at 1.0x from step 0, and keep the existing decay shape and floor after the warmup point. The SGD group (BN biases, whitening bias, head) keeps its full warmup schedule. Lookahead, NS3, momentum and epochs are unchanged. Check finite gradients for the first ~20 steps on synthetic data in drafts/ before launching.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E031.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7540666666666667,
+    "time": 6.1029981713315165,
+    "complete": true
+  },
+  "row": {
+    "exp": "E031",
+    "commit": "9b2f012",
+    "accuracy": 0.7540666666666667,
+    "time": 6.1029981713315165,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I034",
+    "description": "Muon's updates have a fixed magnitude (an orthogonalized step against a weight-norm projection), so the SGD-style warmup (23% of steps ramping from 0.2x) may waste early steps for the conv filters. On the current tip, change only the Muon group's lr multiplier during warmup: hold it at 1.0x from step 0, and keep the existing decay shape and floor after the warmup point. The SGD group (BN biases, whitening bias, head) keeps its full warmup schedule. Lookahead, NS3, momentum and epochs are unchanged. Check finite gradients for the first ~20 steps on synthetic data in drafts/ before launching."
+  }
+}

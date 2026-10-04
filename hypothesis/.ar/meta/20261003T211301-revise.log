@@ -1,0 +1,31 @@
+H6.5.1->refuted, H6.4.2->refuted, H6.4->retired, H6.5.2->supported, H7.3.2->inconclusive, H2.10.3->supported, H2.16.1->supported, H2.16.2->refuted, +H2.10.4, +H2.10.5, +H6.5.3, +H7.3.4, +H6.6, +H6.6.1, +H6.7, +H6.7.1, +H4.2.5, +H2.14.3, +H2.16.3. Tree synced with the verdicts from E057 to E070 and re-baselined per the review.
+
+- **Statements rewritten:** the H2 and H6 Lvl1 statements now describe the current state: tip family ~4.67 s, provisional E070 at 4.584 s with its base unclear, and the Fable tail worth ~+0.12 pp against a fixed pooling baseline rather than +0.25.
+- **Pooling rule (H4):** all same-math runs count regardless of sign, so E066 is in. Bit-identical reruns count once, and runs without a logged source hash wait for provenance. Time noise is now ~0.5-0.8%, and untimed off-seed checks become the A/B instrument.
+- **Status changes:**
+  - Refuted: H6.5.1 (floor 0.05), H6.4.2 (doubled warmup), H2.16.2 (Inductor flags).
+  - Retired: H6.4.
+  - Inconclusive: H7.3.2 (missed its bar by rounding).
+  - Supported with lowered magnitude: H6.5.2 (tail) and H2.10.3 (2@16 + 1.5@24 reshuffle).
+  - Supported: H2.16.1 (elementwise kernels ~30% of GPU time).
+- **H2.15 rewritten:** the whitening-bias freeze uses requires_grad=False at ~0.2 epoch. E061 only tested the LR route, so it showed the accuracy cost is nil but not the time saving.
+- **New hypotheses:**
+  - Provenance: E070's diff folded into H4.2.4, then E070 plus the tail.
+  - Schedule: a fractional trim of the 32 px tail (never tested).
+  - Tail: ablation of its components.
+  - Head: Muon lr 0.4x (spectral scale sqrt(100/576)).
+  - Loss: MaxSup and phase-dependent label smoothing, both search-sourced.
+  - Margin: an off-seed seeds 3-10 check on the current tip.
+  - Timing: a trial-1 lazy-init leak.
+  - Kernels: a hand-written Triton fused BN backward (low priority).
+- **Open Lvl1:** H2, H4, H6 and H8.
+added I083, I084, I085, I086, I087, I088; dropped I080. I added six ideas, dropped one and kept I081, which leaves 7 queued plus I079 running.
+
+The top priority is to settle whether E070 has the Fable tail. Its description says the base is E064 code (a1aef09), and that base had no tail. If the tail is missing, adding it to E070's schedule (2@16 + 1.25@24 + 4@32, 7.25 epochs) should give about +0.15 to +0.25 pp at about 4.58 s (H2.10.4). The same idea runs an off-seed check on seeds 3-10, which covers the H4.2.5 margin check. That margin pays for the next exploit: the first-ever fractional trim of the 32 px phase, 3.75@32, expected around 4.37-4.40 s (H2.10.5). This is the largest remaining schedule saving, because the 32 px phase is about 71% of the time. A math-neutral idea warms the full trial path in build, including the tail's final-EMA and lerp kernels, which are probably new since E068. The aim is to remove the trial-1 slowdown seen in E069 (H2.14.3, -0.3 to -0.8%).
+
+The explore and accuracy ideas are decided with off-seed A/Bs plus two scored runs:
+- head Muon lr at 0.4x, the spectral-condition value (H7.3.4);
+- MaxSup in place of label smoothing (H6.6.1);
+- removing only the final EMA from the tail, to find which part carries its gain (H6.5.3).
+
+I dropped I080 (filter Muon lr 0.28) because its base is stale and its prior is low.

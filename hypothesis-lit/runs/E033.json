@@ -1,0 +1,28 @@
+{
+  "exp": "E033",
+  "commit": "9af24bf",
+  "pid": 407712,
+  "start_ticks": 3907723,
+  "started": 1791062672.5578895,
+  "tag": "I041",
+  "description": "Exploit: remove more high-resolution backward work, extending E029. On E030 (2x20+3x24+2x28+4x32 px, 0.7533 @ 6.95 s), freeze the whole first group-1 conv block (conv 32x32 whitening-output -> 128, pool, BN, GELU) during the 4 epochs at 32 px. In the 32 px CUDA graph, detach the block's output before the second group-1 conv, and drop that conv's weight and its BN affine params from that phase's Muon/SGD parameter lists (or zero their LR). E029 already skips this conv's dgrad. This change also removes its wgrad at 32x32 and the BN/GELU/pool backward at 32x32 and 16x16. BN stays in train mode, so running stats keep updating at 32 px. Capture the modified 32 px graph in build, keeping the same graph count with no recapture in the timed region. Log ms/step per phase. Rationale (FreezeOut-style): the first conv sees the whitened patches and converges earliest. The 28 px and 20/24 px phases (7 epochs) still train it.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E033.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7531333333333333,
+    "time": 6.683013295999747,
+    "complete": true
+  },
+  "row": {
+    "exp": "E033",
+    "commit": "9af24bf",
+    "accuracy": 0.7531333333333333,
+    "time": 6.683013295999747,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I041",
+    "description": "Exploit: remove more high-resolution backward work, extending E029. On E030 (2x20+3x24+2x28+4x32 px, 0.7533 @ 6.95 s), freeze the whole first group-1 conv block (conv 32x32 whitening-output -> 128, pool, BN, GELU) during the 4 epochs at 32 px. In the 32 px CUDA graph, detach the block's output before the second group-1 conv, and drop that conv's weight and its BN affine params from that phase's Muon/SGD parameter lists (or zero their LR). E029 already skips this conv's dgrad. This change also removes its wgrad at 32x32 and the BN/GELU/pool backward at 32x32 and 16x16. BN stays in train mode, so running stats keep updating at 32 px. Capture the modified 32 px graph in build, keeping the same graph count with no recapture in the timed region. Log ms/step per phase. Rationale (FreezeOut-style): the first conv sees the whitened patches and converges earliest. The 28 px and 20/24 px phases (7 epochs) still train it."
+  }
+}

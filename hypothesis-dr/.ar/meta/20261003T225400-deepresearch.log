@@ -1,0 +1,16 @@
+harvest: openalex_search('progressive learning adaptive regularization image size EfficientNetV2') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('FixRes train test resolution discrepancy') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('progressive resizing low resolution training speedup CNN') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('budgeted training resolution schedule wall-clock') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('multi-resolution curriculum batch size learning rate schedule image classification') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('low resolution early training curriculum generalization from scratch') failed: HTTP Error 429: Too Many Requests
+R017 -> D017
+added I072, I073; dropped I071. The tip is E048: 5.000 s at 0.7552, a 0.22 pp margin. I067 (16 px first stage) is running. Every remaining time cut costs about 0.05-0.08 pp per 1% (I067, I069, I057), so the bottleneck is now accuracy margin, not cut ideas. The queued accuracy ideas (I054, I064, I070) all have points of +0.05 pp or less.
+
+I added two ideas:
+- **Batch 2048 only in the low-res stages (H1.2.3).** This is the safer form of the batch-size lever. It cuts fixed per-step cost where low-fidelity steps are about free (point -1.8% time, -0.06 pp), and its result tells us how far to trust I057 (bs 2048 throughout).
+- **Add 0.5 epoch to the 20 px warmup stage (H5).** H5 has never been tested this way on the curriculum base. This is a pricing run (point +3.7% time, +0.25 pp). If it buys accuracy at about 0.1 pp per 1% or better, it beats the ~0.05 pp per 1% that the cuts cost. The banked margin would then fund I057, I067 or I069 as a pair.
+
+I dropped I071 (NS2+AOL): by E016's figure of ~0.15-0.2 ms per NS iteration it would fail its own 0.3 ms gate, and its expected gain is inside timing jitter.
+
+The queue now has 8 ideas: I069 (priority 4), I057, I070 and the two new ones (3), and I054, I064 and I068 (2). I068, the RNG-shift noise measurement, should run before stacking several ~0.1-0.2 pp cuts against the 0.22 pp margin.

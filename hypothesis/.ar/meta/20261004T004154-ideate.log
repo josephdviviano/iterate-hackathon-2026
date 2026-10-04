@@ -1,0 +1,15 @@
+added I115, I116, I117, I118, I119, I120; dropped none. The tip is E100 (E096 plus 1.25x Muon lr in the 32 px phase): ~4.46 s, distinct scored mean 0.7538, and only one off-seed process. Two things are settled. Extra Muon updates buy accuracy at about the same rate wherever they go, ~0.04 pp per 1% of time (E084/E095/E104), which is no better than the 32 px trims they would fund. End-of-run averaging, the whitening-bias window and cudnn.benchmark_limit are closed (E099/E102/E103). That leaves two routes to a faster robust tip: zero-time accuracy that lets the 32 px phase shrink, and depth cuts.
+
+**New queue (6 new ideas plus I114):**
+1. **Confirm E100 (priority 4).** Rerun it unchanged in 2 more fresh processes on seeds 3-26, plus a scored rerun. This decides whether E100 is robustly feasible and gives the paired baseline for the ideas below.
+2. **Higher Muon lr in the low-res phases (priority 4, H10.2).** Multiply the Muon lr by 1.5x in the 16/24 px phases only. If E104's +0.12 pp came from Muon path length (lr × steps) rather than from the extra steps themselves, this gets most of it at zero time cost.
+3. **Dose-response at 32 px (priority 3, H10.2.1).** Raise E100's 32 px factor from 1.25x to 1.5x. A steady rise from 1.0 to 1.25 to 1.5 would be the strongest evidence that path length is the mechanism.
+4. **Extend 1.25x to the 28 px phase (priority 3, H10.2).** This separates "late training generally benefits" from "only the 32 px phase benefits" (H11).
+5. **Turn off translate-2 for the last ~12% of samples (priority 2, explore, H11).** This tests whether late training on test-like inputs is what limits accuracy.
+6. **Project times for the 300 W PCIe judge from existing power logs (priority 1, free).** Used only to break ties between configs within 3% of each other locally.
+
+I114 (profile the two depth cuts before any scored run) stays queued as the main remaining time lever.
+
+**Dropped:** I105. It targets the old E090 base and is confounded with E100's lr change; its remaining question is covered by the phase-specific lr ideas above.
+
+**Decision rule for every A/B:** at least 2 fresh processes per arm, compared seed-for-seed against E100 on seeds 3-26, plus distinct scored samples (the E098 lesson that one process cannot resolve 0.1 pp).

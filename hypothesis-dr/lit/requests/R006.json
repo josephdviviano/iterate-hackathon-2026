@@ -1,0 +1,37 @@
+{
+  "id": "R006",
+  "from": "auto",
+  "after": "E020",
+  "question": "The Muon base is now the tip (E018: 7.5 epochs, 0.7596, 7.39 s), so the knee is probably around 7 epochs. Raising the Muon lr from 0.24 to 0.36 cost about 1 pp (E019), and removing lookahead cost about 1.3 pp (E020). Which Muon variants and settings improve accuracy per epoch for small CNNs on very short schedules? That covers lr and momentum (lower lr, higher momentum, or a momentum warmup), Muon weight decay, the update-scaling rule (spectral/RMS matching versus sqrt(out/in)), Muon on the head or a 2D whitening/first conv, and newer variants (NorMuon, AdaMuon, Dion, Polar Express or other NS coefficients). The answer should also say which weight-averaging or lr-tail scheme pairs best with Muon (lookahead, EMA, schedule-free, WSD cooldown). Each lever should be judged by whether it can move the 0.753 knee from about 7.5 to 6.5 epochs at under 2% extra step time.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791060924.640914,
+  "digest": "D006",
+  "plan": {
+    "question": "The Muon base is now the tip (E018: 7.5 epochs, 0.7596, 7.39 s), so the knee is probably around 7 epochs. Raising the Muon lr from 0.24 to 0.36 cost about 1 pp (E019), and removing lookahead cost about 1.3 pp (E020). Which Muon variants and settings improve accuracy per epoch for small CNNs on very short schedules? That covers lr and momentum (lower lr, higher momentum, or a momentum warmup), Muon weight decay, the update-scaling rule (spectral/RMS matching versus sqrt(out/in)), Muon on the head or a 2D whitening/first conv, and newer variants (NorMuon, AdaMuon, Dion, Polar Express or other NS coefficients). The answer should also say which weight-averaging or lr-tail scheme pairs best with Muon (lookahead, EMA, schedule-free, WSD cooldown). Each lever should be judged by whether it can move the 0.753 knee from about 7.5 to 6.5 epochs at under 2% extra step time.",
+    "queries": [
+      "Muon optimizer hyperparameter learning rate momentum scaling convolutional networks",
+      "Muon orthogonalized update variants NorMuon AdaMuon Polar Express Newton-Schulz coefficients",
+      "Muon weight decay update RMS matching scalable optimizer",
+      "weight averaging EMA lookahead with Muon short training budget",
+      "fast CIFAR training speedrun airbench Muon small epochs",
+      "warmup-stable-decay cooldown schedule averaging short training"
+    ],
+    "rubric": [
+      "Uses Muon or a closely related orthogonalized or spectral-norm optimizer (Shampoo-like, Dion, Polar Express) and reports how a concrete hyperparameter or variant affects accuracy or loss: lr, momentum, weight decay, update scaling, NS steps or coefficients.",
+      "The training regime is short or compute-limited (a few epochs, a speedrun, or a fixed small budget), or the paper gives results on small CNNs or vision models, not only large-LLM pretraining.",
+      "Gives quantitative comparisons, such as ablations or sweeps, including per-step overhead or iterations-to-target, so the effect can be judged against a ~0.25 pp noise floor and a ~1-2% time budget.",
+      "Optional but valuable: studies how Muon interacts with weight averaging (EMA, lookahead, schedule-free) or with the lr-decay tail."
+    ],
+    "exclude": [
+      "Methods that need pretrained weights, distillation from a pretrained teacher, or external or extra data (forbidden by RULES.md)",
+      "Test-time augmentation or anything that touches the test set (forbidden)",
+      "Methods that need packages beyond PyTorch 2.4.0 / torchvision 0.19.0, or multi-GPU or distributed-only optimizers with no single-GPU benefit",
+      "Work that only covers LLM pretraining at billion-parameter scale and gives no transferable small-model or short-budget findings",
+      "Second-order methods whose per-step overhead is far above 2% for a ~3M-parameter CNN (full Shampoo/K-FAC with frequent inversions)"
+    ]
+  },
+  "cost": 0.7896
+}

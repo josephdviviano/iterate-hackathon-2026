@@ -1,0 +1,28 @@
+{
+  "exp": "E023",
+  "commit": "9c08ac0",
+  "pid": 381973,
+  "start_ticks": 3769156,
+  "started": 1791061286.893431,
+  "tag": "I026",
+  "description": "Systems change to the Muon optimizer step only; the recipe math stays the same. Muon currently costs 1.93 ms/step of GPU time (about 10% of the step), mostly as many small kernels: 9 per-param calls, each with momentum, norm and projection ops plus per-iteration NS elementwise work. Replace them with one torch.compile'd Muon step over all conv filters. Do the momentum and Nesterov update with torch._foreach_* ops. Stack same-shape flattened filters within each block (128x1152, 384x3456, 576x5184 pairs) and run the 3 quintic NS iterations as one bmm per shape group. Apply the sqrt(max(1,out/in)) scaling and the weight-norm projection inside the same compiled function. Pass the Muon lr as a 0-d GPU tensor so schedule changes do not recompile. Compile and warm up in build() on synthetic tensors. Run the drafts/debug_nan.py one-step finite-gradient check under max-autotune-no-cudagraphs before launching (E009 lesson). Measure the Muon step GPU time with drafts/time_muon.py before and after.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E023.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7568333333333334,
+    "time": 6.558853191667974,
+    "complete": true
+  },
+  "row": {
+    "exp": "E023",
+    "commit": "9c08ac0",
+    "accuracy": 0.7568333333333334,
+    "time": 6.558853191667974,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I026",
+    "description": "Systems change to the Muon optimizer step only; the recipe math stays the same. Muon currently costs 1.93 ms/step of GPU time (about 10% of the step), mostly as many small kernels: 9 per-param calls, each with momentum, norm and projection ops plus per-iteration NS elementwise work. Replace them with one torch.compile'd Muon step over all conv filters. Do the momentum and Nesterov update with torch._foreach_* ops. Stack same-shape flattened filters within each block (128x1152, 384x3456, 576x5184 pairs) and run the 3 quintic NS iterations as one bmm per shape group. Apply the sqrt(max(1,out/in)) scaling and the weight-norm projection inside the same compiled function. Pass the Muon lr as a 0-d GPU tensor so schedule changes do not recompile. Compile and warm up in build() on synthetic tensors. Run the drafts/debug_nan.py one-step finite-gradient check under max-autotune-no-cudagraphs before launching (E009 lesson). Measure the Muon step GPU time with drafts/time_muon.py before and after."
+  }
+}

@@ -1,0 +1,10 @@
+R009 -> D009
+added I046, I047; dropped I045. The tip is E034: 5.894 s at accuracy 0.7551, only ~0.21 pp above the gate. Epoch trimming without an accuracy gain is not viable: 0.25 epoch costs ~0.29 pp at the current slope.
+
+I added two ideas:
+- **Low-res curriculum (H2.3.2, priority 3).** Under Muon the full-res epoch slope (~0.15 pp per 1% time) is now roughly 2.5x E013's low-res price (~0.058 pp per 1%), so trading 1.25 full-res epochs for 1.5 cheap 24 px epochs could cut ~5% of time. The pool must use static per-resolution kernels to avoid the E009 amax bug.
+- **Batch-size ramp (H1.2, priority 2).** bs 1024 for the first 60%, then bs 2048 in the tail. It only runs if I042's fixed bs 1536 loses accuracy. It keeps the step-limited early phase intact while cutting tail step overhead.
+
+I dropped I045 (projection every k steps). Its expected -1% is inside timing jitter, and the projection is probably already fused into the compiled step.
+
+The queue now holds 8 queued ideas: I039 (LS 0.1), I040 (block-1 depth traded for epochs), I041 (CUDA-graph Muon, gated), I042 (bs 1536), I043 (brightness/contrast jitter), I044 (head lr x0.5), plus the two new ones. That mix is mostly exploit (systems cuts and accuracy-margin tuning) with explore work on batch size, augmentation and resolution. Priority order: I040, I039, I044, I041, the low-res curriculum, then I042, I043 and the ramp.

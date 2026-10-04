@@ -1,0 +1,28 @@
+{
+  "exp": "E071",
+  "commit": "601464f",
+  "pid": 574243,
+  "start_ticks": 4995043,
+  "started": 1791073545.7555761,
+  "tag": "I081",
+  "description": "Exploit: the pre-registered contingency from E068. Halving the head lr cost 0.35 pp on dev, so test the opposite direction. On the current tip (E067 code as committed: 2/2/3 net, 2x20+2x24+3x28+2.5x32 px with warmup and Lookahead anchored in absolute steps, head output scale 2x, ls 0.4, BN-bias multiplier as in E067; official 0.7544, dev 0.7573, held-out 0.7562 @ 4.85 s), double the head-weight lr in the SGD head group, keep the head scale at 2x and change nothing else. If the lr is a value in the GPU schedule tensor, nothing needs recapturing; otherwise recapture all graphs in build. Log the absolute head:BN-bias lr ratio. Run the official seeds plus dev seeds 3-12; do not touch held-out seeds 13-22. Contingency: if dev rises by 0.15 pp or more, try 3x the head lr next. If dev falls by 0.15 pp or more, the head lr is bracketed at 1x and H1.10.2 closes.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E071.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.757,
+    "time": 4.837827846000437,
+    "complete": true
+  },
+  "row": {
+    "exp": "E071",
+    "commit": "601464f",
+    "accuracy": 0.757,
+    "time": 4.837827846000437,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I081",
+    "description": "Exploit: the pre-registered contingency from E068. Halving the head lr cost 0.35 pp on dev, so test the opposite direction. On the current tip (E067 code as committed: 2/2/3 net, 2x20+2x24+3x28+2.5x32 px with warmup and Lookahead anchored in absolute steps, head output scale 2x, ls 0.4, BN-bias multiplier as in E067; official 0.7544, dev 0.7573, held-out 0.7562 @ 4.85 s), double the head-weight lr in the SGD head group, keep the head scale at 2x and change nothing else. If the lr is a value in the GPU schedule tensor, nothing needs recapturing; otherwise recapture all graphs in build. Log the absolute head:BN-bias lr ratio. Run the official seeds plus dev seeds 3-12; do not touch held-out seeds 13-22. Contingency: if dev rises by 0.15 pp or more, try 3x the head lr next. If dev falls by 0.15 pp or more, the head lr is bracketed at 1x and H1.10.2 closes."
+  }
+}

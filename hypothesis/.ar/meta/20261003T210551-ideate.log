@@ -1,0 +1,13 @@
+added I076, I077, I078, I079, I080, I081, I082; dropped I075. The tip is the E062 code: 4.669-4.680 s, with a pooled accuracy of 0.7537 over 3 runs, only ~0.07 pp above the 0.753 gate. The clearest open lead is E064/E065. The 2@16 + 1.5@24 + 4@32 reshuffle pooled 0.7552 at 4.71 s, buying accuracy at ~0.13 pp per 1% of time, while trims cost only ~0.03-0.04 pp per 1%.
+
+The two top exploit ideas resell that accuracy as time. They are a matched pair of ~-2% trims on the E064 code:
+- **Priority 5:** shorten the 24 px phase to 1.25 epochs (2@16 + 1.25@24 + 4@32, ~4.58 s).
+- **Priority 4:** shorten the 16 px phase to 1.5 epochs (1.5@16 + 1.5@24 + 4@32, ~4.58 s).
+
+Each is scored twice and needs a two-run pool >=0.7540 to become the tip. Comparing the two also shows which phase is cheapest to cut.
+
+Three zero-cost margin sources come next, all on the current tip: Fable's held-floor tail plus short final EMA (rebased I074), decoupled weight decay on the Muon head, and filter Muon lr 0.28 with the head's absolute LR held fixed (rebased I075, now without the head-LR confound).
+
+Two explore ideas follow. One is an untimed per-layer width profile (384/352/320) that gates any further width cut and also adds a variance sample to the tip pool. The other is a hand-fused Triton BN+GELU kernel, the last untested elementwise lever after E066's kernel-tuning null.
+
+I dropped I074 and I075 only because their base is stale; both are re-proposed on the E062 tip. The queue now holds 7 ideas.

@@ -1,0 +1,37 @@
+{
+  "id": "R001",
+  "from": "auto",
+  "after": "E000",
+  "question": "E000 shows the template is only a stub (accuracy 0.012, time 0.11 s), so the first real experiment has to put a full recipe in place, and the exact settings are still unknown. The search should answer this: which published from-scratch recipe reaches \u226575.3% CIFAR-100 top-1 test accuracy without test-time augmentation in the fewest epochs or least wall-clock time on one GPU? What does its accuracy-vs-epochs curve look like near 75% (needed for H1.1.1, H1.1.2 and H1.1.3), and how much do TTA, label smoothing (H1.3), lookahead/EMA (H4.2) and width (H1.5) each contribute? Exact hyperparameters are needed: widths, lr, wd, batch size, LS, whitening and epochs.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791058200.4295745,
+  "digest": "D001",
+  "plan": {
+    "question": "E000 shows the template is only a stub (accuracy 0.012, time 0.11 s), so the first real experiment has to put a full recipe in place, and the exact settings are still unknown. The search should answer this: which published from-scratch recipe reaches \u226575.3% CIFAR-100 top-1 test accuracy without test-time augmentation in the fewest epochs or least wall-clock time on one GPU? What does its accuracy-vs-epochs curve look like near 75% (needed for H1.1.1, H1.1.2 and H1.1.3), and how much do TTA, label smoothing (H1.3), lookahead/EMA (H4.2) and width (H1.5) each contribute? Exact hyperparameters are needed: widths, lr, wd, batch size, LS, whitening and epochs.",
+    "queries": [
+      "fast CIFAR-100 training few epochs small ResNet",
+      "airbench CIFAR-10 speedrun patch whitening lookahead",
+      "94% on CIFAR-10 in 3.29 seconds single GPU",
+      "label smoothing CIFAR-100 short training schedule accuracy",
+      "budgeted training CIFAR-100 epochs accuracy tradeoff",
+      "Muon optimizer convolutional networks CIFAR speedrun"
+    ],
+    "rubric": [
+      "Reports CIFAR-100 (or CIFAR-10 with explicit transfer to CIFAR-100) top-1 test accuracy from scratch at <=~20 epochs or on a stated wall-clock budget on a single GPU",
+      "Gives enough hyperparameters to reproduce the recipe (architecture widths and depth, optimizer, lr, wd, batch size, label smoothing, schedule, epochs)",
+      "Reports accuracy without TTA, or isolates the TTA contribution, or gives ablations of label smoothing, lookahead/EMA, width or epoch count",
+      "Gives an accuracy-vs-epochs curve or variance across seeds near the 75% level"
+    ],
+    "exclude": [
+      "Methods using pretrained weights, transfer learning, distillation from pretrained teachers, or external/extra data",
+      "Results that depend on test-time augmentation or any use of the test set during training or tuning",
+      "Large-scale or multi-GPU/TPU training of ImageNet-sized models with no small-budget CIFAR results",
+      "Neural architecture search costing many GPU-hours to find the model",
+      "Methods requiring packages beyond PyTorch 2.4/torchvision 0.19"
+    ]
+  },
+  "cost": 0.5432
+}

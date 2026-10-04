@@ -1,0 +1,28 @@
+{
+  "exp": "E107",
+  "commit": "29c7505",
+  "pid": 608121,
+  "start_ticks": 5238081,
+  "started": 1791075976.140567,
+  "tag": "I116",
+  "description": "Placement-paired test of the path-length mechanism in the low-res phases. E104 bought ~+0.12 pp off-seed by running the 16/24 px phases at bs 1024, i.e. ~1.5x more Muon steps there, at +2.8% time. If the gain is Muon path length (lr \u00d7 steps) rather than update count, a 1.5x larger Muon lr in those phases should reproduce it at zero time. Base: E100 code. In the 16 and 24 px phases only (bs 1536, warmup included), multiply the conv-filter Muon lr schedule by 1.5 (0.24 -> 0.36 at the same schedule position). The head keeps its 0.5x multiplier and scales along. The SGD groups, the 28/32 px phases (32 px keeps its 1.25x) and the tail are unchanged. Implement it as a phase-keyed host-side factor written into the existing 0-d lr tensor, so nothing recompiles. Before scoring, smoke-test that the 16 px loss stays finite over the first 30 steps. Decide on off-seed seeds 3-26 in >=2 fresh processes, paired against the E100 baseline, plus two distinct scored samples.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E107.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7521333333333333,
+    "time": 4.47609497733356,
+    "complete": true
+  },
+  "row": {
+    "exp": "E107",
+    "commit": "29c7505",
+    "accuracy": 0.7521333333333333,
+    "time": 4.47609497733356,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I116",
+    "description": "Placement-paired test of the path-length mechanism in the low-res phases. E104 bought ~+0.12 pp off-seed by running the 16/24 px phases at bs 1024, i.e. ~1.5x more Muon steps there, at +2.8% time. If the gain is Muon path length (lr \u00d7 steps) rather than update count, a 1.5x larger Muon lr in those phases should reproduce it at zero time. Base: E100 code. In the 16 and 24 px phases only (bs 1536, warmup included), multiply the conv-filter Muon lr schedule by 1.5 (0.24 -> 0.36 at the same schedule position). The head keeps its 0.5x multiplier and scales along. The SGD groups, the 28/32 px phases (32 px keeps its 1.25x) and the tail are unchanged. Implement it as a phase-keyed host-side factor written into the existing 0-d lr tensor, so nothing recompiles. Before scoring, smoke-test that the 16 px loss stays finite over the first 30 steps. Decide on off-seed seeds 3-26 in >=2 fresh processes, paired against the E100 baseline, plus two distinct scored samples."
+  }
+}

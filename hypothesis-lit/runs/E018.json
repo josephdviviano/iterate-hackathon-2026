@@ -1,0 +1,28 @@
+{
+  "exp": "E018",
+  "commit": "7e324b2",
+  "pid": 360029,
+  "start_ticks": 3676534,
+  "started": 1791060360.6710396,
+  "tag": "I020",
+  "description": "Throughput, numerically near-equivalent. Batch Newton-Schulz across conv weights by grouping same-shape weights into one batched matmul call. Use torch._foreach ops for the SGD updates on biases, BN and the head. Capture the full train step (forward, backward, Muon, SGD) in a CUDA graph with static input buffers, and warm it up in build on synthetic data. Pass the LR schedule as a GPU tensor so per-step LR changes need no recapture. prepare resets all parameter and state tensors in place.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E018.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7571,
+    "time": 8.156199266665984,
+    "complete": true
+  },
+  "row": {
+    "exp": "E018",
+    "commit": "7e324b2",
+    "accuracy": 0.7571,
+    "time": 8.156199266665984,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I020",
+    "description": "Throughput, numerically near-equivalent. Batch Newton-Schulz across conv weights by grouping same-shape weights into one batched matmul call. Use torch._foreach ops for the SGD updates on biases, BN and the head. Capture the full train step (forward, backward, Muon, SGD) in a CUDA graph with static input buffers, and warm it up in build on synthetic data. Pass the LR schedule as a GPU tensor so per-step LR changes need no recapture. prepare resets all parameter and state tensors in place."
+  }
+}

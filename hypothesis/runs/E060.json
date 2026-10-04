@@ -1,0 +1,28 @@
+{
+  "exp": "E060",
+  "commit": "026a301",
+  "pid": 345301,
+  "start_ticks": 3602884,
+  "started": 1791059624.1728275,
+  "tag": "I061",
+  "description": "On the E044 tip, cut only fixed timed overhead in prepare. Vectorize the dirac init over all 3x3 convs, and do the uint8->normalized conversion in one fused fp16 GPU op. Keep the whitening statistics on the same 5000 images, so the learned function is unchanged apart from numerics. Make sure all lazy CUDA/cuBLAS/cuDNN handles used in prepare are already initialized in build. Log the prepare and train split per trial. E004 tried this under the SGD power cap, where hidden CPU work cost nothing. In the current 5.2 s run, prepare's ~60 ms fixed cost is ~1% of time and is not overlapped with GPU-bound training.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E060.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7526666666666667,
+    "time": 4.674812873667785,
+    "complete": true
+  },
+  "row": {
+    "exp": "E060",
+    "commit": "026a301",
+    "accuracy": 0.7526666666666667,
+    "time": 4.674812873667785,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I061",
+    "description": "On the E044 tip, cut only fixed timed overhead in prepare. Vectorize the dirac init over all 3x3 convs, and do the uint8->normalized conversion in one fused fp16 GPU op. Keep the whitening statistics on the same 5000 images, so the learned function is unchanged apart from numerics. Make sure all lazy CUDA/cuBLAS/cuDNN handles used in prepare are already initialized in build. Log the prepare and train split per trial. E004 tried this under the SGD power cap, where hidden CPU work cost nothing. In the current 5.2 s run, prepare's ~60 ms fixed cost is ~1% of time and is not overlapped with GPU-bound training."
+  }
+}

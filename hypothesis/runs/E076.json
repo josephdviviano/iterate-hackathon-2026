@@ -1,0 +1,28 @@
+{
+  "exp": "E076",
+  "commit": "52dc644",
+  "pid": 412838,
+  "start_ticks": 3955211,
+  "started": 1791063147.4387426,
+  "tag": "I085",
+  "description": "Math-neutral. On the current tip code (the tail variant if banked, otherwise E070), add a full synthetic dress-rehearsal trial to build. Run prepare + the complete train loop on random uint8 data of the real shape: every phase, the resolution switches, the renorm on/off variants, the tail's floor-hold, the lookahead stop, the final-EMA foreach_lerp, the BN buffer copy, and eval at B=1024 and B=1. Then discard all state; prepare still resets everything. This warms the allocator pool, cuBLAS workspaces, cuDNN plans and any lazily compiled tail or EMA kernels that may currently first run inside timed trial 1. Log per-trial prepare/train times. Build stays well under 600 s (one synthetic trial is ~5 s). Score once.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E076.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7532333333333333,
+    "time": 4.588309487667478,
+    "complete": true
+  },
+  "row": {
+    "exp": "E076",
+    "commit": "52dc644",
+    "accuracy": 0.7532333333333333,
+    "time": 4.588309487667478,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I085",
+    "description": "Math-neutral. On the current tip code (the tail variant if banked, otherwise E070), add a full synthetic dress-rehearsal trial to build. Run prepare + the complete train loop on random uint8 data of the real shape: every phase, the resolution switches, the renorm on/off variants, the tail's floor-hold, the lookahead stop, the final-EMA foreach_lerp, the BN buffer copy, and eval at B=1024 and B=1. Then discard all state; prepare still resets everything. This warms the allocator pool, cuBLAS workspaces, cuDNN plans and any lazily compiled tail or EMA kernels that may currently first run inside timed trial 1. Log per-trial prepare/train times. Build stays well under 600 s (one synthetic trial is ~5 s). Score once."
+  }
+}

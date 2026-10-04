@@ -1,0 +1,28 @@
+{
+  "exp": "E001",
+  "commit": "226777c",
+  "pid": 320687,
+  "start_ticks": 3472964,
+  "started": 1791058324.9665852,
+  "tag": "I001",
+  "description": "Replace the template with a full airbench port in submissions/arena/. Architecture: a frozen 2x2 patch-whitening first conv (eigenvectors computed in prepare from training images), Dirac-initialized convs, widths 128/384/576 with 3 convs per group, BN with a 64x bias LR, and a GAP+linear head scaled for 100 classes. Optimizer: Nesterov SGD at batch 1024 with lr 9.0 (airbench scaling), wd 0.012, Lookahead and a triangular LR. Training: label smoothing 0.3, alternating flip, random crop with 2 px translate, 8.5 epochs, no TTA. The full uint8 dataset lives on the GPU with augmentation done there. Use fp16 autocast and channels_last. torch.compile the train step in build and warm it up on synthetic data; use drop_last so batch shapes stay fixed. Eval uses an uncompiled (or dynamic=True) path so any B from 1 to 1024 avoids slow recompiles. Log prepare and train time separately.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E001.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7383333333333333,
+    "time": 8.043640994997986,
+    "complete": true
+  },
+  "row": {
+    "exp": "E001",
+    "commit": "226777c",
+    "accuracy": 0.7383333333333333,
+    "time": 8.043640994997986,
+    "complete": true,
+    "feasible": "no",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I001",
+    "description": "Replace the template with a full airbench port in submissions/arena/. Architecture: a frozen 2x2 patch-whitening first conv (eigenvectors computed in prepare from training images), Dirac-initialized convs, widths 128/384/576 with 3 convs per group, BN with a 64x bias LR, and a GAP+linear head scaled for 100 classes. Optimizer: Nesterov SGD at batch 1024 with lr 9.0 (airbench scaling), wd 0.012, Lookahead and a triangular LR. Training: label smoothing 0.3, alternating flip, random crop with 2 px translate, 8.5 epochs, no TTA. The full uint8 dataset lives on the GPU with augmentation done there. Use fp16 autocast and channels_last. torch.compile the train step in build and warm it up on synthetic data; use drop_last so batch shapes stay fixed. Eval uses an uncompiled (or dynamic=True) path so any B from 1 to 1024 avoids slow recompiles. Log prepare and train time separately."
+  }
+}

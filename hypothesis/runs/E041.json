@@ -1,0 +1,28 @@
+{
+  "exp": "E041",
+  "commit": "103f44b",
+  "pid": 264696,
+  "start_ticks": 2854208,
+  "started": 1791052137.4122744,
+  "tag": "I049",
+  "description": "On the E035 tip, change only the two 24 px epochs (epochs 2-3) to 20 px: 2@16 + 2@20 + 4@32, 8.0 epochs. Use the same operator (flip + translate-2 at 32 px, antialiased bilinear to 20 px). The maps become 19/9/4/2, and AdaptiveMaxPool2d(1) handles that. Compile and warm up the 20 px train shape in build. Step count and schedules are unchanged. This is an intermediate point between the 24 px bridge, which E032 showed matters (-0.68 pp without it), and a third 16 px epoch (E029, -0.31 pp). The goal is a bridge that costs ~0.40-0.45x instead of 0.57x. Log the compiled per-epoch cost of the 20 px phase.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E041.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7534,
+    "time": 5.224614841334794,
+    "complete": true
+  },
+  "row": {
+    "exp": "E041",
+    "commit": "103f44b",
+    "accuracy": 0.7534,
+    "time": 5.224614841334794,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I049",
+    "description": "On the E035 tip, change only the two 24 px epochs (epochs 2-3) to 20 px: 2@16 + 2@20 + 4@32, 8.0 epochs. Use the same operator (flip + translate-2 at 32 px, antialiased bilinear to 20 px). The maps become 19/9/4/2, and AdaptiveMaxPool2d(1) handles that. Compile and warm up the 20 px train shape in build. Step count and schedules are unchanged. This is an intermediate point between the 24 px bridge, which E032 showed matters (-0.68 pp without it), and a third 16 px epoch (E029, -0.31 pp). The goal is a bridge that costs ~0.40-0.45x instead of 0.57x. Log the compiled per-epoch cost of the 20 px phase."
+  }
+}

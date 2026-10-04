@@ -1,0 +1,19 @@
+harvest: openalex_search('multigrid training variable mini-batch spatial resolution video CNN') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('progressive resizing learning rate schedule short training budget') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('progressive learning image size regularization EfficientNetV2 adaptive') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('FixRes train test resolution discrepancy batch norm') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('batch size warmup ramp critical batch size Muon optimizer') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('budgeted training low resolution curriculum compute efficient CNN') failed: HTTP Error 429: Too Many Requests
+R014 -> D014
+added I061, I062, I063, I064, I065; dropped I059. The tip is E045: 0.7568 accuracy at 5.464 s, about 0.38 pp above the gate. The fastest feasible run so far is still E041 at 5.42 s, with 0.03 pp to spare. The clear next step is to spend E045's margin on E044's 28 px stage, which cost -0.23 pp for -4.4% time, a cheap trade at ~0.052 pp per 1% (I061, priority 5, expected ~5.22 s / ~0.7545).
+
+I062 is a fallback: if the 28 px stage fails, trim 0.25 epoch from the 32 px phase instead (-3.9%), pre-registered in I053.
+
+The remaining slots go to untested levers:
+- H1.8.2: drop translate-2 entirely.
+- H1.7.1: BN-bias lr x128, since the head result (x0.5 hurt, x2 helped) says the SGD group is under-driven.
+- H2.5.1: default-mode compile. This one is mainly a guard on build time: curriculum and batch-size variants keep adding compiled graphs against the 600 s build limit.
+
+I dropped I059 (ghost BN) because its time cost beats its expected gain, and the bs-1536 loss it was meant to fix has already been recovered.
+
+The queue now holds 8 ideas: I054, I057, I058 and I061-I065. I060 (20 px first stage) is still running. If it is kept, I061 rebases onto it.

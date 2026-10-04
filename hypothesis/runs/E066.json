@@ -1,0 +1,28 @@
+{
+  "exp": "E066",
+  "commit": "83c1fc1",
+  "pid": 376697,
+  "start_ticks": 3746551,
+  "started": 1791061060.8369696,
+  "tag": "I072",
+  "description": "Base: E060 code. The change is Inductor kernel tuning only, aimed at the fused BN/GELU/elementwise Triton kernels, which take about 30% of GPU time (E052). Set torch._inductor.config.coordinate_descent_tuning=True and torch._inductor.config.max_autotune_pointwise=True (the net already compiles with max-autotune) before compiling the net, then recompile and warm up every static train shape plus the eval path in build. Log build time; it must stay under 600 s, and if tuning would exceed that, drop max_autotune_pointwise first. The math is unchanged apart from reduction order. Smoke-test that the loss stays finite for 10 steps before scoring.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E066.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.757,
+    "time": 4.6644082026662845,
+    "complete": true
+  },
+  "row": {
+    "exp": "E066",
+    "commit": "83c1fc1",
+    "accuracy": 0.757,
+    "time": 4.6644082026662845,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I072",
+    "description": "Base: E060 code. The change is Inductor kernel tuning only, aimed at the fused BN/GELU/elementwise Triton kernels, which take about 30% of GPU time (E052). Set torch._inductor.config.coordinate_descent_tuning=True and torch._inductor.config.max_autotune_pointwise=True (the net already compiles with max-autotune) before compiling the net, then recompile and warm up every static train shape plus the eval path in build. Log build time; it must stay under 600 s, and if tuning would exceed that, drop max_autotune_pointwise first. The math is unchanged apart from reduction order. Smoke-test that the loss stays finite for 10 steps before scoring."
+  }
+}

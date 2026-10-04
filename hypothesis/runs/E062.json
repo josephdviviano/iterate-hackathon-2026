@@ -1,0 +1,28 @@
+{
+  "exp": "E062",
+  "commit": "8d69aa4",
+  "pid": 353110,
+  "start_ticks": 3633714,
+  "started": 1791059932.4675696,
+  "tag": "I069",
+  "description": "Base: E060 code, which is the E057 tip (static shapes, max(dim).values pool, Muon floor 0.05) plus E060's vectorized dirac init and fused fp16 normalization in prepare. Both prepare changes are math-neutral, so the result still belongs to the pooled family, which E060 brings to 8 runs with a mean of 0.7531. Change only the head's Muon learning rate: set it to 0.5x the filter Muon LR (0.12 peak, same schedule shape and floor) as its own 0-d GPU tensor, so nothing recompiles. Leave everything else unchanged. Score it twice. Instrumentation only: log the submission source hash and a per-seed checksum of the final weights and BN buffers (for H4.4.1).",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E062.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7532666666666666,
+    "time": 4.680445058669041,
+    "complete": true
+  },
+  "row": {
+    "exp": "E062",
+    "commit": "8d69aa4",
+    "accuracy": 0.7532666666666666,
+    "time": 4.680445058669041,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I069",
+    "description": "Base: E060 code, which is the E057 tip (static shapes, max(dim).values pool, Muon floor 0.05) plus E060's vectorized dirac init and fused fp16 normalization in prepare. Both prepare changes are math-neutral, so the result still belongs to the pooled family, which E060 brings to 8 runs with a mean of 0.7531. Change only the head's Muon learning rate: set it to 0.5x the filter Muon LR (0.12 peak, same schedule shape and floor) as its own 0-d GPU tensor, so nothing recompiles. Leave everything else unchanged. Score it twice. Instrumentation only: log the submission source hash and a per-seed checksum of the final weights and BN buffers (for H4.4.1)."
+  }
+}

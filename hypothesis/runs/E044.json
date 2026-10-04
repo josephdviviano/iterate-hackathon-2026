@@ -1,0 +1,28 @@
+{
+  "exp": "E044",
+  "commit": "e9015c2",
+  "pid": 278065,
+  "start_ticks": 3010951,
+  "started": 1791053704.8369782,
+  "tag": "I052",
+  "description": "Explore a new accuracy source. On the E035 tip, move the classifier head (the linear 576->100 after the global max pool) from SGD to the compiled Muon update. Treat its weight as a [100, 576] matrix and use Muon lr scaled by sqrt(max(1, out/in)) as for the filters, with the same momentum and 3 NS steps. Leave the head's renorm/scale handling as in the SGD version and keep the bias on SGD. Add the shape to the compiled update and warm it up in build. CIFAR-100's 100-way head is a much larger share of the learning problem than CIFAR-10's 10-way head, and public Muon recipes tuned on CIFAR-10 never tried it.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E044.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7574,
+    "time": 5.237437466665142,
+    "complete": true
+  },
+  "row": {
+    "exp": "E044",
+    "commit": "e9015c2",
+    "accuracy": 0.7574,
+    "time": 5.237437466665142,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "keep",
+    "tag": "I052",
+    "description": "Explore a new accuracy source. On the E035 tip, move the classifier head (the linear 576->100 after the global max pool) from SGD to the compiled Muon update. Treat its weight as a [100, 576] matrix and use Muon lr scaled by sqrt(max(1, out/in)) as for the filters, with the same momentum and 3 NS steps. Leave the head's renorm/scale handling as in the SGD version and keep the bias on SGD. Add the shape to the compiled update and warm it up in build. CIFAR-100's 100-way head is a much larger share of the learning problem than CIFAR-10's 10-way head, and public Muon recipes tuned on CIFAR-10 never tried it."
+  }
+}

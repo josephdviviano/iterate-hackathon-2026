@@ -1,0 +1,62 @@
+diff --git a/submissions/arena/submission.py b/submissions/arena/submission.py
+index f7c48f9..820e5f5 100644
+--- a/submissions/arena/submission.py
++++ b/submissions/arena/submission.py
+@@ -30,6 +30,8 @@ HYP = {
+     "scale": 1 / 9,
+     "lookahead": True,
+     "compile": True,
++    "lowres_epochs": 3,  # first epochs train on random lowres_size crops
++    "lowres_size": 24,
+ }
+ 
+ 
+@@ -116,12 +118,12 @@ def init_whitening(layer, images, eps=5e-4):
+     layer.weight.copy_(torch.cat((scaled, -scaled)))
+ 
+ 
+-def augment(padded, flip_bits, epoch, r):
+-    """Random translate by up to r pixels (from reflect-padded images) + alternating flip."""
++def augment(padded, flip_bits, epoch, r, size=32):
++    """Random size x size crops of the reflect-padded (by r) images + alternating flip."""
+     n = len(padded)
+     device = padded.device
+-    shifts = torch.randint(0, 2 * r + 1, (n, 2), device=device)
+-    base = torch.arange(32, device=device)
++    shifts = torch.randint(0, 32 + 2 * r - size + 1, (n, 2), device=device)
++    base = torch.arange(size, device=device)
+     rows = (base[None, :] + shifts[:, :1])[:, None, :, None]
+     cols = (base[None, :] + shifts[:, 1:])[:, None, None, :]
+     idx_n = torch.arange(n, device=device)[:, None, None, None]
+@@ -186,16 +188,17 @@ def build(context: BuildContext):
+     torch.backends.cudnn.allow_tf32 = True
+     model = Net(context.num_classes, hyp["widths"], hyp["depth"], hyp["bn_momentum"], hyp["scale"])
+     model = model.to(device).to(memory_format=torch.channels_last)
+-    step_model = torch.compile(model, mode="max-autotune-no-cudagraphs") if hyp["compile"] and device.type == "cuda" else model
++    step_model = torch.compile(model, mode="max-autotune-no-cudagraphs", dynamic=False) if hyp["compile"] and device.type == "cuda" else model
+     state = SimpleNamespace(model=model, step_model=step_model, context=context, hyp=hyp)
+     # Warm up compilation and cuDNN autotuning on synthetic data (state is reset in prepare).
+     bs = hyp["batch_size"]
+-    x = torch.rand(bs, 3, 32, 32, device=device).to(memory_format=torch.channels_last)
+     y = torch.randint(0, context.num_classes, (bs,), device=device)
+     model.train()
+     opt = make_optimizer(model, hyp, 10)
+-    for _ in range(3):
+-        train_step(state, opt, x, y)
++    for size in (hyp["lowres_size"], 32):
++        x = torch.rand(bs, 3, size, size, device=device).to(memory_format=torch.channels_last)
++        for _ in range(3):
++            train_step(state, opt, x, y)
+     if device.type == "cuda":
+         torch.cuda.synchronize()
+     return state
+@@ -251,7 +254,8 @@ def train(state) -> nn.Module:
+     epoch = 0
+     while step < total:
+         whiten_on = epoch < hyp["whiten_bias_epochs"]
+-        imgs = augment(state.padded, state.flip_bits, epoch, r) if r > 0 else state.padded
++        size = hyp["lowres_size"] if epoch < hyp["lowres_epochs"] else 32
++        imgs = augment(state.padded, state.flip_bits, epoch, r, size)
+         perm = torch.randperm(n, device=imgs.device)
+         imgs = imgs[perm].contiguous(memory_format=torch.channels_last)
+         labels = state.labels[perm]

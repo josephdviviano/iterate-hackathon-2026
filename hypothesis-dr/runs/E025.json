@@ -1,0 +1,28 @@
+{
+  "exp": "E025",
+  "commit": "2c50588",
+  "pid": 386080,
+  "start_ticks": 3782519,
+  "started": 1791061420.520427,
+  "tag": "I028",
+  "description": "Lower the end-of-schedule floor for the Muon group only. E019's post-mortem says the Muon lr is an unbuffered per-step relative rotation, and the 0.07x terminal floor leaves end-of-training noise that lookahead cannot average out. On the current tip, change only the Muon group's lr multiplier so it decays linearly to 0 at the final step instead of to 0.07x. The warmup and the rest of the decay keep the same shape. The SGD group (BN biases, head) keeps its existing schedule, including its 0.07x floor. Lookahead is unchanged.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E025.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7534666666666667,
+    "time": 6.573776529665338,
+    "complete": true
+  },
+  "row": {
+    "exp": "E025",
+    "commit": "2c50588",
+    "accuracy": 0.7534666666666667,
+    "time": 6.573776529665338,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I028",
+    "description": "Lower the end-of-schedule floor for the Muon group only. E019's post-mortem says the Muon lr is an unbuffered per-step relative rotation, and the 0.07x terminal floor leaves end-of-training noise that lookahead cannot average out. On the current tip, change only the Muon group's lr multiplier so it decays linearly to 0 at the final step instead of to 0.07x. The warmup and the rest of the decay keep the same shape. The SGD group (BN biases, head) keeps its existing schedule, including its 0.07x floor. Lookahead is unchanged."
+  }
+}

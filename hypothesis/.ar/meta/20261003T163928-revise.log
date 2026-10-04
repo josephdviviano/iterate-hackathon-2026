@@ -1,0 +1,44 @@
+H1.4->refuted, H1.4.1->refuted, H1.5.1->supported, H2.1.2->refuted, H2.3->refuted, H2.3.1->refuted, H2.5->refuted, H2.5.1->refuted, H2.5.2->inconclusive, H3->refuted, H3.1->refuted, H3.1.1->refuted, H3.3->refuted, H3.3.1->refuted, H6.1->refuted, H6.1.1->refuted, +H2.7, +H2.7.1, +H2.1.4, +H2.8, +H2.8.1, +H1.6, +H1.6.1, +H2.9, +H2.9.1, +H1.5.2. Revision after E000-E016. The only feasible point is still A1a (0.7549, 7.22 s), and two neutral perturbations of it (E004, E011) landed at 0.752-0.753, so H1.1.1 is down-weighted and H4 now carries an acceptance rule: a new tip needs a 3-seed mean >=0.756 or a seeds 3-10 confirmation.
+
+Refutations propagated:
+- H3 and its children: E004, E010, E011 show the run is energy-bound, so overhead cuts don't pay.
+- H1.4: augmentation (E008).
+- H2.3: selective backprop (E012).
+- H6.1: LR to zero (E015).
+- H2.1.2 (E013) and H2.5/H2.5.1 (E014).
+
+Corrections:
+- H2.5 was rewritten: E006 never used random-resized crop, so only the 2x2 final-map half was tested (and refuted), and the crop half is retired as moot. H2.1's wording was fixed the same way.
+- H2.6 was corrected: group 2, not group 1, carries ~48% of the FLOPs.
+- H1.5.1 is supported by E007.
+- H5 was trimmed to 0.55; it rests on external evidence only.
+- H6 was narrowed to regime-specific levers.
+
+New nodes:
+- N1/N1a: total epochs matter more than the 32 px share; a 24 px epoch substitutes for most of a 32 px one.
+- N2: 24->32 two-stage schedule at 9.5-10 epochs, with no 28 px phase. This is the next run to do.
+- N3/N3a: resolutions below 24 px.
+- N4/N4a: smaller batches for accuracy at equal time.
+- N5/N5a: tanh-approximate GELU.
+- N6: epoch slope above 8.5 epochs.
+
+Open housekeeping:
+- Report E013/E016's augmentation hashes to close H2.1.3.
+- E006's results.tsv description wrongly says random-resized crop; per its implementation note, it used flip + translate followed by an antialiased downsample.
+added I022, I023, I024, I025, I026; dropped none; skipped ideas for unknown/closed H5.2 (new, under H5): Muon's +0.82 s over SGD (E019, ~2 ms/step) comes mostly from CPU launch overhead of eager per-parameter Newton-Schulz while the GPU idles, not from NS FLOPs (~60 GFLOP/step, <0.5 ms in bf16). Batching and compiling the step removes most of it.. The six new ideas follow up on E019. Switching the group convs to Muon gave +1.14 pp accuracy (0.7663) but cost +0.82 s (8.04 s). That swing makes Muon the main lever, with enough margin to spend on time cuts.
+
+**Exploit ideas (four)**
+- **Muon at 7.0 epochs (I022, priority 5).** Measures Muon's accuracy-per-epoch slope. Predicted ~6.6 s, which would beat A1a by about 8% if accuracy holds at ≥0.753.
+- **Batched, compiled Newton-Schulz step (I023, priority 4).** Tests a new hypothesis, H5.2: the 0.82 s Muon overhead comes from CPU kernel-launch cost, not from the matrix math. Predicted 7.3-7.55 s at 8.5 epochs, and it stacks on the other Muon runs.
+- **Muon with the two-stage 24→32 px schedule (I024, priority 4).** 4 epochs at 24 px then 4 at 32 px (no 28 px phase). Predicted 6.2-6.5 s at 0.754-0.761.
+- **Exact GELU → tanh approximation on the Muon base (I026, priority 2).** About 1% time, cheap enough to keep now that Muon gives margin.
+
+**Explore ideas (two)**
+- **Muon at batch size 2000 (I025, priority 3).** Halves the per-step Muon overhead and tests whether Muon avoids the large-batch accuracy loss SGD showed in E010.
+- **Muon momentum 0.6 → 0.85 (I027, priority 2).** The current Muon settings were tuned for CIFAR-10 at batch size 2000.
+
+**Queue and tree housekeeping**
+- Nothing was dropped: every earlier queued idea is already done or dropped.
+- Three open hypotheses were tested only with SGD: H2.1.4, H2.7.1 and H2.8.1. They should now be rerun on Muon, and I024 starts that.
+- H5 should be marked refuted once I022 confirms that Muon also reduces time-to-75%.
+- H5.2 needs to be added to the tree under H5.

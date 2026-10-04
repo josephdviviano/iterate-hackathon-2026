@@ -1,0 +1,35 @@
+H1.1->supported, H1.1.1->supported, H1.2->retired, H1.3->refuted, H1.3.1->refuted, H2.1.1->inconclusive, H2.2->refuted, H2.2.1->refuted, H3.2->refuted, H3.2.1->refuted, H4.1->supported, H4.1.1->supported, +H1.5, +H1.5.1, +H2.4, +H2.4.1, +H2.5, +H2.5.1, +H2.5.2, +H2.1.2, +H2.1.3, +H2.6, +H2.6.1, +H6, +H6.1, +H6.1.1, +H6.2, +H6.2.1, +H4.2, +H4.2.1, +H4.2.2. Changes to the hypothesis tree, following the results, literature search and skeptical review:
+
+**Supported**
+- **H1.1 / H1.1.1:** E001 and E002 replicate exactly (0.7549, 7.22 s). I removed the claim about the ResNet9 template, which was never measured.
+- **H4.1 / H4.1.1:** reworded to cover what E002 actually showed: accuracy is identical for a given seed and time noise is ~0.1–0.5%. It says nothing about accuracy noise.
+
+**Refuted**
+- **H1.3:** making group 3 wider adds about 10% cost per epoch (E005, plus the reference ablation).
+- **H2.2:** switching GELU to SiLU cost 0.61 pp, about 2.6 times the noise level, at fixed hyperparameters.
+- **H3.2:** prepare is about 1% of time, and E004 cut it with no effect on the score.
+
+**Retired**
+- **H1.2 / H1.2.1:** the reference recipe already uses dirac init, so the premise is false.
+
+**Downgraded**
+- **H3 (overhead) to 0.2, with H3.1 and H3.3 at 0.2:** E004 suggests the GPU runs at its power cap, so cutting CPU or launch overhead barely changes time.
+
+**Restated**
+- **H2.1** now requires the low-resolution stage to be at least 26 px (24 px leaves a degenerate final pooling map), a crop or antialiased-resize operator, and a real full-resolution phase at the end.
+- **H2.1.1** stays inconclusive because E006 changed several things at once.
+- **H4** now uses perturbation noise (~0.23 pp standard error on the 3-seed mean) and calls for a mean of about 0.756 or more, or checks on extra seeds.
+- **H1** is lowered to 0.5, since E006 shows cutting resolution trades better than cutting epochs.
+
+**New hypotheses**
+- **Under H1:** measure accuracy against epoch count locally (8.0 epochs predicted at about 6.8 s).
+- **Under H2:**
+  - The power-cap mechanism (time tracks GPU energy), tested by logging power and clocks.
+  - E006's accuracy loss comes from its 24 px stage and random-resized crops. Two tests: 26 px with antialiased downsampling, and crop mode against resize mode.
+  - Narrowing groups 1 and 2, where most of the FLOPs are.
+- **Under H2.1:** a schedule with 40% at full resolution, and a check that E006's augmentation randomness follows the trial seed.
+- **New Lvl1 (N_free):** accuracy gains that cost no time, which can then be spent on epoch or resolution cuts. Two tests: decay the learning rate to 0 instead of 0.07x, and re-estimate BN statistics at 32 px after progressive resizing.
+- **Under H4:** perturbation noise and the risk of picking a variant that is only lucky on seeds 0–2. Two tests: the spread across three neutral changes, and A1a's accuracy on extra seeds 3–10.
+
+Priorities: progressive resizing with the confounds removed, the epoch slope, and decaying the learning rate to zero. Muon (H5), selective backprop (H2.3) and CUDA graphs (H3.1) go last.
+added I014, I015, I016, I017, I018, I019, I020, I021; dropped none. The open lever is clear by now. E004, E010 and E011 settled that the GPU is energy-bound, so overhead cuts don't move time. E003, E005, E008 and E009 settled that regularization and capacity tweaks don't help. Progressive resizing (E006) has the best exchange rate: -0.69 pp for -18.6% time, about 2x better than cutting full-res epochs (E007). The top priority is to turn that into a feasible tip. H2.1.2 (P5) is a 9-epoch 26/28/32 schedule with a 40% full-res tail and antialiased downsampling, predicted at about 6.3-6.5 s and 0.751-0.757. H2.5.1 (P4) removes E006's two confounds (24 px pool geometry and random-resized crop) at E006's fractions. H2.5.2 (P3) compares crop mode with resize mode on the H2.1.2 schedule. H6.1.1 (P4) tests a zero-cost LR-to-zero decay on the 8.0-epoch control, which could be a direct tip at 6.80 s and would stack onto resizing. Diagnostics and explores: an RNG/seeding audit of E006's suspiciously tight 0.02 pp per-seed spread (H2.1.3, which also checks rule compliance), narrowing group 2 as an architectural FLOP cut (H2.6.1), FixRes BN re-estimation (H6.2.1) and Muon (H5.1.1). With I013 still running, 8 ideas are now queued. Nothing is dropped, because every queued hypothesis is still open.

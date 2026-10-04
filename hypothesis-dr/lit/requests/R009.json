@@ -1,0 +1,37 @@
+{
+  "id": "R009",
+  "from": "auto",
+  "after": "E033",
+  "question": "On the Muon tip (6.5 epochs, bs 1024, lookahead, CIFAR-100, ~320 steps total), can the batch size be raised (1536-2048) at a fixed epoch count without losing accuracy? This would cut per-step Muon and lookahead overhead and enlarge the GEMMs (H1.2.3). If so, how should the hyperparameters scale with batch size: the Muon lr and momentum, the SGD-group (BN biases, head) lr and wd, the warmup length, and the averaging horizon? This is the largest untested time lever. The last three tail and schedule tweaks (E025, E031, E033) all failed. Evidence on critical batch size for orthogonalized or normalized optimizers in very short, few-hundred-step training would decide whether bs 1536 is worth a run. It would also set the scaling rules for that run.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791063099.9780834,
+  "digest": "D009",
+  "plan": {
+    "question": "On the Muon tip (6.5 epochs, bs 1024, lookahead, CIFAR-100, ~320 steps total), can the batch size be raised (1536-2048) at a fixed epoch count without losing accuracy? This would cut per-step Muon and lookahead overhead and enlarge the GEMMs (H1.2.3). If so, how should the hyperparameters scale with batch size: the Muon lr and momentum, the SGD-group (BN biases, head) lr and wd, the warmup length, and the averaging horizon? This is the largest untested time lever. The last three tail and schedule tweaks (E025, E031, E033) all failed. Evidence on critical batch size for orthogonalized or normalized optimizers in very short, few-hundred-step training would decide whether bs 1536 is worth a run. It would also set the scaling rules for that run.",
+    "queries": [
+      "Muon optimizer critical batch size",
+      "orthogonalized optimizer large batch scaling learning rate",
+      "critical batch size short training budget image classification",
+      "batch size scaling normalized updates weight norm learning rate",
+      "fast CIFAR training large batch few epochs",
+      "batch size hyperparameter transfer momentum weight decay scaling"
+    ],
+    "rubric": [
+      "Measures how accuracy or loss at a fixed data or epoch budget depends on batch size. It reports a critical batch size or the point where step-efficiency degrades.",
+      "Covers Muon, Shampoo or SOAP, or another orthogonalized or normalized-update optimizer, or weight-normalized and scale-invariant networks with BatchNorm, and gives explicit lr, momentum or weight-decay scaling rules across batch sizes.",
+      "The regime is short-horizon training (a few hundred to a few thousand steps, or a few epochs), ideally on CIFAR-scale convnets or small models. A paper about large-model pretraining counts only if it gives a transferable rule.",
+      "Reports quantitative results (accuracy vs batch size at matched epochs or matched compute), not only theory."
+    ],
+    "exclude": [
+      "Methods that need pretrained weights, external data, distillation from a pretrained teacher, or test-set access (including test-time augmentation)",
+      "Distributed or multi-node large-batch systems papers whose gains come only from communication or parallelism",
+      "Work that needs packages beyond PyTorch 2.4.0 and torchvision 0.19.0",
+      "LARS/LAMB papers that report gains only at batch sizes of 8k or more on ImageNet with no small-batch-range data",
+      "Topics already settled in this loop: decaying the lr to zero, the Muon terminal lr floor, removing warmup, and frequency-wise (DCT) Muon"
+    ]
+  },
+  "cost": 0.859
+}

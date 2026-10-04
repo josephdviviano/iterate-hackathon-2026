@@ -1,0 +1,28 @@
+{
+  "exp": "E035",
+  "commit": "6f7d490",
+  "pid": 416697,
+  "start_ticks": 3986314,
+  "started": 1791063458.467105,
+  "tag": "I038",
+  "description": "On the tip, after training ends and the final lookahead-averaged weights are in place (inside train(), so it is timed), recompute the BN running statistics. Reset running_mean/var, set BN momentum=None (cumulative average), and run a no-grad train-mode forward over 12 batches of 1024 training images: un-augmented, normalized as in training, bf16 autocast, channels_last. Restore the momentum afterwards. Compile and warm up this train-mode no-grad forward in build() on synthetic data. Before launching, check in drafts/ whether lookahead currently blends BN buffers; recalibration replaces them either way. The learning recipe is otherwise unchanged.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E035.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7554333333333333,
+    "time": 6.176477517998137,
+    "complete": true
+  },
+  "row": {
+    "exp": "E035",
+    "commit": "6f7d490",
+    "accuracy": 0.7554333333333333,
+    "time": 6.176477517998137,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I038",
+    "description": "On the tip, after training ends and the final lookahead-averaged weights are in place (inside train(), so it is timed), recompute the BN running statistics. Reset running_mean/var, set BN momentum=None (cumulative average), and run a no-grad train-mode forward over 12 batches of 1024 training images: un-augmented, normalized as in training, bf16 autocast, channels_last. Restore the momentum afterwards. Compile and warm up this train-mode no-grad forward in build() on synthetic data. Before launching, check in drafts/ whether lookahead currently blends BN buffers; recalibration replaces them either way. The learning recipe is otherwise unchanged."
+  }
+}

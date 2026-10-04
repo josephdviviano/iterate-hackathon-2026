@@ -1,0 +1,57 @@
+H2.6.1->supported, H2.6->supported, H2.4.5->refuted, H1.5->retired, H6.1.1->refuted, H1.3.3->refuted, H1.7.7->inconclusive, H4.1->open, H4.2->inconclusive, H4.2.1->inconclusive, +H4.4, +H4.4.1, +H2.3.5, +H6.2, +H6.2.1, +H6.1.3, +H2.4.7, +H2.4.8, +H1.7.11, +H1.7.12, +H4.5. I revised the tree after the E038-E045 results, the search on the judge and on the Hiverge, airbench and Polar Express recipes, and the skeptical review.
+
+**Closed or downgraded**
+- H1.3.3 refuted: ls 0.4 and ls 0.3 have the same 2-salt mean (0.7527 vs 0.7525).
+- H2.4.5 refuted: training the whitening bias for 8 steps cost 0.47 pp (E045).
+- H6.1.1 refuted on its time bound: group 3 at 768 cost +10% (E044). The +0.4 pp it gained was a single draw.
+- H1.5 retired into H6.1, after removing the misfiled E009/E010 evidence.
+- H1.7.7 marked inconclusive.
+- Single draws inside noise were downgraded: E012 (H1.3.1) and E019 (H4.2/H4.2.1 → inconclusive, H4.2 raised to 0.25).
+- Confidence lowered on the 'no accuracy cost' half of H2.3 (0.65) and H2.4 (0.65), on H6 (0.35, its falsifying test H1.8.2 was never run) and on H1.7 (0.22, the tested knobs were flat).
+
+**Supported**
+- H2.6.1 and H2.6: E042's pooling swap cut time 2.8%. The swap is numerically equivalent, so its accuracy re-roll was noise the change did not cause.
+
+**H4 and H5**
+- H4 is reframed. Companion draws come in lower because of winner's curse, not because the official seeds are favourable.
+- H4.1 is reopened, since the source of the nondeterminism seen in E043 is unresolved.
+- H4.3 gains E034+ and E039+.
+- H5 is updated: the judge is confirmed as an A100 PCIe with 40 trials.
+- H2.5.4 is dropped to 0.08, because Fable saved only ~0.3% with a whole-run graph.
+- H1.7.9 is refined to recompute the Polar Express coefficients for num_iters=2.
+
+**New hypotheses**
+- Variance source, with an identical-rerun test (N1/N1a).
+- An acceptance rule judging numerically equivalent cuts on time alone (N10).
+- Margin accounting via a second draw of E024 (N2).
+- Orthogonalization quality as the accuracy cap, tested with a third NS step (N3/N3a).
+- Cheaper capacity: group 3 at 640, stacked with the pooling cut (N4).
+- Cutting group 2 to 2 convs (N5).
+- An intermediate whitening-bias window of about 1 epoch (N6).
+- Fast BN momentum as a free replacement for E043's re-estimation (N7).
+- NorMuon (N8).
+- Untested Muon weight decay and BN-bias LR multiplier (N9).
+
+**Process checks still pending:** verify which recipe E027 actually ran (commit ff1557d), since the pooled 0.7533 estimate depends on it.
+
+**Suggested order**
+1. The identical re-run (N1a).
+2. The pooling cut re-applied with 2 draws (N10).
+3. The anchor-fixed epoch slope test (H1.8.2).
+4. One margin source verified with 2 draws (N4, N7 or N2), then the banked time cuts stacked in a single run.
+added I056, I057, I058, I059, I060; dropped none. Where things stand: E046 put the E038 tip at a 10-seed mean of 0.7534 (per-seed std 0.28 pp) and showed that identical code reproduces bit-for-bit. So a single official draw at >=0.7535 is acceptable again, and dev seeds 3-12 now give about 0.09 pp SE per config. That is cheaper and sharper than salts, so every new margin idea measures its gain on dev seeds as well as on the official run.
+
+New ideas (5, which brings the queue to 7):
+- Top priority (exploit) combines two earlier near-misses: the banked -0.19 s pooling cut from E042 and a cheaper 4-batch version of E043's BN re-estimation. Expected time is about 6.55 s, and the run also measures how much accuracy the BN re-estimation really adds (H2.3.2).
+- Two removed-work cuts to stack on that base:
+  - Whitening-bias window limited to the 20 px phase, with the whitening output detached at 24 px (H2.4.8). The cut lines up with a phase boundary, so the graph count does not change.
+  - The conv1-block freeze extended to the 28 px phase (H2.4.6).
+- One capacity step: group 3 at 640 channels (H6.1.3), run only if a microbenchmark on the current recipe shows ms/step rising by no more than 4%. This is the lesson from E044.
+- One free explore: the BN-bias lr multiplier halved to 32x (H1.7.12). Weight decay on the Muon convs is effectively a no-op under the per-step weight renorm, so only the SGD-group settings are live knobs here.
+
+Kept as queued: I054 (Polar Express, H1.7.9) and I055 (head output scale, H1.3.4). Both test open hypotheses and add no time. I053 is still running. Nothing is dropped.
+
+Not queued, and why:
+- Group-2 depth cut (H2.4.7): not worth running while the recipe looks capacity-limited (H6).
+- Muon renorm every k steps (H2.5.3) and whole-run CUDA graph (H2.5.4): overhead-type cuts that may not carry over to the PCIe judge (H5.1).
+- Anchor-fixed epoch tests (H1.8.2, H1.9.1): at best about 0.35 pp/s, which is too expensive to help the score.

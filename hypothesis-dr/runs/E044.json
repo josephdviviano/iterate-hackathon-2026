@@ -1,0 +1,28 @@
+{
+  "exp": "E044",
+  "commit": "6eadb92",
+  "pid": 450711,
+  "start_ticks": 4265831,
+  "started": 1791066253.6342435,
+  "tag": "I052",
+  "description": "Add a middle 28 px stage to the E040 curriculum. On the E040 tip, make one change: 24 px for epochs 0-1.5 as now, then whole images bilinearly downsampled (antialias=True, inside the compiled GPU augment after flip/translate) to 28 px for 1.5 epochs, then 32 px for the last 3.75 epochs. Total stays 6.75 epochs, bs 1024, step-indexed schedules unchanged. In drafts/, print the per-block spatial sizes at 28 px input first (expect whitening 27 -> pools 13/6/3). Set the 28 px graph's final pool to F.max_pool2d with a static kernel equal to its final map size. Do NOT use amax or flatten().max (the E009 Inductor bug). Compile and warm up the 28 px train step without whitening-bias grad, plus any partial batch at the stage switches, in build() with channels_last tensors of the exact timed layout. Run debug_nan.py on the new graph, and compare trial-0 and later-trial train times to catch warmup gaps. Eval stays the 32 px graph.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E044.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7526666666666667,
+    "time": 5.2093691256668535,
+    "complete": true
+  },
+  "row": {
+    "exp": "E044",
+    "commit": "6eadb92",
+    "accuracy": 0.7526666666666667,
+    "time": 5.2093691256668535,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I052",
+    "description": "Add a middle 28 px stage to the E040 curriculum. On the E040 tip, make one change: 24 px for epochs 0-1.5 as now, then whole images bilinearly downsampled (antialias=True, inside the compiled GPU augment after flip/translate) to 28 px for 1.5 epochs, then 32 px for the last 3.75 epochs. Total stays 6.75 epochs, bs 1024, step-indexed schedules unchanged. In drafts/, print the per-block spatial sizes at 28 px input first (expect whitening 27 -> pools 13/6/3). Set the 28 px graph's final pool to F.max_pool2d with a static kernel equal to its final map size. Do NOT use amax or flatten().max (the E009 Inductor bug). Compile and warm up the 28 px train step without whitening-bias grad, plus any partial batch at the stage switches, in build() with channels_last tensors of the exact timed layout. Run debug_nan.py on the new graph, and compare trial-0 and later-trial train times to catch warmup gaps. Eval stays the 32 px graph."
+  }
+}

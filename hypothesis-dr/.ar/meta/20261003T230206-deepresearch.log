@@ -1,0 +1,41 @@
+harvest: arxiv_search('progressive resizing adaptive regularization image size training') failed: The read operation timed out
+harvest: openalex_search('progressive resizing adaptive regularization image size training') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('FixRes train test resolution discrepancy batch norm') failed: HTTP Error 429: Too Many Requests
+harvest: arxiv_search('resolution curriculum low resolution early training CNN efficiency') failed: The read operation timed out
+harvest: openalex_search('resolution curriculum low resolution early training CNN efficiency') failed: HTTP Error 429: Too Many Requests
+harvest: arxiv_search('budgeted training progressive image size learning rate schedule') failed: HTTP Error 429: Unknown Error
+harvest: openalex_search('budgeted training progressive image size learning rate schedule') failed: HTTP Error 429: Too Many Requests
+harvest: arxiv_search('mixed resolution training batch size scaling small images convnet') failed: The read operation timed out
+harvest: openalex_search('mixed resolution training batch size scaling small images convnet') failed: HTTP Error 429: Too Many Requests
+harvest: arxiv_search('minimum input resolution feature learning early training curriculum') failed: HTTP Error 429: Unknown Error
+harvest: openalex_search('minimum input resolution feature learning early training curriculum') failed: HTTP Error 429: Too Many Requests
+R018 -> D018
+H1.2.3->inconclusive, H1.5->supported, H1.7.3->inconclusive, H1.8.1->inconclusive, H2.3->supported, H2.3.2->retired, H2.3.3->supported, H5->refuted, +H6, +H6.1, +H6.1.1, +H6.1.2, +H6.2, +H6.2.1, +H6.3, +H6.3.1, +H1.2.4, +H1.2.5, +H1.2.6, +H1.10, +H1.10.1, +H2.4.6, +H2.4.7, +H4.1.5, +H1.8.3. I've brought the tree up to date with the 5.00 s tip (E048) and taken the review's points on board. H1 is rewritten: update structure (Muon and lookahead) still sets accuracy per step, but recent time cuts came from cheaper or fewer steps. Every scalar re-tune since E024 is now classed as re-draw noise. H5 ("no reallocation beats epochs") is refuted for resolution, since E040, E047 and E048 cost ~0-0.05 pp per 1% of time against ~0.12-0.15 for epochs. A new Lvl1, N1, replaces it: post-warmup full-res steps set the score, and how cheap the early phase can be is limited by structural thresholds. Its children cover the whitening-bias-freeze confound vs the 1x1-map explanation (N1.a.1, N1.a.2), a larger batch in the low-res stages (N1.b.1), and the length of the 32 px tail (N1.c.1).
+
+On the curriculum branch, E040, E047 and E048 are re-filed as evidence for H2.3, which is now supported. H2.3.2 is retired as untested-as-stated. H2.3.3 is rewritten to match what was actually run and marked supported.
+
+H4 and H4.1 now carry a working paired sd of ~0.12-0.15 pp, the force-keep ratchet bias and the E044/E048 discrepancy. Confidence in H4.1.4 (sd <=0.06) is lowered. The extra-seed checks (H4.1.2) and the 28 px marginal-cost check (N6) are now priorities.
+
+H1.6.6 is widened to check whether E046 and E049 also changed the weights at all; this cheap check gates several axis closures. H1.2.3 is marked inconclusive, and N1.e (late batch ramp) and N1.f (NorMuon) are added under H1.2. N1.d, a Muon lr 0.11 control, must run before H1.9.1. H2.4.5 (AOL-NS2) is lowered because the Turbo-Muon paper's own results weaken it; Polar Express NS2 (N3) and FreezeOut (N4) are added as alternatives. Other changes:
+- H2.4.3 (projection frequency) is the next systems run.
+- H1.4 is lowered.
+- H1.7.3 and H1.8.1 are inconclusive.
+- N2 adds a node for the head's update geometry.
+- N5 adds a trial-0 timing check.
+- N7 adds augmentation coupled to resolution.
+
+The open Lvl1s are H1, H2, H4 and N1.
+added I074, I075, I076, I077, I078; dropped I054. The tip is E052 (4.928 s, 0.7546), which leaves only 0.16 pp of margin. I072 (bs 2048 in the low-res stages) is running.
+
+**New ideas (5):**
+- **H6.3.1, priority 3:** the main time lever left on the curriculum. Run 28 px through epoch 4.0, leaving 2.75 epochs at 32 px. Expected about -1.5% time at about -0.13 pp, which is borderline feasible.
+- **H1.6.6, priority 3:** a cheap check in `drafts/`. It verifies whether the lookahead-decay, Muon-lr and head-lr edits actually reached the compiled path, by logging the values applied and comparing final-weight hashes across commit pairs. This guards against several "flat" axes being compile no-ops.
+- **H2.4.7, priority 2:** FreezeOut on block 1 for the last 20% of samples. Expected about -2.7% time at about -0.2 pp. The prior is low, but it is one of the few structural time cuts left.
+- **H1.10.1, priority 2:** move the 100-way head onto Muon, with no weight-norm projection and lr set to match the current update RMS. This is the structural explore idea on the update side.
+- **H6.1.1, priority 2:** train the whitening bias through the end of the 28 px stage. It tests whether freezing the bias at low resolution limits how cheap the curriculum can get, for about +0.9% time.
+
+**Changes to the existing queue:**
+- **Dropped I054 (H1.9.1):** it was written against the old E040 base, and its Muon-lr control (H1.2.4) has never run.
+- **Kept:** I057 (bs 2048 throughout; once I072 is read, it only prices the 32 px stage), I064 (BN-bias lr x128), and I068 (an RNG-shift run that measures paired noise).
+
+That brings the queue to 8. The time-cutting ideas are tight against the 0.753 gate. Any idea that lands within about 0.1 pp of the gate should keep its code path and be paired with whichever accuracy idea succeeds.

@@ -1,0 +1,28 @@
+{
+  "exp": "E040",
+  "commit": "18ce8ac",
+  "pid": 431591,
+  "start_ticks": 4101360,
+  "started": 1791064608.9287548,
+  "tag": "I046",
+  "description": "Reallocate time from full-res epochs to cheap low-res epochs. The Muon epoch slope at the knee is now steep (~1.14 pp/epoch, ~0.15 pp per 1% time). E013 priced 24 px epochs at only ~0.058 pp per 1% on SGD, so low-res epochs should now be cheaper than full-res ones. On the tip (E034 commit f74c715: Muon NS3 batched, lr 0.16, mom 0.8, lookahead 0.97^5, LS 0.2, SiLU, whitening bias trained only in epoch 1, ~6.5 epochs), make one curriculum change. Train the first 1.5 epochs on whole images bilinearly downsampled to 24 px (F.interpolate, antialias=True, inside the compiled GPU augment, after flip/translate). Then train 5.25 epochs at 32 px, for 6.75 epochs total. Scale the lr, Muon and lookahead schedules to the new total step count; bs stays 1024. The frozen whitening conv is reused unchanged. In drafts/, first print the per-block spatial sizes at 24 px input. Set the final pool for each resolution graph to F.max_pool2d with a static kernel equal to that graph's final map size. Do NOT use amax or flatten().max (the E009 Inductor bug). Compile and warm up every variant in build() on synthetic data: 24 px with whitening-bias grad, 24 px without it, 32 px without it, plus each full and partial batch shape. Eval stays the 32 px graph. Run drafts/debug_nan.py on every graph under max-autotune-no-cudagraphs before launching.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E040.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7559,
+    "time": 5.718205952665206,
+    "complete": true
+  },
+  "row": {
+    "exp": "E040",
+    "commit": "18ce8ac",
+    "accuracy": 0.7559,
+    "time": 5.718205952665206,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I046",
+    "description": "Reallocate time from full-res epochs to cheap low-res epochs. The Muon epoch slope at the knee is now steep (~1.14 pp/epoch, ~0.15 pp per 1% time). E013 priced 24 px epochs at only ~0.058 pp per 1% on SGD, so low-res epochs should now be cheaper than full-res ones. On the tip (E034 commit f74c715: Muon NS3 batched, lr 0.16, mom 0.8, lookahead 0.97^5, LS 0.2, SiLU, whitening bias trained only in epoch 1, ~6.5 epochs), make one curriculum change. Train the first 1.5 epochs on whole images bilinearly downsampled to 24 px (F.interpolate, antialias=True, inside the compiled GPU augment, after flip/translate). Then train 5.25 epochs at 32 px, for 6.75 epochs total. Scale the lr, Muon and lookahead schedules to the new total step count; bs stays 1024. The frozen whitening conv is reused unchanged. In drafts/, first print the per-block spatial sizes at 24 px input. Set the final pool for each resolution graph to F.max_pool2d with a static kernel equal to that graph's final map size. Do NOT use amax or flatten().max (the E009 Inductor bug). Compile and warm up every variant in build() on synthetic data: 24 px with whitening-bias grad, 24 px without it, 32 px without it, plus each full and partial batch shape. Eval stays the 32 px graph. Run drafts/debug_nan.py on every graph under max-autotune-no-cudagraphs before launching."
+  }
+}

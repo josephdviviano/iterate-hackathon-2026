@@ -1,0 +1,23 @@
+harvest: openalex_search('Muon optimizer critical batch size scaling') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('batch size scaling learning rate momentum orthogonalized optimizer') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('critical batch size data-limited short training') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('EMA weight averaging batch size scaling rule') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('ghost batch normalization large batch generalization gap') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('large batch training few steps CIFAR accuracy recovery') failed: HTTP Error 429: Too Many Requests
+R012 -> D012
+added I055, I056, I057, I058, I059; dropped I047, I050, I048. The tip is E042: bs 1536, 6.5 epochs, all at 32 px, jitter, 5.449 s, 0.7549, margin 0.19 pp. Per D012, E041/E042 do not yet include the E040 24 px curriculum, and E040 by itself saved 3% at no accuracy cost. The top-priority idea (P5) stacks that curriculum onto the bs-1536 tip; expected ~5.30 s at ~0.7555. I052 (the 28 px stage) and I053 (head lr x2) stay queued and apply to whichever commit becomes the tip. I051 (moving the 24 px boundary later, at bs 1024) is still running, and its result tells us how far the low-res phase can be extended.
+
+Two of the new ideas are exploits on the batch-size axis:
+- **Muon lr 0.20 at bs 1536 (P3).** This compensates for the run taking a third fewer fixed-magnitude rotations.
+- **bs 2048 (P2).** This prices the next step on the batch-size axis, with a pre-registered rule for closing it.
+
+Two are explores on the averaging and BN side, testing whether large batch removed useful noise or averaging density:
+- **Lookahead sync every 3 steps with the per-step decay unchanged (P2).** This is H1.6.1's untested density arm.
+- **Ghost BN with 2x768 groups (P2).** This is the named follow-up in H1.2.3.
+
+I054 (scheduling how strongly NS orthogonalizes) stays as an explore. Dropped:
+- **I047 (bs ramp):** it was a fallback in case fixed bs 1536 lost more than 0.3 pp, and that did not happen.
+- **I050 (bs 768):** E041 showed larger batches are the cheaper lever, so going smaller would cost about 10% time for no plausible gain.
+- **I048 (BN-bias x32):** it was written for the old bs-1024 SGD rates and points opposite to the E039 evidence; re-propose it after I053.
+
+That leaves 8 queued. The open risk is still the thin margin: H4.1.2/H4.1.3 (extra-seed checks run offline in drafts/) should be done before any epoch trim that leaves less than 0.15 pp of margin.

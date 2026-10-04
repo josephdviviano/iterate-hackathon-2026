@@ -1,0 +1,20 @@
+R005 -> D005
+added I025, I026, I027, I028, I029, I030; dropped I024. The tip is E018: Muon with 3 Newton-Schulz steps, lookahead, 7.5 epochs, accuracy 0.7596, 7.39 s, a 0.66 pp margin over 0.753. The new ideas cash that margin in.
+
+**Exploit**
+- **7.0 epochs (priority 5):** expected ~0.7555 at ~6.9 s.
+- **One compiled, batched Muon step (priority 4):** targets the 1.93 ms/step of Muon kernel overhead; expect -3% to -6% time with the math unchanged. It is tagged H2.4 and also tests whether H2's "not optimizer overhead" claim still holds now that the optimizer is heavier.
+- **Muon lr 0.16 (priority 4):** the follow-up E019 pre-registered.
+- **Muon terminal lr decaying to 0 instead of 0.07x (priority 3):** for the Muon group only, tests H1.6.2. The E019 post-mortem points to the lr floor as end-of-run noise.
+
+**Explore**
+- **Muon momentum 0.6 → 0.8 (priority 2).**
+- **Frequency-wise (DCT-basis) Muon-C kernel split (priority 2):** from D003 C0016/C0017.
+
+I023 (GELU → SiLU) stays queued. I022 (Muon without lookahead) is still running; its result decides whether averaging-density ideas (H1.6.1) are worth queuing on the Muon base, so none were added yet.
+
+I dropped I024: progressive resizing buys time at about half the accuracy-per-time rate of cutting Muon epochs.
+
+That leaves 7 queued ideas.
+
+**Stale hypotheses:** H1.1.4 (SGD at 8.75 epochs) and H1.5.1 width-for-epochs now concern the superseded SGD base. They should be re-scoped to the Muon base or retired at the next tree review.

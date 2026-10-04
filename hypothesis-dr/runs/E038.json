@@ -1,0 +1,28 @@
+{
+  "exp": "E038",
+  "commit": "0aef1a5",
+  "pid": 422839,
+  "start_ticks": 4044500,
+  "started": 1791064040.328701,
+  "tag": "I041",
+  "description": "Systems change, math unchanged. Gate it first in drafts/: compare the batched Muon step's wall span (cuda events around it) with the sum of its kernel times from the profiler. Launch only if the gap is 0.4 ms/step or more. If so, capture the compiled Muon step (foreach Nesterov momentum, NS3 bmm per shape group, sqrt(out/in) scaling, weight-norm projection) in a torch.cuda.CUDAGraph during build() on synthetic tensors. Use static .grad buffers (zero_grad(set_to_none=False)), a 0-d lr tensor updated with fill_, and parameters and momentum buffers that prepare() resets IN PLACE (copy_/zero_), so the captured addresses stay valid across trials. Replay the graph each step. Everything else stays unchanged.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E038.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7551666666666667,
+    "time": 5.885562021666071,
+    "complete": true
+  },
+  "row": {
+    "exp": "E038",
+    "commit": "0aef1a5",
+    "accuracy": 0.7551666666666667,
+    "time": 5.885562021666071,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I041",
+    "description": "Systems change, math unchanged. Gate it first in drafts/: compare the batched Muon step's wall span (cuda events around it) with the sum of its kernel times from the profiler. Launch only if the gap is 0.4 ms/step or more. If so, capture the compiled Muon step (foreach Nesterov momentum, NS3 bmm per shape group, sqrt(out/in) scaling, weight-norm projection) in a torch.cuda.CUDAGraph during build() on synthetic tensors. Use static .grad buffers (zero_grad(set_to_none=False)), a 0-d lr tensor updated with fill_, and parameters and momentum buffers that prepare() resets IN PLACE (copy_/zero_), so the captured addresses stay valid across trials. Replay the graph each step. Everything else stays unchanged."
+  }
+}

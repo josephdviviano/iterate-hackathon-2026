@@ -1,0 +1,28 @@
+{
+  "exp": "E058",
+  "commit": "fb3f626",
+  "pid": 571496,
+  "start_ticks": 4967423,
+  "started": 1791073269.56196,
+  "tag": "I076",
+  "description": "FreezeOut-style late freeze of block 1. On the tip (E052, or I072's successor if kept), make one change. For the last 20% of training samples, from 5.4 epochs on, use a third 32 px train-step graph variant in which block 1's output is detached. Its conv filters and BN affine params get no gradient, but block 1 still runs in train mode, so BN running stats keep updating. Pair it with a second compiled Muon-step variant that excludes the 128x1152 block-1 shape group. The backward then skips block 1's wgrad and dgrad and block 2's first-conv dgrad. Pick the variant in Python by sample count, with no data-dependent branch in the graph. Lookahead still blends block 1 as now: the slow weights keep converging to the frozen fast weights. The SGD group skips block-1 BN biases (zero grad) through the same variant flag. In build(), warm up the new train variant and the new Muon variant, including every partial-batch shape at the 5.4-epoch switch, with channels_last tensors in the exact timed layout (E035). Run debug_nan.py on the new graph and compare trial-0 with later-trial train times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E058.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7537333333333334,
+    "time": 4.696067019664042,
+    "complete": true
+  },
+  "row": {
+    "exp": "E058",
+    "commit": "fb3f626",
+    "accuracy": 0.7537333333333334,
+    "time": 4.696067019664042,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I076",
+    "description": "FreezeOut-style late freeze of block 1. On the tip (E052, or I072's successor if kept), make one change. For the last 20% of training samples, from 5.4 epochs on, use a third 32 px train-step graph variant in which block 1's output is detached. Its conv filters and BN affine params get no gradient, but block 1 still runs in train mode, so BN running stats keep updating. Pair it with a second compiled Muon-step variant that excludes the 128x1152 block-1 shape group. The backward then skips block 1's wgrad and dgrad and block 2's first-conv dgrad. Pick the variant in Python by sample count, with no data-dependent branch in the graph. Lookahead still blends block 1 as now: the slow weights keep converging to the frozen fast weights. The SGD group skips block-1 BN biases (zero grad) through the same variant flag. In build(), warm up the new train variant and the new Muon variant, including every partial-batch shape at the 5.4-epoch switch, with channels_last tensors in the exact timed layout (E035). Run debug_nan.py on the new graph and compare trial-0 with later-trial train times."
+  }
+}

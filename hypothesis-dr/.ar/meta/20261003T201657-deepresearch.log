@@ -1,0 +1,16 @@
+R002 -> D002
+added I010, I011, I012, I013; dropped I007; skipped ideas for unknown/closed H2.2 (proposed new Lvl3 H2.2.2: removing atomic-kernel ops from the non-conv path saves >=2% at identical accuracy), H1.1 (proposed new Lvl3 H1.1.4: the inherited peak lr 9 is not optimal for CIFAR-100 at ~9 epochs). State: 9 epochs gives 0.7552 in 8.34 s (E002). Accuracy is deterministic given the seeds, and timing noise is about 1% (E003). The slope is about 0.31 pp per epoch, so the knee is near 8.3 epochs.
+
+Changes to the queue:
+- **Dropped I009:** the profile shows the step is not launch-bound.
+- **Dropped I007:** it changed the optimizer and the batch size together. A single-change Muon test at bs 1024 and 9 epochs replaces it.
+
+New ideas:
+- **Top exploit:** 8.5 epochs. Expected 0.7535-0.7540 at about 7.9 s, which also tests H1.1.2 directly.
+- **Systems wins at the same accuracy, guided by the profile:** swap the global adaptive max-pool for amax, removing an atomic backward kernel (about -2.5%), and autotune the conv kernels with cudnn.benchmark plus max-autotune (0 to -8%).
+- **Hyperparameter probe:** peak lr ×1.25 with the effective weight-decay strength held fixed. The lr was carried over unverified from CIFAR-10.
+- **Explore:** the corrected Muon test, and proxy-model hard-example selection (H1.4.1, untested until now).
+
+Kept: I006 (lookahead ablation) and I008 (progressive resizing). I005 (LS 0.2) is still running.
+
+The queue now has 8 queued ideas: about 5 exploit or high-information and 3 explore. Once the 8.5-epoch point and the pooling fix land, they should be combined.

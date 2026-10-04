@@ -1,0 +1,25 @@
+H5->refuted, H5.1->refuted, H5.1.1->refuted, H4.2.1->retired, H4.2.2->retired, H1->supported, H1.5->supported, H1.5.2->retired, H1.6->retired, H2.1->supported, H2.1.1->retired, H2.1.4->retired, H2.6->refuted, H2.6.1->refuted, H2.7->refuted, H2.8.1->supported, H2.9->refuted, H2.9.1->refuted, H6.2->refuted, H6.2.1->refuted, +H7, +H7.1, +H7.1.1, +H7.1.2, +H7.2, +H7.2.1, +H7.2.2, +H7.2.3, +H2.10, +H2.10.1, +H2.8.2, +H4.3, +H4.3.1, +H6.3, +H6.3.1. I revised the tree to match the Muon era.
+
+**Muon.** H5, H5.1 and H5.1.1 are now refuted. E019, E020 and E024 show that Muon greatly improves time to 75%, and their evidence tokens were logged with the wrong sign. The finding moves to a new Lvl1, N1: optimizer quality per update is the binding constraint. N1 has two mechanisms:
+- **Hyperparameters (N1a):** momentum is probably near its optimum, since both tuned public recipes use 0.655. LR has not been explored.
+- **Remaining overhead (N1b):** about 1 ms/step, roughly 7% of time. The candidate cuts are periodic weight renormalization, 2 Newton-Schulz steps with better coefficients, and bs 1536.
+
+**Noise model.** H4 is rewritten. The tip is not deterministic between runs (E028). The sd of a 3-seed mean is about 0.15 pp and the sd of a difference between two runs is about 0.2 pp. The tip estimate is 0.7554 on seeds 0-2 (0.7553 over 11 seeds). H4 now carries the rule for a new tip: a 3-seed mean of at least 0.755, or two runs averaging at least 0.7535. H4.1 is supported only for SGD. A new node, N3, proposes that pinning the autotune choices would restore bit-determinism.
+
+**SGD-era nodes.** H1 is scoped to SGD, where it is supported. Retiring its SGD-only children removes H1.5.2, H1.6 and H1.6.1. H3 is scoped to SGD at full resolution and stays refuted. H2.4 now admits that launch-bound Muon phases do cost time. H2.4.1 is retargeted at the tip's 16/24 px phases.
+
+**Status cleanup.**
+- H2.6 and H2.6.1 are refuted (E017).
+- H6.2 and H6.2.1 are refuted (E018).
+- H2.9 and H2.9.1 are refuted (E023).
+- H2.7 is refuted (E025), and a new node N2 replaces it: the 32 px tail is binding, so savings should be reinvested with step-indexed switching.
+- H2.1 is supported (E021, consistent with E006).
+- H2.8.1 is supported on two feasible runs (E026, E028). Its 20 px cost is still unmeasured.
+- H2.8 is reworded so that its 16 px exchange-rate advantage is not overstated.
+- H2.1.3 stays open as a cheap compliance check.
+- H2.1.1, H2.1.4, H2.7.1, H4.2.1 and H4.2.2 are retired as superseded.
+
+**Regularization.** H6 is reopened for the Muon regime. Its new child N4 tests whether LS 0.2 helps the tip.
+
+The open Lvl1 hypotheses are H2, H4, H6 and N1.
+added I041, I042, I043, I044, I045, I046, I047; dropped none. I added 7 ideas, for 8 queued in total including I040. No queued idea was dropped, because I040's hypothesis H2.4.1 is still open. The new ideas mostly go after accuracy first: the tip is about 0.7554 against a 0.753 bar, so it has only ~0.25 pp of real margin. The top idea follows from E031: going from 3 to 2 Newton-Schulz iterations cost 1.8 pp, so a 4th iteration (~+2.3% time) may buy a few tenths of a pp more cheaply than any change to the epoch schedule. A related idea keeps 3 iterations at equal cost but uses Polar Express per-iteration coefficients. Two untested zero-cost knobs are also queued: Muon lr 0.20 (the dropped I039 never ran) and label smoothing 0.2 under Muon. Any margin they buy would pay for the E029 3@16 + 1@24 + 4@32 near-miss (-0.27 s). For Muon overhead there are two ideas: periodic weight renormalization, and bs 1536 to cut the step count. A determinism probe (Muon compiled with mode='default', cuDNN algorithm choice pinned) would make seed-paired comparisons possible, roughly halving the noise on recipe differences. H2.10.1 (reinvesting the low-res savings in a longer 32 px tail) waits for the running I038 (4@16 + 4@32). H7.1.1 is effectively answered by E030: momentum 0.5 brought no gain.

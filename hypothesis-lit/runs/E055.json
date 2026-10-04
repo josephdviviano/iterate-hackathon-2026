@@ -1,0 +1,28 @@
+{
+  "exp": "E055",
+  "commit": "7d2a86e",
+  "pid": 471973,
+  "start_ticks": 4461380,
+  "started": 1791068209.1301978,
+  "tag": "I061",
+  "description": "Exploit: spend E053's margin on the two time cuts already measured as accuracy-neutral on dev seeds. On E053 (E038 + head output scale 2x, ls 0.4; official 0.7575, dev 0.7578 @ 6.68 s), make two changes. (1) The pooling cut: replace the head's AdaptiveMaxPool2d(1) with x.flatten(2).max(dim=2).values at every resolution and in eval. Use the indices-based backward, not amax (amax crashed in E041). (2) E049's 2-epoch whitening-bias window: train the whitening-conv bias only in the 20 px phase, and in the 24 px graph detach the whitening output after its activation and zero the bias lr. Keep the graph count at 4, recapture everything in build, and change nothing else. Check that eval returns finite [B,100] logits for B in {1, 7, 513, 1024}. Run the official seeds plus dev seeds 3-12.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E055.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.76,
+    "time": 6.456583978331764,
+    "complete": true
+  },
+  "row": {
+    "exp": "E055",
+    "commit": "7d2a86e",
+    "accuracy": 0.76,
+    "time": 6.456583978331764,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I061",
+    "description": "Exploit: spend E053's margin on the two time cuts already measured as accuracy-neutral on dev seeds. On E053 (E038 + head output scale 2x, ls 0.4; official 0.7575, dev 0.7578 @ 6.68 s), make two changes. (1) The pooling cut: replace the head's AdaptiveMaxPool2d(1) with x.flatten(2).max(dim=2).values at every resolution and in eval. Use the indices-based backward, not amax (amax crashed in E041). (2) E049's 2-epoch whitening-bias window: train the whitening-conv bias only in the 20 px phase, and in the 24 px graph detach the whitening output after its activation and zero the bias lr. Keep the graph count at 4, recapture everything in build, and change nothing else. Check that eval returns finite [B,100] logits for B in {1, 7, 513, 1024}. Run the official seeds plus dev seeds 3-12."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "exp": "E001",
+  "commit": "2998e35",
+  "pid": 604309,
+  "start_ticks": 5207558,
+  "started": 1791075670.910141,
+  "tag": "I001",
+  "description": "Replace the template recipe in submissions/arena/ with an airbench96-style port. Architecture: a frozen 2x2 patch-whitening first conv, with whitening computed in prepare from training patches; Dirac init; 3 residual groups of 3 convs at widths 128/384/576; BatchNorm-GELU. Optimizer: Nesterov SGD, lr 9.0 (airbench scaling), wd 0.012, batch size 1024, triangular LR schedule, 9 epochs, label smoothing 0.3. Data: the dataset stays on the GPU in fp16/channels_last; random crop (pad 2) runs on the GPU; derandomized alternating flip. No TTA and no torch.compile yet. Eval is a plain forward pass with no state changes. Build warms up eager kernels and cuDNN on synthetic tensors for train batch 1024 and eval B in {1, 1024}. This is the base recipe every other idea builds on.",
+  "log": "/home/jovyan/work/arena3/hypothesis-unc/runs/E001.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7429666666666667,
+    "time": 9.431919813000908,
+    "complete": true
+  },
+  "row": {
+    "exp": "E001",
+    "commit": "2998e35",
+    "accuracy": 0.7429666666666667,
+    "time": 9.431919813000908,
+    "complete": true,
+    "feasible": "no",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I001",
+    "description": "Replace the template recipe in submissions/arena/ with an airbench96-style port. Architecture: a frozen 2x2 patch-whitening first conv, with whitening computed in prepare from training patches; Dirac init; 3 residual groups of 3 convs at widths 128/384/576; BatchNorm-GELU. Optimizer: Nesterov SGD, lr 9.0 (airbench scaling), wd 0.012, batch size 1024, triangular LR schedule, 9 epochs, label smoothing 0.3. Data: the dataset stays on the GPU in fp16/channels_last; random crop (pad 2) runs on the GPU; derandomized alternating flip. No TTA and no torch.compile yet. Eval is a plain forward pass with no state changes. Build warms up eager kernels and cuDNN on synthetic tensors for train batch 1024 and eval B in {1, 1024}. This is the base recipe every other idea builds on."
+  }
+}

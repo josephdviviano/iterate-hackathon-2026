@@ -1,0 +1,28 @@
+{
+  "exp": "E030",
+  "commit": "a255916",
+  "pid": 399054,
+  "start_ticks": 3835228,
+  "started": 1791061947.6078491,
+  "tag": "I030",
+  "description": "Explore the D003 mechanism (C0016/C0017): how a 4D kernel is split before orthogonalization. Replace the flattened [out, in*9] orthogonalization with a real frequency-wise variant of Muon-C. Project each 3x3 kernel momentum onto an orthonormal real 3x3 basis (the tensor product of the 3-point orthonormal DCT-II), which gives 9 [out, in] matrices per layer. Orthogonalize them with one batched 3-step NS (bmm over the 9 frequencies), then transform back to the spatial domain. The output scaling uses sqrt(max(1,out/in)) on the [out,in] shape. Keep the weight-norm projection, lr 0.24, momentum 0.6, lookahead and the epoch count of the current tip. Compile in build() and run the one-step finite-gradient check first.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E030.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7426,
+    "time": 6.303244266334029,
+    "complete": true
+  },
+  "row": {
+    "exp": "E030",
+    "commit": "a255916",
+    "accuracy": 0.7426,
+    "time": 6.303244266334029,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I030",
+    "description": "Explore the D003 mechanism (C0016/C0017): how a 4D kernel is split before orthogonalization. Replace the flattened [out, in*9] orthogonalization with a real frequency-wise variant of Muon-C. Project each 3x3 kernel momentum onto an orthonormal real 3x3 basis (the tensor product of the 3-point orthonormal DCT-II), which gives 9 [out, in] matrices per layer. Orthogonalize them with one batched 3-step NS (bmm over the 9 frequencies), then transform back to the spatial domain. The output scaling uses sqrt(max(1,out/in)) on the [out,in] shape. Keep the weight-norm projection, lr 0.24, momentum 0.6, lookahead and the epoch count of the current tip. Compile in build() and run the one-step finite-gradient check first."
+  }
+}

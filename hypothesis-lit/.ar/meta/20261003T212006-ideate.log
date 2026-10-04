@@ -1,0 +1,16 @@
+added I041, I042, I043, I044, I045, I046, I047; dropped I040. The incumbent is E030: 0.7533 in 6.95 s. Its expected accuracy, from the pooled E025/E027 calibration, sits right at the 0.753 bar, so any time cut needs either extra margin or a near-zero accuracy cost.
+
+I dropped I039 and I040 because both were built on E025, which E030 has replaced. Both are re-queued unchanged on E030.
+
+The new queue has 7 ideas. Four are exploits:
+- **Freeze group-1 conv in the 32 px phase (H2.4, priority 4):** freeze the first group-1 conv block during the 32 px epochs. This removes its 32x32 weight-gradient and BN backward work. Expected about -2 to -3.5% time.
+- **1 Newton-Schulz step after AOL (H2.5.2, priority 3):** expected about -1 to -1.5% time.
+- **Move one 32 px epoch to 28 px (H2.3.2, priority 3):** tests whether the closing 32 px phase only needs to re-fit BN and the head. Run with 2 salts; expected about -2.5% time.
+- **+0.5 epoch at 32 px on E030 (H1.8.1, priority 4):** calibrates the accuracy-per-second slope and gives a safe-margin fallback config.
+
+Three are explores, each meant to add margin:
+- **One extra 20 px epoch (H1.8, priority 3):** compares the cheapest epoch against the 32 px tail as a way to buy margin.
+- **Label smoothing 0.4 (H1.3.1, priority 2):** the last untested direction of the label-smoothing knob.
+- **Muon momentum 0.75 (H1.7, priority 2):** momentum is untested, while lr is already known to be flat.
+
+Margin-adding runs can't be kept on time alone. Their job is to set the exchange rate between accuracy and time, and to say which margin source should pair with the time cuts.

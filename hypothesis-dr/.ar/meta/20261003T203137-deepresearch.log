@@ -1,0 +1,29 @@
+R004 -> D004
+H1.1->supported, H1.1.1->supported, H1.1.2->supported, H1.1.3->refuted, H1.3->refuted, H1.3.1->refuted, H2.1->retired, H2.2->refuted, H2.2.1->refuted, H3->refuted, H3.1->supported, H3.1.1->supported, H3.2->supported, H3.2.1->supported, H4.1->inconclusive, H4.1.1->supported, H4.2->supported, H4.2.1->supported, +H1.6, +H1.6.1, +H1.6.2, +H1.6.3, +H1.7, +H1.7.1, +H1.1.4, +H2.4, +H2.4.1, +H2.5, +H2.5.1, +H2.5.2, +H1.2.2, +H4.1.2, +H1.8, +H1.8.1. I brought the tree in line with E000–E010. Several nodes are now closed:
+- **Supported:** H1.1 and H1.1.1 (the base recipe clears the bar at 9–10 epochs). H1.1.2 is supported after being rewritten as "the knee is in (8.5, 9] epochs"; its original "at least 1 extra epoch needed" clause is refuted.
+- **Refuted:** H1.1.3 (the slope is not linear and is below 0.4 pp per epoch), H1.3 and H1.3.1 (label smoothing 0.2 and 0.3 give the same result), H2.2 and H2.2.1 (the train step is GPU-bound, not launch-bound; I took E010 off H2.2 because it was misattributed there), and H3 (fixed overhead is about 2%, not over 10%). H3.1 and H3.2 stay supported as maintenance items.
+- **Retired:** H2.1 and H2.1.1, because compile, channels_last and bf16 have been in the base since E001 and E007 tested something else.
+- **Supported:** H4.2 and H4.2.1 (lookahead is worth about 1 pp; I dropped the clause claiming it reduces spread).
+
+H4.1 now holds an explicit noise model and is marked inconclusive. Bit-identical reruns are deterministic, but any code change re-draws the 3-seed mean with an sd of about 0.09 pp, and time jitter is about 1%.
+
+Several nodes were restated:
+- **H1:** the new target is a knee below 8 epochs, at 7.3 s or less.
+- **H2:** headroom is now about 5–10% from cutting work, with lower confidence.
+- **H4:** the binding constraint is the local 0.753 gate, with winner's-curse risk.
+- **H1.2.1:** Muon with lookahead kept and batch size 1024, compared at 9 epochs.
+- **H1.4.1:** a self-scoring version with no separate proxy model, at low priority.
+- **H1.5.1:** widening beyond the current 576 channels.
+
+New nodes:
+- **N1 (end-of-training noise, the top lever):** averaging and lr-tail changes, plus a combined 8.5-epoch target.
+- **N2:** an lr/wd/momentum sweep.
+- **N3:** an 8.75-epoch test of the knee.
+- **N4 (non-conv kernels):** E010 is its first evidence, and N4a tests SiLU or ReLU in place of GELU.
+- **N5 (conv-shape inefficiency):** a cold-cache paired rerun that checks whether the E007 keep was noise, and a test of the whitening output shape.
+- **N6:** whether Muon needs lookahead.
+- **N7:** checking the tip on extra seeds.
+- **N8:** mild brightness/contrast augmentation.
+
+Suggested priority: N1a/N1b, then N3, then H1.2.1 and N6, then N4a, then N2a, then H1.5.1.
+added I018, I019, I020, I021, I022, I023, I024; dropped I013. E014 is the main signal. Muon on the conv filters, with lookahead kept, gave 0.7681 at 9 epochs, +1.3 pp over the SGD recipe, at ~10% NS overhead. That is worth about 2 epochs, so the queue now focuses on cashing it in. The top priority is Muon ported onto the E010 tip at 8 epochs (expected ~0.760 in ~7.95 s, a new best). Next, cut the NS overhead to 3 steps, then push the knee to 7.5 epochs (~7.4 s, toward H1.2.1's 7.3 s target). After that, one Muon lr probe. The explore third: test whether Muon makes lookahead redundant (H1.2.2), try a SiLU swap as a transferable systems cut (H2.4.1), and combine E013's progressive resizing with Muon's slack. I dropped I013 (low expected value next to Muon) and I017 (specified on an SGD tip that is being superseded; rebase it later). Decisions follow the noise rule: accuracy deltas under 0.25 pp and time deltas under 1.5% count as inconclusive.

@@ -1,0 +1,1 @@
+sed -i 's/        update = torch.compile(muon_update, mode="max-autotune-no-cudagraphs")/        update = torch.compile(muon_update)/; s/^    torch.backends.cudnn.benchmark = True$/    torch.backends.cudnn.benchmark = False\n    torch.backends.cudnn.deterministic = True/' submissions/arena/submission.py

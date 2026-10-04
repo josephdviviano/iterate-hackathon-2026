@@ -1,0 +1,26 @@
+{
+  "exp": "E041",
+  "commit": "18f915f",
+  "pid": 422013,
+  "start_ticks": 4038992,
+  "started": 1791063985.2537155,
+  "tag": "I048",
+  "description": "Exploit, a numerically equivalent throughput cut. On the current tip (E038: 2x20+3x24+2x28+4x32 px, 2/3/3 net, Muon at batch 1536 with AOL plus 2 NS steps, conv1 block frozen at 32 px, ls 0.4; 0.7546 @ 6.68 s), replace the head's AdaptiveMaxPool2d(1) with x.flatten(2).amax(2), or an equivalent amax over dims (2,3), in every resolution's forward. Change nothing else. Recapture all 4 CUDA graphs and the eval path in build. Confirm that eval still returns finite [B,100] logits for B in {1, 7, 513, 1024}. In the smoke test, log ms/step per phase and a one-step profiler line for the pooling backward kernel (atomic adaptive_max_pool2d_backward vs the amax backward).",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E041.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "complete": false
+  },
+  "row": {
+    "exp": "E041",
+    "commit": "18f915f",
+    "accuracy": "",
+    "time": "",
+    "complete": false,
+    "feasible": "no",
+    "improved": "no",
+    "status": "crash",
+    "tag": "I048",
+    "description": "Exploit, a numerically equivalent throughput cut. On the current tip (E038: 2x20+3x24+2x28+4x32 px, 2/3/3 net, Muon at batch 1536 with AOL plus 2 NS steps, conv1 block frozen at 32 px, ls 0.4; 0.7546 @ 6.68 s), replace the head's AdaptiveMaxPool2d(1) with x.flatten(2).amax(2), or an equivalent amax over dims (2,3), in every resolution's forward. Change nothing else. Recapture all 4 CUDA graphs and the eval path in build. Confirm that eval still returns finite [B,100] logits for B in {1, 7, 513, 1024}. In the smoke test, log ms/step per phase and a one-step profiler line for the pooling backward kernel (atomic adaptive_max_pool2d_backward vs the amax backward)."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "exp": "E065",
+  "commit": "0f4f9af",
+  "pid": 554193,
+  "start_ticks": 4837410,
+  "started": 1791071969.433916,
+  "tag": "I073",
+  "description": "Exploit: the pre-registered BN-bias follow-up, which adds margin at no time cost. On the E061 tip (2/2/3 net, 2x20+3x24+3x28+2.5x32 px, head scale 2x, ls 0.4, BN-bias lr multiplier 16x; official 0.7560, dev 0.7586 @ 5.24 s), halve the BN-bias lr multiplier from 16x to 8x. Change nothing else: Muon lr and momentum, head lr, SGD-group wd and momentum, schedule, Lookahead, resolutions, freezing and the whitening-bias window all stay fixed. If the multiplier lives in the GPU schedule tensor, no recapture is needed; otherwise recapture all graphs in build. Log the absolute BN-bias:head lr ratio before and after (the references sit at about 1:10-1:13). Run the official seeds plus dev seeds 3-12 and compare against E061's dev mean of 0.7586. Contingency: if dev rises by 0.15 pp or more, try 4x next. If dev falls by 0.15 pp or more, 16x brackets the optimum and the BN-bias axis is closed.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E065.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7574666666666666,
+    "time": 5.2389930073331925,
+    "complete": true
+  },
+  "row": {
+    "exp": "E065",
+    "commit": "0f4f9af",
+    "accuracy": 0.7574666666666666,
+    "time": 5.2389930073331925,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I073",
+    "description": "Exploit: the pre-registered BN-bias follow-up, which adds margin at no time cost. On the E061 tip (2/2/3 net, 2x20+3x24+3x28+2.5x32 px, head scale 2x, ls 0.4, BN-bias lr multiplier 16x; official 0.7560, dev 0.7586 @ 5.24 s), halve the BN-bias lr multiplier from 16x to 8x. Change nothing else: Muon lr and momentum, head lr, SGD-group wd and momentum, schedule, Lookahead, resolutions, freezing and the whitening-bias window all stay fixed. If the multiplier lives in the GPU schedule tensor, no recapture is needed; otherwise recapture all graphs in build. Log the absolute BN-bias:head lr ratio before and after (the references sit at about 1:10-1:13). Run the official seeds plus dev seeds 3-12 and compare against E061's dev mean of 0.7586. Contingency: if dev rises by 0.15 pp or more, try 4x next. If dev falls by 0.15 pp or more, 16x brackets the optimum and the BN-bias axis is closed."
+  }
+}

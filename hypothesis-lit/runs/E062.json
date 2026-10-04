@@ -1,0 +1,28 @@
+{
+  "exp": "E062",
+  "commit": "7471cd8",
+  "pid": 517921,
+  "start_ticks": 4686895,
+  "started": 1791070464.282661,
+  "tag": "I069",
+  "description": "Exploit, work removal in group 3, extending E059's finding that one 8x8 group-2 conv cost ~0.73 s for only -0.15 pp. First microbenchmark ms/step per phase on the current recipe (graphed, Muon included) for group 3 at 3 vs 2 convs. If the 2-conv version saves >=4%, cut group 3 from 3 convs to 2 (net 2/2/2, airbench94-style) at width 576, keeping the pooling position and head. Remove the 576x5184 matrix from the batched-NS shape groups; it is the largest Muon matrix. Hold epochs, resolutions, schedule, ls, head scale, BN-bias multiplier, freezing and the bias window fixed. Recapture all graphs in build. Check that eval returns finite [B,100] logits for B in {1, 7, 513, 1024}. Run the official seeds plus dev seeds 3-12. If the microbenchmark saves <3%, log it and do not run. Run this after the BN-bias 16x idea, on whichever base is then the tip.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E062.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7503333333333333,
+    "time": 4.8244341696651345,
+    "complete": true
+  },
+  "row": {
+    "exp": "E062",
+    "commit": "7471cd8",
+    "accuracy": 0.7503333333333333,
+    "time": 4.8244341696651345,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I069",
+    "description": "Exploit, work removal in group 3, extending E059's finding that one 8x8 group-2 conv cost ~0.73 s for only -0.15 pp. First microbenchmark ms/step per phase on the current recipe (graphed, Muon included) for group 3 at 3 vs 2 convs. If the 2-conv version saves >=4%, cut group 3 from 3 convs to 2 (net 2/2/2, airbench94-style) at width 576, keeping the pooling position and head. Remove the 576x5184 matrix from the batched-NS shape groups; it is the largest Muon matrix. Hold epochs, resolutions, schedule, ls, head scale, BN-bias multiplier, freezing and the bias window fixed. Recapture all graphs in build. Check that eval returns finite [B,100] logits for B in {1, 7, 513, 1024}. Run the official seeds plus dev seeds 3-12. If the microbenchmark saves <3%, log it and do not run. Run this after the BN-bias 16x idea, on whichever base is then the tip."
+  }
+}

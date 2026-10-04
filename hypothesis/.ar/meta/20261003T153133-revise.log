@@ -1,0 +1,36 @@
++H1, +H1.1, +H1.1.1, +H1.2, +H1.2.1, +H1.3, +H1.3.1, +H1.4, +H1.4.1, +H2, +H2.1, +H2.1.1, +H2.2, +H2.2.1, +H2.3, +H2.3.1, +H3, +H3.1, +H3.1.1, +H3.2, +H3.2.1, +H3.3, +H3.3.1, +H4, +H4.1, +H4.1.1, +H5, +H5.1, +H5.1.1. The tree was empty, so I seeded it with 5 Lvl1 claims, each with Lvl2 mechanisms and numeric Lvl3 predictions. No experiments have run, so no statuses changed. All new items are open.
+
+- **A, sample efficiency (0.75):** an airbench96-style recipe reaches 75.3% in about 8.5 epochs.
+  - A1a: reproducing the futurebiohackers submission gives accuracy >=0.753 in <=9 s.
+  - Ways to cut epochs: dirac init (A2), a wider last block with fewer epochs (A3), brightness/contrast augmentation (A4).
+- **B, per-epoch compute (0.6):** progressive resizing (B1), SiLU instead of GELU (B2), hard-example selection (B3, low prior).
+- **C, fixed and per-step overhead (0.5):** compiling the whole train step or using CUDA graphs with a fused optimizer (C1), trimming the timed prepare step (C2), batch size 2000 (C3).
+- **D, noise and margin (0.6):** this sets the acceptance rule. Seed std is about 0.25 pp, so a 3-seed mean around 0.755 is needed to be safe. Time gains under 2% need a repeat run (D1a).
+- **E, Muon vs SGD (0.6):** a mostly negative claim that Muon is not a win on CIFAR-100.
+
+Recommended first runs:
+1. The A1a reproduction. As the reviewer asked, it should also record per-seed accuracy and the prepare/train time split, which tests D1a and C2a.
+2. A repeat of the same config, to measure noise.
+
+Every feasible run should also get a standing rule check:
+- prepare resets everything learned.
+- build touches no real data.
+- eval runs in eval mode and stays under 5 s for any batch size from 1 to 1024.
+added I001, I002, I003, I004, I005, I006, I007, I008; dropped none. So far there's only the no-op baseline: accuracy 0.012, time 0.11 s, not feasible. The queue was empty, so I queued 8 ideas and dropped none.
+
+**First run (priority 5):** reproduce the futurebiohackers airbench96-style recipe (A1a) to get the first run that meets the 0.753 accuracy target. All compile and CUDA/cuDNN warmup has to happen in `build`. E000 showed that otherwise lazy CUDA init lands in the first timed trial.
+
+**Next, all built on A1a (priority 4):**
+- **Noise check:** rerun A1a unchanged to measure run-to-run time and accuracy variation (H4.1.1). This sets how big a time gain has to be before it counts.
+- **Dirac init:** add identity init to the group convs and cut from 8.5 to 7.5 epochs (H1.2.1). Expect about 10% less time.
+
+**Smaller exploit ideas (priority 3):**
+- GELU to SiLU swap (H2.2.1).
+- Compute the whitening statistics on 1500 images instead of 5000 to shrink `prepare` (H3.2.1).
+- Last group widened to 768 at 7.5 epochs (H1.3.1).
+
+**Explore ideas (priority 2):**
+- Progressive resizing, 24 → 28 → 32 px (H2.1.1).
+- Batch size 2000 with the learning rate rescaled (H3.3.1).
+
+I left out a Muon test (H5) because it's unlikely to cut time. If A1a lands at 0.750–0.753, the fallback is the same recipe at 9.0 epochs.

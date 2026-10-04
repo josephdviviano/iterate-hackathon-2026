@@ -1,0 +1,15 @@
+added I068, I069, I070, I071, I072; dropped none. I added 5 ideas and dropped none, so the queue now holds 7: the 2 already queued (the I066 train-fit diagnostic and I067's Gram reuse) plus these 5.
+
+**Where things stand.** E059 is the incumbent: official 0.7565, dev 0.7557, at 5.25 s. Its expected margin over the 0.753 bar is only about +0.27 pp on dev seeds, so the next steps need to add margin and keep cutting work.
+
+**Margin (time-free), priority 5.** Halve the BN-bias lr multiplier again, from 32x to 16x. This is the contingency E054 left open: going from 64x to 32x gave +0.27 pp on dev, and the only other margin source found since E030 is the head scale.
+
+**Time cut, priority 4.** Cut group 3 from 3 convs to 2. E059 showed that removing one deep, low-efficiency conv saved about 0.73 s for only -0.15 pp. The group-3 conv also carries the largest Newton-Schulz matrix, so I expect -7 to -10% time for about -0.3 pp. A microbenchmark runs first and decides whether the full run goes ahead.
+
+**Capacity, priority 3.** Widen group 2 from 384 to 448 channels in its 2 convs (H6.1.4). This trades depth for width and buys back accuracy at an exchange rate that can be compared with the 32 px tail's 0.67 pp/s.
+
+**Explore, priority 2.**
+- Add one 20 px epoch with the schedule anchors fixed in absolute steps (H1.9.1). This finally tests whether E036's loss came from moved anchors, now that an epoch is cheap.
+- Cyclical Muon momentum that runs opposite to the LR triangle (D004 C0029), which costs no time.
+
+Every idea is judged on dev seeds 3-12 against E059's dev mean (0.7557). Keep rules require dev ≥0.754 and official ≥0.7535.

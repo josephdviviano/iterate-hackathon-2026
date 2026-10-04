@@ -1,0 +1,51 @@
+H1->retired, H2.4->supported, H2.4.1->refuted, H2.11->inconclusive, H2.11.1->refuted, H6.4.1->refuted, H4.2.3->supported, H4.3->supported, H4.3.1->refuted, H4.3.2->refuted, H2.8->supported, H2.8.2->retired, H2.10.1->retired, H2.1.3->retired, H2.13->inconclusive, H2.13.1->refuted, +H2.14, +H2.14.1, +H2.14.2, +H2.12.2, +H2.10.2, +H2.13.2, +H6.4.2, +H7.3, +H7.3.1, +H7.1.3, +H4.4, +H4.4.1, +H8, +H8.1, +H8.1.1, +H8.1.2. Tree revised around the E046 tip (4.955 s, two-run mean 0.7548, ~0.15 pp margin on the local 0.753 gate).
+
+**Bookkeeping fixes:**
+- H1 retired as SGD history.
+- H5's misfiled tokens noted in the reason field (E020/E024 refute it; the Muon hyperparameter runs belong to H7.x).
+- H2.4.1 refuted as a conjunction: 16 and 32 px held, but 24 px is power-capped.
+- H2.11.1 refuted by E043; H2.11 lowered to inconclusive because of the warmup confound.
+- H4.3.1 and H4.3.2 refuted (E036 cost +9.8%; E042 stayed nondeterministic). H4.3 rewritten: cuDNN algorithm picks are the source, and determinism is not a score lever.
+- H6.4.1 refuted by E051, but H6.4 reopened, since one within-noise run in one direction does not close warmup.
+- H2.13.1 refuted by E050; H2.13 is inconclusive pending a tile-alignment profile.
+- H4.2.3 supported by E048.
+- Retired: H2.10.1, H2.1.3 and H2.8.2.
+
+**Rewritten statements:**
+- H2: E046 schedule and the bs-1536 cost table (32 px is 71% of time).
+- H2.4: only the 16 px phase is overhead-bound.
+- H2.12: 16 px only, 1–2% realistic.
+- H4: four rerun pairs, bimodal nondeterminism, E048 mislabel.
+- H7 and H7.1: Muon knobs are closed only on the bs-1024 base; the head gain is uncertain.
+- H7.2 and H7.2.4: lowered using the Turbo-Muon search result.
+
+**New hypotheses:**
+- **N1 (compile configuration).**
+  - N1a: static per-resolution train graphs, the top-priority zero-accuracy run (predicted ≤4.89 s).
+  - N1b: flatten+amax global pool.
+- **N2c:** overlap Muon with backward.
+- **N2d:** equal-time fractional trim comparison.
+- **N2e:** per-layer width profile.
+- **N3a:** warmup ×2.
+- **N4 / N4a:** head-on-Muon mechanism test.
+- **N5a:** Muon lr 0.28 at bs 1536.
+- **N6 / N6a:** weight-checksum test of train divergence vs eval-only divergence.
+- **H8 (new Lvl1, early-training fragility):**
+  - H8.1.1: small-batch start.
+  - H8.1.2: split warmup to test whether it protects the SGD bias groups.
+
+Open Lvl1s: H2, H4, H6, H8.
+added I062, I063, I064, I065, I066, I067, I068; dropped none. The tip is E046 at 4.955 s, with a two-run mean of 0.7548 and ~0.15 pp of local margin. The new ideas fall into three groups.
+
+**Time levers (exploit):**
+- Static per-resolution compile graphs (H2.14.1), priority 5. This is the cheapest zero-accuracy lever, measured at about -1.6% in E045's micro-benchmark.
+- Swapping AdaptiveMaxPool2d(1) for flatten+amax (H2.14.2).
+- A deliberately small fractional trim of the 24 px bridge (H2.10), 3@16 + 0.75@24 + 4@32. It is sized to fit the ~0.15 pp margin at ~0.03 pp per 1% of time. H2.10.2's full arm A, at -0.26 s, would land right on the 0.753 gate.
+
+**Zero-cost accuracy probes (explore):**
+- A lower Muon LR floor (H6.5.1).
+- Doubled warmup (H6.4.2).
+- Halving the warmup for the Muon groups only (H8.1.2), to locate the mechanism behind E051's -0.2 pp.
+- Freezing the whitening bias after 20% of steps (H8.1, the hiverge/Fable practice).
+
+**Queue:** nothing is dropped. I061 (prepare overhead on the 5 s run) is still a valid, cheap test. I060 (per-phase profiling, still running) gates the CUDA-graph and Muon-overlap ideas (H2.12.1/H2.12.2), so I left those unqueued. The Muon lr 0.28 re-check (H7.1.3), the head step-size diagnostic (H7.3.1), the per-layer width profile (H2.13.2) and the bs-768 first half-epoch (H8.1.1) wait until these runs report. Any result that would become a new tip still needs the H4 confirming rerun.

@@ -1,0 +1,38 @@
+{
+  "id": "R001",
+  "from": "committee",
+  "after": "E003",
+  "question": "What mechanism explains this result, which none of our forecasters predicted? Experiment E003: On the port, compile the model's forward+backward with torch.compile (mode='max-autotune-no-cudagraphs') in build. Compile and warm up on synthetic inputs for the train batch shape and the ragged last-batch shape, and in eval mode for B in {1, 7, 512, 1024} (mark the batch dimension dynamic for eval Measured time=12.067211381334346, accuracy=0.7486333333333334; forecast ranges were W1 {'time': [7.2, 7.9, 8.9], 'accuracy': [0.739, 0.743, 0.747]}; W2 {'time': [7.2, 8.5, 10.2], 'accuracy': [0.739, 0.7425, 0.747]}; W3 {'time': [7.7, 8.4, 9.3], 'accuracy': [0.739, 0.743, 0.747]}; W4 {'time': [7.6, 8.7, 9.8], 'accuracy': [0.739, 0.7425, 0.746]}. Open cruxes: Is E003's +1.5 s a fixed recompile or autotune leak inside the timed region, which is fixable, or a genuine per-step slowdown of Inductor kernels compared with cuDNN? Per-epoch timing of the compiled run would settle it. | Does the port carry a fixable accuracy deficit compared with reference airbench96 (whitening eps, BN eps of 1e-12 in fp16, lr scaling)? If it does, that could save about 1 epoch. | Is the EMA/Lookahead gain at 10-11 epochs at least 0.3 pp (about 0.5 epoch, about 0.5 s), or is it within noise? | Does EMA/Lookahead or any cheap accuracy trick give \u22650.3 pp at 9 epochs (converti",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791075933.1946895,
+  "digest": "D001",
+  "plan": {
+    "question": "Why did compiling the airbench96-style port's forward+backward with torch.compile (mode='max-autotune-no-cudagraphs', PyTorch 2.4) plus a foreach/fused SGD make the timed prepare+train run slower (12.07 s vs 9.43 s at 9 epochs) instead of faster, with accuracy unchanged? Specifically: is the extra ~2.6 s a fixed cost leaking into the timed region (Dynamo guard failures or recompiles when train/eval mode, requires_grad, BN buffers or new shapes change after build; autotuning or cuDNN benchmark redone on the first real step; lazy compilation of the backward), or a real per-step slowdown of Inductor-generated conv/BN/GELU kernels compared with eager cuDNN for small-resolution, channels_last fp16 CNNs? Which diagnostics (per-epoch timing, TORCH_LOGS recompiles, Dynamo cache stats) and which fixes (compiling only non-conv parts, mode='default', static shapes, dropping the ragged batch, CUDA graphs) recover the expected 10\u201320% speedup?",
+    "queries": [
+      "torch.compile TorchInductor PyTorch 2 graph compilation performance convolution",
+      "TorchDynamo guard recompilation overhead dynamic shapes",
+      "Inductor max-autotune convolution cuDNN comparison CNN training slowdown",
+      "fast CIFAR-10 training speedrun compile CUDA graphs overhead",
+      "deep learning compiler small batch CNN training kernel fusion batchnorm benchmark",
+      "PyTorch training step overhead kernel launch CPU-bound small models"
+    ],
+    "rubric": [
+      "Measures torch.compile/Inductor (or a comparable DL compiler such as XLA or TVM) for CNN training against eager cuDNN, with per-step timing reported separately from compile or warm-up time",
+      "Names concrete causes of compiled-mode slowdowns or recompiles, e.g. guard failures, dynamic shapes, train/eval mode switches, autotuning, or conv lowering choices, and gives a fix or diagnostic",
+      "Covers short, overhead-dominated runs (small images, ~seconds per epoch, single GPU, few CPU cores) where fixed costs make up a meaningful share of wall time",
+      "Gives actionable settings (compile mode, which ops to compile, CUDA graphs, static shapes, warm-up strategy) that can be used with PyTorch 2.4 and no new packages"
+    ],
+    "exclude": [
+      "Methods relying on pretrained weights, external data, or transfer learning",
+      "Test-time augmentation or anything using the test set during training",
+      "Approaches needing package installs or PyTorch versions other than 2.4 (e.g., newer compile features only in 2.5+)",
+      "Clock/power manipulation or sleeping tricks",
+      "Large-scale distributed/multi-GPU or LLM-only compiler studies with no CNN relevance",
+      "Inference-only compilation papers with no training-step measurements"
+    ]
+  },
+  "cost": 0.479
+}

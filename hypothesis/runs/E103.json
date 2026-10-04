@@ -1,0 +1,28 @@
+{
+  "exp": "E103",
+  "commit": "1318a69",
+  "pid": 578437,
+  "start_ticks": 5030487,
+  "started": 1791073900.2020404,
+  "tag": "I113",
+  "description": "Discriminating test for end-of-run averaging, matching the H6.5.4 spec on the current tip. Base: E090 code. Replace the 8-step final EMA with E081's 20-step window (lerp 0.3 every 4 steps from 20 steps before the end, initialized from the net at the window start). Also lerp every BN running_mean/running_var buffer with the same weights, in the same foreach_lerp, instead of copying the buffers from the final net. EMA buffer copies are allocated in build and reset in prepare. The lookahead stop and floor-hold are unchanged, and nothing recompiles. Decide on off-seed seeds 3-26, paired against the E090 baseline. Add one scored run, and a second only if off-seed is >= +0.05 pp.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E103.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7535333333333333,
+    "time": 4.457322438667082,
+    "complete": true
+  },
+  "row": {
+    "exp": "E103",
+    "commit": "1318a69",
+    "accuracy": 0.7535333333333333,
+    "time": 4.457322438667082,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I113",
+    "description": "Discriminating test for end-of-run averaging, matching the H6.5.4 spec on the current tip. Base: E090 code. Replace the 8-step final EMA with E081's 20-step window (lerp 0.3 every 4 steps from 20 steps before the end, initialized from the net at the window start). Also lerp every BN running_mean/running_var buffer with the same weights, in the same foreach_lerp, instead of copying the buffers from the final net. EMA buffer copies are allocated in build and reset in prepare. The lookahead stop and floor-hold are unchanged, and nothing recompiles. Decide on off-seed seeds 3-26, paired against the E090 baseline. Add one scored run, and a second only if off-seed is >= +0.05 pp."
+  }
+}

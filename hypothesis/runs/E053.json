@@ -1,0 +1,28 @@
+{
+  "exp": "E053",
+  "commit": "5a77f89",
+  "pid": 319717,
+  "start_ticks": 3460470,
+  "started": 1791058200.0306613,
+  "tag": "I062",
+  "description": "On the E046 tip (bs 1536, 3@16 + 1@24 + 4@32 px, compiled Muon on 9 convs plus head), set torch._dynamo.config.automatic_dynamic_shapes=False and raise torch._dynamo.config.cache_size_limit (e.g. 64) so that each (resolution, batch) train shape (16/24/32 px at bs 1536, plus any partial last-batch shapes) compiles as its own static graph. Warm all of them up in build on synthetic data. Keep eval on a separate compiled function that is dynamic in the batch dimension (torch._dynamo.mark_dynamic on dim 0, or the existing eval path unchanged), so any B from 1 to 1024 never recompiles. In an untimed side check, verify eval for B in {1, 7, 1000, 1024} returns finite [B,100] logits in under 5 s with no recompile. Change no math, hyperparameters or schedule. Log per-phase epoch times.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E053.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7524,
+    "time": 4.857648593999329,
+    "complete": true
+  },
+  "row": {
+    "exp": "E053",
+    "commit": "5a77f89",
+    "accuracy": 0.7524,
+    "time": 4.857648593999329,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I062",
+    "description": "On the E046 tip (bs 1536, 3@16 + 1@24 + 4@32 px, compiled Muon on 9 convs plus head), set torch._dynamo.config.automatic_dynamic_shapes=False and raise torch._dynamo.config.cache_size_limit (e.g. 64) so that each (resolution, batch) train shape (16/24/32 px at bs 1536, plus any partial last-batch shapes) compiles as its own static graph. Warm all of them up in build on synthetic data. Keep eval on a separate compiled function that is dynamic in the batch dimension (torch._dynamo.mark_dynamic on dim 0, or the existing eval path unchanged), so any B from 1 to 1024 never recompiles. In an untimed side check, verify eval for B in {1, 7, 1000, 1024} returns finite [B,100] logits in under 5 s with no recompile. Change no math, hyperparameters or schedule. Log per-phase epoch times."
+  }
+}

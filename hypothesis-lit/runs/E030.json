@@ -1,0 +1,28 @@
+{
+  "exp": "E030",
+  "commit": "57438dd",
+  "pid": 399360,
+  "start_ticks": 3838480,
+  "started": 1791061980.1273584,
+  "tag": "I037",
+  "description": "Exploit the resolution ladder one rung lower. On E025, run epochs 1-2 at 20 px instead of 24 px, so the schedule becomes 2x20 + 3x24 + 2x28 + 4x32 (11 epochs in total, the same LR schedule over total steps). Use whole augmented images downscaled with bilinear F.interpolate after the 2 px translate crop, as for 24/28 px, and keep the AdaptiveMaxPool2d(1) head. Batch 1536 with drop_last. Capture and warm up a 4th CUDA graph (20 px) in build. Rationale: the first epochs learn coarse features and the triangle is still warming up, so resolution matters least there. E020 and E025 both gained from cheaper early pixels.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E030.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7533,
+    "time": 6.951436428001519,
+    "complete": true
+  },
+  "row": {
+    "exp": "E030",
+    "commit": "57438dd",
+    "accuracy": 0.7533,
+    "time": 6.951436428001519,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I037",
+    "description": "Exploit the resolution ladder one rung lower. On E025, run epochs 1-2 at 20 px instead of 24 px, so the schedule becomes 2x20 + 3x24 + 2x28 + 4x32 (11 epochs in total, the same LR schedule over total steps). Use whole augmented images downscaled with bilinear F.interpolate after the 2 px translate crop, as for 24/28 px, and keep the AdaptiveMaxPool2d(1) head. Batch 1536 with drop_last. Capture and warm up a 4th CUDA graph (20 px) in build. Rationale: the first epochs learn coarse features and the triangle is still warming up, so resolution matters least there. E020 and E025 both gained from cheaper early pixels."
+  }
+}

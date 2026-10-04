@@ -1,0 +1,28 @@
+{
+  "exp": "E054",
+  "commit": "81c1232",
+  "pid": 538507,
+  "start_ticks": 4758185,
+  "started": 1791071177.176773,
+  "tag": "I074",
+  "description": "Lengthen the 28 px stage again and price the next half-epoch of the 32 px tail. The tip is E052 (commit 447a7db): bs 1536; 20 px bilinear antialiased whole images for epochs 0-1.5 and 28 px for 1.5-3.5, both without translate; 32 px with translate-2 for 3.5-6.75; jitter in every stage; SGD-group lr x1.5; head lr x2 with wd halved; Muon lr 0.16, mom 0.8, NS3; lookahead 0.97^5; whitening bias trained in epoch 1 only. If I072 (bs 2048 in the low-res stages) is kept, use its commit and keep its batch sizes per stage. Make one change: move the 28 -> 32 px switch from 3.5 to 4.0 epochs (sample 200000), so 28 px runs for 2.5 epochs and 32 px for the last 2.75. The low-res augment variant (no translate) covers the longer 28 px stage. Total epochs, bs, the sample stream and every step-indexed schedule stay unchanged. Where the switch falls inside a step, split that step into the two partial shapes, as the existing switches do. In build(), warm up every new partial-batch shape at the 4.0-epoch switch for the 28 px and 32 px graphs, with channels_last tensors in the exact timed layout (E035). Keep build under ~450 s. Run debug_nan.py on new shapes and compare trial-0 with later-trial train times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E054.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7524,
+    "time": 4.81566614399829,
+    "complete": true
+  },
+  "row": {
+    "exp": "E054",
+    "commit": "81c1232",
+    "accuracy": 0.7524,
+    "time": 4.81566614399829,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I074",
+    "description": "Lengthen the 28 px stage again and price the next half-epoch of the 32 px tail. The tip is E052 (commit 447a7db): bs 1536; 20 px bilinear antialiased whole images for epochs 0-1.5 and 28 px for 1.5-3.5, both without translate; 32 px with translate-2 for 3.5-6.75; jitter in every stage; SGD-group lr x1.5; head lr x2 with wd halved; Muon lr 0.16, mom 0.8, NS3; lookahead 0.97^5; whitening bias trained in epoch 1 only. If I072 (bs 2048 in the low-res stages) is kept, use its commit and keep its batch sizes per stage. Make one change: move the 28 -> 32 px switch from 3.5 to 4.0 epochs (sample 200000), so 28 px runs for 2.5 epochs and 32 px for the last 2.75. The low-res augment variant (no translate) covers the longer 28 px stage. Total epochs, bs, the sample stream and every step-indexed schedule stay unchanged. Where the switch falls inside a step, split that step into the two partial shapes, as the existing switches do. In build(), warm up every new partial-batch shape at the 4.0-epoch switch for the 28 px and 32 px graphs, with channels_last tensors in the exact timed layout (E035). Keep build under ~450 s. Run debug_nan.py on new shapes and compare trial-0 with later-trial train times."
+  }
+}

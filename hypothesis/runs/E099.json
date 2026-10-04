@@ -1,0 +1,28 @@
+{
+  "exp": "E099",
+  "commit": "3a3c031",
+  "pid": 559895,
+  "start_ticks": 4882850,
+  "started": 1791072423.8268626,
+  "tag": "I110",
+  "description": "Math-neutral FLOP-free time lever. Base: E090 code. At the very start of build, before any conv runs, set torch.backends.cudnn.benchmark_limit = 0 so that cuDNN v8 tries every available algorithm for each static train shape (16/24 px at bs 1536, 28/32 px at bs 1024, both whitening-bias-grad variants) and for the eval path, instead of the default 10. Change nothing else. Log the build time, which must stay <600 s, the per-phase epoch times, and the conv kernel names per (layer, shape), and diff the kernel names against the E090 defaults logged by the H4.2.7 run. Score twice and compare distinct samples against the E090 family.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E099.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7533666666666666,
+    "time": 4.476680288333834,
+    "complete": true
+  },
+  "row": {
+    "exp": "E099",
+    "commit": "3a3c031",
+    "accuracy": 0.7533666666666666,
+    "time": 4.476680288333834,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I110",
+    "description": "Math-neutral FLOP-free time lever. Base: E090 code. At the very start of build, before any conv runs, set torch.backends.cudnn.benchmark_limit = 0 so that cuDNN v8 tries every available algorithm for each static train shape (16/24 px at bs 1536, 28/32 px at bs 1024, both whitening-bias-grad variants) and for the eval path, instead of the default 10. Change nothing else. Log the build time, which must stay <600 s, the per-phase epoch times, and the conv kernel names per (layer, shape), and diff the kernel names against the E090 defaults logged by the H4.2.7 run. Score twice and compare distinct samples against the E090 family."
+  }
+}

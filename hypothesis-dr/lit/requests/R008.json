@@ -1,0 +1,38 @@
+{
+  "id": "R008",
+  "from": "auto",
+  "after": "E032",
+  "question": "On the Muon tip (~6.75 epochs, bs 1024, lookahead, Muon lr 0.16-0.24 with weight-norm projection, Nesterov SGD for the BN biases and head), would a larger batch (1536-2048) cut wall-clock time without costing accuracy per epoch? Settles H1.2.3. Two parts. (a) How do Muon and other orthogonalized optimizers scale with batch size: what is their critical batch size compared with SGD/Adam, and how should Muon lr and momentum change with batch size? (b) At a fixed number of epochs, in short budget-limited training, how much accuracy is lost when the batch grows and there are fewer steps, and how do SGD-group lr/wd scaling rules (linear vs sqrt) and weight averaging (EMA/lookahead) change that loss?",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791062592.6211782,
+  "digest": "D008",
+  "plan": {
+    "question": "On the Muon tip (~6.75 epochs, bs 1024, lookahead, Muon lr 0.16-0.24 with weight-norm projection, Nesterov SGD for the BN biases and head), would a larger batch (1536-2048) cut wall-clock time without costing accuracy per epoch? Settles H1.2.3. Two parts. (a) How do Muon and other orthogonalized optimizers scale with batch size: what is their critical batch size compared with SGD/Adam, and how should Muon lr and momentum change with batch size? (b) At a fixed number of epochs, in short budget-limited training, how much accuracy is lost when the batch grows and there are fewer steps, and how do SGD-group lr/wd scaling rules (linear vs sqrt) and weight averaging (EMA/lookahead) change that loss?",
+    "queries": [
+      "Muon optimizer critical batch size scaling",
+      "orthogonalized optimizer batch size learning rate scaling",
+      "critical batch size short training budget data efficiency",
+      "large batch training fixed epochs accuracy loss weight averaging",
+      "Muon hyperparameter transfer batch size momentum",
+      "fast CIFAR training batch size Newton-Schulz optimizer"
+    ],
+    "rubric": [
+      "Reports measured accuracy or loss against batch size at a fixed data or epoch budget, not only at a fixed step count, for Muon/Shampoo/SOAP-style orthogonalized or preconditioned optimizers, or compares their critical batch size with SGD/Adam.",
+      "Gives a concrete rule or measurement for how lr and/or momentum (or EMA/averaging horizon) should change with batch size. Usable answers are linear scaling, sqrt scaling, or invariance under normalized updates.",
+      "The regime is short or compute-limited training (few epochs, or a budget below convergence) on image classification or small models, so the results can plausibly carry over to ~6-7 epochs of CIFAR-100 with a small ResNet/VGG-style convnet.",
+      "Preferred: includes wall-clock or throughput tradeoffs (fewer optimizer steps, GPU utilization), not only sample efficiency."
+    ],
+    "exclude": [
+      "Methods that rely on pretrained weights, transfer learning, distillation from a pretrained teacher, or external/extra data (forbidden by RULES.md)",
+      "Test-time augmentation or any use of the test set for tuning/adaptation (forbidden)",
+      "Multi-GPU/distributed-only large-batch results (thousands of GPUs, LARS/LAMB at batch 32k+) with no single-GPU small-batch regime",
+      "LLM-only Muon papers that report only token-budget language-model loss with no batch-size sweep",
+      "Methods requiring packages beyond PyTorch 2.4.0/torchvision 0.19.0",
+      "Topics already settled in the tree: label smoothing 0.3 vs 0.2, NS step count, Muon lr above 0.24, removing lookahead, frequency-wise Muon-C"
+    ]
+  },
+  "cost": 0.8527
+}

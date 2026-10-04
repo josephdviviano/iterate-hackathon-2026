@@ -1,0 +1,18 @@
+added I009, I010, I011, I012, I013; dropped none. I added five ideas, which brings the queue to seven. Nothing was dropped: none of the queued hypotheses is settled yet.
+
+**Where things stand.** The current best is still E001 at 7.22 s with accuracy 0.7549. That clears the 0.753 bar by only about 0.19 pp, and E003–E005 showed that small recipe changes alone move the 3-seed mean by about 0.2 pp.
+
+**What this means for the ideas.** E004 showed the GPU sits at its 400 W power cap, so only cuts to GPU work shorten training. The main lever is therefore fewer epochs: one epoch is about 0.85 s, roughly 12% of the run. Fewer epochs need extra accuracy from somewhere, so most of the new ideas aim there.
+
+**New ideas, in priority order:**
+- **Priority 5:** Rerun the current best recipe at 8.0 epochs with no other change. If it stays at or above 0.753 it becomes the new best; either way it measures how much accuracy one epoch buys, and it is the baseline for the next two ideas.
+- **Priority 4:** Add light brightness/contrast jitter at 8.0 epochs. This tests H1.4.1 against that baseline.
+- **Priority 3:** Lower label smoothing from 0.3 to 0.2 at 8.0 epochs. The reference settings were tuned at 8.5 epochs and may leave accuracy on the table at shorter runs.
+- **Priority 2 (explore):** Use a fused optimizer and compile the optimizer step together with the EMA update. I expect less than the 2% gain H3.1.1 predicts, which would confirm the power-cap explanation.
+- **Priority 2 (explore):** Selective backprop, which tests H2.3.1. From epoch 3, only the 614 highest-loss images in each batch of 1024 get a backward pass; the run measures the accuracy cost per second saved.
+
+**Kept in the queue:**
+- I007 (train at 24 → 28 → 32 px over the run) fits the power-cap finding well.
+- I008 (batch size 2000) is now lower value. E004 suggests that removing per-step overhead does little on this GPU, so I didn't add more ideas of that kind.
+
+**Not added:** I left out a Muon optimizer test (H5.1.1) because it is unlikely to cut time.

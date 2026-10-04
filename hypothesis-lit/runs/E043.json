@@ -1,0 +1,28 @@
+{
+  "exp": "E043",
+  "commit": "c52afda",
+  "pid": 430891,
+  "start_ticks": 4098467,
+  "started": 1791064579.9976819,
+  "tag": "I049",
+  "description": "Exploit and add margin by fixing a BN-statistics mismatch (D004 C0031/C0035). Lookahead copies the slow weights into the model at the end of training, but the BN running statistics were accumulated under the fast iterates, and the frozen block's stats under the detach regime. At the end of train(), after the final Lookahead sync, reset all BN running stats. Re-estimate them with cumulative averaging (momentum=None) from 6 forward-only batches of 1536 un-augmented, un-flipped 32 px training images (no_grad, fp16, channels_last). Draw the images with the trial-seeded generator, then restore BN momentum. Do the re-estimation pass in a small CUDA graph or compiled function warmed up in build on synthetic data, so its first call costs nothing extra in the timed region. Training data only; the test set is never touched. Change nothing else on E038. Run salt 0 and salt 1.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E043.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7556666666666667,
+    "time": 6.767745280332747,
+    "complete": true
+  },
+  "row": {
+    "exp": "E043",
+    "commit": "c52afda",
+    "accuracy": 0.7556666666666667,
+    "time": 6.767745280332747,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I049",
+    "description": "Exploit and add margin by fixing a BN-statistics mismatch (D004 C0031/C0035). Lookahead copies the slow weights into the model at the end of training, but the BN running statistics were accumulated under the fast iterates, and the frozen block's stats under the detach regime. At the end of train(), after the final Lookahead sync, reset all BN running stats. Re-estimate them with cumulative averaging (momentum=None) from 6 forward-only batches of 1536 un-augmented, un-flipped 32 px training images (no_grad, fp16, channels_last). Draw the images with the trial-seeded generator, then restore BN momentum. Do the re-estimation pass in a small CUDA graph or compiled function warmed up in build on synthetic data, so its first call costs nothing extra in the timed region. Training data only; the test set is never touched. Change nothing else on E038. Run salt 0 and salt 1."
+  }
+}

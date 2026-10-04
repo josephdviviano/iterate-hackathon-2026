@@ -1,0 +1,28 @@
+{
+  "exp": "E049",
+  "commit": "60045ce",
+  "pid": 467218,
+  "start_ticks": 4414825,
+  "started": 1791067743.5791147,
+  "tag": "I066",
+  "description": "Follow up E045 on the head lr axis. On the tip (E047 commit 3d6a396: bs 1536, 20 px bilinear antialiased whole images for epochs 0-1.5 then 32 px, 6.75 epochs, SGD-group lr x1.5, head lr x2 with wd halved, Muon lr 0.16 mom 0.8 NS3, lookahead 0.97^5, jitter, whitening bias trained in epoch 1 only; or I061's successor if it is kept), make one change: raise the head (final linear layer) lr multiplier from x2 to x3 relative to the original head lr. Keep lr*wd constant for the head by dividing its current wd by 1.5. BN-bias lr x64, whitening-bias lr, Muon, lookahead, LS, curriculum, jitter, bs and epochs stay identical. The lr is a 0-d tensor, so there are no new shapes and nothing recompiles. Background: head x0.5 cost 0.41 pp (E039) and x2 gained 0.18 pp (E045), so the head looks under-driven. This run checks whether the optimum lies above x2 before the head axis is closed.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E049.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7548333333333334,
+    "time": 5.014965159663309,
+    "complete": true
+  },
+  "row": {
+    "exp": "E049",
+    "commit": "60045ce",
+    "accuracy": 0.7548333333333334,
+    "time": 5.014965159663309,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I066",
+    "description": "Follow up E045 on the head lr axis. On the tip (E047 commit 3d6a396: bs 1536, 20 px bilinear antialiased whole images for epochs 0-1.5 then 32 px, 6.75 epochs, SGD-group lr x1.5, head lr x2 with wd halved, Muon lr 0.16 mom 0.8 NS3, lookahead 0.97^5, jitter, whitening bias trained in epoch 1 only; or I061's successor if it is kept), make one change: raise the head (final linear layer) lr multiplier from x2 to x3 relative to the original head lr. Keep lr*wd constant for the head by dividing its current wd by 1.5. BN-bias lr x64, whitening-bias lr, Muon, lookahead, LS, curriculum, jitter, bs and epochs stay identical. The lr is a 0-d tensor, so there are no new shapes and nothing recompiles. Background: head x0.5 cost 0.41 pp (E039) and x2 gained 0.18 pp (E045), so the head looks under-driven. This run checks whether the optimum lies above x2 before the head axis is closed."
+  }
+}

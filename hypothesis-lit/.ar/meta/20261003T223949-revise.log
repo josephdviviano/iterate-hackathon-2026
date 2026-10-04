@@ -1,0 +1,54 @@
+H4.1->supported, H4.3->supported, H4.3.1->supported, H4.4->supported, H4.4.1->supported, H2.4.6->inconclusive, H6.1.3->inconclusive, H2.4.8->inconclusive, H2.6.2->refuted, H2.5.4->retired, H3->retired, H3.1->retired, H3.2->retired, H1.7.6->inconclusive, +H7, +H7.1, +H7.1.1, +H1.3.6, +H1.3.7, +H2.5.5, +H2.5.6, +H2.6.3, +H6.1.4, +H4.5.1, +H1.7.13. I made 31 updates and added 13 new hypotheses, including one new Lvl1 (N1).
+
+**Noise bookkeeping (H4 branch)**
+- E046 reproduced E038 bit-identically, so H4.4.1 is now supported. H4 and H4.1 are rewritten: the official metric is deterministic per code; salts and dev seeds are the replicates; per-seed std is 0.28 pp. Comparisons must be like for like, judged with a symmetric 2-SE band, and harmless edits must never be used to fish for a passing draw.
+- H4.3 and H4.3.1 are supported. The E038 family's expected accuracy is about 0.7531, and the official seeds run about +0.15 pp high. The 'freezing lowers variance' branch is dropped.
+- H4.5 is restated as a claim about expected accuracy only. Under it, an official stacking run needs a dev mean of about 0.7545 or more. Its child N9 pre-registers the planned 640 + banked-cuts stack as roughly a coin flip (dev mean forecast at about 0.753), so it should not be run yet.
+
+**Verdicts made symmetric**
+- H2.4.6 (E050, -0.21 pp, about 1.6 SE) moves from refuted to inconclusive, matching H6.1.3 (E051, +0.19 pp).
+- H6.1.3 is inconclusive: 640 costs about +2.9% for +0.19 pp, roughly 1 pp/s.
+- H6.1 and H6 are lowered to about 0.3, because H6's own falsification test has not been run.
+- H1.7.6 (lr flat, one draw) is now inconclusive.
+- H2.6.2 is refuted on magnitude (E047: -0.3% time against the ≥1% predicted).
+- H2.4.8 is inconclusive: the 2-epoch bias window is a neutral cut but saves only about 0.9%.
+
+**Splits and closures**
+- H2.3.2 is narrowed to 'a shorter 32 px phase is cheap', with a new dev-seed test (N6). BN re-estimation is closed as no-gain.
+- Retired: H3, H3.1 and H3.2 (lever exhausted), and H2.5.4 (Fable found graph gains neutral).
+- H1 is narrowed to time-free sample-efficiency knobs.
+
+**Search-driven changes**
+- H1.2 and H1.2.1 are raised to about 0.5: the airbench ablation puts alternating flip at a 15% epoch-equivalent speedup at 10 epochs. H1.2.1 now runs on dev seeds.
+- H1.7.12 is rewritten: per-step renorm makes Muon-weight wd a dead knob, so only the SGD-group wd, SGD-group momentum and the BN-bias LR remain.
+- H6.2 and H6.2.1 are lowered, since more exact orthogonalization does not reliably help. H1.7.9 (Polar Express slope) is raised slightly.
+- H5 is raised to 0.45 (PCIe judge confirmed; Fable found launch-overhead wins small). H5.1 is now a tie-breaker only.
+
+**Re-scoped tests**
+- H1.8.2 and H1.9.1 are re-scoped as anchor-fixed dev-seed tests, top priority. They give the current exchange rate and decide between H6 and H1.8.
+
+**New hypotheses**
+- **N1 (new Lvl1):** fit limit vs generalization gap, with a dev-only train-accuracy diagnostic (N1a, N1a1).
+- **N2:** online label smoothing.
+- **N3:** hierarchical smoothing with coarse labels; legality must be checked in RULES.md first.
+- **N4:** reuse the AOL Gram matrix in the first NS step.
+- **N5:** 2-step Gram Newton-Schulz (stability risk).
+- **N7:** a fresh per-phase kernel profile to look for hidden atomic or un-graphed work.
+- **N8:** group-2 depth-for-width trade (2 convs at 512 vs 3 at 384).
+- **N10:** frozen BN weight and eps 1e-12, as in the reference recipes.
+
+Open Lvl1 hypotheses: H1, H4, H5, H6 and N1.
+added I061, I062, I063, I064, I065, I066, I067; dropped none. E053's head scale (2x) is the first real margin source since E030, worth about +0.44 pp on dev seeds (0.7578), so the loop changes from finding margin to spending it. Seven new ideas are queued, alongside I060, which is still running.
+
+**Exploit (spend the margin, in order):**
+- **A, priority 5:** stack the two cuts already measured as neutral on dev seeds, the pooling change and the 2-epoch whitening-bias window. Expected about 6.44 s, with dev around 0.7565.
+- **Priority 4:** add the 28 px tail shift (H2.3.2), another -0.10 s.
+- **Priority 3:** cut the 32 px tail by half an epoch (H1.8), about -0.35 s. This also measures how much the tail is worth: E032 suggested it may be saturated.
+- **Priority 3:** cut group 2 from 3 convs to 2, behind a microbenchmark gate (H2.4.7).
+- **Priority 2:** reuse the Gram matrix in Muon's Newton-Schulz step (H2.5.5). This needs a code check first.
+
+**Explore:**
+- **Priority 4:** probe head scale 3x (H1.3.4). The scale is still the most promising free knob.
+- **Priority 2:** a dev-only diagnostic of how well the model fits the training set (H7.1.1). It decides whether further margin should come from capacity and more steps or from regularization.
+
+Every keep needs the dev 10-seed mean at or above 0.754 and the official run at or above 0.7535, so no passing draw is selected by chance. Nothing is dropped: all earlier queued ideas are done or already dropped, and I060 is in progress.

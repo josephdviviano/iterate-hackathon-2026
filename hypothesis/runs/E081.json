@@ -1,0 +1,28 @@
+{
+  "exp": "E081",
+  "commit": "2940f3c",
+  "pid": 441723,
+  "start_ticks": 4167086,
+  "started": 1791065266.193649,
+  "tag": "I089",
+  "description": "Base: the current tip, E070 code (e945ed5). It is 2@16 + 1.25@24 + 4@32 px at 7.25 ep and already contains the Fable tail, as the I083 drop note confirms. Precondition, untimed: log the source hash and a one-line diff against e945ed5, so this run joins the right family (H4.2.4). Change only the final-EMA window. Start the final EMA 20 steps before the end instead of 8. Keep the cadence (every 4 steps) and the lerp (ema = 0.7*ema + 0.3*net via foreach_lerp), so there are ~5 updates instead of ~2. Initialize the EMA from the net weights at the window start, using buffers allocated in build and reset in prepare. Leave the floor-hold point (~96% of steps), the lookahead stop point, eval on the EMA weights and the BN buffers copied from the net all unchanged. This is a host-side step-index change only, so nothing new compiles. Decide with an untimed off-seed run on seeds 3-10. In the same session, rerun the tip off-seed so the baseline (0.7530) gets a second sample. Add two scored runs. Instrumentation for H4.4.1/H4.5.1: log per-seed final-weight checksums and the cuDNN conv kernel names per (layer, shape).",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E081.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7506666666666667,
+    "time": 4.608474010667123,
+    "complete": true
+  },
+  "row": {
+    "exp": "E081",
+    "commit": "2940f3c",
+    "accuracy": 0.7506666666666667,
+    "time": 4.608474010667123,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I089",
+    "description": "Base: the current tip, E070 code (e945ed5). It is 2@16 + 1.25@24 + 4@32 px at 7.25 ep and already contains the Fable tail, as the I083 drop note confirms. Precondition, untimed: log the source hash and a one-line diff against e945ed5, so this run joins the right family (H4.2.4). Change only the final-EMA window. Start the final EMA 20 steps before the end instead of 8. Keep the cadence (every 4 steps) and the lerp (ema = 0.7*ema + 0.3*net via foreach_lerp), so there are ~5 updates instead of ~2. Initialize the EMA from the net weights at the window start, using buffers allocated in build and reset in prepare. Leave the floor-hold point (~96% of steps), the lookahead stop point, eval on the EMA weights and the BN buffers copied from the net all unchanged. This is a host-side step-index change only, so nothing new compiles. Decide with an untimed off-seed run on seeds 3-10. In the same session, rerun the tip off-seed so the baseline (0.7530) gets a second sample. Add two scored runs. Instrumentation for H4.4.1/H4.5.1: log per-seed final-weight checksums and the cuDNN conv kernel names per (layer, shape)."
+  }
+}

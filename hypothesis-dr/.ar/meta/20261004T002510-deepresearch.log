@@ -1,0 +1,19 @@
+R025 -> D025
+added I079, I080, I081, I082, I083, I084; dropped none. The tip is E058: 4.696 s at 0.7537, only 0.07 pp above the 0.753 gate. Freezing block 1 for the last 20% of samples cost about 0.02 pp per 1% of time. That is roughly 4-7x cheaper than adding epochs (about 0.08-0.15 pp per 1%) and the cheapest lever found so far. So the queue is built around a freeze ladder.
+
+**New ideas, in run order:**
+1. **Block-1 freeze at 0.7 (priority 5).** Freeze block 1 from 0.7 of samples instead of 0.8. Expected: -2.4% time, about -0.05 pp, so roughly 0.7532, right at the gate.
+2. **Block-2 freeze at 0.9 (priority 4).** Also freeze block 2 for the last 10%. A step with both blocks frozen costs about half an unfrozen one. Expected: -3.9% time, about -0.15 pp, which probably misses the gate on its own.
+3. **Combine with +0.25 epoch (priority 3, conditional).** Once ideas 1 and 2 are read, stack the kept or near-miss freeze cuts and add 0.25 epoch to the 32 px stage. This turns the cheap freeze cost into extra margin. Expected: about -2.4% time, about 0.7545.
+
+**Exploration:**
+- **Update thinning (priority 2, H2.4.7).** Update block 1 only on alternate steps between 3.5 and 5.4 epochs. This tells us whether block 1 needs recent updates or many updates.
+- **Weaker late orthogonalization at fixed update size (priority 2, H1.9).** Muon whitens the update less strongly late in training (a Frobenius-norm schedule before the 3 Newton-Schulz steps), with the update size matched to the tip's. This removes the lower-effective-lr confound that got I054 dropped.
+- **NorMuon (priority 1, H1.2.6).** Per-filter normalization after the 3 Newton-Schulz steps, with the update size kept the same.
+
+**Queue status:**
+- I078 (whitening bias trained through the 28 px stage) stays queued. H6.1.1 is still open and the idea applies to the new tip.
+- I077 (Muon on the head) is still running.
+- Nothing was dropped: no queued idea's hypothesis has been settled.
+
+That leaves 7 queued ideas. Because the margin is so thin, each new idea says to keep its code for pairing when it misses the gate by 0.1-0.15 pp or less.

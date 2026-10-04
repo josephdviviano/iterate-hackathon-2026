@@ -1,0 +1,28 @@
+{
+  "exp": "E049",
+  "commit": "d88cd86",
+  "pid": 450306,
+  "start_ticks": 4261594,
+  "started": 1791066211.2639692,
+  "tag": "I057",
+  "description": "Exploit, removing low-res backward work at a phase boundary, so no new graph is needed. On the current tip (idea A's stack if kept, else E038 plus the pooling cut), train the whitening-conv bias only during the 20 px phase (epochs 1-2, about 64 steps) instead of epochs 1-5. In the 24 px phase, detach the whitening output (after its activation) before group 1, as the 28/32 px graphs already do, and zero the whitening bias lr or drop it from that phase's parameter list. The 24 px graph is recaptured in build with the detach. The 20 px graph is unchanged and the graph count stays 4. This is the 2-epoch window between E045's 8 steps (failed, -0.47 pp) and E029's 3 epochs (neutral), aligned with the 20->24 px boundary. Also evaluate dev seeds 3-12. Log ms/step in the 24 px phase.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E049.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7526666666666667,
+    "time": 6.454035505999248,
+    "complete": true
+  },
+  "row": {
+    "exp": "E049",
+    "commit": "d88cd86",
+    "accuracy": 0.7526666666666667,
+    "time": 6.454035505999248,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I057",
+    "description": "Exploit, removing low-res backward work at a phase boundary, so no new graph is needed. On the current tip (idea A's stack if kept, else E038 plus the pooling cut), train the whitening-conv bias only during the 20 px phase (epochs 1-2, about 64 steps) instead of epochs 1-5. In the 24 px phase, detach the whitening output (after its activation) before group 1, as the 28/32 px graphs already do, and zero the whitening bias lr or drop it from that phase's parameter list. The 24 px graph is recaptured in build with the detach. The 20 px graph is unchanged and the graph count stays 4. This is the 2-epoch window between E045's 8 steps (failed, -0.47 pp) and E029's 3 epochs (neutral), aligned with the 20->24 px boundary. Also evaluate dev seeds 3-12. Log ms/step in the 24 px phase."
+  }
+}

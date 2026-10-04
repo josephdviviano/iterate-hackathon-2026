@@ -1,0 +1,147 @@
+Traceback (most recent call last):
+  File "/home/jovyan/work/arena3/hypothesis-lit/benchmark/worker.py", line 97, in run_worker
+    state = module.build(
+            ^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/results/arena/20261003T233839Z-14dcc9ec/source/submission.py", line 337, in build
+    loss.backward()
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_tensor.py", line 521, in backward
+    torch.autograd.backward(
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 289, in backward
+    _engine_run_backward(
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 768, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 306, in apply
+    return user_fn(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 1861, in backward
+    out = call_compiled_backward()
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 1805, in call_compiled_backward
+    CompiledFunction.compiled_bw = aot_config.bw_compiler(
+                                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_dynamo/backends/common.py", line 47, in _wrapped_bw_compiler
+    return disable(disable(bw_compiler)(*args, **kwargs))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 600, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_utils_internal.py", line 84, in wrapper_function
+    return StrobelightCompileTimeProfiler.profile_compile_time(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_strobelight/compile_time_profiler.py", line 129, in profile_compile_time
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 231, in time_wrapper
+    r = func(*args, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 1454, in bw_compiler
+    return inner_compile(
+           ^^^^^^^^^^^^^^
+  File "/home/jovyan/.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_dynamo/repro/after_aot.py", line 84, in debug_wrapper
+    inner_compiled_fn = compiler_fn(gm, example_inputs)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/debug.py", line 304, in inner
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 231, in time_wrapper
+    r = func(*args, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 527, in compile_fx_inner
+    compiled_graph = fx_codegen_and_compile(
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py", line 831, in fx_codegen_and_compile
+    compiled_fn = graph.compile_to_fn()
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/graph.py", line 1749, in compile_to_fn
+    return self.compile_to_module().call
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 231, in time_wrapper
+    r = func(*args, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/graph.py", line 1678, in compile_to_module
+    self.codegen_with_cpp_wrapper() if self.cpp_wrapper else self.codegen()
+                                                             ^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/graph.py", line 1634, in codegen
+    self.scheduler = Scheduler(self.buffers)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 231, in time_wrapper
+    r = func(*args, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/scheduler.py", line 1410, in __init__
+    self.finalize_multi_template_buffers()
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/scheduler.py", line 1871, in finalize_multi_template_buffers
+    min_node_unfused, _ = multi_node.get_min_choice()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/ir.py", line 3694, in get_min_choice
+    min_choice = min(self.choice_timings, key=self.choice_timings.get)  # type: ignore[arg-type]
+                     ^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/ir.py", line 3672, in choice_timings
+    self._choice_timings = self._choice_timings_fn()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py", line 1312, in get_timings
+    timings = do_autotuning(precompile_fn)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py", line 1280, in do_autotuning
+    timings = self.lookup(
+              ^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/codecache.py", line 299, in lookup
+    timings = benchmark(choices)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py", line 1266, in autotune
+    return make_benchmark_fn()(choices)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py", line 1472, in benchmark_in_current_process
+    raise e
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py", line 1438, in benchmark_in_current_process
+    timing = benchmark_choice_in_current_process(choice, *inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py", line 1425, in benchmark_choice_in_current_process
+    result = choice.benchmark(*example_inputs, out=out)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py", line 843, in benchmark
+    return self.bmreq.benchmark(*args, output_tensor=out)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/autotune_process.py", line 544, in benchmark
+    out = self.do_bench(fn, *input_tensors, output_tensor)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/autotune_process.py", line 597, in do_bench
+    out = do_bench_gpu(fn)
+          ^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/runtime/runtime_utils.py", line 113, in do_bench_gpu
+    return triton_do_bench(*args, **kwargs)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/triton/testing.py", line 103, in do_bench
+    fn()
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 818, in run
+    self.precompile()
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 232, in precompile
+    compiled_binary, launcher = self._precompile_config(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 431, in _precompile_config
+    binary = triton.compile(*compile_args, **compile_kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/triton/compiler/compiler.py", line 276, in compile
+    module = src.make_ir(options, codegen_fns, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/work/arena3/hypothesis-lit/.venv/lib/python3.12/site-packages/triton/compiler/compiler.py", line 113, in make_ir
+    return ast_to_ttir(self.fn, self, context=context, options=options, codegen_fns=codegen_fns)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/inspect.py", line 1267, in getsourcelines
+    lines, lnum = findsource(object)
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/jovyan/.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/inspect.py", line 1096, in findsource
+    raise OSError('could not get source code')
+OSError: could not get source code

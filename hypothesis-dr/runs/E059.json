@@ -1,0 +1,28 @@
+{
+  "exp": "E059",
+  "commit": "23aca65",
+  "pid": 577270,
+  "start_ticks": 5019128,
+  "started": 1791073786.6053581,
+  "tag": "I077",
+  "description": "Give the 100-way head an orthogonalized update. On the tip (E052, or I072's successor if kept), make one change: move the [100, 576] head weight out of the SGD group into Muon. Add it as its own shape group in the batched compiled Muon step: Nesterov momentum 0.8, NS3 with the same coefficients, sqrt(max(1,out/in)) = 1. Do NOT apply the weight-norm projection to the head, because row norms set the logit scale. Keep the head's current decoupled per-step decay (the same lr*wd product as now). Set its Muon lr so that the first-step update RMS matches the current SGD head's (x2) first-step update RMS, measured in drafts/ on real batch 0 of seed 0, and log that number. Use the same schedule multiplier as the Muon group. The head bias, if present, stays in SGD. In build(), warm up the new Muon graph on synthetic tensors and run debug_nan.py under max-autotune-no-cudagraphs.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E059.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7476333333333334,
+    "time": 4.664716400334631,
+    "complete": true
+  },
+  "row": {
+    "exp": "E059",
+    "commit": "23aca65",
+    "accuracy": 0.7476333333333334,
+    "time": 4.664716400334631,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I077",
+    "description": "Give the 100-way head an orthogonalized update. On the tip (E052, or I072's successor if kept), make one change: move the [100, 576] head weight out of the SGD group into Muon. Add it as its own shape group in the batched compiled Muon step: Nesterov momentum 0.8, NS3 with the same coefficients, sqrt(max(1,out/in)) = 1. Do NOT apply the weight-norm projection to the head, because row norms set the logit scale. Keep the head's current decoupled per-step decay (the same lr*wd product as now). Set its Muon lr so that the first-step update RMS matches the current SGD head's (x2) first-step update RMS, measured in drafts/ on real batch 0 of seed 0, and log that number. Use the same schedule multiplier as the Muon group. The head bias, if present, stays in SGD. In build(), warm up the new Muon graph on synthetic tensors and run debug_nan.py under max-autotune-no-cudagraphs."
+  }
+}

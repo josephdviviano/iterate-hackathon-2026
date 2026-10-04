@@ -1,0 +1,28 @@
+{
+  "exp": "E020",
+  "commit": "6112d2c",
+  "pid": 364573,
+  "start_ticks": 3700099,
+  "started": 1791060596.3160625,
+  "tag": "I023",
+  "description": "Exploit: add progressive resizing to the E018 incumbent (2/3/3 net, Muon at batch 1536 with lr 0.205 and momentum 0.655, CUDA-graphed step, 9.5 epochs, 0.7571 @ 8.16 s). This is E015's contingency moved onto the faster, higher-margin base. Train 11 epochs in total. Epochs 1-5 use whole augmented images downscaled to 24 px on the GPU (bilinear F.interpolate, AdaptiveMaxPool2d(1) head pooling as in E011/E015). Epochs 6-11 run at 32 px. Define the LR schedule (triangular plus Lookahead, as in the incumbent) over total steps. Batch 1536 with drop_last at both resolutions. Capture one CUDA graph per resolution in build and warm both on synthetic data, so nothing recompiles or recaptures in the timed region. Everything else stays at E018. Log per-phase ms/step.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E020.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7588,
+    "time": 7.816627885998362,
+    "complete": true
+  },
+  "row": {
+    "exp": "E020",
+    "commit": "6112d2c",
+    "accuracy": 0.7588,
+    "time": 7.816627885998362,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I023",
+    "description": "Exploit: add progressive resizing to the E018 incumbent (2/3/3 net, Muon at batch 1536 with lr 0.205 and momentum 0.655, CUDA-graphed step, 9.5 epochs, 0.7571 @ 8.16 s). This is E015's contingency moved onto the faster, higher-margin base. Train 11 epochs in total. Epochs 1-5 use whole augmented images downscaled to 24 px on the GPU (bilinear F.interpolate, AdaptiveMaxPool2d(1) head pooling as in E011/E015). Epochs 6-11 run at 32 px. Define the LR schedule (triangular plus Lookahead, as in the incumbent) over total steps. Batch 1536 with drop_last at both resolutions. Capture one CUDA graph per resolution in build and warm both on synthetic data, so nothing recompiles or recaptures in the timed region. Everything else stays at E018. Log per-phase ms/step."
+  }
+}

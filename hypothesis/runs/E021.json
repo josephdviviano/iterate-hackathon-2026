@@ -1,0 +1,28 @@
+{
+  "exp": "E021",
+  "commit": "bf93586",
+  "pid": 219790,
+  "start_ticks": 2278184,
+  "started": 1791046377.1643624,
+  "tag": "I023",
+  "description": "Port the two-stage 24->32 px progressive schedule to the E019 Muon recipe. 8.0 total epochs: epochs 0-3 at 24 px, epochs 4-7 at 32 px, no 28 px phase. Use the E006 operator: flip + translate-2 at 32 px, then F.interpolate(bilinear, antialias=True) to 24 px, with AdaptiveMaxPool2d(1) as the final pool. Rescale the LR/EMA/lookahead schedules to the step count. Keep the Muon step eager as in E019. In build, compile and warm up both train shapes and the 32 px eval, so nothing recompiles in timed code.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E021.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7578333333333334,
+    "time": 6.33147566966727,
+    "complete": true
+  },
+  "row": {
+    "exp": "E021",
+    "commit": "bf93586",
+    "accuracy": 0.7578333333333334,
+    "time": 6.33147566966727,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I023",
+    "description": "Port the two-stage 24->32 px progressive schedule to the E019 Muon recipe. 8.0 total epochs: epochs 0-3 at 24 px, epochs 4-7 at 32 px, no 28 px phase. Use the E006 operator: flip + translate-2 at 32 px, then F.interpolate(bilinear, antialias=True) to 24 px, with AdaptiveMaxPool2d(1) as the final pool. Rescale the LR/EMA/lookahead schedules to the step count. Keep the Muon step eager as in E019. In build, compile and warm up both train shapes and the 32 px eval, so nothing recompiles in timed code."
+  }
+}

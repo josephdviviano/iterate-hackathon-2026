@@ -1,0 +1,28 @@
+{
+  "exp": "E093",
+  "commit": "4aa8dc7",
+  "pid": 476652,
+  "start_ticks": 4516376,
+  "started": 1791068759.0877671,
+  "tag": "I098",
+  "description": "Base: the tip (E086 code). Precondition, free: log the current whiten_bias_epochs value in step terms. Then verify, in an untimed compiled-graph dump, that the steps after the detach have no stem dgrad or bias-reduction kernels. This was the H2.15.1 premise, and code reading says it is already present. Change only the freeze point. Train the whitening bias for the first 0.2 epoch (~7 steps at bs 1536), with its own LR tensor decaying linearly to 0 over that window (hiverge), then switch to the existing whiten_bias_grad=False graph for the rest of training. Both graph variants already exist and are warmed up for 16 px; the 24/32 px shapes need only the detached variant. Decide with an off-seed run on seeds 3-10 plus two scored runs.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E093.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7475,
+    "time": 4.426199502668169,
+    "complete": true
+  },
+  "row": {
+    "exp": "E093",
+    "commit": "4aa8dc7",
+    "accuracy": 0.7475,
+    "time": 4.426199502668169,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I098",
+    "description": "Base: the tip (E086 code). Precondition, free: log the current whiten_bias_epochs value in step terms. Then verify, in an untimed compiled-graph dump, that the steps after the detach have no stem dgrad or bias-reduction kernels. This was the H2.15.1 premise, and code reading says it is already present. Change only the freeze point. Train the whitening bias for the first 0.2 epoch (~7 steps at bs 1536), with its own LR tensor decaying linearly to 0 over that window (hiverge), then switch to the existing whiten_bias_grad=False graph for the rest of training. Both graph variants already exist and are warmed up for 16 px; the 24/32 px shapes need only the detached variant. Decide with an off-seed run on seeds 3-10 plus two scored runs."
+  }
+}

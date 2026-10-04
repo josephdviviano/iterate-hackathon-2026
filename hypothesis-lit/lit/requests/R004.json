@@ -1,0 +1,45 @@
+{
+  "id": "R004",
+  "from": "agent",
+  "after": "E034",
+  "question": "Which training-recipe changes raise CIFAR-100 (or CIFAR-10) test accuracy at a fixed short training budget (<=15 epochs) with no extra compute: e.g. label smoothing level, BatchNorm variants or zero-init, activation choice, head/pooling design, weight decay or momentum settings, data ordering, augmentation strength, init schemes?",
+  "hypotheses": [
+    "H1"
+  ],
+  "must_have": [
+    "reports a controlled ablation on CIFAR-10 or CIFAR-100 at a short or fixed training budget showing an accuracy change from a change that does not add training compute"
+  ],
+  "exclude": [
+    "test-time augmentation, ensembles, distillation, pretrained models, methods that add forward/backward passes (SAM, mixup with extra passes), long schedules >= 100 epochs only"
+  ],
+  "status": "done",
+  "created": 1791062903.3416104,
+  "digest": "D004",
+  "plan": {
+    "question": "Which zero-cost changes to a training recipe raise CIFAR-100 or CIFAR-10 test accuracy at a fixed, short budget (\u226415 epochs, about 300 steps)? Candidates include label-smoothing level, BatchNorm variants (zero-init of the last BN gamma, BN momentum, ghost BN), activation choice (GELU, SiLU or ReLU), head and pooling design (max vs avg vs mixed pooling, head scaling or temperature), weight-decay and momentum settings, data ordering (shuffling schedules, curriculum without extra passes), augmentation strength (crop translate, flip scheme), and init schemes (Dirac, orthogonal, identity-like). The aim is to find accuracy margin that lets the airbench/Muon-style recipe (currently ~0.753 at about 11 mixed-resolution epochs) cut epochs. Priority goes to changes with controlled ablations in the under-trained regime, because the incumbent's margin is about 0.2 pp, and extra epochs have proven expensive and noisy (E032).",
+    "queries": [
+      "fast CIFAR-10 training few epochs ablation airbench",
+      "short training budget CIFAR-100 label smoothing batch normalization ablation",
+      "budgeted training learning rate schedule weight decay fixed epochs CIFAR",
+      "zero-init residual batchnorm gamma initialization fast convergence CIFAR",
+      "data ordering shuffling curriculum fixed compute CIFAR accuracy",
+      "pooling head design global max average pooling small budget image classification"
+    ],
+    "rubric": [
+      "Reports a controlled ablation on CIFAR-10 or CIFAR-100 that changes one recipe component (e.g. label smoothing, BN/init, activation, pooling/head, wd/momentum, data order, augmentation strength) and holds training compute fixed.",
+      "The training budget in the ablation is short (\u226415 epochs, or explicitly a fixed or limited step/time budget), not only long-schedule results of \u2265100 epochs.",
+      "Gives the accuracy delta numerically, ideally with multiple seeds or variance, so effects of ~0.1-0.5 pp can be judged against noise.",
+      "The change adds no forward/backward passes and no meaningful per-step FLOPs, so it is applicable to a ResNet/VGG-style convnet trained from scratch."
+    ],
+    "exclude": [
+      "test-time augmentation (banned by RULES.md)",
+      "ensembles, model soups across runs, or knowledge distillation",
+      "pretrained weights, transfer learning, or external/extra data (including synthetic or generated data)",
+      "methods adding forward/backward passes: SAM/ASAM, mixup/cutmix with extra passes, consistency regularization, multi-view augmentation",
+      "papers reporting only long schedules (>=100 epochs) with no short-budget result",
+      "data selection/coreset methods requiring extra scoring passes or proxy models",
+      "hardware/clock/power manipulation"
+    ]
+  },
+  "cost": 0.9103
+}

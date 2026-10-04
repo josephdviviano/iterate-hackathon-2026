@@ -1,0 +1,38 @@
+{
+  "id": "R018",
+  "from": "auto",
+  "after": "E050",
+  "question": "The resolution curriculum is now the main time lever: E040, E047 and E048 were all keeps, and the tip E048 runs at 5.00 s with 0.7552 accuracy. But lowering the first stage from 20 px to 16 px (E050) cost about 1.4 pp, an abrupt drop where E047's 24\u219220 px change cost only about 0.18 pp. Moving the low-res boundary later also hurt (E043). Question: in progressive-resizing or resolution-curriculum training under a short compute budget, what sets the lowest early resolution that stays useful, and how should other settings change with each resolution stage so that low-res steps can be cheaper or more numerous without losing accuracy? Settings of interest: augmentation/regularization strength, batch size, lr, and the train\u2013test resolution mismatch, i.e. BN statistics and receptive field (FixRes-style). Concretely, could weaker augmentation at low res (as in EfficientNetV2 progressive learning), a larger batch in the low-res stage, or a short full-res BN/fine-tune adjustment rescue 16\u201320 px stages or move the boundary later?",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791068526.303068,
+  "digest": "D018",
+  "plan": {
+    "question": "The resolution curriculum is now the main time lever: E040, E047 and E048 were all keeps, and the tip E048 runs at 5.00 s with 0.7552 accuracy. But lowering the first stage from 20 px to 16 px (E050) cost about 1.4 pp, an abrupt drop where E047's 24\u219220 px change cost only about 0.18 pp. Moving the low-res boundary later also hurt (E043). Question: in progressive-resizing or resolution-curriculum training under a short compute budget, what sets the lowest early resolution that stays useful, and how should other settings change with each resolution stage so that low-res steps can be cheaper or more numerous without losing accuracy? Settings of interest: augmentation/regularization strength, batch size, lr, and the train\u2013test resolution mismatch, i.e. BN statistics and receptive field (FixRes-style). Concretely, could weaker augmentation at low res (as in EfficientNetV2 progressive learning), a larger batch in the low-res stage, or a short full-res BN/fine-tune adjustment rescue 16\u201320 px stages or move the boundary later?",
+    "queries": [
+      "progressive resizing adaptive regularization image size training",
+      "FixRes train test resolution discrepancy batch norm",
+      "resolution curriculum low resolution early training CNN efficiency",
+      "budgeted training progressive image size learning rate schedule",
+      "mixed resolution training batch size scaling small images convnet",
+      "minimum input resolution feature learning early training curriculum"
+    ],
+    "rubric": [
+      "Trains a CNN from scratch with an input-resolution schedule that changes during training (progressive resizing or a curriculum), and reports accuracy against compute or time",
+      "Gives an ablation or rule for how regularization/augmentation, batch size or lr should vary with the resolution stage, or for how low the early resolution can go before accuracy collapses",
+      "Deals with train\u2013test resolution mismatch (BN statistics, receptive field, final pooling map size), with a fix that is cheap at train time and changes nothing at evaluation",
+      "Results on CIFAR-scale or small-image data, or in short-schedule regimes (roughly \u226420 epochs), that plausibly transfer to ~7-epoch CIFAR-100 runs"
+    ],
+    "exclude": [
+      "Methods that need pretrained weights, distillation from a pretrained teacher, or external/extra data",
+      "Test-time augmentation, multi-resolution test ensembles, or any use of the test set during training or calibration (e.g. FixRes fine-tuning on test images)",
+      "Super-resolution or generative upsampling work that does not concern classifier training efficiency",
+      "Vision-transformer-only token/patch dropping methods that do not apply to a small convnet",
+      "Large-scale ImageNet-only papers with no small-image or short-budget results, unless they give an explicit resolution-to-regularization rule",
+      "Anything that needs packages beyond PyTorch 2.4/torchvision 0.19, clock or power changes, or sleeps"
+    ]
+  },
+  "cost": 0.5604
+}

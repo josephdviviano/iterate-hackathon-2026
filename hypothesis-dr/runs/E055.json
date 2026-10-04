@@ -1,0 +1,28 @@
+{
+  "exp": "E055",
+  "commit": "bb1c66a",
+  "pid": 555156,
+  "start_ticks": 4844757,
+  "started": 1791072042.904173,
+  "tag": "I057",
+  "description": "Push the batch-size axis one step further, as D012 suggests, after the curriculum stack is settled. On the tip, change only the batch size, from 1536 to 2048, at the same epoch count (~159 steps at 6.5 epochs). Scale every schedule (warmup fraction, decay, Muon lr multiplier, lookahead (t/T)^3 ramp, the whitening-bias freeze at the end of epoch 1 in samples, and the curriculum switch in samples) to the new step count. The Muon lr stays at 0.16 and momentum at 0.8. Scale the SGD group (BN biases, whitening bias, head) per-step lr by x(2048/1536) and keep wd unchanged, the same noise-scale rule E041 used. Lookahead keeps syncing every 5 steps. In build(), warm up the 2048 full batch and the new partial batch (50000 mod 2048 = 848) for every train-graph variant and resolution, with channels_last tensors in the exact timed layout. Run debug_nan.py on the new shapes and compare trial-0 with later trial times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E055.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7500666666666667,
+    "time": 4.75466302666852,
+    "complete": true
+  },
+  "row": {
+    "exp": "E055",
+    "commit": "bb1c66a",
+    "accuracy": 0.7500666666666667,
+    "time": 4.75466302666852,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I057",
+    "description": "Push the batch-size axis one step further, as D012 suggests, after the curriculum stack is settled. On the tip, change only the batch size, from 1536 to 2048, at the same epoch count (~159 steps at 6.5 epochs). Scale every schedule (warmup fraction, decay, Muon lr multiplier, lookahead (t/T)^3 ramp, the whitening-bias freeze at the end of epoch 1 in samples, and the curriculum switch in samples) to the new step count. The Muon lr stays at 0.16 and momentum at 0.8. Scale the SGD group (BN biases, whitening bias, head) per-step lr by x(2048/1536) and keep wd unchanged, the same noise-scale rule E041 used. Lookahead keeps syncing every 5 steps. In build(), warm up the 2048 full batch and the new partial batch (50000 mod 2048 = 848) for every train-graph variant and resolution, with channels_last tensors in the exact timed layout. Run debug_nan.py on the new shapes and compare trial-0 with later trial times."
+  }
+}

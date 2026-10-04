@@ -1,0 +1,36 @@
+H4.2.7->inconclusive, H4.2.6->supported, H2.14.5->refuted, H7.1.3->inconclusive, H10.1.1->inconclusive, H10.2.1->inconclusive, H11.1->retired, H11.1.1->inconclusive, H11.2.1->inconclusive, H6->retired, H6.5->retired, H6.5.4->inconclusive, H8->open, +H4.2.8, +H8.2, +H8.2.1, +H12, +H12.1, +H12.1.1, +H12.2, +H12.2.1, +H12.3, +H12.3.1, +H2.19, +H2.19.1, +H7.4, +H7.4.1. The update corrects the noise model and roll-ups, opens new structural directions, and reframes the tip as feasible partly by luck.
+
+1. **Noise model.** Rerunning the same seed in a new process moves accuracy about as much as a cross-seed draw does, so pairing by seed barely reduces variance. One-process off-seed differences therefore have an SE of ~0.1 pp, not 0.05. The 3-seed scored run sd is ~0.2 pp (E101). Every recent off-seed delta (E100, E102-E105) is under 1.2 SE.
+
+2. **Corrected verdicts.**
+   - **Now inconclusive:** H7.1.3 (E105~), H10.2.1 (E100~), H6.5.4 (E103~, inside its own dead zone and run on a different base), H11.1.1 (only one arm run) and H4.2.7 (E095 was never measured).
+   - **Token flips:** H10.1.1 changes from E104- to E104~ (leaning supports) and H11.2.1 to E104~ (leaning refutes).
+   - **Refuted:** H2.14.5 (E099; the result is math-neutral, so accuracy noise doesn't affect it).
+
+3. **Roll-ups.**
+   - H6 and H6.5 are retired on expected value, not because their mechanism was refuted.
+   - H11 drops to 0.25 and H11.1 is retired.
+   - H10.2 drops to 0.2.
+   - H8 is reinstated as an asymmetric early-fragility claim (0.45), backed by E032, E043, E093 and E070.
+   - H2, H4, H7, H10, H2.11 and H2.18 are rewritten around the E100 tip. E100 is reported as ~4.46 s with a distinct-sample mean of 0.7538 (n=2), and its gain over E090 is unproven.
+
+4. **New hypotheses.**
+   - **N4.tip:** re-decide E090, E096, E100 and E095 with at least 3 processes per arm.
+   - **N8.2 / N8.2.1:** move time from the 32 px phase into the 24 px bridge. This directly tests H8 against H11.
+   - **NA (new Lvl1):** data-side structural levers under Muon. Candidates are multi-sample augmentation at equal compute (Fort et al. 2021), class-balanced batches and stronger late translate.
+   - **N2.19:** a tile-aligned group-3 width (576 → 640 or 512), checked against the existing kernel logs before any run.
+   - **N7.4:** a WSD-shaped Muon learning-rate schedule.
+   - **H2.18.1** is redefined using airbench96's residual structure, with group 2's conv3 as the main target.
+
+Open Lvl1 hypotheses: H2, H4, H8, H10, H11 and NA.
+added I121, I122, I123, I124; dropped I120. E106 banked E100 as a robust tip: distinct scored samples average 0.7543, and the pooled off-seed mean is 0.7527 over 3 processes at ~4.46 s. That leaves only ~0.1 pp of local margin. Every measured time trade costs ~0.04-0.065 pp per 1%, so a further cut needs new zero-time accuracy first, or a better exchange rate.
+
+I added four ideas and dropped one.
+- **Bridge reallocation (H8.2.1, priority 4):** moves 0.25 epoch of 32 px into the 24 px bridge at roughly equal time. It is the direct discriminating test between the bridge-value hypothesis (H8.2) and late-full-resolution binding (H11), and it is the most likely exploit win.
+- **Class-balanced minibatches (H12.2.1, priority 3):** zero compute cost and stackable on any tip.
+- **Group-3 width tile alignment (H2.19.1, priority 3):** starts with a free read of the existing kernel-name logs, then an untimed width profile, and is scored only if 640 channels costs ≤1.5% time.
+- **Two augmentation copies per image in the 32 px phase (H12.1.1, priority 2):** an explore idea with a low prior.
+
+I dropped I120: it is a tie-break-only analysis, and I114 already captures the NVML energy that matters.
+
+The resulting queue holds 8 ideas: I114, I117, I118, I119 and the four new ones. I116 is still running. Every new idea is decided on ≥3 fresh off-seed processes paired against the pooled E106 baseline, plus distinct scored samples, following the H4 rules.

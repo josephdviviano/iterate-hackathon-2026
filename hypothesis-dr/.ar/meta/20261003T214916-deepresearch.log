@@ -1,0 +1,52 @@
+harvest: openalex_search('critical batch size Shampoo SOAP versus SGD Adam') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('batch size scaling weight averaging EMA horizon') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('learning rate scaling batch size fixed epoch budget short training') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('Muon hyperparameter transfer batch size weight decay') failed: HTTP Error 429: Too Many Requests
+R011 -> D011
+H1.5.1->retired, H1.6.4->refuted, H1.6.5->refuted, H1.7.2->refuted, H2.3.1->retired, H2.4.2->supported, H2.4.4->refuted, H2.5.2->refuted, H4.1->inconclusive, H5.1->refuted, H5.1.1->refuted, +H4.1.4, +H1.6.6, +H1.9, +H1.9.1, +H1.7.3, +H2.3.3, +H2.4.5. I rewrote H1 around one pattern. Only structural changes to the update move accuracy by ~1 pp: Muon, Muon-C and lookahead. Inherited scalar settings (LS, Muon lr and momentum, warmup, lr floor) sit on a plateau. The knee shift is now credited to Muon, not lookahead, which was in the recipe from E001.
+
+Node statuses are synced with their verdicts:
+- **Refuted:** H1.6.4, H1.6.5, H1.7.2, H2.4.4, H2.5.2, H5.1 and H5.1.1.
+- **Supported:** H2.4.2 (E034).
+- **Retired:** H1.5.1 and H2.3.1, as stale SGD-era predictions.
+- **Rescoped, still open:** H1.7.1 now excludes head lr x0.5.
+- **Evidence refiled:** E010 belongs to H2.4, E030 refutes only Muon-C, E012 belongs to H1.6, and H3.1/H3.2 now cite E001, E003 and E035.
+
+The noise model H4.1 drops to inconclusive. Seven recent edits on the Muon base moved the mean by at most 0.06 pp, which contradicts the assumed ~0.15 pp sd. New node N1 re-measures it. N2 tests whether E028 (the lookahead horizon change) was a no-op, so H1.6 no longer claims the horizon is flat.
+
+H2.3 goes up after the E013 arithmetic was corrected and Fable's curriculum results came in. New node N5 tests a 28→32 px curriculum on the Muon tip. H5 is restated as a falsifiable band, with the resolution curriculum as the test most likely to break it.
+
+H1.2.3 (bs 1536) is updated with concrete scaling rules, a drafts timing gate and pre-registered thresholds; its confidence is slightly lower because the literature points both ways. Other new nodes: N3/N3a (Hiverge's scheduled partial orthogonalization), N4 (head lr x2, the direction E039 suggests) and N6 (NS2 with Turbo-Muon preconditioning).
+
+Recommended order:
+1. N2 (E028 no-op check), then N1 (noise), both cheap and in drafts.
+2. H1.2.3 (bs 1536).
+3. N5 (28→32 curriculum).
+4. N4 (head lr x2).
+5. H2.4.3 (projection every k steps).
+6. H1.8.1 (jitter) and N3a (partial orthogonalization).
+added I051, I052, I053, I054; dropped I049. The tip is now E040: a 24 px → 32 px bilinear curriculum, 5.718 s, accuracy 0.7559, margin 0.29 pp. It shows a low-res whole-image epoch is worth ~0.83 of a full-res epoch for ~61% of the time, making it the cheapest accuracy-per-time lever found on the Muon base.
+
+**Two exploit ideas build on it, each with one change:**
+- **Move the boundary later (H2.3.2, priority 4):** 2.25 epochs at 24 px then 4.5 at 32 px. Expected about -4.5% time and -0.15 pp accuracy. It also tests whether low-res steps stay cheap after warmup ends.
+- **Add a 28 px middle stage (H2.3.3, priority 3):** 1.5 epochs at 24 px, 1.5 at 28 px, 3.75 at 32 px. Expected about -5% time and -0.12 pp.
+
+**Two hyperparameter and update-geometry ideas:**
+- **Head lr ×2 with wd halved (H1.7.3, priority 3):** the pre-registered follow-up to E039, where halving it cost 0.41 pp.
+- **Hiverge-style pre-NS Frobenius scaling from 0.50 to 0.08 (H1.9.1, priority 2, explore).**
+
+**Dropped I049** (selective backprop, H1.4.1). Its expected value is break-even, and on the curriculum base it would need many more compiled graphs.
+
+**Kept as queued:**
+- I043 (brightness/contrast jitter, H1.8.1)
+- I047 (bs ramp, conditional on I042)
+- I048 (BN-bias ×32, H1.7.1)
+- I050 (bs 768, H1.2.3 probe)
+
+These four were written against E034 and should be applied to the E040 curriculum tip, with every new batch shape warmed up at both the 24 px and 32 px resolutions.
+
+**Not added:**
+- NS2 with AOL (H2.4.5) and projection-frequency cuts (H2.4.3): the expected time cuts of about 1–1.2% are inside timing jitter. Keep them for a bundled systems change later.
+- H1.6.6, H4.1.2, H4.1.4: these are offline diagnostics in drafts/, not scored experiments.
+
+That leaves 8 queued ideas, with I042 (bs 1536) still running.

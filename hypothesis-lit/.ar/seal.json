@@ -1,0 +1,6 @@
+{
+  "exp": "E071",
+  "at": 1791073545.7620182,
+  "text": "## Pre-registration\nOn the tip E067 (official 0.7544, dev10 0.7573, 4.85 s). Change: head-weight SGD lr x2 (effective decay unchanged), head scale 2/9 kept. Absolute lrs: head \u2248 2 x 0.00115 = 0.0023 vs BN-bias \u2248 8 x 0.00115 = 0.0092 per summed-loss unit (ratio 1:4, was 1:8). Dev seeds 3-12 (run before launch): mean 0.75625 (std 0.25 pp), 4.84 s: -0.10 pp vs E067 \u2014 flat.\n- Prediction: accuracy [0.7520, 0.7595]\n- Prediction: time [4.80, 4.90]\n- Prediction: complete [1, 1]\n- Supports if: (H1.10.2 upward) dev gain >= 0.15 pp \u2014 not met.\n- Refutes if: dev falls >= 0.15 pp \u2014 not met; expected inconclusive: head lr is bracketed at ~1x (0.5x: -0.35 pp, 2x: -0.10 pp).\n\n## Contingencies\n- If it lands in the predicted range: discard; close H1.10.2 with the head lr at 1x.\n- If it moves the right way but less than predicted: same.\n- If it moves the opposite way: same.\n- If it crashes: tail, fix.\n\n",
+  "late": false
+}

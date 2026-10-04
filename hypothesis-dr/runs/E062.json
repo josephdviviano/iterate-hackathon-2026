@@ -1,0 +1,28 @@
+{
+  "exp": "E062",
+  "commit": "53eb8c7",
+  "pid": 598263,
+  "start_ticks": 5150372,
+  "started": 1791075099.0496888,
+  "tag": "I080",
+  "description": "FreezeOut cascade: freeze block 2 for the last 10% of samples, following D025 (b) and C0239. Block 2 is frozen only after block 1, because in a skip-free net detaching block 2 cuts all gradient to block 1. On the tip (E058, or the successor of the block-1-at-0.7 idea, I077 or I078 if one is kept), make one change: from sample 303750 (6.075 epochs, 0.9 of samples) to the end, use a fourth 32 px train-step graph variant in which block 2's output is detached. Blocks 1 and 2 still run forward in train mode, so their BN running stats keep updating. Pair it with a third compiled Muon-step variant that contains only the 576-wide block-3 shape group, and skip block-1 and block-2 BN biases in the SGD group through the same variant flag. The backward then skips block 2's wgrad and dgrad and block 3's first-conv dgrad. Conv FLOPs per step fall from ~0.81x to ~0.49x of an unfrozen 32 px step. Lookahead still blends blocks 1 and 2. Pick the variant in Python by sample count, with no data-dependent branch in the graph. Split the straddling step at 303750 into the two partial shapes. In build(), warm up the new train and Muon variants plus every partial shape at the 0.9 switch and at the run end, with channels_last tensors in the exact timed layout (E035). Keep build under ~450 s. Run debug_nan.py on the new graph and compare trial-0 with later-trial train times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E062.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7488666666666667,
+    "time": 4.491066042001573,
+    "complete": true
+  },
+  "row": {
+    "exp": "E062",
+    "commit": "53eb8c7",
+    "accuracy": 0.7488666666666667,
+    "time": 4.491066042001573,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I080",
+    "description": "FreezeOut cascade: freeze block 2 for the last 10% of samples, following D025 (b) and C0239. Block 2 is frozen only after block 1, because in a skip-free net detaching block 2 cuts all gradient to block 1. On the tip (E058, or the successor of the block-1-at-0.7 idea, I077 or I078 if one is kept), make one change: from sample 303750 (6.075 epochs, 0.9 of samples) to the end, use a fourth 32 px train-step graph variant in which block 2's output is detached. Blocks 1 and 2 still run forward in train mode, so their BN running stats keep updating. Pair it with a third compiled Muon-step variant that contains only the 576-wide block-3 shape group, and skip block-1 and block-2 BN biases in the SGD group through the same variant flag. The backward then skips block 2's wgrad and dgrad and block 3's first-conv dgrad. Conv FLOPs per step fall from ~0.81x to ~0.49x of an unfrozen 32 px step. Lookahead still blends blocks 1 and 2. Pick the variant in Python by sample count, with no data-dependent branch in the graph. Split the straddling step at 303750 into the two partial shapes. In build(), warm up the new train and Muon variants plus every partial shape at the 0.9 switch and at the run end, with channels_last tensors in the exact timed layout (E035). Keep build under ~450 s. Run debug_nan.py on the new graph and compare trial-0 with later-trial train times."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "exp": "E063",
+  "commit": "3a94ad6",
+  "pid": 601322,
+  "start_ticks": 5179123,
+  "started": 1791075386.562229,
+  "tag": "I081",
+  "description": "Cash in the freeze exchange rate as margin. Freezing costs ~0.02-0.05 pp per 1% of time, while 32 px epochs buy ~0.08-0.15 pp per 1%, so freeze-more plus more epochs should net time at equal accuracy. Run this only after the block-1-at-0.7 and block-2-cascade ideas have been read. Base: the faster feasible commit among them if one was kept. Otherwise stack every freeze change that was infeasible by <=0.15 pp onto E058; if neither qualifies, skip this idea. Make one change: total epochs 6.75 -> 7.0, with the extra 0.25 epoch added to the 32 px stage (stage boundaries at 1.5 and 3.5 epochs stay in samples). Scale the lr warmup and decay, the Muon multiplier and the lookahead (t/T)^3 ramp to samples seen. Keep the freeze points as fractions of total samples (for example 0.7 and 0.9), so they move proportionally. The last quarter-epoch uses the first quarter of that epoch's permutation, as in E027. In build(), warm up every new partial shape at the moved freeze switches and at the new run end for each graph variant, with channels_last tensors in the exact timed layout (E035). Run debug_nan.py on new shapes and compare trial-0 with later-trial times.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E063.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7532666666666666,
+    "time": 4.751105472333923,
+    "complete": true
+  },
+  "row": {
+    "exp": "E063",
+    "commit": "3a94ad6",
+    "accuracy": 0.7532666666666666,
+    "time": 4.751105472333923,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I081",
+    "description": "Cash in the freeze exchange rate as margin. Freezing costs ~0.02-0.05 pp per 1% of time, while 32 px epochs buy ~0.08-0.15 pp per 1%, so freeze-more plus more epochs should net time at equal accuracy. Run this only after the block-1-at-0.7 and block-2-cascade ideas have been read. Base: the faster feasible commit among them if one was kept. Otherwise stack every freeze change that was infeasible by <=0.15 pp onto E058; if neither qualifies, skip this idea. Make one change: total epochs 6.75 -> 7.0, with the extra 0.25 epoch added to the 32 px stage (stage boundaries at 1.5 and 3.5 epochs stay in samples). Scale the lr warmup and decay, the Muon multiplier and the lookahead (t/T)^3 ramp to samples seen. Keep the freeze points as fractions of total samples (for example 0.7 and 0.9), so they move proportionally. The last quarter-epoch uses the first quarter of that epoch's permutation, as in E027. In build(), warm up every new partial shape at the moved freeze switches and at the new run end for each graph variant, with channels_last tensors in the exact timed layout (E035). Run debug_nan.py on new shapes and compare trial-0 with later-trial times."
+  }
+}

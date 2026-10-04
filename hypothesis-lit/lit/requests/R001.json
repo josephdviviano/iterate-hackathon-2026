@@ -1,0 +1,44 @@
+{
+  "id": "R001",
+  "from": "agent",
+  "after": "E000",
+  "question": "What architectures and training recipes reach >=75% CIFAR-100 top-1 (single view, no TTA) in the fewest epochs or least GPU wall time, and how does accuracy scale with epochs and width for ResNet-9/airbench-style networks on CIFAR-100?",
+  "hypotheses": [
+    "H1.1"
+  ],
+  "must_have": [
+    "reports CIFAR-100 test accuracy together with epoch count or training time for a fast/short training schedule (<=30 epochs)"
+  ],
+  "exclude": [
+    "pretrained models, ImageNet transfer, knowledge distillation from a pretrained teacher, results only on CIFAR-10"
+  ],
+  "status": "done",
+  "created": 1791058337.2285035,
+  "digest": "D001",
+  "plan": {
+    "question": "Which architectures and training recipes get CIFAR-100 to at least 75% top-1 test accuracy (single view, no test-time augmentation) in the fewest epochs or the least GPU wall time? How does accuracy scale with epoch count and channel width for ResNet-9 and airbench-style networks (patch-whitening stem, label smoothing, Nesterov SGD or Lookahead, short triangular LR schedules) on CIFAR-100? Specifically, is about 8.5 to 10 epochs enough without TTA, and how much accuracy does each extra epoch, or each increase in width, buy near 75%?",
+    "queries": [
+      "fast training CIFAR-100 few epochs ResNet-9 accuracy",
+      "airbench CIFAR speedrun patch whitening label smoothing",
+      "CIFAR-100 training time budget wall-clock accuracy",
+      "budgeted training short schedule CIFAR-100 epochs scaling",
+      "super-convergence one-cycle CIFAR-100 ResNet",
+      "width depth epochs tradeoff CIFAR-100 compute-efficient training"
+    ],
+    "rubric": [
+      "Reports CIFAR-100 top-1 test accuracy together with an epoch count or training wall time for a short schedule (<=30 epochs), trained from scratch",
+      "States whether the reported accuracy uses a single view or test-time augmentation, or gives enough detail to tell",
+      "Gives an architecture or recipe detail (width, depth, optimizer, LR schedule, label smoothing, augmentation, whitening/init) that could be ported to a ResNet-9/airbench-style network",
+      "Preferably reports accuracy at several epoch counts or widths (scaling curves or ablations) so the marginal gain per epoch or per width step near 75% can be estimated"
+    ],
+    "exclude": [
+      "pretrained models or ImageNet/external-data transfer",
+      "knowledge distillation from a pretrained teacher",
+      "results reported only on CIFAR-10",
+      "accuracies that depend on test-time augmentation with no single-view number",
+      "long schedules (>100 epochs) with no short-schedule results",
+      "methods that use the test set for training, tuning, or state updates"
+    ]
+  },
+  "cost": 0.5433
+}

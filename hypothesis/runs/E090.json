@@ -1,0 +1,28 @@
+{
+  "exp": "E090",
+  "commit": "48b13a7",
+  "pid": 468960,
+  "start_ticks": 4435163,
+  "started": 1791067946.952772,
+  "tag": "I096",
+  "description": "Equal-time sibling of the bs-1024 32 px trim idea, on the same base: E084 code plus the E086 pinned staging. Step 1, untimed: measure the compiled cost of a 28 px epoch at bs 1024 against a 32 px epoch at bs 1024 (2 epochs each, static shapes). If the ratio is >0.85x, drop the idea without a scored run. Step 2: replace the first 1.25 epochs of the 32 px phase with 28 px, using the same operator (flip + translate-2 at 32 px, then antialiased bilinear to 28 px; maps 27/13/6/3, max(dim).values pool). The schedule is 2@16 + 1.25@24 + 1.25@28 + 2.75@32 px. Samples seen are unchanged, so the step count is unchanged and LR/EMA/tail/renorm are untouched. Compile the bs-1024 28 px shape as a static graph and warm it up in build. Decide with an off-seed run on seeds 3-10 plus two scored runs, and compare against the trim arm.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E090.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7530666666666667,
+    "time": 4.458946407331193,
+    "complete": true
+  },
+  "row": {
+    "exp": "E090",
+    "commit": "48b13a7",
+    "accuracy": 0.7530666666666667,
+    "time": 4.458946407331193,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I096",
+    "description": "Equal-time sibling of the bs-1024 32 px trim idea, on the same base: E084 code plus the E086 pinned staging. Step 1, untimed: measure the compiled cost of a 28 px epoch at bs 1024 against a 32 px epoch at bs 1024 (2 epochs each, static shapes). If the ratio is >0.85x, drop the idea without a scored run. Step 2: replace the first 1.25 epochs of the 32 px phase with 28 px, using the same operator (flip + translate-2 at 32 px, then antialiased bilinear to 28 px; maps 27/13/6/3, max(dim).values pool). The schedule is 2@16 + 1.25@24 + 1.25@28 + 2.75@32 px. Samples seen are unchanged, so the step count is unchanged and LR/EMA/tail/renorm are untouched. Compile the bs-1024 28 px shape as a static graph and warm it up in build. Decide with an off-seed run on seeds 3-10 plus two scored runs, and compare against the trim arm."
+  }
+}

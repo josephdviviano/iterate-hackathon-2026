@@ -1,0 +1,28 @@
+{
+  "exp": "E001",
+  "commit": "866d2a2",
+  "pid": 324979,
+  "start_ticks": 3496253,
+  "started": 1791058557.858857,
+  "tag": "I001",
+  "description": "Build the first real recipe in submissions/arena/: an airbench96-style net without TTA. Settings: frozen patch-whitening conv (2x2, fit in prepare on real train images), dirac init, widths 128/384/576, depth 3 per block, BatchNorm-bias lr x64, Nesterov SGD lr 9 / wd 0.012 / bs 1024, label smoothing 0.3, lookahead, alternating flip plus translate-2 on GPU. The whole train set lives on the GPU as uint8 and is loaded in prepare. Use channels_last with bf16/fp16 autocast. torch.compile and warmup run in build() on synthetic data, covering the full batch, the final partial batch and eval shapes. Train for 10 epochs. Eval is a plain forward with no TTA and must handle any B from 1 to 1024.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E001.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7583666666666666,
+    "time": 9.280933287334241,
+    "complete": true
+  },
+  "row": {
+    "exp": "E001",
+    "commit": "866d2a2",
+    "accuracy": 0.7583666666666666,
+    "time": 9.280933287334241,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I001",
+    "description": "Build the first real recipe in submissions/arena/: an airbench96-style net without TTA. Settings: frozen patch-whitening conv (2x2, fit in prepare on real train images), dirac init, widths 128/384/576, depth 3 per block, BatchNorm-bias lr x64, Nesterov SGD lr 9 / wd 0.012 / bs 1024, label smoothing 0.3, lookahead, alternating flip plus translate-2 on GPU. The whole train set lives on the GPU as uint8 and is loaded in prepare. Use channels_last with bf16/fp16 autocast. torch.compile and warmup run in build() on synthetic data, covering the full batch, the final partial batch and eval shapes. Train for 10 epochs. Eval is a plain forward with no TTA and must handle any B from 1 to 1024."
+  }
+}

@@ -1,0 +1,27 @@
+R010 -> D010
+added I048, I049, I050; dropped none. I added three ideas and dropped nothing, so the queue now holds 8 queued ideas plus I041 running.
+
+The tip is E034: 5.894 s at accuracy 0.7551, which leaves 0.21 pp of margin. Most axes are now closed:
+- **Update tuning:** Muon lr and momentum, the lr floor, warmup, LS and the averaging window all came back flat or negative.
+- **Allocation:** reallocating compute is no better, either across width (E029) or by cutting block-1 depth for epochs (E037).
+
+The remaining levers are steps and samples (batch size, example selection), the untuned SGD group, and systems work.
+
+**New ideas**
+1. **H1.7.1, BN-bias lr x64 → x32 (priority 2, exploit).** Independent of I044 (head lr), and tests the other part of the SGD group still inherited from CIFAR-10. If both come back neutral, H1.7.1 is refuted.
+2. **H1.4.1, selective backprop by the model's own loss (priority 2, explore).** This hypothesis has never been tested. A no-grad eval-mode forward over each 1024 batch picks the 512 hardest examples to train on, starting after epoch 1. Expected time is about -13% and accuracy about -0.9 pp. Break-even is about -1.0 pp, so a drop of 0.7 pp or less would be a lever worth adding epochs back for.
+3. **H1.2.3, bs 768 (priority 2, explore).** The opposite direction from I042 (bs 1536), so the two runs together give the accuracy-vs-batch slope. Literature item C0110 suggests the best batch size is small at about 320 steps. The change wins only if accuracy rises by 0.45 pp or more for about +5% time.
+
+**Kept as is**
+- I042 (bs 1536) and I047 (batch-size ramp, conditional on I042).
+- I043 (brightness/contrast jitter).
+- I044 (head lr x0.5). Its stated base is E028, but it applies unchanged to E034.
+- I046 (24 px → 32 px resolution curriculum).
+
+None of these test a settled hypothesis.
+
+**Considered and not added**
+- Removing translate-2 (H1.8.2): low expected value while I043 already probes augmentation.
+- ReLU (H2.4.1): likely time gain is below timing jitter, with accuracy risk at a 0.21 pp margin.
+- Denser lookahead syncing: the averaging window was flat in E028.
+- Trimming prepare and trial-0 overhead: under 1%.

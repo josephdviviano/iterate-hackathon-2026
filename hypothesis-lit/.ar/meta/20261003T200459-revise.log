@@ -1,0 +1,27 @@
++H1, +H1.1, +H1.1.1, +H1.1.2, +H1.1.3, +H1.2, +H1.2.1, +H1.3, +H1.3.1, +H1.3.2, +H1.4, +H1.4.1, +H1.5, +H1.5.1, +H1.6, +H1.6.1, +H2, +H2.1, +H2.1.1, +H2.2, +H2.2.1, +H2.3, +H2.3.1, +H3, +H3.1, +H3.1.1, +H3.2, +H3.2.1. The tree was empty, so this revision seeds it. Nothing could be rolled up because there are no results yet. It adds 3 open Lvl1 hypotheses, each split into mechanisms (Lvl2) and numbered predictions (Lvl3):
+
+- **A, sample efficiency (epochs needed to hit target).** Its main mechanism is a port of airbench, Keller Jordan's fast CIFAR-10 training recipe, with TTA (test-time augmentation) removed. A public 8.11 s / 75.29% result on this same benchmark makes it the obvious starting point. That result comes only from search snippets; the code itself wasn't verified. Other mechanisms under A:
+  - alternating flip
+  - label smoothing 0.3 and no Cutout at short schedules
+  - SGD vs Muon
+  - the trade-off between width and epochs
+  - dropping easy examples late in training
+- **B, per-step throughput.** Mechanisms:
+  - GPU-resident data, since only 4 CPU cores are available
+  - channels_last + fp16 + compiling during the untimed build
+  - progressive resizing
+- **C, fixed overhead in the timed window.** Mechanisms:
+  - whitening init from a subset, plus one bulk transfer to the GPU
+  - zero recompiles during training, plus a safe eval path for every batch size
+
+The review's methodology points are now concrete predictions:
+- **Noise model (A1c):** the minimum accuracy and time differences that count as real, so smaller deltas are treated as inconclusive.
+- **TTA ban (A1b):** losing TTA leaves under 0.3 pp of margin at 8.5 epochs, so about one more epoch is probably needed.
+- **Recompile and eval checks (C2a):** zero recompiles in the timed region, and finite logits within 5 s for B in {1, 7, 513, 1024}.
+
+Recommended first steps:
+1. Run the unmodified template, with prepare, train and per-epoch time logged separately.
+2. Run the airbench port (A1a), then repeat it to get the noise estimate.
+
+Treat any result between 0.753 and about 0.756 as provisional, because of selection bias near the cutoff. Times measured on the SXM card won't transfer exactly to the PCIe judging GPU.
+added I001, I002, I003, I004, I005, I006, I007, I008; dropped none. The queue was empty and only the infeasible template baseline has run, so the top priority is getting a first feasible run. Two priority-5 ideas do that: the airbench port at 8.5 epochs (H1.1.1) and a 9.5-epoch version as a hedge for the thin margin without TTA (H1.1.2). Next comes a replicate run to calibrate noise (H1.1.3). After that, three exploit refinements: wider and shorter training (H1.5.1), a cheaper prepare via subset whitening (H3.1.1), and max-autotune with a zero-recompile check (H2.2.1/H3.2.1). Two explore ideas round out the queue: Muon (H1.4.1) and progressive resizing (H2.3.1). Flip, label-smoothing, Cutout and data-filtering ablations are held back until a feasible incumbent exists. Nothing was dropped.

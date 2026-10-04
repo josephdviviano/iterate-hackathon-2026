@@ -1,0 +1,28 @@
+{
+  "exp": "E065",
+  "commit": "c93c5ea",
+  "pid": 615976,
+  "start_ticks": 5286409,
+  "started": 1791076459.4226067,
+  "tag": "I083",
+  "description": "RMS-matched test of scheduled orthogonalization strength. This is the form requested when I054 was dropped, so that a result is not confounded with a lower effective Muon lr (H1.2.4). On the tip (E058 or its successor), make one change inside the batched compiled Muon step. Today each momentum matrix is scaled to Frobenius norm 1 before NS3. Instead, scale it to s_t, which decays linearly from 0.50 at step 0 to 0.08 at the final step (Hiverge's CIFAR-10 schedule). Run the same 3 quintic iterations, then rescale each NS output matrix so its Frobenius norm equals that of the tip's NS output for that shape group (or, more simply, sqrt(min(out,in)) times the existing sqrt(max(1,out/in)) factor). The per-step update magnitude is therefore unchanged, and only how strongly the small singular directions are flattened changes. Pass s_t as a 0-d GPU tensor updated with fill_, so nothing recompiles. Weight-norm projection, Muon lr 0.16, momentum 0.8, lookahead, the curriculum, freeze points and epochs stay unchanged. In drafts/, log the per-group update Frobenius norm and the fraction of singular values above 0.5 at steps 0, 100 and the end, against the tip, to confirm the norms match and the spectrum is less whitened late in training. Run debug_nan.py under max-autotune-no-cudagraphs and re-warm the Muon variants in build().",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E065.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7386333333333334,
+    "time": 4.704673618999853,
+    "complete": true
+  },
+  "row": {
+    "exp": "E065",
+    "commit": "c93c5ea",
+    "accuracy": 0.7386333333333334,
+    "time": 4.704673618999853,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I083",
+    "description": "RMS-matched test of scheduled orthogonalization strength. This is the form requested when I054 was dropped, so that a result is not confounded with a lower effective Muon lr (H1.2.4). On the tip (E058 or its successor), make one change inside the batched compiled Muon step. Today each momentum matrix is scaled to Frobenius norm 1 before NS3. Instead, scale it to s_t, which decays linearly from 0.50 at step 0 to 0.08 at the final step (Hiverge's CIFAR-10 schedule). Run the same 3 quintic iterations, then rescale each NS output matrix so its Frobenius norm equals that of the tip's NS output for that shape group (or, more simply, sqrt(min(out,in)) times the existing sqrt(max(1,out/in)) factor). The per-step update magnitude is therefore unchanged, and only how strongly the small singular directions are flattened changes. Pass s_t as a 0-d GPU tensor updated with fill_, so nothing recompiles. Weight-norm projection, Muon lr 0.16, momentum 0.8, lookahead, the curriculum, freeze points and epochs stay unchanged. In drafts/, log the per-group update Frobenius norm and the fraction of singular values above 0.5 at steps 0, 100 and the end, against the tip, to confirm the norms match and the spectrum is less whitened late in training. Run debug_nan.py under max-autotune-no-cudagraphs and re-warm the Muon variants in build()."
+  }
+}

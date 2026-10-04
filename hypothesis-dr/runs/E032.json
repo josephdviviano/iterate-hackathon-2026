@@ -1,0 +1,28 @@
+{
+  "exp": "E032",
+  "commit": "eba1609",
+  "pid": 402805,
+  "start_ticks": 3859433,
+  "started": 1791062189.652887,
+  "tag": "I035",
+  "description": "Systems change to the conv shapes, with the learning recipe unchanged. First, in drafts/, print the activation spatial sizes per block and run a per-layer profile of the tip (untimed, not an experiment). If the unpadded 2x2 whitening conv outputs 31x31, block 1's first conv runs at 31x31, and max-pool(2) then floors that to 15x15, so its last row and column are computed and discarded. Make one change: slice the whitening output to [..., :30, :30] in the model's forward, identically in train and eval. This is a fixed architecture step, not TTA, and eval still accepts 32x32 inputs for any B. Every downstream pooled shape is unchanged (15/7/3); the only math change is that row and column 29 see zero padding instead of row and column 30. Warm up the new shapes in build() and run the finite-gradient check. If the profile shows the net already runs at even sizes (32/16/8/4), skip this idea and mark H2.5.2 not applicable.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E032.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7543666666666666,
+    "time": 6.072660868997143,
+    "complete": true
+  },
+  "row": {
+    "exp": "E032",
+    "commit": "eba1609",
+    "accuracy": 0.7543666666666666,
+    "time": 6.072660868997143,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I035",
+    "description": "Systems change to the conv shapes, with the learning recipe unchanged. First, in drafts/, print the activation spatial sizes per block and run a per-layer profile of the tip (untimed, not an experiment). If the unpadded 2x2 whitening conv outputs 31x31, block 1's first conv runs at 31x31, and max-pool(2) then floors that to 15x15, so its last row and column are computed and discarded. Make one change: slice the whitening output to [..., :30, :30] in the model's forward, identically in train and eval. This is a fixed architecture step, not TTA, and eval still accepts 32x32 inputs for any B. Every downstream pooled shape is unchanged (15/7/3); the only math change is that row and column 29 see zero padding instead of row and column 30. Warm up the new shapes in build() and run the finite-gradient check. If the profile shows the net already runs at even sizes (32/16/8/4), skip this idea and mark H2.5.2 not applicable."
+  }
+}

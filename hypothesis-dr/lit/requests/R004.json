@@ -1,0 +1,39 @@
+{
+  "id": "R004",
+  "from": "auto",
+  "after": "E008",
+  "question": "The best feasible recipe is the airbench96-style net at 9 epochs: 0.7542\u20130.7552 accuracy in about 8.26 s. That margin over 0.753 is very thin. The systems changes failed (E005 and E007 refuted H2.2.1 and H2.1), and dropping to 8.5 epochs missed the bar (E006). The lever that remains is sample efficiency per epoch. Lookahead alone was worth about 1.1 pp (E008), which shows that optimizer and averaging dynamics matter a great deal in this regime. The question: in very short CIFAR training (about 5\u201310 epochs, small ResNet/airbench-style CNNs), does Muon or another orthogonalized optimizer reach a given accuracy in fewer epochs or less wall-clock time than tuned Nesterov SGD with lookahead? Specifically:\n- which hyperparameters work (lr, momentum, Newton-Schulz steps, batch size, which parameters get Muon);\n- whether it combines with lookahead or EMA weight averaging;\n- how large the gain is on CIFAR-100 compared with CIFAR-10.\nThis directly tests H1.2 / H1.2.1 (confidence 0.40\u20130.50, untested). The answer decides whether the next experiments port airbench94_muon's optimizer or stay with SGD and tune averaging or the schedule.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791059497.9879084,
+  "digest": "D004",
+  "plan": {
+    "question": "The best feasible recipe is the airbench96-style net at 9 epochs: 0.7542\u20130.7552 accuracy in about 8.26 s. That margin over 0.753 is very thin. The systems changes failed (E005 and E007 refuted H2.2.1 and H2.1), and dropping to 8.5 epochs missed the bar (E006). The lever that remains is sample efficiency per epoch. Lookahead alone was worth about 1.1 pp (E008), which shows that optimizer and averaging dynamics matter a great deal in this regime. The question: in very short CIFAR training (about 5\u201310 epochs, small ResNet/airbench-style CNNs), does Muon or another orthogonalized optimizer reach a given accuracy in fewer epochs or less wall-clock time than tuned Nesterov SGD with lookahead? Specifically:\n- which hyperparameters work (lr, momentum, Newton-Schulz steps, batch size, which parameters get Muon);\n- whether it combines with lookahead or EMA weight averaging;\n- how large the gain is on CIFAR-100 compared with CIFAR-10.\nThis directly tests H1.2 / H1.2.1 (confidence 0.40\u20130.50, untested). The answer decides whether the next experiments port airbench94_muon's optimizer or stay with SGD and tune averaging or the schedule.",
+    "queries": [
+      "Muon optimizer orthogonalized momentum CIFAR fast training",
+      "Newton-Schulz orthogonalization optimizer convolutional networks sample efficiency",
+      "airbench CIFAR-10 speedrun optimizer few epochs",
+      "lookahead EMA weight averaging short training budget CIFAR-100",
+      "Shampoo SOAP Muon comparison SGD image classification small budget",
+      "budgeted training learning rate schedule few epochs CIFAR-100 ResNet"
+    ],
+    "rubric": [
+      "Trains a CNN from scratch on CIFAR-10/100 (or a comparable small image dataset) under a short budget, roughly 20 epochs or fewer, or reports accuracy as a function of epochs or wall-clock time",
+      "Compares Muon, an orthogonalized or other second-order-style optimizer, or a weight-averaging scheme (lookahead/EMA/SWA) directly against a tuned SGD/Nesterov baseline at matched epochs or matched time",
+      "Reports concrete hyperparameters (lr, momentum, batch size, which parameters each optimizer handles, averaging decay/schedule) that can be transferred to an airbench-style net",
+      "Gives the optimizer's per-step overhead or the end-to-end wall-clock time, not just epoch counts"
+    ],
+    "exclude": [
+      "Test-time augmentation (forbidden by RULES.md)",
+      "Pretrained weights, transfer learning, or knowledge distillation from pretrained teachers",
+      "External or extra training data, including synthetic or generated datasets beyond the 50k CIFAR-100 training images",
+      "Methods that use the test set for selection, tuning, or BN recalibration",
+      "LLM/transformer-only optimizer results with no convolutional or vision evidence",
+      "Methods that need packages beyond PyTorch 2.4.0 / torchvision 0.19.0",
+      "Long-schedule (100+ epoch) state-of-the-art accuracy papers with no short-budget analysis"
+    ]
+  },
+  "cost": 0.4697
+}

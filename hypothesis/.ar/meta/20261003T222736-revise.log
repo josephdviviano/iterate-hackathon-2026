@@ -1,0 +1,59 @@
+H9.1.1->refuted, H9.1->retired, H9->retired, H8->retired, H2.10.4->refuted, H2.14.4->retired, H2.13->refuted, H2.13.2->refuted, H7.3->inconclusive, H7.3.2->inconclusive, H6.5.2->inconclusive, H6.5.3->inconclusive, +H10, +H10.1, +H10.1.1, +H2.11.4, +H2.17, +H2.17.1, +H2.15.2, +H6.5.4, +H6.8, +H6.8.1, +H4.2.6. Revision after E077–E084, the search and the review.
+
+**Closed:**
+- **Renorm-target line.** H9.1.1 refuted: E082 collapsed training. Search also shows the premise was false, because the reference recipes' decaying 'target magnitude' is dead code ahead of a Frobenius renorm. H9.1 retired.
+- **H9.** Its structural-vs-scalar ranking rule cannot be falsified. Retired.
+- **H8 (early fragility).** Retired together with its children. E084 shows late steps help too, so the early-fragility story no longer holds.
+- **Tip provenance.** E079, E081 and E083 could only have worked if E070 already had the Fable tail, so H2.10.4 is refuted. The tail and the 24 px trim did not stack, or the tail pool was a high draw. H4.2.4 is narrowed to diffing the six bases built on the tip since E077.
+- **Other closures:** width cuts (H2.13 and H2.13.2, from E080) and the pinned staging buffer (H2.14.4, from E076).
+
+**Downgraded:**
+- **Fable tail.** H6.5.2 is now inconclusive: it rests on one high draw and has no off-seed tail vs no-tail check.
+- **Tail ablation.** H6.5.3 is inconclusive: only one arm ran, and the result was about 1 SE.
+- **Head-side Muon gains.** H7.3 and H7.3.2 are inconclusive: the head lr gain is about +0.09 pp without E066's high draw.
+- **Noise statement.** H4 now notes that the off-seed instrument has never been calibrated.
+
+**Corrected from search:**
+- H2.15: Fable does detach the whitening bias, and the reference freeze point is 0.2 epoch, not 20% of steps.
+- H6.5: Fable's real final-EMA window is about 20 steps, which is what E081 tested.
+
+**Updated:**
+- H2.4 and H7.2: E084 shows per-step optimizer work costs about 1.7 ms per step even in the power-capped 32 px phase.
+- H2.11 and H2.11.3 stay open. E084 is positive but confounded by a longer EMA window and is still waiting for its second scoring.
+
+**New hypotheses:**
+- **N_upd (Lvl1): total update count drives accuracy.** It has a placement test, N_upd_place1: bs 1024 in the early phases only, which is free of E084's EMA-window confound.
+- **E084 ablation (N_e084abl):** bs 1024 at 32 px with the EMA window pinned at 8 steps.
+- **28 px substitution (N_28/N_28a):** a 28 px epoch in place of one 32 px epoch, keeping the step count. It is a head-to-head rival to the 32 px trim (H2.10.5).
+- **Reference-style 0.2-epoch whitening-bias detach (N_wb02).**
+- **BN-mismatch test for end-of-run averaging (N_bnmis).**
+- **Lookahead removal (N_la/N_la1).**
+- **Off-seed calibration (N_offcal).**
+
+**Suggested next steps:**
+1. The free work: provenance diffs and the checksum and kernel-log analyses (H4.4.1, H4.5.1).
+2. Calibrate the off-seed instrument (N_offcal).
+3. The whitening-bias detach, H2.15.1 (the main time lever).
+4. E084's second scoring and its ablation.
+5. The 32 px trim against the 28 px substitution.
+
+Lvl1 hypotheses still open: H2, H4, H6 and N_upd.
+added I095, I096, I097, I098, I099, I100, I101; dropped none. The queue was empty: every earlier idea is done or dropped, so there is nothing to drop and this adds 7 new ideas. The tip is E086/E087 at about 4.565 s, with a pool of 0.7537 and an off-seed mean of 0.7530, so it has almost no accuracy margin.
+
+**Main exploit (priority 5):** pair E084's extra-update 32 px phase at bs 1024 (+0.18 pp scored, +0.11 pp off-seed, +2.5% time) with the first fractional 32 px trim on a Muon base (3.75@32). Prediction: about -2% time at roughly tip accuracy.
+
+**Equal-time sibling (priority 4):** keep the same number of updates but run 1.25 epochs of the 32 px phase at 28 px instead (H2.17.1). It is gated by an untimed cost measurement, and it tests H10's claim that keeping updates beats trimming them.
+
+**Other time levers (priority 3):**
+- Remove the lookahead-EMA (H6.8.1), which cuts per-step work.
+- Train the whitening bias for only 0.2 epoch, decaying its LR to 0, then detach it (H2.15.2).
+
+**Measurement and diagnostics:**
+- Priority 3: calibrate the off-seed instrument (H4.2.6), with weight-checksum and cuDNN-kernel logging. Every recent verdict rests on off-seed differences of 0.18 pp or less.
+- Priority 2: the E084 EMA-window confound ablation (H2.11.4), which decides whether bs 1024 is a real update-count lever.
+- Priority 2: the early-vs-late update placement test (H10.1.1).
+
+**Deliberately left out:**
+- Scalar knobs, because H9 showed they have been null; this covers filter Muon lr and phase-dependent label smoothing.
+- Width cuts (closed by E080).
+- End-of-run averaging variants (closed by E081 and E083).

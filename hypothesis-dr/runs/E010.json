@@ -1,0 +1,28 @@
+{
+  "exp": "E010",
+  "commit": "5aa9aa5",
+  "pid": 346549,
+  "start_ticks": 3608474,
+  "started": 1791059680.0639548,
+  "tag": "I014",
+  "description": "One systems change on the tip recipe (E007 commit 52204ad: 9 epochs, LS 0.2, cudnn.benchmark plus max-autotune-no-cudagraphs). Replace the final global adaptive_max_pool2d (and any other adaptive pool in the net) with an equivalent reduction, x.amax(dim=(2,3)), or F.max_pool2d with a fixed kernel equal to the spatial size. Its backward then becomes a dense masked/eq kernel that Inductor can fuse, instead of the atomic scatter kernel that took 0.48 ms/step (~2.5% of GPU time) in the E003 profile. The forward math is identical. Recompile and warm up in build() for the full batch, the partial batch and eval shapes. Nothing else changes.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E010.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7551333333333333,
+    "time": 8.091988340665315,
+    "complete": true
+  },
+  "row": {
+    "exp": "E010",
+    "commit": "5aa9aa5",
+    "accuracy": 0.7551333333333333,
+    "time": 8.091988340665315,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I014",
+    "description": "One systems change on the tip recipe (E007 commit 52204ad: 9 epochs, LS 0.2, cudnn.benchmark plus max-autotune-no-cudagraphs). Replace the final global adaptive_max_pool2d (and any other adaptive pool in the net) with an equivalent reduction, x.amax(dim=(2,3)), or F.max_pool2d with a fixed kernel equal to the spatial size. Its backward then becomes a dense masked/eq kernel that Inductor can fuse, instead of the atomic scatter kernel that took 0.48 ms/step (~2.5% of GPU time) in the E003 profile. The forward math is identical. Recompile and warm up in build() for the full batch, the partial batch and eval shapes. Nothing else changes."
+  }
+}

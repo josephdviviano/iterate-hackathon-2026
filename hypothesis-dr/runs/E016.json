@@ -1,0 +1,28 @@
+{
+  "exp": "E016",
+  "commit": "59dac7e",
+  "pid": 360834,
+  "start_ticks": 3684070,
+  "started": 1791060436.0231733,
+  "tag": "I018",
+  "description": "Exploit E014. Port the E014 Muon optimizer exactly as it was onto the tip E010 commit (5aa9aa5: LS 0.2, cudnn.benchmark, max-autotune-no-cudagraphs, F.max_pool2d head). Muon settings: conv filters except the frozen whitening conv, Nesterov momentum 0.6, lr 0.24, 5 quintic NS steps in bf16, update scaled by sqrt(max(1,out/in)) on the flattened [out,in*k*k] matrix. BN biases and the head stay on the existing SGD, and lookahead is kept. Make ONE recipe change: epochs 9 -> 8, with the lr, Muon and lookahead schedules scaled to the new step count. The final partial batch shape is compiled in build(). Before launching, run the one-step finite-gradient check (drafts/debug_nan.py), because the compiled NS and Muon graph is new to the tip's compile mode. Log the optimizer step time separately.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E016.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7619,
+    "time": 8.11424579766996,
+    "complete": true
+  },
+  "row": {
+    "exp": "E016",
+    "commit": "59dac7e",
+    "accuracy": 0.7619,
+    "time": 8.11424579766996,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "keep",
+    "tag": "I018",
+    "description": "Exploit E014. Port the E014 Muon optimizer exactly as it was onto the tip E010 commit (5aa9aa5: LS 0.2, cudnn.benchmark, max-autotune-no-cudagraphs, F.max_pool2d head). Muon settings: conv filters except the frozen whitening conv, Nesterov momentum 0.6, lr 0.24, 5 quintic NS steps in bf16, update scaled by sqrt(max(1,out/in)) on the flattened [out,in*k*k] matrix. BN biases and the head stay on the existing SGD, and lookahead is kept. Make ONE recipe change: epochs 9 -> 8, with the lr, Muon and lookahead schedules scaled to the new step count. The final partial batch shape is compiled in build(). Before launching, run the one-step finite-gradient check (drafts/debug_nan.py), because the compiled NS and Muon graph is new to the tip's compile mode. Log the optimizer step time separately."
+  }
+}

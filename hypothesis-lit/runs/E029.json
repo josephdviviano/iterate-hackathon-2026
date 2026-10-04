@@ -1,0 +1,28 @@
+{
+  "exp": "E029",
+  "commit": "ef18981",
+  "pid": 393860,
+  "start_ticks": 3815584,
+  "started": 1791061751.1694205,
+  "tag": "I036",
+  "description": "Exploit by removing high-resolution backward work that carries little accuracy. On E025, train the whitening-conv bias only during the 24 px phase (epochs 1-5). In the 28 px and 32 px phases, detach the whitening-layer output (after its activation) before group 1. Autograd then skips the dgrad of the first 128-channel conv and the whitening BN/activation backward at the highest resolutions. In the optimizer, drop the whitening bias from those phases' parameter list, or zero its LR. The 28 and 32 px graphs are captured in build with the detach already in place, and the 24 px graph is unchanged, so no new graph count and no recapture in the timed region. Log per-phase ms/step.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E029.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7534666666666666,
+    "time": 7.145294954330893,
+    "complete": true
+  },
+  "row": {
+    "exp": "E029",
+    "commit": "ef18981",
+    "accuracy": 0.7534666666666666,
+    "time": 7.145294954330893,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I036",
+    "description": "Exploit by removing high-resolution backward work that carries little accuracy. On E025, train the whitening-conv bias only during the 24 px phase (epochs 1-5). In the 28 px and 32 px phases, detach the whitening-layer output (after its activation) before group 1. Autograd then skips the dgrad of the first 128-channel conv and the whitening BN/activation backward at the highest resolutions. In the optimizer, drop the whitening bias from those phases' parameter list, or zero its LR. The 28 and 32 px graphs are captured in build with the detach already in place, and the 24 px graph is unchanged, so no new graph count and no recapture in the timed region. Log per-phase ms/step."
+  }
+}

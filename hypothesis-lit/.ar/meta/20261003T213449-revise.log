@@ -1,0 +1,61 @@
+H1.1.2->supported, H1.6->refuted, H1.7.1->retired, H1.7.5->open, H1.8->inconclusive, H1.8.1->inconclusive, H2->supported, H2.3.1->inconclusive, H2.3.3->refuted, H2.3.4->inconclusive, H2.4->supported, H2.4.3->retired, H2.4.4->supported, H2.5.2->supported, H4.1->supported, H4.1.1->supported, H4.2->refuted, +H6, +H6.1, +H6.1.1, +H6.1.2, +H1.9, +H1.9.1, +H1.8.2, +H2.6, +H2.6.1, +H2.6.2, +H2.4.5, +H2.4.6, +H2.5.3, +H2.5.4, +H1.7.7, +H1.7.8, +H1.7.9, +H1.7.10, +H1.3.3, +H1.3.4, +H1.3.5, +H4.3.1. The tree is revised. Time has dropped from 8.16 s to 6.68 s, all through per-step and work-removal cuts (H2). Over the same stretch, margin has worn away to nothing: the incumbent (E033) has a 2-salt mean of 0.7525, below the 0.753 bar.
+
+**Status changes and rollups**
+- **Closed as supported:**
+  - H2 (0.8), because its children H2.3, H2.4 and H2.5 are all supported.
+  - H2.4.4 (E029).
+  - H2.5.2, now restricted to the 3→2 Newton-Schulz step with AOL. E024 supports it. E035 only refutes going down to 1 step.
+  - H4.1 and H4.1.1. The salt companions E027 and E034 each moved the 3-seed mean by about 0.12 pp.
+  - H3, closed as exhausted.
+- **Refuted:** H2.3.3 (bigger batch at low resolution, E031), H1.6 (loss filtering, E013) and H4.2 (weight EMA).
+- **Downgraded to inconclusive:**
+  - H2.3.1. The time saving was real, but its accuracy floor of 0.755 failed on the 2-salt mean of 0.7533.
+  - H1.8 and H1.8.1. "Still under-trained" is no longer established. E032 and E036 each changed the schedule anchors along with the epoch count, and each delta is only about 1 SE.
+  - H2.3.4 (tested by E026).
+- **Retired:** H1.7.1, H2.4.3 and H1.6.2.
+- **Reopened:** H1.7.5, the LR floor. It was retired without a test, and the Fable champion uses one.
+
+**Bookkeeping fixes**
+- H1.1.2's status now matches its verdict.
+- H1.5 no longer cites E009 and E010.
+- E026 has moved from H2.3 to H2.3.4.
+- H2.4 is rewritten as a work-removal (FreezeOut) mechanism.
+- H4 and H5 now reflect the current situation:
+  - **H4:** every kept run since E024 cleared the bar on a single draw, while the salt-0 means kept falling, and both salt-1 companions came in lower.
+  - **H5:** one search snippet says the official judge may be an L40S rather than the A100 80GB PCIe. Check this against RULES.md.
+
+**New hypotheses**
+- **New Lvl1, N1:** accuracy is capped by model capacity and regularization. Its main test (N1a1/N1a2) is cheap width in groups 2 and 3 at equal epochs.
+- **N2:** step placement relative to the schedule anchors matters, not epoch count. It comes with an anchor-fixed re-run of E036 and a clean slope test.
+- **Faster steps:**
+  - Kernel efficiency (N3): an amax head pool and an eval-mode BN in the frozen block.
+  - More freezing (N4a/N4b): train the whitening bias for only about 0.2 epoch, and freeze the 28 px phase too.
+  - Less launch overhead (N5a/N5b): renormalize every k steps instead of every step, and capture the whole run as one CUDA graph.
+- **Margin candidates:**
+  - Precise BN re-estimation (N6a).
+  - Muon momentum, the lr-damping diagnostic and Polar Express coefficients (N7a–N7c).
+  - Splitting Lookahead from the triangle schedule (N7d).
+  - Label smoothing 0.4, head scale, and brightness/contrast jitter (N8a–N8c).
+- **Dev-seed test of the winner's curse (N9a).**
+
+**Recommended order**
+1. Calibrate the incumbent with dev seeds (N9a).
+2. Run the margin-adding changes with 2 salts each.
+3. Only after that, resume freezing and other time cuts, keeping a change only if its 2-salt mean is ≥0.753 or its salt-0 result is ≥0.755.
+added I048, I049, I050, I051, I052, I053, I054, I055; dropped none. The queue was empty, so I added 8 new ideas; there is nothing to drop. The current tip is E038, which scored 0.7546 on the official seeds (salt 0) at 6.68 s, but its 2-salt mean is only about 0.7527. That makes margin the binding constraint, and the queue is built around it.
+
+**Safest time cut (priority 5):** swap the head's adaptive max pool for `amax` (H2.6.1). The numerics stay the same, so it can be kept without spending margin.
+
+**Margin-adding exploits (priority 4), each judged with 2 salts:**
+- Re-estimate the BN running stats after the final Lookahead sync, using a few un-augmented 32 px training batches (H2.3.2, from D004).
+- Widen group 3 to 768 at equal epochs (H6.1.1). This is the clean capacity test that E008 confounded with an epoch cut.
+
+**Further time cuts (priority 3):** these change numerics, so they are judged against the bar plus a companion run:
+- Train the whitening bias for only ~0.25 epoch, then detach its output in every phase (H2.4.5).
+- Put the frozen block's BN in eval mode at 32 px (H2.6.2).
+
+**Calibration (priority 3):** a 10-dev-seed run of the tip (H4.3.1), to measure the winner's-curse bias and settle the keep rule.
+
+**Explores (priority 2):** Polar Express coefficients for the Newton-Schulz steps (H1.7.9), checked first on real gradient matrices, and a 2x head logit-scale sweep under ls 0.4 (H1.3.4).
+
+If a margin-adding idea passes, that margin can pay for the time cuts that were blocked: the E037 28 px shift and freezing conv1 at 28 px (H2.4.6).

@@ -1,0 +1,28 @@
+{
+  "exp": "E034",
+  "commit": "f74c715",
+  "pid": 412490,
+  "start_ticks": 3953042,
+  "started": 1791063125.75432,
+  "tag": "I037",
+  "description": "Systems change; the recipe is unchanged during the first epoch. On the tip, train the whitening-conv bias only for the first epoch (~49 of ~319 steps), as airbench94_muon/Hiverge do. After that, call a second compiled train-step variant where whiten.bias is detached / requires_grad=False. The whitening output then needs no grad, and the backward skips the input-gradient (dgrad) of block 1's first 24->128 conv at 31x31 plus the whitening-bias reduction. Compile and warm up BOTH variants in build() on synthetic data (full and partial batch) so the switch never recompiles in the timed region. Lookahead still blends the frozen bias (a no-op once it is fixed). Run drafts/debug_nan.py on both graphs under max-autotune-no-cudagraphs first.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E034.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7551,
+    "time": 5.894344831666483,
+    "complete": true
+  },
+  "row": {
+    "exp": "E034",
+    "commit": "f74c715",
+    "accuracy": 0.7551,
+    "time": 5.894344831666483,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I037",
+    "description": "Systems change; the recipe is unchanged during the first epoch. On the tip, train the whitening-conv bias only for the first epoch (~49 of ~319 steps), as airbench94_muon/Hiverge do. After that, call a second compiled train-step variant where whiten.bias is detached / requires_grad=False. The whitening output then needs no grad, and the backward skips the input-gradient (dgrad) of block 1's first 24->128 conv at 31x31 plus the whitening-bias reduction. Compile and warm up BOTH variants in build() on synthetic data (full and partial batch) so the switch never recompiles in the timed region. Lookahead still blends the frozen bias (a no-op once it is fixed). Run drafts/debug_nan.py on both graphs under max-autotune-no-cudagraphs first."
+  }
+}

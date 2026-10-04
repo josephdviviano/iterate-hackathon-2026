@@ -1,0 +1,28 @@
+{
+  "exp": "E035",
+  "commit": "9efb085",
+  "pid": 251795,
+  "start_ticks": 2666489,
+  "started": 1791050260.221756,
+  "tag": "I044",
+  "description": "On the E026 tip, change only how often the Muon-managed conv filters are renormalized: every 2 + int(15*progress) steps instead of every step (hiverge/Fable style). Do it inside the compiled update with a 0-d bool/int tensor flag (torch.where-gated, or two warmed-up variants selected on the host) so nothing recompiles in timed code. Warm up both paths in build. Everything else is unchanged. Before scoring, log per-step update time with CUDA events in an untimed run, to separate the renorm cost from NS.",
+  "log": "/home/jovyan/work/arena3/hypothesis/runs/E035.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7572,
+    "time": 5.472168799332091,
+    "complete": true
+  },
+  "row": {
+    "exp": "E035",
+    "commit": "9efb085",
+    "accuracy": 0.7572,
+    "time": 5.472168799332091,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I044",
+    "description": "On the E026 tip, change only how often the Muon-managed conv filters are renormalized: every 2 + int(15*progress) steps instead of every step (hiverge/Fable style). Do it inside the compiled update with a 0-d bool/int tensor flag (torch.where-gated, or two warmed-up variants selected on the host) so nothing recompiles in timed code. Warm up both paths in build. Everything else is unchanged. Before scoring, log per-step update time with CUDA events in an untimed run, to separate the renorm cost from NS."
+  }
+}

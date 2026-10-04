@@ -1,0 +1,28 @@
+{
+  "exp": "E068",
+  "commit": "d6c1ddf",
+  "pid": 563484,
+  "start_ticks": 4925075,
+  "started": 1791072846.0772676,
+  "tag": "I076",
+  "description": "Exploit, separating the two knobs that E053 confounded. On the E061 tip, keep the head output scale at 2x and halve the head-weight lr (in the SGD head group), changing nothing else. Under Agarwala et al., the effective head lr scales as lr\u00b7\u03b2\u00b2, so the 2x scale also quadrupled the effective head step. Halving the lr tests whether part of E053's +0.44 pp came from temperature and part was a too-large head step. The lr is a per-group value in the schedule tensor, so recapture only if it is a graph constant. Run the official seeds plus dev seeds 3-12. Contingency: if dev falls by 0.15 pp or more, run 2x head lr next. If |\u0394| < 0.1 pp, the head lr is not a live knob at this scale; close H1.10.2.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E068.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7547,
+    "time": 4.824922271332373,
+    "complete": true
+  },
+  "row": {
+    "exp": "E068",
+    "commit": "d6c1ddf",
+    "accuracy": 0.7547,
+    "time": 4.824922271332373,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I076",
+    "description": "Exploit, separating the two knobs that E053 confounded. On the E061 tip, keep the head output scale at 2x and halve the head-weight lr (in the SGD head group), changing nothing else. Under Agarwala et al., the effective head lr scales as lr\u00b7\u03b2\u00b2, so the 2x scale also quadrupled the effective head step. Halving the lr tests whether part of E053's +0.44 pp came from temperature and part was a too-large head step. The lr is a per-group value in the schedule tensor, so recapture only if it is a graph constant. Run the official seeds plus dev seeds 3-12. Contingency: if dev falls by 0.15 pp or more, run 2x head lr next. If |\u0394| < 0.1 pp, the head lr is not a live knob at this scale; close H1.10.2."
+  }
+}

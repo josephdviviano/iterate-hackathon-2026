@@ -1,0 +1,11 @@
+R006 -> D006
+added I031, I032, I033, I034, I035; dropped none. The tip is E023: Muon NS3, batched and compiled, at 7.0 epochs, scoring 0.7568 in 6.56 s with a 0.38 pp margin over the 0.753 bar. I027 (Muon lr 0.16) is running. Three ideas are queued: I028 (Muon lr floor to 0), I029 (momentum 0.8) and I030 (frequency-split Muon). All their hypotheses are still open, so I dropped none.
+
+I added five ideas, which brings the queue to 8:
+1. **Epoch cut to 6.75** (priority 4, exploit, H1.2.1): about -3.5% time, landing near 0.7548. If I027 or I028 bank a gain of 0.2 pp or more, the cut becomes 6.5 epochs instead.
+2. **Longer lookahead window** (priority 3, exploit, H1.6.1): decay 0.95^5 → 0.97^5, since averaging is worth about 0.9 pp on Muon (E020).
+3. **Block-3 width 576 → 640** (priority 3, exploit, H1.5.1): combines the E011 near-miss with the exchange rates. Width is priced at about 0.13 pp per 1% of time, while Muon epochs cost about 0.056 pp per 1%. So extra width paid for with fewer epochs should be a net win.
+4. **No warmup for the Muon group** (priority 2, explore, H1.2): Muon's updates have a fixed size, so the warmup may waste early steps.
+5. **Slice the whitening output to 30x30** (priority 2, explore, H2.5.2): if the profile confirms the shapes, this removes the conv row and column that max-pool on 31x31 discards. It is gated on that per-layer profile.
+
+I left out NorMuon/PolarAdamW. With wide flattened filters and a weight-norm projection, the rows are already near-uniform, so that change should do nothing (the same reasoning D006 gave for skipping Aurora). I also left out batch-size and hard-example selection: at about 7 epochs, they cost per-epoch sample efficiency.

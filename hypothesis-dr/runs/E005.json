@@ -1,0 +1,28 @@
+{
+  "exp": "E005",
+  "commit": "4e36ee3",
+  "pid": 335417,
+  "start_ticks": 3553904,
+  "started": 1791059134.3717813,
+  "tag": "I009",
+  "description": "Built on the first feasible airbench96-style base (I001/I003 knee). Make one systems change and leave the recipe alone. Move the whole training step into one torch.compile'd function: forward, backward, Nesterov SGD update and lookahead blend. Apply the update with torch._foreach_* ops (or SGD foreach/fused=True) so there is no per-parameter Python loop. Pass lr and the lookahead schedule as 0-d GPU tensors so changing them never triggers a recompile. Compile and warm up this function in build() on synthetic data, covering the full batch and the final partial batch. Keep the epoch count, seeds, lr, wd, LS and widths identical to the base.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E005.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7541666666666667,
+    "time": 8.347034433667432,
+    "complete": true
+  },
+  "row": {
+    "exp": "E005",
+    "commit": "4e36ee3",
+    "accuracy": 0.7541666666666667,
+    "time": 8.347034433667432,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "yes",
+    "status": "discard",
+    "tag": "I009",
+    "description": "Built on the first feasible airbench96-style base (I001/I003 knee). Make one systems change and leave the recipe alone. Move the whole training step into one torch.compile'd function: forward, backward, Nesterov SGD update and lookahead blend. Apply the update with torch._foreach_* ops (or SGD foreach/fused=True) so there is no per-parameter Python loop. Pass lr and the lookahead schedule as 0-d GPU tensors so changing them never triggers a recompile. Compile and warm up this function in build() on synthetic data, covering the full batch and the final partial batch. Keep the epoch count, seeds, lr, wd, LS and widths identical to the base."
+  }
+}

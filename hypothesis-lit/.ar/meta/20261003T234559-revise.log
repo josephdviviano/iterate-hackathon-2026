@@ -1,0 +1,51 @@
+H1->supported, H6->refuted, H6.1.3->retired, H7->refuted, H7.1->refuted, H7.1.1->refuted, H1.9->refuted, H1.9.1->refuted, H1.8->retired, H1.8.1->retired, H2.4.6->refuted, H2.3.2->supported, H2.3.5->retired, H1.3.4->supported, H4.2->refuted, H4.2.1->refuted, H4.5.1->retired, H4.5->supported, H2.4.8->supported, H2.4.7->supported, H1.7->inconclusive, H1.7.12->supported, H1.7.9->refuted, +H1.10, +H1.10.1, +H1.10.2, +H1.10.3, +H1.10.4, +H1.11, +H1.11.1, +H1.11.2, +H2.7, +H2.7.1, +H2.7.2, +H2.7.3, +H1.12, +H1.12.1, +H1.3.8, +H4.3.2. I brought the hypothesis tree up to date with E053–E063, the search findings and the skeptical review.
+
+**Status corrections**
+- **H7.1.1:** refuted. E060 measured train accuracy at 0.964, which meets the prediction's own refutation criterion. It had been mislogged as supporting. H7 and H7.1 are refuted as stated: the recipe does not under-fit the training set.
+- **H6:** refuted. Head scale and BN-bias LR raised dev accuracy to 0.7586 without adding capacity, so the "75.3% cap" is broken. Its old-base children are retired, and the orthogonalization-quality question moves to a new node under H1.
+- **Other statuses fixed:**
+  - H1.9.1 and H1.9 refuted (E063).
+  - H2.4.6 refuted.
+  - H4.2 and H4.2.1 refuted.
+  - H1.7.9 refuted.
+  - H2.3.2, H1.3.4, H2.4.7, H2.4.8, H2.6.1 and H4.5 supported.
+  - H1.3.3 gets its evidence tokens.
+  - H4.5.1, H2.3.5 and the H1.8 subtree retired as superseded.
+
+**Restatements**
+- **H4/H4.3:** official minus dev is a zero-mean residual (σ≈0.2 pp), not a +0.15 pp favourable offset. Licensing an official run now needs a dev mean of about 0.7555–0.7558 or higher.
+- **H1:** marked supported, with the margin sources found so far listed in the statement.
+- **H1.7:** narrowed to Muon-internal knobs (inconclusive). Every test of those knobs so far was flat or negative.
+- **H2.4:** records the depth floors: groups 1, 2 and 3 at 2, 2 and 3 convs.
+- **H1.2.1:** restated on the current tip with smaller expected effects, taken from the airbench paper.
+
+**New nodes**
+- **N_SGD (Lvl2 under H1):** the step sizes of parameters left on SGD are mis-scaled under Muon. Predictions: BN-bias 8x to bracket the optimum, head lr at fixed 2x scale, head scale re-swept at 16x, and SGD momentum 0.825.
+- **N_ALLOC:** early low-res epochs are saturated and accuracy lives in the high-res tail. Predictions: drop a 24 px epoch with anchored warmup and Lookahead ramp, then reallocate the saved time to the 32 px tail.
+- **N_COST (under H2):** step cost is roughly proportional to multiply-accumulates and dominated by the group-2/3 entry convs. Predictions: a per-layer profile, then width cuts of group 2 (384→320) and group 3 (576→512).
+- **N_NS:** test AOL with 3 Newton-Schulz steps (AOL+3) to check whether orthogonalization is saturated at 2 steps.
+- **N_REG.1:** Cutout only in the 24/28 px phases.
+- **N_HOLD:** a fresh held-out seed block (13–22) to de-bias the dev mean after repeated selection on seeds 3–12.
+
+**Open Lvl1s:** H4 and H5.
+
+**Logging error:** E058's logged description is wrong. The actual change was 32 px tail 3→2.5 epochs, not 4→3.5, so the 0.67 pp/s tail rate should be read against 3→2.5.
+added I073, I074, I075, I076, I077, I078, I079, I080; dropped none. The queue was empty (every idea was done or dropped), so I added 8 ideas built on the E061 tip (dev 0.7586 @ 5.24 s). Expected margin is about +0.28 pp over the dev level of about 0.7558 needed for P(official ≥ 0.753) ≈ 0.9. The split is 5 exploit and 3 explore.
+
+**Exploit, adding margin at no time cost:**
+- **BN-bias 8x (H1.10.1, priority 5):** the pre-registered next step after two +0.28 pp halvings.
+- **Head lr 0.5x at fixed scale 2x (H1.10.2):** separates the effective-lr part of E053's head-scale gain.
+
+**Exploit, removing time:**
+- **Group-2 width 384→320 (H2.7.2):** behind a microbenchmark gate. It is the largest remaining structural lever, since widening to 448 cost +13.6%. Expected about -6 to -11% time.
+- **Drop one 24 px epoch with anchors fixed (H1.11.1):** expected about -0.35 s, given that the early phase is saturated (E036, E063).
+- **Freeze BN weight (H1.7.13):** a small cut, gated on a code check first.
+
+**Calibration:**
+- **Held-out seeds 13-22 on E061 (H4.3.2):** de-biases the dev mean after about 6 selections on the same dev seeds and sets the keep bar for the time cuts.
+
+**Explore:**
+- **AOL + 3 NS steps (H1.12.1):** tests whether orthogonalization quality is still below saturation.
+- **Cutout in the 24/28 px phases only (H1.3.8):** tests input regularization, given the 21 pp train-test gap from E060.
+
+No queued ideas needed dropping. If the BN-bias 8x run adds margin, stack it with the group-2 width cut and the 24 px drop next.

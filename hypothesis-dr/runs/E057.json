@@ -1,0 +1,28 @@
+{
+  "exp": "E057",
+  "commit": "fcf9469",
+  "pid": 561158,
+  "start_ticks": 4898189,
+  "started": 1791072577.220059,
+  "tag": "I068",
+  "description": "Measure the paired re-draw noise on the current base directly, without changing any math. On the tip (E047, or I061's successor if it is kept), make one change: in prepare(), right after seeding the trial generator and before the epoch permutations and augmentation draws, consume one dummy draw from that same trial-seeded generator (e.g. torch.randn(1, generator=g, device=g.device)). Every permutation, flip, translate and jitter value then shifts while the recipe stays identical. Nothing else changes, so no new compiled shapes are needed. Report per-seed accuracies next to the tip's. Discard the run regardless of outcome: keeping a lucky RNG shift would select on seeds 0-2 and would not transfer to the 40-seed judge.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr/runs/E057.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7550333333333333,
+    "time": 4.931250012001935,
+    "complete": true
+  },
+  "row": {
+    "exp": "E057",
+    "commit": "fcf9469",
+    "accuracy": 0.7550333333333333,
+    "time": 4.931250012001935,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I068",
+    "description": "Measure the paired re-draw noise on the current base directly, without changing any math. On the tip (E047, or I061's successor if it is kept), make one change: in prepare(), right after seeding the trial generator and before the epoch permutations and augmentation draws, consume one dummy draw from that same trial-seeded generator (e.g. torch.randn(1, generator=g, device=g.device)). Every permutation, flip, translate and jitter value then shifts while the recipe stays identical. Nothing else changes, so no new compiled shapes are needed. Report per-seed accuracies next to the tip's. Discard the run regardless of outcome: keeping a lucky RNG shift would select on seeds 0-2 and would not transfer to the 40-seed judge."
+  }
+}

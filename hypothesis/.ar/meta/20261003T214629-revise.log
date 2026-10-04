@@ -1,0 +1,48 @@
+H2.10.3->inconclusive, H2.11->open, H2.14.3->refuted, H2.16->refuted, H4.2.5->supported, H6.6->refuted, H6.6.1->refuted, H7.3->supported, H7.3.1->retired, H7.3.2->supported, H7.3.3->inconclusive, H7.3.4->refuted, +H2.14.4, +H2.11.3, +H9, +H9.1, +H9.1.1. The first step is free: diff the tip's code against the tail commit (H4.2.4). The tip (E070/E071, 4.58 s, pooled 0.7537) probably lacks the Fable tail. Until that diff is done, the bases of E077 and E078 are also unverified.
+
+**Tree changes**
+- **Re-pooling.** I recomputed the deltas against the rule-consistent head-lr family (~0.7550). The 7.0-7.5-epoch low-res reshuffles then form a noise plateau. H2.10.3 moves to inconclusive. If the tip lacks the tail, the 24 px trim costs ~0.055 pp per 1% of time against its correct parent, not 0.14.
+- **Tail (H6.5.2).** Still supported, but confidence is lowered to 0.35. It rests on one high draw and has had no off-seed check. H2.10.4 now doubles as that check.
+- **Head-lr line closed.** H7.3 is supported (tuned at 0.5x). H7.3.4 is refuted, recorded as "no gain; flat between 0.4x and 0.5x" rather than a proven optimum. H7.3.3 (head wd) is inconclusive, H7.3.1 retired.
+- **MaxSup (H6.6).** Refuted, but only at α=0.3. Phase-dependent label smoothing (H6.7) has a lower prior: the search shows its cited support did not cover label smoothing, and another paper (TSLA) points the opposite way.
+- **Hand-fused BN backward (H2.16, H2.16.3).** H2.16 is refuted and H2.16.3 retired. BN backward needs per-channel reductions over the whole activation before it can write the input gradient, so it cannot be done in one pass.
+- **Whitening-bias freeze (H2.15).** Re-sourced to hiverge and airbench, which actually skip the compute, unlike Fable. The expected saving rises to ≥1%, and the freeze point is aligned with E061's tested 20%.
+- **Width cuts (H2.13).** Re-framed around tile quantization: 352 and 320 both round up on 128-wide tiles, so 256 is the clean test point.
+- **Per-phase batch size.** H2.11.1 now carries E043- as its evidence. H2.11 is reopened for the mirror split.
+- **Margin check (H4.2.5).** Supported at its boundary (off-seed 0.7530).
+- **H4.** The pooling rule now uses code diffs, not description labels, plus a ±0.6% band for time deltas.
+
+**New hypotheses**
+- **N_pin:** a pinned staging buffer for the trial-1 slow-transfer window.
+- **N_bs:** bs 1536 at low resolution with bs 1024 in the 32 px phase.
+- **N9 (new Lvl1):** accuracy now has to come from structural changes, because scalar knobs are exhausted at the noise floor.
+- **N9a / N9a1:** hiverge and Fable's decaying renorm target norm, which acts as an implicit learning-rate schedule.
+
+**Recommended order**
+1. Diff the tip against the tail commit.
+2. Add the tail to E070, with an off-seed check on seeds 3-10.
+3. The real whitening-bias freeze.
+4. Trim the 32 px phase by 0.25 epoch.
+5. Muon filter lr 0.28 and the renorm-target decay as off-seed A/Bs.
+6. The batch split.
+added I089, I090, I091, I092, I093, I094; dropped none. The queue gets six new ideas plus I081, which is still running (7 total). Margin is about 0.07 pp: the tip is at 4.58 s, with a scored pool of 0.7537 and an off-seed mean of 0.7530. Accuracy has to come before any further cut.
+
+**Accuracy sources (exploit):**
+- **Final-EMA window, priority 5 (H6.5).** E079 showed the 2-update final EMA carries ~0.15-0.2 pp, so this is the most likely accuracy source. The idea starts the EMA 20 steps before the end instead of 8, keeping the cadence and lerp.
+- **Uniform-average sibling arm (H6.5).** A LAWA-style uniform average over the same window. It shares the off-seed tip baseline with the EMA-window run.
+- **Renorm-target decay (H9.1.1).** A structural, zero-cost change. Its first step is a free code check, so H9.1.1 can be retired without a run if the tip already decays its target.
+
+**Explore and math-neutral:**
+- **bs 1024 in the 32 px tail (H2.11.3).** Tests whether bs 1536's accuracy cost arose in the tail. It costs +1.5-3% time, so it does not become the tip on its own.
+- **Pinned staging buffer (H2.14.4).** Math-neutral, worth ~0.5% of the local mean. I scored it low because the slow window may come from the PCIe link power state rather than pageable memory. In that case pinned memory won't help, and the per-trial logs will show it.
+
+**Gated:**
+- **Fractional 32 px trim (H2.10.5).** Runs only if one of the accuracy ideas banks ≥+0.1 pp off-seed.
+
+**Not queued:**
+- H7.1.3 (filter lr) and H6.7.1 (phase-dependent LS): low-prior scalar knobs, which H9 says to stop generating.
+- H2.15 (whitening-bias freeze): effectively settled. The recipe already detaches the bias, and E061's earlier switch saved only 0.3%, which is inside time noise.
+- H4.4.1 and H4.5.1: their logging rides along with the EMA-window run.
+- H4.2.4 (provenance): resolved for E070 by the I083 note (E070 already contains the Fable tail). The EMA-window run logs a source diff against e945ed5 before scoring.
+
+All accuracy decisions use an off-seed seeds 3-10 A/B plus two scored runs. The EMA-window run also adds a second off-seed sample of the tip, so the 0.7530 baseline isn't a single draw.

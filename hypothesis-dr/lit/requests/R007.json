@@ -1,0 +1,38 @@
+{
+  "id": "R007",
+  "from": "auto",
+  "after": "E025",
+  "question": "The tip is E024: Muon on the conv filters (lr 0.16, momentum 0.6, NS3) with lookahead, 7 epochs, 6.53 s, accuracy 0.7585. It is about 0.55 pp above the gate, so the next step is to push to 6.5 or 6 epochs. Two levers have failed: a sharper lr tail (E025) and a higher Muon lr (E019). What is left is mostly hyperparameters the tip inherited untuned from CIFAR-10 airbench94_muon. Which of these do published studies show improve accuracy per epoch in short-horizon training? (a) Muon momentum and Nesterov settings: 0.6 vs 0.9 or higher. (b) Weight decay on the Muon group: decoupled vs. none, plus how it interacts with the weight-norm projection. (c) Batch size and step count under Muon: whether its critical batch size is larger or smaller than SGD's. For example, would bs 512 with more steps per epoch beat bs 1024? (d) The kind and schedule of weight averaging that suits orthogonalized updates: lookahead vs. EMA vs. schedule-free/primal averaging, including how often and how strongly to average. The answer should rank these levers by expected gain at a fixed small epoch count and give concrete settings to try.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791061504.5437663,
+  "digest": "D007",
+  "plan": {
+    "question": "The tip is E024: Muon on the conv filters (lr 0.16, momentum 0.6, NS3) with lookahead, 7 epochs, 6.53 s, accuracy 0.7585. It is about 0.55 pp above the gate, so the next step is to push to 6.5 or 6 epochs. Two levers have failed: a sharper lr tail (E025) and a higher Muon lr (E019). What is left is mostly hyperparameters the tip inherited untuned from CIFAR-10 airbench94_muon. Which of these do published studies show improve accuracy per epoch in short-horizon training? (a) Muon momentum and Nesterov settings: 0.6 vs 0.9 or higher. (b) Weight decay on the Muon group: decoupled vs. none, plus how it interacts with the weight-norm projection. (c) Batch size and step count under Muon: whether its critical batch size is larger or smaller than SGD's. For example, would bs 512 with more steps per epoch beat bs 1024? (d) The kind and schedule of weight averaging that suits orthogonalized updates: lookahead vs. EMA vs. schedule-free/primal averaging, including how often and how strongly to average. The answer should rank these levers by expected gain at a fixed small epoch count and give concrete settings to try.",
+    "queries": [
+      "Muon optimizer momentum weight decay hyperparameter sensitivity",
+      "Muon critical batch size orthogonalized updates",
+      "Muon optimizer convolutional networks CIFAR speedrun",
+      "weight averaging EMA lookahead short training budget",
+      "schedule-free averaging Muon orthogonal optimizer",
+      "spectral norm steepest descent optimizer hyperparameter transfer"
+    ],
+    "rubric": [
+      "The paper reports controlled experiments that vary at least one of these: Muon/orthogonalized-optimizer momentum, weight decay, batch size, or the weight-averaging scheme (EMA, lookahead, schedule-free, SWA). It must report the effect on accuracy or loss, not just say the method works.",
+      "Results cover a short or compute-limited training regime: few epochs, a fixed small token or step budget, or speedrun settings. The paper should also show how the optimal setting moves with the length of training.",
+      "The setting is image classification with CNNs or ResNets, or the paper says explicitly that its findings hold across architectures. LLM-only papers count only if they give hyperparameter rules that do not depend on scale, such as for momentum, weight decay or batch size.",
+      "The paper gives specific numbers that can be applied directly: a momentum value, a weight decay coefficient, a batch size, or an averaging decay/interval. It should also give the size of the accuracy or loss gap between settings."
+    ],
+    "exclude": [
+      "Methods that need pretrained weights, distillation from a pretrained teacher, or external or extra data (forbidden by RULES.md)",
+      "Test-time augmentation, or any technique that touches the test set or changes state during evaluation",
+      "Papers about distributed or communication-efficient Muon (sharding, multi-node), or memory-efficient optimizer state, with no effect on accuracy per step",
+      "Billion-parameter LLM scaling papers with no hyperparameter findings that transfer",
+      "Learning-rate tail or annealing-to-zero studies (already refuted for this recipe in E025) and Muon learning-rate sweeps (already bracketed by E019/E024)",
+      "Label smoothing strength, progressive resizing and adaptive-pool/systems kernel work (already tested in the tree)"
+    ]
+  },
+  "cost": 0.7639
+}

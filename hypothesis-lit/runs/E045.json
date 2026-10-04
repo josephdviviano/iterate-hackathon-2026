@@ -1,0 +1,28 @@
+{
+  "exp": "E045",
+  "commit": "b173f21",
+  "pid": 439416,
+  "start_ticks": 4141832,
+  "started": 1791065013.6498282,
+  "tag": "I051",
+  "description": "Exploit, removing low-res backward work. On E038, train the whitening-conv bias for only the first ~0.25 epoch (8 steps at batch 1536), as Fable and Hiverge do, instead of the first 5 epochs. After that, detach the whitening output (after its activation) in every phase, including 20 and 24 px. The 20/24 px phases then also skip the first group-1 conv's dgrad and the whitening BN/activation backward. Capture a no-detach 20 px graph for the first 8 steps plus the detached 20/24 px graphs in build, so nothing is captured in the timed region (5 graphs in total). Drop the whitening bias from the optimizer, or zero its lr, after step 8. Change nothing else.",
+  "log": "/home/jovyan/work/arena3/hypothesis-lit/runs/E045.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7480333333333333,
+    "time": 6.602837004999553,
+    "complete": true
+  },
+  "row": {
+    "exp": "E045",
+    "commit": "b173f21",
+    "accuracy": 0.7480333333333333,
+    "time": 6.602837004999553,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I051",
+    "description": "Exploit, removing low-res backward work. On E038, train the whitening-conv bias for only the first ~0.25 epoch (8 steps at batch 1536), as Fable and Hiverge do, instead of the first 5 epochs. After that, detach the whitening output (after its activation) in every phase, including 20 and 24 px. The 20/24 px phases then also skip the first group-1 conv's dgrad and the whitening BN/activation backward. Capture a no-detach 20 px graph for the first 8 steps plus the detached 20/24 px graphs in build, so nothing is captured in the timed region (5 graphs in total). Drop the whitening bias from the optimizer, or zero its lr, after step 8. Change nothing else."
+  }
+}
