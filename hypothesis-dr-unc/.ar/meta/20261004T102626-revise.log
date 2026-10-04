@@ -1,0 +1,32 @@
++H1, +H1.1, +H1.1.1, +H1.1.2, +H1.2, +H1.2.1, +H1.3, +H1.3.1, +H2, +H2.1, +H2.1.1, +H2.2, +H2.2.1, +H2.3, +H2.3.1, +H3, +H3.1, +H3.1.1, +H3.2, +H3.2.1, +H4, +H4.1, +H4.1.1, +H4.2, +H4.2.1, +H4.3, +H4.3.1. The tree was empty, so I seeded it with 4 top-level (Lvl1) hypotheses, each with mechanisms (Lvl2) and falsifiable predictions (Lvl3):
+
+- **H1, sample efficiency:** an airbench96-family whitened CNN at about 8.5 epochs is the main lever. The anchor prediction is that the public 8.11 s / 75.29% result reproduces here. It also covers an epoch sweep, a width-vs-epochs trade-off, and an ablation of whitening and dirac init.
+- **H2, throughput and overhead:** keeping data and augmentation on the GPU (only 4 CPU cores are available), compile max-autotune and CUDA graphs prepared in the untimed build, and a cheaper whitening step in prepare.
+- **H3, less compute per epoch:** airbench96_faster-style hard-example filtering, and training early epochs at lower resolution.
+- **H4, hyperparameters for a short 100-class run:** weaker cutout and label smoothing, alternating flip, and Muon. Prior evidence says Muon lost to SGD, so it starts at low confidence and is expected to be refuted.
+
+No updates, because there is no evidence yet. Following the review, the first runs should be:
+- the unmodified template as a baseline (H2a1);
+- the airbench96 reproduction, run twice to measure accuracy and time noise (H1a1).
+
+Until that noise floor is measured, any accuracy change under about 0.3 pp, or any time change within the measured jitter, should be logged as inconclusive. Every candidate also needs a rule check:
+- no real data in build;
+- a full reset in prepare;
+- eval that works for any batch size from 1 to 1024 within 5 s;
+- no TTA.
+
+Absolute times measured on this SXM GPU won't carry over to the PCIe judging GPU.
+added I001, I002, I003, I004, I005, I006, I007, I008; dropped none. The queue was empty and only the chance-level baseline (E000) has run. Because of that, I wrote the ideas in dependency order:
+
+- **First (priority 5):** reproduce airbench96 at 128/384/576 widths and 8.5 epochs (H1.1.1). It runs twice to set the noise floor and should give the first feasible run, around 8 s.
+- **Epoch sweep (H1.1.2):** a 10-epoch run (priority 4) secures a feasible fallback, and a 7-epoch run (priority 3) gives the lower point for interpolating the crossing at 0.753.
+- **Exploit ideas on that recipe:**
+  - max-autotune plus CUDA graphs (H2.2.1).
+  - Weaker regularization, removing cutout and lowering label smoothing to 0.1 (H4.1.1). If it helps, it allows fewer epochs.
+  - Whitening computed on 5,000 images (H2.3.1), a cheap cut to prepare time.
+- **Explore ideas:**
+  - Swap alternating flip for random flip to test whether alternating flip helps on CIFAR-100 (H4.3.1).
+  - A narrower 128/256/384 net at 10 epochs (H1.2.1).
+
+I left the Muon, proxy-filtering and progressive-resizing ideas for later. They only make sense once there is a tuned feasible baseline to compare against.
+round 1 (forecast): 0/6 verified members on 0 experiments, 0 ideas voted

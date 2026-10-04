@@ -1,0 +1,28 @@
+{
+  "exp": "E001",
+  "commit": "3336e4f",
+  "pid": 1091118,
+  "start_ticks": 8677665,
+  "started": 1791110371.9845479,
+  "tag": "I001",
+  "description": "Replace the template recipe in submissions/arena/ with an airbench96-style net. Layers: frozen 2x2 patch-whitening conv (eigendecomposition computed in prepare), then three blocks of 3 convs with widths 128/384/576, BN, GELU, maxpool, then a scaled linear head with 100 outputs. Use dirac init on block convs. Train with Nesterov SGD using airbench96 lr, wd and momentum, label smoothing 0.2, Lookahead, and a linear warmup/decay schedule. Hold the full uint8 dataset on the GPU and do flip (alternating), translate 4 and cutout 12 on the GPU. Batch 1024, 8.5 epochs, bf16, channels_last, no TTA. torch.compile and warmup run in build on synthetic data; eval uses a separate path that is legal for any B. Run it twice in a row to measure the noise floor.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr-unc/runs/E001.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7304,
+    "time": 7.772319488334081,
+    "complete": true
+  },
+  "row": {
+    "exp": "E001",
+    "commit": "3336e4f",
+    "accuracy": 0.7304,
+    "time": 7.772319488334081,
+    "complete": true,
+    "feasible": "no",
+    "improved": "yes",
+    "status": "keep",
+    "tag": "I001",
+    "description": "Replace the template recipe in submissions/arena/ with an airbench96-style net. Layers: frozen 2x2 patch-whitening conv (eigendecomposition computed in prepare), then three blocks of 3 convs with widths 128/384/576, BN, GELU, maxpool, then a scaled linear head with 100 outputs. Use dirac init on block convs. Train with Nesterov SGD using airbench96 lr, wd and momentum, label smoothing 0.2, Lookahead, and a linear warmup/decay schedule. Hold the full uint8 dataset on the GPU and do flip (alternating), translate 4 and cutout 12 on the GPU. Batch 1024, 8.5 epochs, bf16, channels_last, no TTA. torch.compile and warmup run in build on synthetic data; eval uses a separate path that is legal for any B. Run it twice in a row to measure the noise floor."
+  }
+}

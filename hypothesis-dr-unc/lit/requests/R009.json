@@ -1,0 +1,38 @@
+{
+  "id": "R009",
+  "from": "auto",
+  "after": "E031",
+  "question": "Muon reversed the earlier SGD evidence. On the block conv filters it gave about +0.7-0.8 pp at equal epochs (E025, E026). It now carries the tip, E031: 8.75 epochs, batch 2048, 5.43 s, 0.7551, with a thin margin. Near 9-10 epochs, cutting epochs costs only ~0.3 pp per epoch, while resize and stronger augmentation both hurt under Muon (E029, E030). So the next time cut needs more accuracy per epoch from the optimizer itself. Which Muon-family changes raise sample efficiency in very short training (<= 10 epochs) of small convnets at large batch, at little or no extra per-step cost? Candidates:\n- momentum and lr settings, and how they scale with batch size;\n- the number of Newton-Schulz iterations and their coefficients (e.g. Polar Express, quintic variants);\n- weight decay under Muon;\n- the lr schedule shape and warmup under Muon;\n- which parameters Muon should cover (first conv, head, BN);\n- normalized or adaptive variants (NorMuon, AdaMuon, Dion);\n- interaction with Lookahead, EMA or label smoothing.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791115559.062038,
+  "digest": "D009",
+  "plan": {
+    "question": "Muon reversed the earlier SGD evidence. On the block conv filters it gave about +0.7-0.8 pp at equal epochs (E025, E026). It now carries the tip, E031: 8.75 epochs, batch 2048, 5.43 s, 0.7551, with a thin margin. Near 9-10 epochs, cutting epochs costs only ~0.3 pp per epoch, while resize and stronger augmentation both hurt under Muon (E029, E030). So the next time cut needs more accuracy per epoch from the optimizer itself. Which Muon-family changes raise sample efficiency in very short training (<= 10 epochs) of small convnets at large batch, at little or no extra per-step cost? Candidates:\n- momentum and lr settings, and how they scale with batch size;\n- the number of Newton-Schulz iterations and their coefficients (e.g. Polar Express, quintic variants);\n- weight decay under Muon;\n- the lr schedule shape and warmup under Muon;\n- which parameters Muon should cover (first conv, head, BN);\n- normalized or adaptive variants (NorMuon, AdaMuon, Dion);\n- interaction with Lookahead, EMA or label smoothing.",
+    "queries": [
+      "Muon optimizer convolutional network short training sample efficiency",
+      "Newton-Schulz iterations orthogonalized momentum fewer steps accuracy",
+      "Muon hyperparameter momentum learning rate batch size scaling",
+      "NorMuon AdaMuon variant orthogonal optimizer improvement",
+      "Polar Express polar decomposition optimizer Muon",
+      "Muon weight decay learning rate schedule CIFAR speedrun"
+    ],
+    "rubric": [
+      "Tests Muon or a close orthogonalized-update variant against a tuned baseline. Reports accuracy or loss vs steps or epochs, not only final results after long training.",
+      "Gives concrete, transferable settings or ablations (momentum, lr, Newton-Schulz steps or coefficients, weight decay, schedule, parameter coverage, batch size) with measured effect sizes.",
+      "Measures in a regime relevant here: image convnets or small models, a short budget or large batch, ideally CIFAR-scale. Or it shows the effect does not depend on scale.",
+      "Reports or allows estimating the wall-clock or per-step overhead of the change, so that accuracy per second can be judged."
+    ],
+    "exclude": [
+      "Methods that need pretrained weights, distillation from a pretrained teacher, or external data (forbidden by RULES.md)",
+      "Test-time augmentation or any use of the test set during training or selection",
+      "Work that only covers LLM pretraining at billion-parameter scale, with no ablation that transfers to small convnets",
+      "Second-order methods with heavy per-step cost (full Shampoo/SOAP preconditioner updates every step) and no amortized cheap variant",
+      "Proxy-based data filtering and coreset selection (already refuted, E016)",
+      "Stronger augmentation or cutout as the accuracy lever (refuted under Muon, E030)"
+    ]
+  },
+  "cost": 0.9422
+}

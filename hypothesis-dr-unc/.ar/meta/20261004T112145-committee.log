@@ -1,0 +1,75 @@
+round 12 (update): 6/6 verified members on 19 experiments, 6 ideas voted; E019: no member's vote predicted 'infeasible'; retired W13 (replays 79%); retired W14 (replays 84%); retired W15 (replays 84%); retired W16 (replays 84%); retired W17 (replays 79%); retired W18 (replays 84%); COUNTEREXAMPLE E016, E019: no verified world model replays it; wrote 3 around E019: admitted W19, W20, W21; wrote 3: admitted W22, W23, W24; raised I031 (outside the evidence)
+R006 -> D006
+H1.1.4->retired, H1.2.1->refuted, H1.2.2->retired, H2.4.1->refuted, H2.4.2->supported, H3.1->refuted, H3.1.1->refuted, H3.2.1->refuted, H3.2.2->inconclusive, H3.2.3->inconclusive, H4.1.3->inconclusive, H4.3.1->inconclusive, H4.4.1->refuted, +H2.4.3, +H2.4.4, +H4.4.2, +H1.2.4, +H1.2.5, +H1.2.6, +H5.2, +H5.2.1, +H5.2.2, +H4.5.2, +H3.2.5, +H3.2.6. I fixed the bookkeeping, recalibrated verdicts against a realistic noise floor and restated the tree around what produced the 6.65 s tip (E023).
+
+**Bookkeeping**
+- H1.1.2: the crossing clause is now evidenced E002-.
+- H1.2.1 is refuted (E007-, E009-). Its E012 credit moves to the restated H1.2.
+- E010 now sits under H3.2.2 (~), E011 under H4.1.3 (~), E014 under H4.1.2 (~), E015 under H4.4.1 (-) and E013 under H3.2.4 (~).
+- H3.1 and H3.1.1 are refuted (E016).
+- H2.4.1 is refuted on magnitude: -2.3% against a >= 4% threshold. The mechanism behind it (removable per-step overhead) is credited to H2.4.
+- H2.4.2 is supported (E023).
+- H3.2.1 is refuted. Three resize runs consistently lost ~0.56 pp, above its 0.3 pp limit.
+
+**Retired**
+- H1.1.4 and H1.2.2: they test the superseded wide net, or are dominated by E012.
+
+**Downgraded or relabelled as within noise**
+The sd of a run-to-run difference is ~0.3 pp, so these no longer count as decided:
+- E005 (H4.3.1)
+- E011 (H4.1.3)
+- E014 (H4.1.2)
+- E018 (H3.2.3)
+
+H1.1 is restated: slopes must be measured per recipe, and interpolating them is unreliable (E009). H5.1 is lowered to 0.35, because E007 vs E009 changes regularization and epochs together.
+
+**Restated mechanisms**
+- **H1.2 (block-specific width):** block 2 is cheap to cut, while blocks 1 and 3 are binding. This explains E019.
+- **H3.2 (resize):** low-res steps are cheaper but less useful, at ~0.4 pp lost per second saved, whatever the schedule or antialiasing. This explains E013.
+- **H4.4 (batch size):** the run is sample-limited, not step-limited, so batch size is a throughput lever. This explains E015.
+- **H2:** ~1-2 ms per step of overhead that doesn't scale with resolution is still left. E022 and the Fulcrum search point the same way.
+- **H1.1.3 (noise floor):** now targets the tip. It pools E022 and E023 and adds a rule to rerun any keep with less than 0.3 pp of margin, to counter the winner's curse on keeps that barely clear the gate.
+
+E014 and E016 are explained as well: LS 0.1 is near its optimum, and proxy filtering is launch-bound and harmful on 100 classes.
+
+**New hypotheses**
+- N1, N2: profile the tip, then capture the whole run as one CUDA graph with augmentation staged into per-step buffers.
+- N3: batch 1536 for throughput.
+- N4: block-3 width dose-response (704 to 896).
+- N5: cut block 2 further, to 192.
+- N6: add the original airbench96 residual over the last two convs.
+- N7: a new mechanism under H5, that the 100-way head is limited by pooled feature dimension. Tested by N8 (a 1x1 expansion before pooling) and N9 (concatenated avg and max pooling).
+- N10: cut whiten_bias_epochs from 3 to 0.5.
+- N11: raise the low-res fraction to 70%, using the margin from N4.
+- N12: retest the 24/28/32 curriculum once N2 has removed the per-step overhead.
+
+**Before trusting cross-run deltas**
+Audit the recipe lineage first: translate, epochs and base recipe in commits 6d40ead, b0eba3b, 12fffd2 and d07ea5f. Then measure the noise floor (H1.1.3).
+
+**Suggested next runs**
+In order: H1.1.3, N1 then N2, N4 then N11, N3 and N5.
+added I032, I033, I034, I035, I036, I037, I038; dropped none. The queue was empty: every earlier idea was done or dropped, so there was nothing to drop. I added 7 new ideas.
+
+The current best feasible run is E024: 0.7544 accuracy at 6.448 s, with 128/256/704 widths, 50% of steps at 24 px, batch 1536 and a fused SGD update. That is only 0.14 pp above the 0.753 bar. The run descriptions for E024 and E025 say "On E012", but their times (6.45 s and 7.26 s) show they actually ran on the tip.
+
+The biggest new finding is E025: Muon on the block conv filters beat SGD by +0.78 pp, the opposite of what the hypothesis tree expected. But it cost +0.81 s, almost all of it per-step launch overhead (~2.3 ms per step).
+
+**Top priority (5): turn Muon into speed.**
+- **I032** keeps the Muon math identical but makes it cheap: same-shape filters run through one batched Newton-Schulz, and the whole Muon step goes inside the captured train-step graph. Expected time is ~6.65-6.85 s.
+- **I033** spends Muon's gain on fewer epochs, cutting from 11 to 9.5. Expected accuracy is ~0.755, at ~6.27 s on the current Muon code or ~5.8 s if I032's fused version works. Either would be a new best.
+
+**Other exploit ideas:**
+- **Batch 2048 (priority 4):** a further throughput gain of -2 to -4% expected, with some risk of losing accuracy.
+- **Whole-phase CUDA graphs (priority 2):** removes the host gaps between graph replays; -3 to -6% expected.
+
+**Explore ideas, each one cheap and decisive:**
+- **Whitening-bias training cut from 3 to 0.5 epochs (priority 3):** a schedule constant left over from 37-epoch runs; costs no time.
+- **Max + average pooling before the head (priority 2):** a near-free test of whether the 100-class head is limited by its feature dimension.
+- **Block 3 widened from 704 to 896 (priority 2):** a dose-response point for the block-3 width lever.
+
+The literature committee's forecasts gave no votes on queued ideas, so none could be sharpened or dropped on that basis.
+
+The noise floor (H1.1.3) is handled by a rule in I033: any new tip that clears 0.753 by less than 0.3 pp is rerun and pooled before it replaces E024. That matters because per-trial accuracy on the same seed varies by up to 0.9 pp between runs.
+
+H4.2.1 should be marked supported, overturning its "expected: refuted" note. H4.2's confidence should go up, and its statement should be rewritten to say Muon wins on CIFAR-100.
+round 13 (forecast): 6/6 verified members on 19 experiments, 0 ideas voted

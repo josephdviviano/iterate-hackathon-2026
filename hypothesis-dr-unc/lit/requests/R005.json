@@ -1,0 +1,38 @@
+{
+  "id": "R005",
+  "from": "committee",
+  "after": "E015",
+  "question": "What mechanism explains this result, which none of our verified world models predicted? E015: Explore whether progress is limited by steps or by samples. On E004, change only the batch size, from 1024 to 768, at equal epochs. Under linear scaling, scale the per-step LR by 768/1024, keep wd per sample as airbench defines it, and tie the schedule to the new step count. Recapture the CUDA graph for the new shape in build and handle the last partial batch the same way as now. Outcome: not-improved, {\"accuracy\": 0.7563, \"time\": 8.090300401328326, \"complete\": true}. Our world models believe:\n  W13 (replays 100%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is steps times per-step cost. Per-step cost grows with stage-2 and stage-3 widths, scales roughly linearly with batch size plus a ~15% fixed overhead, and has a small cutout surcharge. Low-resolution early steps cut the cost by about 30% of the compute they cover. Accuracy depends on the epoch budget, model width, label smoothing near 0.1 and lighter translation. Cutout, random flip and low-res downsampling each cost accuracy.\n  W14 (replays 100%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time scales with total samples processed (steps \u00d7 batch) times a per-sample cost that grows with the later-stage channel widths. Small batches add a little overhead. Cutout adds a little. Low-res early phase via resizing cuts time about 16% but costs about 0.5 points of accuracy. Accuracy rises logarithmically with epochs, falls with narrower nets, cutout, random flip and zero or heavy label smoothing, and rises slightly with weaker translation.\n  W15 (replays 100%; premise: Assume what this literature digest (D004) reports holds in this task, and build on it:\n# D): Time = steps \u00d7 per-step cost: fixed ~2 ms overhead plus conv compute scaling with squared stage-2/3 widths and batch size; a resize-based low-resolution first phase cuts cost ~17%. Accuracy rises logarithmically with epochs, falls with narrower ",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791112499.9439502,
+  "digest": "D005",
+  "plan": {
+    "question": "E015 cut batch size from 1024 to 768 on E004, keeping epochs equal and scaling LR linearly. Mean time fell about 9.5% (8.94 s to 8.09 s), but our world models predicted a small time increase from the extra steps. Accuracy was unchanged within noise (0.7563 vs 0.7550), so more steps per epoch did not raise accuracy per epoch. What mechanism explains this?\n\nThere are two candidate explanations, and the next experiments depend on which is right:\n\n(a) A real GPU-efficiency effect of batch size. Possible causes are wave/tile quantization on the A100's 108 SMs, a different cuDNN or Triton (max-autotune) conv algorithm chosen for the 768 shape, better L2/memory locality, or a smaller BN/activation working set. If this is the cause, per-step cost is not linear in batch size, and batch size (e.g. 512, 640, 896) is a cheap throughput lever.\n\n(b) Timing drift between runs. E012 and E014 ran after E011 and also came in near 7.7 s; E014 changed only label smoothing and was still ~1.2 s faster than E004. This points to a shift in node, clock or autotune state, which would make all time comparisons need a same-session baseline.\n\nOn the accuracy side: why was accuracy per epoch flat when steps per epoch rose by a third? Is a batch of ~768-1024 already below the critical batch size for a ~10-epoch, 100-class run with Nesterov SGD + Lookahead?",
+    "queries": [
+      "GPU wave quantization batch size convolution throughput",
+      "cuDNN convolution algorithm selection batch size performance variability",
+      "critical batch size gradient noise scale image classification",
+      "batch size learning rate scaling equal epochs short training budget",
+      "GPU benchmark timing variance reproducibility deep learning training",
+      "Triton autotuning matmul tile shape sensitivity batch dimension"
+    ],
+    "rubric": [
+      "Measures how GPU training or conv throughput (samples/s) depends on batch size or tensor shape, beyond linear scaling (e.g. tile/wave quantization, algorithm switches, cache effects), preferably on an A100/Ampere or similar GPU.",
+      "Or: quantifies run-to-run or session-to-session timing variance in GPU training benchmarks and gives a method for controlling it, e.g. interleaved baselines or same-session controls.",
+      "Or: shows empirically how accuracy at a fixed epoch budget changes with batch size under linear LR scaling (critical batch size or gradient noise scale), with CNN image-classification results, ideally on CIFAR-scale short schedules.",
+      "Gives concrete numbers (speedup %, batch thresholds, variance %) that can be checked against a ~10% time change at batch 768 vs 1024."
+    ],
+    "exclude": [
+      "Methods that need pretrained weights, external data or knowledge distillation from a pretrained teacher",
+      "Test-time augmentation or anything that touches the test set",
+      "GPU clock, power-limit or frequency changes, and sleeps (forbidden by the rules)",
+      "Multi-GPU or distributed data-parallel batch scaling (single A100 only)",
+      "Large-batch LLM/transformer pretraining papers with no CNN or throughput-vs-shape results",
+      "Methods that need packages not in PyTorch 2.4.0 / torchvision 0.19.0"
+    ]
+  },
+  "cost": 0.6484
+}

@@ -1,0 +1,20 @@
+round 2 (update): 0/6 verified members on 0 experiments, 0 ideas voted
+harvest: arxiv_search('fast training CIFAR-100 few epochs speedrun') failed: The read operation timed out
+harvest: arxiv_search('airbench CIFAR-10 94% seconds patch whitening') failed: HTTP Error 429: Unknown Error
+harvest: arxiv_search('budgeted training learning rate schedule short epochs') failed: The read operation timed out
+R001 -> D001
+added I009; dropped none. No uncertainty-committee forecasts came with the inputs, so I couldn't adjust or drop anything based on them. The queue keeps I002-I008 (7 queued) and adds one explore idea for H3.2.1, which brings it to 8.
+
+New idea: progressive resizing, training the first half of steps at 24 px with both graph shapes compiled in build. It is the cheapest untested route to a time cut above 10% that doesn't depend on epoch tuning.
+
+Exploit vs explore: 5 exploit ideas (I002, I003, I004, I005, I007) and 3 explore ideas (I006, I008, new H3.2.1).
+
+Order of work: settle the epoch edge first (I001 running, then I002/I003). Then try the regularization retune (I005) and compile/CUDA graphs (I004). Then run width (I008) and resizing as explore bets.
+
+Intentionally not added yet:
+- H1.3.1 (whitening ablation): information only, removes a known-good component.
+- H3.1.1 (proxy filtering): heavy to implement; wait for the feasible anchor.
+- H4.2.1 (Muon): prior evidence already leans toward refuting it.
+
+Tree maintenance: D001 and E000 show the template is a 0.1 s stub, so H2.1.1's 50-70 s baseline premise is false. Rewrite or retire it, and measure any GPU-pipeline gain against the first real recipe instead; I001 already uses a GPU-resident pipeline. Once I001 lands, a near-miss just under 0.753 should be combined with I005 (weaker regularization) at the same epochs before spending more epochs.
+round 3 (forecast): 0/6 verified members on 0 experiments, 0 ideas voted

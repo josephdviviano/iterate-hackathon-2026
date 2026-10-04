@@ -1,0 +1,21 @@
+round 10 (update): 6/6 verified members on 15 experiments, 7 ideas voted; E010: no member's vote predicted 'infeasible'; retired W7 (replays 60%); retired W8 (replays 60%); retired W9 (replays 60%); retired W10 (replays 60%); retired W11 (replays 60%); retired W12 (replays 60%); COUNTEREXAMPLE E010, E012, E013, E014, E015: no verified world model replays it; wrote 3 around E015: admitted W13, W14, W15; wrote 3: admitted W16, W17, W18; raised I025 (outside the evidence)
+R005 -> D005
+added I026, I027, I028, I029, I030, I031; dropped none. The incumbent is E012 (128/256/576, 11 epochs, translate 2): 0.7567 accuracy at 7.70 s, which is 0.37 pp of margin over 0.753. Three findings shape the new ideas:
+- Every resize schedule lands on the same line of ~0.4 pp lost per second saved.
+- Extra epochs near 11 return almost nothing (0.1-0.3 pp per epoch), so cutting epochs may be cheap.
+- Block-3 width looks like the binding capacity.
+
+New ideas:
+- **Priority 5, cut epochs 11 to 10 on E012:** directly exploits the flat slope. Expected about 7.0 s at 0.751-0.755.
+- **Priority 4, widen block 3 to 704 on E013:** combines two near-misses. Width may raise the ceiling where epochs could not (E017). Expected about 6.7 s at 0.753-0.756.
+- **Priority 3, 25% of steps at 24 px on E012:** buys the same ~0.7 s through resize instead of epochs. Comparing the two gives each lever's cost per second saved.
+- **Priority 3, LR floor at 5% of peak (H4.5.1):** an untested Lvl3 schedule change that could bank margin.
+- **Priority 3, batch 1536:** follows E015's finding that the regime is sample-limited, so a larger batch may buy throughput.
+- **Priority 2, Muon (H4.2.1):** one decisive check, expected to be refuted.
+
+I keep I024 (fused foreach optimizer in the captured graph) and I025 (data-path warm-up in build). Both are cheap tests of throughput with the same math. The committee's unanimous 'not-improved' vote on them is outside the evidence, and I025 can be read directly from the per-trial prepare times.
+
+Note that several queue descriptions (I021, I022, I023) say "translate 4". Per the I019/I020 notes, the tip lineage from E011 onward uses translate 2, and the new ideas say so explicitly.
+
+The queue is now 8 queued ideas plus I023 running. If I023 (96/256/576) wins, the epoch-cut idea is rebased onto it.
+round 11 (forecast): 6/6 verified members on 15 experiments, 6 ideas voted

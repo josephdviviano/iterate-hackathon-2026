@@ -1,0 +1,38 @@
+{
+  "id": "R004",
+  "from": "committee",
+  "after": "E009",
+  "question": "What mechanism explains this result, which none of our verified world models predicted? E009: Explore. Rewrite of I008 onto the current best recipe. Start from E004 (no cutout, LS 0.1, alternating flip, max-autotune + CUDA graph). Change only the widths, from 128/384/576 to 128/256/384 (same 3 convs per block), and set the epochs to 12 (schedule rescaled) to make up for the lower capacity. Estimated conv FLOPs per epoch are ~0.62x of the wide net. Outcome: infeasible, {\"accuracy\": 0.7455666666666666, \"time\": 7.440111936996497, \"complete\": true}. Our world models believe:\n  W7 (replays 89%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is steps times per-step cost: a fixed overhead (~8 ms: launches, augmentation, optimizer/EMA) plus conv compute proportional to the sum of squared widths in stages 2 and 3, with lower resolution cutting compute. Accuracy rises logarithmically with steps and model width. Cutout and random (non-alternating) flip cost accuracy. Smaller nets give a large time saving but lose ~1.5 points, which the extra steps only partly recover.\n  W8 (replays 89%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is roughly steps times a per-step cost that grows with model width/params (about 0.0085 + 0.0039 s per million params). Accuracy rises logarithmically with step count and falls with narrower networks. Cutout and random (non-alternating) flip cost a little accuracy at this short budget. Label smoothing 0.1 beats 0.2. Run-to-run noise is about 0.5%.\n  W9 (replays 89%; premise: Assume what this literature digest (D003) reports holds in this task, and build on it:\n# D): Time \u2248 0.2s overhead + steps \u00d7 per-step cost; per-step cost is a fixed part plus a part proportional to conv FLOPs (sum of squared stage widths), scaled by resolution\u00b2 and batch size. Cutout adds a little. Accuracy rises with log(epochs) and with model capacity (width), and falls with heavy regularization (cutout, label smoothing 0.2) at short s",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791111478.4571083,
+  "digest": "D004",
+  "plan": {
+    "question": "Why did narrowing the airbench96 net from 128/384/576 to 128/256/384 and raising epochs from 8.5 to 12 reach only 74.56% on CIFAR-100 (E009), when our models predicted 74.9-76.1%? E007 suggests the narrow net gains only about +0.5 pp from 10 to 12 epochs plus lighter regularization, while the wide net reaches 75.5% in 8.5 epochs. What mechanism makes narrow CNNs gain little from extra epochs in short-budget, many-class training? Candidates are a width-limited capacity or accuracy ceiling, wider nets being more sample efficient per step, a too-narrow final feature dimension for 100 classes, or LR/weight-decay settings that don't transfer across widths. Given those, is there a width/epoch trade-off (or an intermediate width such as 128/320/480 with a wide final stage) that beats the wide net's time?",
+    "queries": [
+      "compute-optimal width versus training steps CNN image classification scaling law",
+      "wider networks sample efficiency fewer epochs convergence speed",
+      "penultimate feature dimension bottleneck number of classes accuracy",
+      "hyperparameter transfer across width muP learning rate convolutional",
+      "fast training CIFAR-100 small budget width depth trade-off",
+      "train large then compress compute-efficient training"
+    ],
+    "rubric": [
+      "Measures accuracy as a joint function of model width (or parameters) and training steps/epochs under a fixed compute or time budget, ideally in a short or under-trained regime",
+      "Reports results on CIFAR-100 or another many-class image dataset with CNNs/ResNets, or gives a mechanism (capacity ceiling, sample efficiency vs width, feature-dimension bottleneck) that transfers to them",
+      "Gives quantitative guidance usable for choosing per-stage widths or epochs, such as scaling exponents, an optimal width-to-steps ratio, or which stage's width matters most",
+      "Or shows how optimal LR/weight decay/momentum shift with width, explaining why fixed hyperparameters underperform on narrower nets"
+    ],
+    "exclude": [
+      "Pretrained weights, transfer learning, fine-tuning or distillation from external/pretrained teachers",
+      "External or extra training data, synthetic data generation from outside models",
+      "Test-time augmentation or any use of the test set during training",
+      "Large-scale language-model-only scaling studies with no transferable CNN mechanism",
+      "Pruning/compression of already-trained models for inference speed only",
+      "Hardware clock/power manipulation"
+    ]
+  },
+  "cost": 0.5313
+}

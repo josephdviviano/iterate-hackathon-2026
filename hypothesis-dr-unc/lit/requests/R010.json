@@ -1,0 +1,36 @@
+{
+  "id": "R010",
+  "from": "committee",
+  "after": "E035",
+  "question": "None of our experiments has varied muon_ns_coefficients, so our world models have no evidence on this proposed change: New Lvl3 under H4.2, from D009 (C0094, C0095, C0099): a zero-cost accuracy-per-step lever. On tip E031, change only the Newton-Schulz polynomial coefficients. Replace the fixed airbench quintic (a, b, c) = (3.4445, -4.7750, 2.0315) with Polar-Express-style per-iteration coefficients at the same iteration count. First confirm the current count in the code; E025's notes suggest 3. Keep the same pre- What does the literature say about its effect in settings like ours, and what mechanism decides it? Our world models believe:\n  W31 (replays 89%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is steps times a per-step cost: width-driven per-sample compute plus about 12% fixed per-step overhead, so smaller batches are slower per sample. Low-res phases cut pixel compute (24px about 0.56x, 28px about 0.77x). Muon adds fixed time but gains accuracy. Accuracy rises with epochs and width. Cutout, translate4, random flip, off-optimal label smoothing and low-res phases cost accuracy. E016 looks like an outlier (noise or glitch), so it is not modeled.\n  W32 (replays 91%; premise: Assume what this literature digest (D007) reports holds in this task, and build on it:\n# D): Time = fixed ~0.7s + steps \u00d7 per-step cost. Per-step cost is affine in stage widths (c1, c2 dominate; c3 cheap), sublinear in batch (~bs^0.8), reduced by low-res phases (~78% of pixel-ratio saving), plus Muon overhead. Accuracy rises with epochs (saturating), width, and Muon (+0.8pt). It falls with cutout, translate4, random flip, label smoothing away from 0.1, and low-res phases (~0.5pt).\n  W33 (replays 91%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is steps times per-step cost: a fixed launch/optimizer overhead, Muon overhead, and a batch-proportional term made of a small constant plus conv FLOPs (from channel widths) scaled by the resolution curriculum, where low-res steps cost about half. Accuracy rises with effec",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791116179.8470361,
+  "digest": "D010",
+  "plan": {
+    "question": "Our Muon optimizer currently uses a fixed airbench quintic (3.4445, -4.7750, 2.0315) for Newton-Schulz, probably with about 3 iterations, on conv filters. If we switch to per-iteration minimax-optimal coefficients (Polar Express or similar) and keep the same iteration count, does that improve accuracy per step for a small CNN trained for about 9 epochs at batch 2048 in bf16? What decides the effect? Specifically: how the orthogonalization error (the singular-value spread after k iterations) depends on the coefficient schedule and the iteration count; whether a more exact polar factor helps or hurts optimization compared with the deliberately loose airbench/Keller quintic, which only maps singular values into roughly [0.7, 1.2]; whether bf16 stability needs safety margins or renormalization; and whether reported gains appear at very short horizons or low iteration counts, or only in LLM pretraining.",
+    "queries": [
+      "Polar Express optimal polynomial Newton-Schulz Muon",
+      "Muon Newton-Schulz coefficients orthogonalization accuracy",
+      "minimax polynomial polar decomposition bfloat16 iterations",
+      "Muon optimizer approximate orthogonalization error convergence",
+      "Muon CNN CIFAR speedrun Newton-Schulz iterations"
+    ],
+    "rubric": [
+      "Compares Newton-Schulz or polar-factor polynomial coefficient schedules (fixed quintic vs per-iteration/optimal) inside Muon or a similar orthogonalized-momentum optimizer, and reports a training-quality metric (loss or accuracy per step), not only matrix approximation error.",
+      "Reports the effect at a low iteration count (<= 5) or analyzes how approximation quality, such as the singular-value interval after k steps, maps onto optimization progress.",
+      "Covers low-precision (bf16) numerical stability of the iteration, e.g. safety factors, normalization, or divergence.",
+      "Preferably includes small-scale or vision/CNN experiments, or short-horizon training budgets, rather than only large LLM pretraining."
+    ],
+    "exclude": [
+      "Methods requiring pretrained weights or external data",
+      "Test-time augmentation or any use of the test set",
+      "Approaches needing new package installs beyond PyTorch 2.4.0 / torchvision 0.19.0",
+      "Distributed/multi-GPU-only Muon systems work with no single-GPU relevance",
+      "Classical numerical-analysis polar decomposition papers with no connection to optimizers or training"
+    ]
+  },
+  "cost": 0.8588
+}

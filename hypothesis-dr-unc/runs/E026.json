@@ -1,0 +1,28 @@
+{
+  "exp": "E026",
+  "commit": "383c312",
+  "pid": 1154923,
+  "start_ticks": 9118258,
+  "started": 1791114777.9137676,
+  "tag": "I032",
+  "description": "Exploit: make Muon cheap at equal math. Start from E025 (commit 50d39d6: E024 tip plus Muon on the block conv filters, lr ~0.24, momentum 0.6, nesterov; 0.7622 at 7.26 s). Change only how the Muon update is implemented, not what it computes. (a) Group the same-shape conv filters (block-2 conv2/conv3, block-3 conv2/conv3, and any others that match) and run Newton-Schulz on each stacked group as one batched bf16 bmm. (b) Put the whole Muon step (momentum update, nesterov blend, NS, renorm, param update) into the same compiled function as the fused foreach SGD+Lookahead update, inside the CUDA-graph-captured train step. Read the LR from the GPU step table. Momentum buffers stay persistent, are captured in build on synthetic data, and are zeroed in prepare. Check in a short synthetic test that the parameter delta matches E025's per-parameter loop to bf16 tolerance.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr-unc/runs/E026.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7628333333333334,
+    "time": 6.974250221333932,
+    "complete": true
+  },
+  "row": {
+    "exp": "E026",
+    "commit": "383c312",
+    "accuracy": 0.7628333333333334,
+    "time": 6.974250221333932,
+    "complete": true,
+    "feasible": "yes",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I032",
+    "description": "Exploit: make Muon cheap at equal math. Start from E025 (commit 50d39d6: E024 tip plus Muon on the block conv filters, lr ~0.24, momentum 0.6, nesterov; 0.7622 at 7.26 s). Change only how the Muon update is implemented, not what it computes. (a) Group the same-shape conv filters (block-2 conv2/conv3, block-3 conv2/conv3, and any others that match) and run Newton-Schulz on each stacked group as one batched bf16 bmm. (b) Put the whole Muon step (momentum update, nesterov blend, NS, renorm, param update) into the same compiled function as the fused foreach SGD+Lookahead update, inside the CUDA-graph-captured train step. Read the LR from the GPU step table. Momentum buffers stay persistent, are captured in build on synthetic data, and are zeroed in prepare. Check in a short synthetic test that the parameter delta matches E025's per-parameter loop to bf16 tolerance."
+  }
+}

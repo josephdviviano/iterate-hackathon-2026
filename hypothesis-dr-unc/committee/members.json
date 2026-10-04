@@ -1,0 +1,356 @@
+[
+  {
+    "id": "W1",
+    "premise": "Account for the objective as the sum of the costs of the process's parts. Derive each part's cost from the settings that scale it (sizes, counts, steps), and the constrained metrics from the budget those parts buy.",
+    "mechanisms": "Time is a fixed overhead (~1s: data upload, whitening init) plus steps times per-step cost (scales with batch size, resolution\u00b2, params); about 0.016 s/step on A100 with bf16 and compile. Accuracy rises with log of epochs/steps, drops with heavy regularization (cutout, label smoothing 0.2) at short schedules, and benefits from alternating flip, translation, EMA and whitening init.",
+    "status": "retired",
+    "born": "E006",
+    "replay": 0.667,
+    "attempts": 1,
+    "retired": "after E009: replays 67%"
+  },
+  {
+    "id": "W2",
+    "premise": "Prefer the simplest model that fits: each setting moves each metric by a fixed amount or factor, fitted from the experiments where only that setting changed.",
+    "mechanisms": "Time is roughly fixed overhead (~0.8s) plus linear in optimizer steps (~0.0165 s/step); cutout adds a small per-step cost. Accuracy rises with epochs (~0.9 pts per epoch near 10), heavy regularization (cutout, label smoothing 0.2) hurts at this short budget, and alternating flip beats random flip slightly.",
+    "status": "retired",
+    "born": "E006",
+    "replay": 0.667,
+    "attempts": 1,
+    "retired": "after E009: replays 67%"
+  },
+  {
+    "id": "W3",
+    "premise": "Assume interactions dominate: the effect of one setting depends on others. Find the pairs that matter in the data and model them explicitly.",
+    "mechanisms": "Time is roughly a fixed overhead (~0.8 s) plus per-step cost times optimizer steps (epochs\u00d750k/batch), scaled by batch size, resolution and model size. Accuracy rises about logarithmically with epochs. Cutout and heavy label smoothing hurt in very short schedules; alternating flip beats random flip slightly. Near the 0.753 threshold, seed noise (~0.002) decides outcomes.",
+    "status": "retired",
+    "born": "E006",
+    "replay": 0.667,
+    "attempts": 1,
+    "retired": "after E009: replays 67%"
+  },
+  {
+    "id": "W4",
+    "premise": "Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cliff past some setting. Locate the knees from the data.",
+    "mechanisms": "Time is roughly a fixed overhead plus linear in optimizer steps (about 17 ms/step at batch 1024), with a small cost for cutout. Accuracy saturates with epochs (about A minus c/epochs, with knee near 10 epochs). Cutout and heavy label smoothing 0.2 hurt in a short schedule. Alternating flip beats random flip. Translate augmentation helps.",
+    "status": "retired",
+    "born": "E006",
+    "replay": 0.667,
+    "attempts": 1,
+    "retired": "after E009: replays 67%"
+  },
+  {
+    "id": "W5",
+    "premise": "Start from the experiments that missed a constraint or failed to improve. Write the boundary that separates them from the rest first, then the objective inside it.",
+    "mechanisms": "Time is a small fixed overhead plus a per-optimizer-step cost (~17 ms per 1024-batch step), so steps dominate. Accuracy grows roughly logarithmically with total steps and falls with heavy regularization: cutout and label smoothing 0.2 hurt in this short schedule, as does random rather than alternating flip. The 75.3% boundary sits near 488 steps without cutout.",
+    "status": "retired",
+    "born": "E006",
+    "replay": 0.667,
+    "attempts": 1,
+    "retired": "after E009: replays 67%"
+  },
+  {
+    "id": "W6",
+    "premise": "Assume what this literature digest (D002) reports holds in this task, and build on it:\n# D002: E001 refuted H1.1.1. The airbench96-style 128/384/576 net at 8.5 epochs without TTA reached only 0.7304, about 2.3 pp below the 0.753 target, at 7.77 s. The prior evidence (PR #3: 9 epochs gave 75.6%) probably relied on TTA or on settings that differ from ours, and TTA is forbidden here. The open question is the cheapest way to recover about 2.3 pp of CIFAR-100 test accuracy in a short (~8-15 epoch) from-scratch run. The candidates are more epochs (how steep is the accuracy-vs-epochs curve in this regime?), more width or depth, and training-only changes. Those include EMA or weight averaging, label smoothing and augmentation strength for 100 classes, lr schedule and batch size, and alternating flip. The answer decides whether the next experiments run the epoch sweep (H1.1.2), scale width (the opposite direction of H1.2), or retune regularization (H4.1). We want published accuracy-vs-epoch and accuracy-vs-width numbers for fast CIFAR-100 training without TTA.\n\nRequest R002 (auto, after E001); 80 papers found, 7 relevant, 5 read in full, 13 verified claims; cost $0.64\n\n## Lit digest: recovering ~2.3 pp at an ~8-epoch CIFAR-100 budget\n\n**Bottom line:** none of the cards give accuracy-vs-epoch or accuracy-vs-width numbers for fast CIFAR-100 training without TTA. Every card is from a ResNet, EfficientNet or MobileNet run at 25\u2013100+ epochs. Our own runs already answer the question better than the papers do:\n\n- **Epochs:** going from 8.5 to 10 epochs (E001 \u2192 E002) gave about",
+    "mechanisms": "Time is roughly linear in optimizer steps (~18.5 ms/step on A100 with compile, bf16), slightly higher with cutout. Accuracy rises about 0.9 pp per epoch near 8\u201310 epochs with diminishing returns. Cutout hurts at this short budget (~1 pp), alternating flip beats random flip (~0.4 pp), label smoothing 0.1 beats 0.2 slightly. Seed noise is ~0.1\u20130.2 pp.",
+    "status": "retired",
+    "born": "E006",
+    "replay": 0.667,
+    "attempts": 1,
+    "retired": "after E009: replays 67%"
+  },
+  {
+    "id": "W7",
+    "premise": "Account for the objective as the sum of the costs of the process's parts. Derive each part's cost from the settings that scale it (sizes, counts, steps), and the constrained metrics from the budget those parts buy.",
+    "mechanisms": "Time is steps times per-step cost: a fixed overhead (~8 ms: launches, augmentation, optimizer/EMA) plus conv compute proportional to the sum of squared widths in stages 2 and 3, with lower resolution cutting compute. Accuracy rises logarithmically with steps and model width. Cutout and random (non-alternating) flip cost accuracy. Smaller nets give a large time saving but lose ~1.5 points, which the extra steps only partly recover.",
+    "status": "retired",
+    "born": "E009",
+    "replay": 0.6,
+    "attempts": 2,
+    "retired": "after E015: replays 60%"
+  },
+  {
+    "id": "W8",
+    "premise": "Prefer the simplest model that fits: each setting moves each metric by a fixed amount or factor, fitted from the experiments where only that setting changed.",
+    "mechanisms": "Time is roughly steps times a per-step cost that grows with model width/params (about 0.0085 + 0.0039 s per million params). Accuracy rises logarithmically with step count and falls with narrower networks. Cutout and random (non-alternating) flip cost a little accuracy at this short budget. Label smoothing 0.1 beats 0.2. Run-to-run noise is about 0.5%.",
+    "status": "retired",
+    "born": "E009",
+    "replay": 0.6,
+    "attempts": 1,
+    "retired": "after E015: replays 60%"
+  },
+  {
+    "id": "W9",
+    "premise": "Assume what this literature digest (D003) reports holds in this task, and build on it:\n# D003: None of our experiments has varied low_res_input_resolution, low_res_step_fraction, resize_mode, so our world models have no evidence on this proposed change: Explore. Rewrite of I009 onto the current best recipe. Start from E004 (10 epochs, no cutout). Change only the resolution schedule: for the first 50% of steps, downsample each augmented batch to 24x24 (F.interpolate, bilinear, antialias=False) after flip and translate. The remaining steps run at 32 px. Keep the LR schedule tied to step count. Compile and capture CUDA graphs for both input shapes o What does the literature say about its effect in settings like ours, and what mechanism decides it? Our world models believe:\n  W1 (replays 100%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is a fixed overhead (~1s: data upload, whitening init) plus steps times per-step cost (scales with batch size, resolution\u00b2, params); about 0.016 s/step on A100 with bf16 and compile. Accuracy rises with log of epochs/steps, drops with heavy regularization (cutout, label smoothing 0.2) at short schedules, and benefits from alternating flip, translation, EMA and whitening init.\n  W2 (replays 100%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is roughly fixed overhead (~0.8s) plus linear in optimizer steps (~0.0165 s/step); cutout adds a small per-step cost. Accuracy rises with epochs (~0.9 pts per epoch near 10)",
+    "mechanisms": "Time \u2248 0.2s overhead + steps \u00d7 per-step cost; per-step cost is a fixed part plus a part proportional to conv FLOPs (sum of squared stage widths), scaled by resolution\u00b2 and batch size. Cutout adds a little. Accuracy rises with log(epochs) and with model capacity (width), and falls with heavy regularization (cutout, label smoothing 0.2) at short schedules and with random instead of alternating flip.",
+    "status": "retired",
+    "born": "E009",
+    "replay": 0.6,
+    "attempts": 1,
+    "retired": "after E015: replays 60%"
+  },
+  {
+    "id": "W10",
+    "premise": "Assume interactions dominate: the effect of one setting depends on others. Find the pairs that matter in the data and model them explicitly.",
+    "mechanisms": "Time is roughly steps \u00d7 (fixed per-step overhead + cost proportional to sum of squared channel widths). Accuracy rises logarithmically with step count and model width. Cutout and plain random flip cost accuracy compared with alternating flip, and label smoothing 0.2 is worse than 0.1. E008 matches E004 on every listed setting but measured faster and less accurate. I think a hidden setting causes this, and this model can't capture it.",
+    "status": "retired",
+    "born": "E009",
+    "replay": 0.6,
+    "attempts": 2,
+    "retired": "after E015: replays 60%"
+  },
+  {
+    "id": "W11",
+    "premise": "Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cliff past some setting. Locate the knees from the data.",
+    "mechanisms": "Time is roughly steps times a per-step cost that grows with parameter count (width), plus small overhead. Accuracy saturates exponentially with epochs, drops with narrower networks (~1.2 points per halving of params), and with cutout or random (non-alternating) flip. Accuracy near 75.3% is the knee: only the wide net at 10 epochs without cutout clears it.",
+    "status": "retired",
+    "born": "E009",
+    "replay": 0.6,
+    "attempts": 1,
+    "retired": "after E015: replays 60%"
+  },
+  {
+    "id": "W12",
+    "premise": "Start from the experiments that missed a constraint or failed to improve. Write the boundary that separates them from the rest first, then the objective inside it.",
+    "mechanisms": "Time is roughly steps \u00d7 per-step cost; per-step cost grows with parameter count (width) and slightly with cutout or random flip. Accuracy rises logarithmically with epochs and with model size. Cutout, higher label smoothing (0.2) and random flip instead of alternating flip lower accuracy at this short schedule. The 0.753 threshold separates the 10-epoch wide model from the narrower or shorter ones.",
+    "status": "retired",
+    "born": "E009",
+    "replay": 0.6,
+    "attempts": 1,
+    "retired": "after E015: replays 60%"
+  },
+  {
+    "id": "W13",
+    "premise": "Account for the objective as the sum of the costs of the process's parts. Derive each part's cost from the settings that scale it (sizes, counts, steps), and the constrained metrics from the budget those parts buy.",
+    "mechanisms": "Time is steps times per-step cost. Per-step cost grows with stage-2 and stage-3 widths, scales roughly linearly with batch size plus a ~15% fixed overhead, and has a small cutout surcharge. Low-resolution early steps cut the cost by about 30% of the compute they cover. Accuracy depends on the epoch budget, model width, label smoothing near 0.1 and lighter translation. Cutout, random flip and low-res downsampling each cost accuracy.",
+    "status": "retired",
+    "born": "E015",
+    "replay": 0.789,
+    "attempts": 1,
+    "retired": "after E019: replays 79%"
+  },
+  {
+    "id": "W14",
+    "premise": "Prefer the simplest model that fits: each setting moves each metric by a fixed amount or factor, fitted from the experiments where only that setting changed.",
+    "mechanisms": "Time scales with total samples processed (steps \u00d7 batch) times a per-sample cost that grows with the later-stage channel widths. Small batches add a little overhead. Cutout adds a little. Low-res early phase via resizing cuts time about 16% but costs about 0.5 points of accuracy. Accuracy rises logarithmically with epochs, falls with narrower nets, cutout, random flip and zero or heavy label smoothing, and rises slightly with weaker translation.",
+    "status": "retired",
+    "born": "E015",
+    "replay": 0.842,
+    "attempts": 1,
+    "retired": "after E019: replays 84%"
+  },
+  {
+    "id": "W15",
+    "premise": "Assume what this literature digest (D004) reports holds in this task, and build on it:\n# D004: What mechanism explains this result, which none of our verified world models predicted? E009: Explore. Rewrite of I008 onto the current best recipe. Start from E004 (no cutout, LS 0.1, alternating flip, max-autotune + CUDA graph). Change only the widths, from 128/384/576 to 128/256/384 (same 3 convs per block), and set the epochs to 12 (schedule rescaled) to make up for the lower capacity. Estimated conv FLOPs per epoch are ~0.62x of the wide net. Outcome: infeasible, {\"accuracy\": 0.7455666666666666, \"time\": 7.440111936996497, \"complete\": true}. Our world models believe:\n  W7 (replays 89%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is steps times per-step cost: a fixed overhead (~8 ms: launches, augmentation, optimizer/EMA) plus conv compute proportional to the sum of squared widths in stages 2 and 3, with lower resolution cutting compute. Accuracy rises logarithmically with steps and model width. Cutout and random (non-alternating) flip cost accuracy. Smaller nets give a large time saving but lose ~1.5 points, which the extra steps only partly recover.\n  W8 (replays 89%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is roughly steps times a per-step cost that grows with model width/params (about 0.0085 + 0.0039 s per million params). Accuracy rises logarithmically with step count and falls with narrower networks. Cutout and random (non-alternat",
+    "mechanisms": "Time = steps \u00d7 per-step cost: fixed ~2 ms overhead plus conv compute scaling with squared stage-2/3 widths and batch size; a resize-based low-resolution first phase cuts cost ~17%. Accuracy rises logarithmically with epochs, falls with narrower stages, cutout, non-alternating flip, translate4 versus translate2, zero label smoothing, and downsampled-training interpolation. Batch size 768 versus 1024 barely changes accuracy at equal epochs.",
+    "status": "retired",
+    "born": "E015",
+    "replay": 0.842,
+    "attempts": 1,
+    "retired": "after E019: replays 84%"
+  },
+  {
+    "id": "W16",
+    "premise": "Assume interactions dominate: the effect of one setting depends on others. Find the pairs that matter in the data and model them explicitly.",
+    "mechanisms": "Time is roughly steps \u00d7 per-step cost. Per-step cost grows with the stage-2 and stage-3 widths, scales mostly with batch size, and drops about 16% when half the steps run at 24px resolution. Accuracy rises with epochs, with diminishing returns. It falls with narrower stages, cutout, random flip, low-res training, and label smoothing away from 0.1. Light translation (2px) helps. Interactions: width\u00d7epochs and resolution\u00d7steps.",
+    "status": "retired",
+    "born": "E015",
+    "replay": 0.842,
+    "attempts": 1,
+    "retired": "after E019: replays 84%"
+  },
+  {
+    "id": "W17",
+    "premise": "Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cliff past some setting. Locate the knees from the data.",
+    "mechanisms": "Time is steps times per-step cost; per-step cost scales with conv widths (stage 2 and 3 dominate) and mildly sublinearly with batch size. A low-res early phase cuts time about 16%, but costs about 0.5% accuracy. Accuracy rises with epochs, with diminishing returns past 10, and falls with narrower channels. Milder translation helps. Cutout, random flip and label smoothing away from 0.1 hurt. The 75.3% threshold sits at a knee.",
+    "status": "retired",
+    "born": "E015",
+    "replay": 0.789,
+    "attempts": 1,
+    "retired": "after E019: replays 79%"
+  },
+  {
+    "id": "W18",
+    "premise": "Start from the experiments that missed a constraint or failed to improve. Write the boundary that separates them from the rest first, then the objective inside it.",
+    "mechanisms": "Time is proportional to optimizer steps \u00d7 batch size, scaled by model width (mid/late channels), with a small per-step overhead. Downsampled-resize modes cut time about 16% but cost about 0.6 points of accuracy. Accuracy rises with epochs and width, and falls with cutout, random flip, large translate and extreme label smoothing. The 0.753 accuracy boundary separates feasible runs from the rest.",
+    "status": "retired",
+    "born": "E015",
+    "replay": 0.842,
+    "attempts": 1,
+    "retired": "after E019: replays 84%"
+  },
+  {
+    "id": "W19",
+    "premise": "Account for the objective as the sum of the costs of the process's parts. Derive each part's cost from the settings that scale it (sizes, counts, steps), and the constrained metrics from the budget those parts buy.",
+    "mechanisms": "Time is a fixed ~0.4s plus steps times (per-step launch overhead + conv FLOPs scaled by batch size and channel widths), cut by low-resolution phases; cutout adds a little. Accuracy comes from epochs (diminishing returns past 10), network width (especially the last block), light augmentation and label smoothing 0.1, with a penalty for low-resolution phases. Narrowing the net or using low-res buys speed but drops accuracy below the 0.753 target.",
+    "status": "retired",
+    "born": "E019",
+    "replay": 0.72,
+    "attempts": 1,
+    "retired": "after E025: replays 72%"
+  },
+  {
+    "id": "W20",
+    "premise": "Prefer the simplest model that fits: each setting moves each metric by a fixed amount or factor, fitted from the experiments where only that setting changed.",
+    "mechanisms": "Time is steps times per-step cost, which grows with the squared conv widths (stage 1 most per channel) and sub-linearly with batch size. Low-resolution phases cut time by a fraction of the steps they cover. Accuracy rises with epochs (diminishing returns) and width, and falls with cutout, random flip, and low-res phases. Light translate and label smoothing of about 0.1 help.",
+    "status": "retired",
+    "born": "E019",
+    "replay": 0.8,
+    "attempts": 1,
+    "retired": "after E025: replays 80%"
+  },
+  {
+    "id": "W21",
+    "premise": "Assume what this literature digest (D005) reports holds in this task, and build on it:\n# D005: What mechanism explains this result, which none of our verified world models predicted? E015: Explore whether progress is limited by steps or by samples. On E004, change only the batch size, from 1024 to 768, at equal epochs. Under linear scaling, scale the per-step LR by 768/1024, keep wd per sample as airbench defines it, and tie the schedule to the new step count. Recapture the CUDA graph for the new shape in build and handle the last partial batch the same way as now. Outcome: not-improved, {\"accuracy\": 0.7563, \"time\": 8.090300401328326, \"complete\": true}. Our world models believe:\n  W13 (replays 100%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is steps times per-step cost. Per-step cost grows with stage-2 and stage-3 widths, scales roughly linearly with batch size plus a ~15% fixed overhead, and has a small cutout surcharge. Low-resolution early steps cut the cost by about 30% of the compute they cover. Accuracy depends on the epoch budget, model width, label smoothing near 0.1 and lighter translation. Cutout, random flip and low-res downsampling each cost accuracy.\n  W14 (replays 100%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time scales with total samples processed (steps \u00d7 batch) times a per-sample cost that grows with the later-stage channel widths. Small batches add a little overhead. Cutout adds a little. Low-res early phase via resiz",
+    "mechanisms": "Time is steps times per-step cost; per-step cost is a fixed overhead plus conv FLOPs (stage-1 width at 32x32 matters most), scaling sublinearly with batch size. Low-res phases cut compute by resolution squared. Accuracy rises with log epochs, falls with narrower stages (esp. stage 1/3), cutout, random flip, low-res phases, and label smoothing away from 0.1; lighter translation helps. Batch size barely affects accuracy.",
+    "status": "retired",
+    "born": "E019",
+    "replay": 0.72,
+    "attempts": 1,
+    "retired": "after E025: replays 72%"
+  },
+  {
+    "id": "W22",
+    "premise": "Assume interactions dominate: the effect of one setting depends on others. Find the pairs that matter in the data and model them explicitly.",
+    "mechanisms": "Time \u2248 steps \u00d7 per-step cost (fixed overhead plus conv FLOPs, scaled by batch size). Low-resolution phases cut cost of those steps (cost \u2248 0.2 + 0.8\u00b7(res/32)\u00b2) but cost accuracy, more so with three phases, so they usually miss 75.3%. Accuracy rises with width and epochs; translate4, cutout, random flip and extreme label smoothing hurt. E016 (same config as E012, much slower and worse) looks like an unmodeled hidden change.",
+    "status": "retired",
+    "born": "E020",
+    "replay": 0.84,
+    "attempts": 2,
+    "retired": "after E025: replays 84%"
+  },
+  {
+    "id": "W23",
+    "premise": "Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cliff past some setting. Locate the knees from the data.",
+    "mechanisms": "Time is steps (epochs*50000/batch) times per-step cost, which is affine in the three stage widths (c1 and c2 dominate) and sublinear in batch size. Low-resolution phases cut cost by pixel ratio. Accuracy rises with epochs and saturates, falls with narrower widths, heavier augmentation (cutout, translate4), random flip, label smoothing away from 0.1, and low-res fraction. Knee near 75.3%.",
+    "status": "retired",
+    "born": "E020",
+    "replay": 0.793,
+    "attempts": 2,
+    "retired": "after E029: replays 79%"
+  },
+  {
+    "id": "W24",
+    "premise": "Start from the experiments that missed a constraint or failed to improve. Write the boundary that separates them from the rest first, then the objective inside it.",
+    "mechanisms": "Time is steps times per-step cost: a fixed overhead plus compute proportional to conv FLOPs (channel widths weighted by stage resolution) and batch size; cutout adds cost; low-resolution phases cut compute. Accuracy rises with log epochs and width, falls with cutout, random flip, large translation, no label smoothing, and low-res curriculum. Target 0.753 is near the edge, so small changes flip feasibility.",
+    "status": "retired",
+    "born": "E020",
+    "replay": 0.72,
+    "attempts": 1,
+    "retired": "after E025: replays 72%"
+  },
+  {
+    "id": "W25",
+    "premise": "Account for the objective as the sum of the costs of the process's parts. Derive each part's cost from the settings that scale it (sizes, counts, steps), and the constrained metrics from the budget those parts buy.",
+    "mechanisms": "Time is roughly steps \u00d7 batch \u00d7 per-sample compute (conv FLOPs across the three stages, scaled down by the low-resolution phases) plus a small per-step overhead and a fixed cost. Muon and cutout add overhead. Accuracy rises with epochs and width. Low-resolution phases, cutout, translate4, random flip and no label smoothing cost accuracy. Muon adds accuracy. The 75.3% threshold sits close to most runs, so feasibility is marginal.",
+    "status": "retired",
+    "born": "E025",
+    "replay": 0.846,
+    "attempts": 1,
+    "retired": "after E026: replays 85%"
+  },
+  {
+    "id": "W26",
+    "premise": "Prefer the simplest model that fits: each setting moves each metric by a fixed amount or factor, fitted from the experiments where only that setting changed.",
+    "mechanisms": "Time is roughly proportional to epochs times per-epoch cost, which grows with conv FLOPs (stage widths weighted by spatial resolution). A low-resolution early phase cuts cost by about 36% of the fraction used. Muon adds a fixed overhead. Accuracy rises with log epochs and width, and falls with low-res phases and cutout. It is also hurt by heavy label smoothing and random flip, and helped by smaller translation and by Muon.",
+    "status": "retired",
+    "born": "E025",
+    "replay": 0.846,
+    "attempts": 1,
+    "retired": "after E026: replays 85%"
+  },
+  {
+    "id": "W27",
+    "premise": "Assume interactions dominate: the effect of one setting depends on others. Find the pairs that matter in the data and model them explicitly.",
+    "mechanisms": "Time scales with total samples processed (steps \u00d7 batch size) times a width factor (mid-layer channels dominate), reduced by low-resolution phases. Accuracy rises with effective epochs (from steps, not the epochs label) and width, falls with heavy augmentation (cutout, translate4), and falls slightly with low-res fraction. Label smoothing near 0.1 is best, and Muon adds accuracy and some time. Some runs, such as E016, are unexplained outliers.",
+    "status": "retired",
+    "born": "E025",
+    "replay": 0.793,
+    "attempts": 2,
+    "retired": "after E029: replays 79%"
+  },
+  {
+    "id": "W28",
+    "premise": "Start from the experiments that missed a constraint or failed to improve. Write the boundary that separates them from the rest first, then the objective inside it.",
+    "mechanisms": "Time is roughly epochs times a per-epoch cost that grows with conv FLOPs (the last stage counts at half weight), plus a per-step overhead. The low-resolution phase cuts that cost by (24/32)^2 over its fraction of steps, plus a fixed resize overhead. Muon adds about 0.8 s. Accuracy rises with effective epochs and log FLOPs. It falls with a narrow first layer, with cutout, with random flip or translate4, with label smoothing outside 0.05\u20130.15, and with low-res phases. Muon adds about 0.8 points.",
+    "status": "retired",
+    "born": "E025",
+    "replay": 0.828,
+    "attempts": 2,
+    "retired": "after E029: replays 83%"
+  },
+  {
+    "id": "W29",
+    "premise": "Assume what this literature digest (D006) reports holds in this task, and build on it:\n# D006: What mechanism explains this result, which none of our verified world models predicted? E019: Explore the remaining cheap width axis. Per the FLOP accounting, after narrowing block 2, block 1 (128 ch at 32x32, ~0.45 GMACs) is about 35% of E012's conv FLOPs. On E012 (11 epochs, translate 4), change only the widths from 128/256/576 to 96/256/576, keeping 3 convs per block and the whitening output feeding block 1. E012 suggests that block-3 width carries the capacity 100 classes need, and tha Outcome: infeasible, {\"accuracy\": 0.7514666666666666, \"time\": 6.963800710334908, \"complete\": true}. Our world models believe:\n  W19 (replays 90%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is a fixed ~0.4s plus steps times (per-step launch overhead + conv FLOPs scaled by batch size and channel widths), cut by low-resolution phases; cutout adds a little. Accuracy comes from epochs (diminishing returns past 10), network width (especially the last block), light augmentation and label smoothing 0.1, with a penalty for low-resolution phases. Narrowing the net or using low-res buys speed but drops accuracy below the 0.753 target.\n  W20 (replays 95%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is steps times per-step cost, which grows with the squared conv widths (stage 1 most per channel) and sub-linearly with batch size. Low-resolution phases cut time by a fracti",
+    "mechanisms": "Time \u2248 0.5s plus samples processed (epochs\u00d750k) times per-sample cost, which is affine in conv MACs (stage widths at 32\u00b2, 16\u00b2, 8\u00b2 resolution), cut by low-res phases in proportion to pixel count; cutout and Muon add overhead. Accuracy rises logarithmically with epochs and with width (last block most), is helped by light augmentation (translate2) and label smoothing 0.1, Muon, and hurt by cutout and low-res phases. Batch size has little effect at equal epochs.",
+    "status": "retired",
+    "born": "E025",
+    "replay": 0.846,
+    "attempts": 1,
+    "retired": "after E026: replays 85%"
+  },
+  {
+    "id": "W30",
+    "premise": "Account for the objective as the sum of the costs of the process's parts. Derive each part's cost from the settings that scale it (sizes, counts, steps), and the constrained metrics from the budget those parts buy.",
+    "mechanisms": "Time = per-epoch compute (conv FLOPs from channel widths plus a first-layer activation/memory term) times epochs, scaled by a resolution-curriculum factor (24px phases cost ~0.56x) plus resize/selection overhead, plus per-step overhead (smaller batches cost more), plus Muon cost. Accuracy rises with epochs and width, falls with low-res phases, cutout, random flip, off-optimal label smoothing; Muon adds accuracy.",
+    "status": "retired",
+    "born": "E026",
+    "replay": 0.793,
+    "attempts": 2,
+    "retired": "after E029: replays 79%"
+  },
+  {
+    "id": "W31",
+    "premise": "Prefer the simplest model that fits: each setting moves each metric by a fixed amount or factor, fitted from the experiments where only that setting changed.",
+    "mechanisms": "Time is steps times a per-step cost: width-driven per-sample compute plus about 12% fixed per-step overhead, so smaller batches are slower per sample. Low-res phases cut pixel compute (24px about 0.56x, 28px about 0.77x). Muon adds fixed time but gains accuracy. Accuracy rises with epochs and width. Cutout, translate4, random flip, off-optimal label smoothing and low-res phases cost accuracy. E016 looks like an outlier (noise or glitch), so it is not modeled.",
+    "status": "active",
+    "born": "E026",
+    "replay": 0.902,
+    "attempts": 2
+  },
+  {
+    "id": "W32",
+    "premise": "Assume what this literature digest (D007) reports holds in this task, and build on it:\n# D007: None of our experiments has varied muon_learning_rate, muon_momentum, so our world models have no evidence on this proposed change: Exploit: spend Muon's accuracy gain on epochs. Start from the I032 result if it was kept as the Muon base, otherwise from E025 (commit 50d39d6). Change only the epoch count, from 11 to 9.5. Rescale the LR, Lookahead and Muon schedules to the new step count so they still anneal fully, and keep the 24 px phase at the first 50% of steps. Report per-seed accuracy. If the 3-seed mean margin over 0.753  What does the literature say about its effect in settings like ours, and what mechanism decides it? Our world models believe:\n  W23 (replays 92%; premise: Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cli): Time is steps (epochs*50000/batch) times per-step cost, which is affine in the three stage widths (c1 and c2 dominate) and sublinear in batch size. Low-resolution phases cut cost by pixel ratio. Accuracy rises with epochs and saturates, falls with narrower widths, heavier augmentation (cutout, translate4), random flip, label smoothing away from 0.1, and low-res fraction. Knee near 75.3%.\n  W25 (replays 88%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is roughly steps \u00d7 batch \u00d7 per-sample compute (conv FLOPs across the three stages, scaled down by the low-resolution phases) plus a small per-step overhead and a fixed cost. Muon and cutout add",
+    "mechanisms": "Time = fixed ~0.7s + steps \u00d7 per-step cost. Per-step cost is affine in stage widths (c1, c2 dominate; c3 cheap), sublinear in batch (~bs^0.8), reduced by low-res phases (~78% of pixel-ratio saving), plus Muon overhead. Accuracy rises with epochs (saturating), width, and Muon (+0.8pt). It falls with cutout, translate4, random flip, label smoothing away from 0.1, and low-res phases (~0.5pt).",
+    "status": "active",
+    "born": "E027",
+    "replay": 0.927,
+    "attempts": 2
+  },
+  {
+    "id": "W33",
+    "premise": "Account for the objective as the sum of the costs of the process's parts. Derive each part's cost from the settings that scale it (sizes, counts, steps), and the constrained metrics from the budget those parts buy.",
+    "mechanisms": "Time is steps times per-step cost: a fixed launch/optimizer overhead, Muon overhead, and a batch-proportional term made of a small constant plus conv FLOPs (from channel widths) scaled by the resolution curriculum, where low-res steps cost about half. Accuracy rises with effective epochs (steps\u00d7batch) and with layer widths. It falls with low-res fraction, cutout, translate4, random flip and label smoothing away from 0.1. Muon adds about 1%.",
+    "status": "active",
+    "born": "E031",
+    "replay": 0.927,
+    "attempts": 2
+  },
+  {
+    "id": "W34",
+    "premise": "Assume interactions dominate: the effect of one setting depends on others. Find the pairs that matter in the data and model them explicitly.",
+    "mechanisms": "Time \u2248 epochs \u00d7 per-epoch compute (grows with stage widths, mostly w1/w2) \u00d7 low-res discount (savings \u221d step fraction \u00d7 (1\u2212(res/32)\u00b2)) \u00d7 mild large-batch gain \u00d7 Muon overhead. Accuracy rises with epochs (diminishing), width, and Muon; it falls with heavier augmentation (cutout, translate4, random flip), label-smoothing extremes, and low-res step fraction (convex, rising steeply beyond 0.5). The 0.753 threshold decides feasibility.",
+    "status": "active",
+    "born": "E031",
+    "replay": 0.976,
+    "attempts": 2
+  },
+  {
+    "id": "W35",
+    "premise": "Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cliff past some setting. Locate the knees from the data.",
+    "mechanisms": "Time \u2248 fixed 0.1 s + steps \u00d7 (2 ms per-step overhead + per-sample cost from conv FLOPs across the three blocks, scaled by pixel count in low-res phases, + Muon overhead). Steps come from epochs, not the train_steps field. Accuracy saturates with epochs and width, and falls off sharply with low-res fraction. Cutout, random flip, large translate, and extreme label smoothing each cost accuracy. Muon adds about +1%.",
+    "status": "active",
+    "born": "E031",
+    "replay": 0.951,
+    "attempts": 2
+  },
+  {
+    "id": "W36",
+    "premise": "Assume what this literature digest (D008) reports holds in this task, and build on it:\n# D008: None of our experiments has varied muon_learning_rate, muon_momentum, so our world models have no evidence on this proposed change: Exploit: spend Muon's margin on resize, the cheapest accuracy-for-time lever. Resize costs ~0.4 pp/s (E008/E013/E018); cutting epochs costs ~0.75 pp/s (E020). Start from the I032 result if it was kept as the fused-Muon base, otherwise from E025 (commit 50d39d6: E024 tip plus Muon on the block conv filters, lr 0.24, momentum 0.6, 11 ep, batch 1536). Change only the 24 px fraction, from the first 50 What does the literature say about its effect in settings like ours, and what mechanism decides it? Our world models believe:\n  W23 (replays 88%; premise: Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cli): Time is steps (epochs*50000/batch) times per-step cost, which is affine in the three stage widths (c1 and c2 dominate) and sublinear in batch size. Low-resolution phases cut cost by pixel ratio. Accuracy rises with epochs and saturates, falls with narrower widths, heavier augmentation (cutout, translate4), random flip, label smoothing away from 0.1, and low-res fraction. Knee near 75.3%.\n  W27 (replays 88%; premise: Assume interactions dominate: the effect of one setting depends on others. Find the pairs ): Time scales with total samples processed (steps \u00d7 batch size) times a width factor (mid-layer channels dominate), reduced by low-resolution phases. Accuracy rises with effective epochs (from steps, ",
+    "mechanisms": "Time is roughly samples processed (epochs\u00d750k) times a per-sample cost affine in stage widths (c1, c2 dominate), a mild small-batch inefficiency, and ~35% savings scaled by low-res fraction, plus ~1.6 ms/step Muon overhead. Accuracy rises ~0.5pp per epoch, with width, Muon (+~1pp), light translate2 and label smoothing 0.1; cutout, translate4, random flip hurt; low-res fraction costs convexly (steep beyond 0.5).",
+    "status": "active",
+    "born": "E030",
+    "replay": 0.902,
+    "attempts": 1
+  }
+]

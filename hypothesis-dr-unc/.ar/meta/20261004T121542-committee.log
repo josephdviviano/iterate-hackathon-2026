@@ -1,0 +1,70 @@
+round 20 (update): 6/6 verified members on 35 experiments, 8 ideas voted; vetoed I050; vetoed I056; raised I057 (outside the evidence)
+R010 -> D010
+H3.2.5->refuted, H3.2.3->refuted, H3.2.2->retired, H4.1.3->supported, H4.1.2->retired, H4.1.4->retired, H4.2->supported, H4.2.1->supported, H4.4.2->refuted, H5.1.1->retired, +H6, +H6.1, +H6.1.1, +H6.1.2, +H6.2, +H6.2.1, +H6.3, +H6.3.1, +H6.3.2, +H2.5, +H2.5.1, +H1.2.7, +H4.1.5, +H3.2.7, +H3.2.8. I revised the tree with the Muon-era results E025–E035 and the review's corrections.
+
+**Status and wording fixes**
+- **Muon:** H4.2 and H4.2.1 are now supported at 0.85. E025 and E026 independently show about +0.8 pp, and E030 and E033 moved to the hypotheses they actually test.
+- **Batch size (H4.4):** restated as true under SGD only, since E032 contradicts it under Muon. H4.4.2 is closed because E024 already answered it (-3.1%, just short of its 4% threshold).
+- **Resize (H3 / H3.2):** rewritten as nonlinear and dependent on the optimizer. H3.2.5 is refuted by E029 and H3.2.3 is refuted by E018. E034 is relabeled inconclusive because the I047 rationale behind its comparison mixed units: 0.31 is pp per epoch, and the real epoch-cut rate under Muon is about 0.56 pp/s.
+- **Translate:** H4.1.3 is supported. E011 under SGD and E030 under Muon agree in direction.
+- **Block widths:** confidence in H1.2 and H5.2 is lowered. The only evidence that block-3 width matters, E021, is within noise and may be confounded with a translate change.
+- **LR schedule (H4.5 / H4.5.1):** rewritten to first read the actual LR end value. The E035 post-mortem says about 7% of peak, while the tree assumed 0.
+- **Retired:** stale nodes built on the old SGD bases (H5.1.1, H4.1.2, H4.1.4, H3.2.2).
+- **Re-anchored:** the remaining open Lvl3s now point at the Muon tip E031, and H2's step-time numbers are updated to about 25 ms per step, of which about 1.66 ms is Muon.
+
+**New hypotheses**
+- **New Lvl1 H6:** Muon's fixed-size steps make step count and weight averaging first-order. This accounts for the Muon gain (E025), the cost of removing Lookahead (E035) and the batch-3072 loss (E032). It has three branches:
+  - H6.1, averaging: a Lookahead sweep and a Fable-style EMA tail.
+  - H6.2, step count: batch 3072 with Lookahead cadence held fixed per example, to separate averaging from step size.
+  - H6.3, Muon constants: lr 0.20 with momentum 0.65, and Polar Express coefficients with update size matched. The second is pre-registered as a likely null.
+- **H2.5:** Newton-Schulz iteration cuts as a time lever.
+- **H1.2.7:** check the commits for the translate confound, then test block 3 at 576 vs 704 on the Muon tip with replication.
+- **H4.1.5:** translate 1 under Muon.
+- **H3.2.7:** tests whether E029's resize threshold comes from too little training at the 32 px test resolution, via a 32 px phase mid-run or a BN recalibration.
+- **H3.2.8:** a replicated head-to-head of resize vs epoch cuts.
+
+**Committee counterexamples**
+- **E013:** possibly the translate confound.
+- **E014:** within noise.
+- **E015:** per-step overhead.
+- **E016:** proxy launch overhead plus hard-example selection.
+- **E019:** block-1 time does not track its FLOPs.
+
+The committee is wrong 60% of the time when it is unanimous, so its consensus shouldn't be trusted.
+
+**Top priority:** H1.1.3. Rerun E031 twice and E028 once, and pool them to measure the noise floor. E031's +0.21 pp margin triggered the loop's own rerun rule, which was skipped, and E032–E035 were judged against it.
+added I058, I059, I060, I061, I062, I063; dropped none. I added 6 ideas, which brings the queue to 7 with I057 still running. The tip is still E031: 5.43 s at a pooled accuracy of 0.7547, a margin of only +0.17 pp.
+
+Since E033 through E040, five axes are closed:
+- Muon learning rate (bracketed at 0.24)
+- translate amplitude (2 px is the optimum)
+- sharper Newton-Schulz coefficients
+- batch 3072
+- 75% of steps at 24 px
+
+The Lookahead decay test (E039) was inconclusive, so that is left alone too.
+
+**Direct time cuts (2 ideas)**
+- **Fewer Newton-Schulz iterations (H2.5.1, priority 5).** One fewer iteration at the same coefficients, with a profile of the per-step cost done first. E036's lesson is that looser orthogonalization is tolerated or even helps, so I expect about 0.05–0.12 s saved at flat accuracy.
+- **Block 3 narrowed from 704 to 576 (H1.2.7, priority 4).** This cuts both conv FLOPs and the largest Newton-Schulz matrix, for about 0.3–0.45 s saved. Whether block 3 still binds under Muon has never been tested. Even if this run misses 0.753, the accuracy lost per second saved tells us whether narrowing beats cutting epochs (about 0.56 pp/s).
+
+**Zero-cost margin builders (3 ideas)**
+- **LR schedule ends at 0 instead of 7% of peak (H4.5.1).**
+- **An EMA tail added on top of Lookahead (H6.1.2).**
+- **Muon momentum raised from 0.6 to 0.7 (H6.3).**
+
+I picked these because averaging is the strongest lever on the Muon line (removing Lookahead cost 0.81 pp in E035), and none of them adds time per step. Whatever margin they buy goes into an epoch cut next.
+
+**Explore (1 idea)**
+- **Code check for the airbench96 residual in each block (H1.2.6).** It is a no-op if the code already has it.
+
+Two seed-matched reruns (E031 and E038) differed by only 0.07 pp, so a difference of about 0.2 pp between recipes now counts as meaningful.
+
+**Deliberately not queued:**
+- The 40%-at-24 px plus 8.0-epoch combination and block 2 at 192: all six world models predicted both would miss the accuracy target.
+- Re-testing batch 3072 with the Lookahead cadence held fixed: even a full recovery stays infeasible.
+- Polar-Express coefficients with matched update size: E036 already showed sharpening hurts.
+- Translate 1 px only during the 24 px phase: E037 showed 1 px hurts.
+
+Nothing was dropped, because no other idea is still queued.
+round 21 (forecast): 6/6 verified members on 35 experiments, 6 ideas voted; vetoed I059

@@ -1,0 +1,32 @@
+round 4 (update): 0/6 verified members on 1 experiments, 0 ideas voted
+R002 -> D002
+added I010, I011; dropped I009; skipped ideas for unknown/closed H4.1 (new Lvl3 H4.1.2: at 10 ep with no cutout, removing label smoothing entirely raises 3-seed accuracy by >= 0.3 pp), H4.1 (new Lvl3 H4.1.3: at 10 ep, cutting translate from 4 px to 2 px raises 3-seed accuracy by >= 0.3 pp), H1.1.2 (new Lvl3 H1.1.3: on the regularization-tuned recipe, the slope stays ~0.8-0.9 pp/epoch and time ~0.9 s/epoch, so the 0.753 crossing sits near 9.7-9.8 epochs), H4 (new Lvl2 H4.4: in the compute-bound, under-fitting regime, smaller batches give more optimizer steps per epoch at nearly the same s/epoch; new Lvl3 H4.4.1), H4 (new Lvl2 H4.5: airbench's CIFAR-10 peak LR is too low for the 100-class short run; new Lvl3 H4.5.1: +30% peak LR raises accuracy >= 0.3 pp at 10 ep). State of the search: the best feasible run is E004, at 0.7550 accuracy and 8.94 s. Its margin over the 0.753 cutoff is only 0.2 pp.
+
+Two records disagree with the timing:
+- **E004 ran 10 epochs, not 8.5.** The I005/I006 descriptions say "8.5-epoch", but the E004 notebook compares against E003 "at equal epochs", and E003 was 10 epochs. The time also matches 10 epochs with max-autotune. Read E004 and E005 as 10-epoch runs.
+- **D002's "+2.45 pp at 8.5 epochs" is wrong** for the same reason. The real gain from regularization is about +1.26 pp at 10 epochs.
+
+Measured trade-offs so far:
+- More epochs: about 0.87 pp per epoch, at about 0.9 s per epoch.
+- Faster compile: max-autotune with CUDA graphs saves only 2.5%, so the training loop is limited by compute.
+- Alternating flip: worth about 0.4 pp.
+
+**Plan.** The main bet (priority 5–4) is to raise accuracy at a fixed cost, then spend that margin on fewer epochs:
+- I010: drop label smoothing from 0.1 to 0.
+- I011: cut translate from 4 px to 2 px.
+- I012 (priority 3): run 9.5 epochs with the schedule rescaled. This adds a second point to the accuracy-vs-epochs curve for the tuned recipe.
+
+A batch-size test (768) checks whether more optimizer steps help in this regime.
+
+**Explore (about 1/3 of the queue).** Two queued ideas are rewritten onto the E004 recipe, replacing I008 and I009:
+- Narrower net (128/256/384) trained for 12 epochs. Conv FLOPs are about 0.62× the current net, so time is about 15–25% lower if accuracy holds.
+- Train at 24 px for the first half, then 32 px. Both input shapes are compiled in build.
+
+A cheap +30% peak-learning-rate check rounds out the queue. That makes 7 queued ideas, plus I007 (whitening on a 5,000-image subset), which is still running.
+
+**Not added.** Proxy-based data filtering (H3.1) stays out of the queue because the C0015/C0018 cards weigh against it.
+
+**Missing inputs.**
+- No uncertainty-committee forecasts came with the inputs, so none of the ideas were shaped by members' disagreements.
+- The noise floor from repeating an identical run was never measured. With a 0.2 pp margin, any verdict of 0.3 pp or less should be treated as provisional.
+round 5 (forecast): 0/6 verified members on 1 experiments, 0 ideas voted

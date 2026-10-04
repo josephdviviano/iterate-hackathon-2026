@@ -1,0 +1,38 @@
+{
+  "id": "R006",
+  "from": "committee",
+  "after": "E020",
+  "question": "What mechanism explains this result, which none of our verified world models predicted? E019: Explore the remaining cheap width axis. Per the FLOP accounting, after narrowing block 2, block 1 (128 ch at 32x32, ~0.45 GMACs) is about 35% of E012's conv FLOPs. On E012 (11 epochs, translate 4), change only the widths from 128/256/576 to 96/256/576, keeping 3 convs per block and the whitening output feeding block 1. E012 suggests that block-3 width carries the capacity 100 classes need, and tha Outcome: infeasible, {\"accuracy\": 0.7514666666666666, \"time\": 6.963800710334908, \"complete\": true}. Our world models believe:\n  W19 (replays 90%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is a fixed ~0.4s plus steps times (per-step launch overhead + conv FLOPs scaled by batch size and channel widths), cut by low-resolution phases; cutout adds a little. Accuracy comes from epochs (diminishing returns past 10), network width (especially the last block), light augmentation and label smoothing 0.1, with a penalty for low-resolution phases. Narrowing the net or using low-res buys speed but drops accuracy below the 0.753 target.\n  W20 (replays 95%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is steps times per-step cost, which grows with the squared conv widths (stage 1 most per channel) and sub-linearly with batch size. Low-resolution phases cut time by a fraction of the steps they cover. Accuracy rises with epochs (diminishing returns) and width, and falls with cutout, random flip, and low-res phases. Light translate and label smoothing of about 0.1 help.\n  W21 (replays 90%; premise: Assume what this literature digest (D005) reports holds in this task, and build on it:\n# D): Time is steps times per-step cost; per-step cost is a fixed overhead plus conv FLOPs (stage-1 width at 32x32 matters most), scaling sublinearly with batch size. Low-res phases cut compute by resolution squared. Accuracy rises with log epochs, falls with narrower stages (esp. stage 1/3), cutout, random flip,",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791113056.2611413,
+  "digest": "D006",
+  "plan": {
+    "question": "Why did narrowing only the first stage (128->96 channels at 32x32, directly after the frozen 2x2 patch-whitening layer) cost ~0.5 pp of CIFAR-100 accuracy at 11 epochs (E019: 0.7515 vs E012: 0.7567) while saving only ~10% of wall time? Is early-stage width a sample-efficiency (optimization-speed) bottleneck rather than a capacity one in short training: for example, through a rank or information bottleneck right after whitening, slower feature learning in narrow early layers, or width-dependent effective learning rate under SGD with BN? Given a fixed FLOP or time budget, how should width be split across stages (stage 1 vs 2 vs 3) for short-schedule, many-class CNN training? This decides whether the remaining width cuts (block 3, or block 2 below 256) are worth trying, or whether FLOPs should instead go back into stage 1 while other stages are cut.",
+    "queries": [
+      "early layer width bottleneck CNN accuracy per FLOP stage width allocation",
+      "network width sample efficiency short training budget convolutional",
+      "compound scaling stage-wise width allocation fixed compute CIFAR-100",
+      "width scaling learning speed feature learning early layers small epochs",
+      "channel pruning sensitivity first layers CIFAR-100 accuracy",
+      "patch whitening first layer width fast CIFAR training"
+    ],
+    "rubric": [
+      "Reports how accuracy changes when width is varied per stage or per layer (not only uniform width scaling) for CNNs on CIFAR-10/100, ImageNet or similar, ideally at a fixed FLOP or time budget.",
+      "Addresses short or compute-limited training (few epochs, time-to-accuracy, speedruns), or separates width's effect on optimization speed and sample efficiency from its effect on final capacity.",
+      "Gives a mechanism or quantitative rule (e.g. a sensitivity ranking of stages, an optimal width ratio, or a rank/information bottleneck after the stem) that can be tested by changing stage widths in a 3-stage VGG-style net with BN.",
+      "Trains from scratch, with no pretrained weights or distillation from external teachers."
+    ],
+    "exclude": [
+      "Methods requiring pretrained weights, transfer learning, or external/extra data",
+      "Knowledge distillation from a pretrained teacher",
+      "Test-time augmentation or any use of the test set for tuning",
+      "Pruning methods that require first training the full network to convergence (prune-after-train) without from-scratch width findings",
+      "Transformer/ViT-only or NLP-only width scaling studies",
+      "Neural architecture search requiring large GPU-day searches with no transferable width rule"
+    ]
+  },
+  "cost": 0.6392
+}

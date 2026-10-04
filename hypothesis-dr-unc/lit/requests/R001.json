@@ -1,0 +1,38 @@
+{
+  "id": "R001",
+  "from": "auto",
+  "after": "E000",
+  "question": "E000 shows the template is a trivial stub (1.2% accuracy, 0.1 s), not a 50\u201370 s baseline, so H2.1.1's premise is wrong. The first real recipe will be built from scratch, and the decision that matters most is which architecture and epoch budget to start from. Question: what published fast-training recipes reach about 75% top-1 on CIFAR-100 from scratch in the fewest epochs or least wall-clock time? For whitened or airbench-style CNNs versus ResNet-18-class nets, how do the accuracy-vs-epoch curve, network width, and regularization strength (label smoothing, cutout, translate) trade off in the short, under-fitting regime of fewer than about 15 epochs? This tests H1.1/H1.1.2, H1.2 and H4.1.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791109872.9422994,
+  "digest": "D001",
+  "plan": {
+    "question": "E000 shows the template is a trivial stub (1.2% accuracy, 0.1 s), not a 50\u201370 s baseline, so H2.1.1's premise is wrong. The first real recipe will be built from scratch, and the decision that matters most is which architecture and epoch budget to start from. Question: what published fast-training recipes reach about 75% top-1 on CIFAR-100 from scratch in the fewest epochs or least wall-clock time? For whitened or airbench-style CNNs versus ResNet-18-class nets, how do the accuracy-vs-epoch curve, network width, and regularization strength (label smoothing, cutout, translate) trade off in the short, under-fitting regime of fewer than about 15 epochs? This tests H1.1/H1.1.2, H1.2 and H4.1.",
+    "queries": [
+      "fast training CIFAR-100 few epochs speedrun",
+      "airbench CIFAR-10 94% seconds patch whitening",
+      "budgeted training learning rate schedule short epochs",
+      "label smoothing cutout underfitting short training budget",
+      "ResNet-18 CIFAR-100 single GPU minutes 75% accuracy",
+      "progressive resizing low resolution early epochs CNN training speed"
+    ],
+    "rubric": [
+      "Reports CIFAR-100 (or CIFAR-10 with a transferable ablation) accuracy as a function of epoch count or wall-clock time under a short budget (about 30 epochs or fewer)",
+      "Trains from scratch on a single GPU with no pretrained weights or extra data, and gives the architecture, width, optimizer and schedule in enough detail to reproduce",
+      "Ablates at least one lever in our tree: whitening or dirac init, network width or depth, augmentation or label-smoothing strength, LR schedule shape, progressive resizing, or data filtering",
+      "Gives accuracy numbers near the 70\u201380% CIFAR-100 range, or explicit time-to-accuracy figures"
+    ],
+    "exclude": [
+      "pretrained weights, ImageNet pretraining, transfer learning, distillation from pretrained teachers",
+      "external or synthetic extra training data (e.g., 80M Tiny Images, diffusion-generated data)",
+      "test-time augmentation or any use of the test set during training or tuning",
+      "multi-GPU or TPU large-batch distributed training results with no single-GPU applicability",
+      "long-schedule (200+ epoch) SOTA accuracy papers with no short-budget results",
+      "vision transformers trained for hundreds of epochs"
+    ]
+  },
+  "cost": 0.5268
+}

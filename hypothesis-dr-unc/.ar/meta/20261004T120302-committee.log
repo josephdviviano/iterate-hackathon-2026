@@ -1,0 +1,29 @@
+round 18 (update): 6/6 verified members on 29 experiments, 0 ideas voted; retired W23 (replays 79%); retired W27 (replays 79%); retired W28 (replays 83%); retired W30 (replays 79%); wrote 4: admitted W33, W34, W35, W36
+harvest: openalex_search('Muon optimizer convolutional network short training sample efficiency') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('Newton-Schulz iterations orthogonalized momentum fewer steps accuracy') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('NorMuon AdaMuon variant orthogonal optimizer improvement') failed: HTTP Error 429: Too Many Requests
+harvest: openalex_search('Polar Express polar decomposition optimizer Muon') failed: HTTP Error 429: Too Many Requests
+R009 -> D009
+added I050, I051, I052, I053, I054, I055, I056, I057; dropped none. Every queued idea is done or dropped, so there was nothing to drop and the queue was empty. I added 8 ideas, all on the Muon tip E031 (5.43 s, 0.7551, margin +0.21 pp).
+
+**Top priority (5): a direct time cut.** It trades less resize for fewer epochs: 24 px fraction from 50% to 40%, epochs from 8.75 to 8.0. Under Muon the two levers now cost different amounts:
+- Resize near 50% costs about 0.75 pp per second saved (E034).
+- Cutting epochs costs about 0.56 pp per second saved (E028 to E031).
+
+The projected point is about 5.2 s at about 0.7546, which is a thin margin. It runs under the rule that any keep with a margin under 0.3 pp is rerun and pooled before it becomes the tip.
+
+**Priority 4: build margin at no extra time.**
+- **New Newton-Schulz coefficients.** Swap the fixed quintic for per-iteration coefficients at the same iteration count. This comes from D009 and is the only zero-cost accuracy lever the literature offers.
+- **Translate 2 px to 1 px.** E030 hit harder under Muon (-0.62 pp vs -0.35 pp under SGD), which suggests the augmentation optimum may sit below 2 px.
+- **A required rerun of E031.** Its margin is under 0.3 pp, so the noise-floor rule calls for it.
+
+**Priority 3: tune Muon's surroundings.**
+- **Stronger Lookahead averaging** (peak decay 0.95**k to 0.97**k). E035 showed averaging is first-order: removing Lookahead cost -0.81 pp.
+- **Muon lr down to 0.18.** E033 showed 0.32 was worse; this checks the other side of 0.24.
+
+**Priority 2: explore.**
+- **Block-2 width 256 to 192 under Muon.** It measures pp lost per second saved, against the 0.56 pp/s epoch rate.
+- **Whitening-bias phase cut from 3 to 1 epoch.** This is a no-op if the phase doesn't exist in the code.
+
+**How these settle what the world models disagree on.** The 40%/8.0 run and the block-2 cut test whether resize gets convexly more expensive above about 0.4 and whether the epoch curve has a knee below 8.75 ep. The averaging and lr ideas probe Muon-specific behaviour that none of the world models captures.
+round 19 (forecast): 6/6 verified members on 29 experiments, 0 ideas voted

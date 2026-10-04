@@ -21,3 +21,7 @@ Per arm:
 | hypothesis-unc | 66 | E061 `376f231` 5.02 s, acc 0.7534 | E052 `ce17ae7` 4.99 s, acc 0.7555 (discard) |
 | baseline-r1 | 37 | E036 `2979b7a` 5.05 s, acc 0.7559 | E036 `2979b7a` 5.05 s, acc 0.7559 (keep) |
 | hypothesis-lit | 72 | E067 `515a931` 4.85 s, acc 0.7544 | E068 `d6c1ddf` 4.82 s, acc 0.7547 (discard) |
+
+## hypothesis-dr-unc (added 2026-10-04)
+
+The hypothesis harness with forced deep research and the committee of verified world models (framework `hypothesis-dr-unc` on branch `youssef-harness`). Snapshot taken while the run was live: 42 experiments, best kept E031 `3797e1a` 5.43 s at 75.51%. Its kept-commit history is on branch `youssef-hypothesis-dr-unc`.

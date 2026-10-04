@@ -1,0 +1,27 @@
+round 8 (update): 6/6 verified members on 9 experiments, 7 ideas voted; E008: no member's vote predicted 'infeasible'; E009: no member's vote predicted 'infeasible'; retired W1 (replays 67%); retired W2 (replays 67%); retired W3 (replays 67%); retired W4 (replays 67%); retired W5 (replays 67%); retired W6 (replays 67%); COUNTEREXAMPLE E007, E008, E009: no verified world model replays it; wrote 3 around E009: admitted W7, W8, W9; wrote 3: admitted W10, W11, W12; raised I018 (outside the evidence)
+R004 -> D004
+H1.1.1->refuted, H1.1.2->refuted, H1.3->retired, H2.1->retired, H2.2->refuted, H2.2.1->refuted, H2.3->refuted, H2.3.1->refuted, H3.2.1->inconclusive, H4.1.1->supported, +H5, +H5.1, +H5.1.1, +H1.1.3, +H1.1.4, +H1.2.2, +H1.2.3, +H3.2.2, +H3.2.3, +H3.2.4, +H4.1.2, +H4.1.3, +H4.1.4, +H4.4, +H4.4.1, +H4.5, +H4.5.1, +H2.4, +H2.4.1, +H2.4.2. Statuses brought up to date: H1.1.1, H1.1.2, H2.2, H2.2.1, H2.3 and H2.3.1 refuted. H4.1.1 supported (E004 gave +1.26 pp, about 5 sigma). H3.2.1 inconclusive: its accuracy threshold measured the wrong thing. H1.3, H1.3.1, H2.1 and H2.1.1 retired (understanding-only, already adopted, or false premise). H1.2.1 drops to 0.15 and stays open: E007 is relabeled ~ and E009 leans toward refuting it, but a possible older-base confound in E007 keeps it from being closed. E005 is down-weighted to ~ (about 1.7 sigma).
+
+Reworded:
+- H1: separable epochs x FLOPs replaced by an accuracy-per-second curve.
+- H1.1: the wide net is at the 75% edge at about 10 epochs under the E004 regularization.
+- H1.2: only a mild width cut can pay.
+- H2 (now 0.3): narrowed to per-step work that does not scale with resolution.
+- H3.2: judged on time at feasibility.
+- H4: the <10% cap is dropped.
+- H4.1: regularization strength depends on the epoch budget.
+
+New Lvl1 K1: regularization x resolution x capacity jointly set the slope and the ceiling. It explains the committee counterexamples:
+- E007/E009: capacity ceiling and a late-training width law (C0039). Tested by K1a1.
+- E008: resolution as a FLOP lever plus a per-step remainder that does not scale with resolution (H3.2, K14).
+
+New decisive tests, in priority order:
+1. Rerun E004 for the noise floor and feasibility (K2).
+2. Resizing on E004 with extra epochs: 50% at 24 px at 11 ep (K6); 24/28/32 by thirds (K7).
+3. Single-variable regularization tests at 10 ep: LS 0.05/0 (K9), translate 2 (K10).
+4. Current-recipe slope, 10 to 9 ep (K3).
+5. Then batch 512 (K12a), LR floor (K13a), fused optimizer in the graph (K14a), first-trial warmup (K14b), and a milder width cut 128/320/480 (K4).
+
+The E004/E005 descriptions say 8.5 epochs but the runs were 10. Use 10 as the baseline in every rewrite.
+added I019, I020, I021, I022, I023, I024, I025; dropped none. The incumbent is E012 (128/256/576, 11 epochs): 0.7567 in 7.70 s. Two near-misses can be combined. Translate 2 gave +0.35 pp on the wide net (E011). Resize on the narrowed net (E013) was 6.32 s but 0.2-0.25 pp short. The top priorities are translate 2 on E012 (bank margin) and translate 2 on E013 (a feasible run at ~6.3 s would be ~18% faster). E013 at 12 epochs is the fallback. Explore ideas: a gentler 24/28/32 curriculum (H3.2.3), and narrowing block 1, which is now ~35% of the FLOPs (H1.2, 96/256/576). Throughput ideas: a fused, graph-captured foreach optimizer (H2.4.1) and warming the H2D path in build (H2.4.2). Dropped I018: literature contradicts it, the committee unanimously forecasts not-improved, and it is costly to build. The queue now has 7 new ideas, 5 exploit and 2 explore.
+round 9 (forecast): 6/6 verified members on 9 experiments, 0 ideas voted

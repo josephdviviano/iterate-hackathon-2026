@@ -1,0 +1,20 @@
+round 14 (update): 6/6 verified members on 25 experiments, 7 ideas voted; retired W19 (replays 72%); retired W20 (replays 80%); retired W21 (replays 72%); retired W22 (replays 84%); retired W24 (replays 72%); wrote 5: admitted W25, W26, W27, W28, W29; raised I038 (outside the evidence)
+R007 -> D007
+added I039, I040, I041, I042, I043; dropped I037, I035, I036. Muon on the block convs has opened a new line: E025 gave +0.78 pp, and the time cost is launch overhead that I032 is fusing. The question now is how to spend that margin.
+
+**Kept in the queue:**
+- I033: Muon with the epoch cut to 9.5.
+- I034: batch 2048.
+- I038: one CUDA graph per resolution phase, which saves time at equal math and carries over to any base.
+
+**New ideas:**
+- **Muon + 75% of steps at 24 px (H3.2.5, P4).** This is the main competitor to I033. Resize costs about 0.4 pp per second saved, against about 0.75 pp/s for cutting epochs (E020). So on the measured rates, spending Muon's margin on a larger low-res fraction should beat spending it on epochs. Running both shows which way of spending the margin is cheaper.
+- **Muon + translate 4 (H4.2, P2).** The literature says Muon benefits more from strong augmentation. This checks whether H4.1's weak-regularization optimum, learned under SGD, still holds under Muon.
+- **Muon lr 0.32 (H4.2, P2).** The current value was carried over from the CIFAR-10 recipe at a different batch size and budget. This idea and the translate idea are both outside the committee's evidence; each is a clean single-axis test.
+- **Noise-floor rerun of the E024 tip, twice (H1.1.3, P2).** The tip's margin over 0.753 is only +0.14 pp, and the same seed can vary by up to 0.9 pp per trial, so verdicts near the threshold need a measured noise floor.
+- **2-conv blocks at matched FLOPs (H1.2.3, P1, explore).** This is the one architecture axis not yet tested.
+
+**Dropped:** I035, I036 and I037. All three buy accuracy at equal time on the SGD tip, with expected gains near the noise floor. Muon now supplies margin more cheaply, and 5/6 committee members forecast none of the three improves the score.
+
+**Ordering:** the Muon ideas depend on whether I032 is kept as the base, so the fused-Muon result should be checked first.
+round 15 (forecast): 6/6 verified members on 25 experiments, 5 ideas voted

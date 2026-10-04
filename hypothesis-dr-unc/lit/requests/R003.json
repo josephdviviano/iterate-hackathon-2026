@@ -1,0 +1,37 @@
+{
+  "id": "R003",
+  "from": "committee",
+  "after": "E006",
+  "question": "None of our experiments has varied low_res_input_resolution, low_res_step_fraction, resize_mode, so our world models have no evidence on this proposed change: Explore. Rewrite of I009 onto the current best recipe. Start from E004 (10 epochs, no cutout). Change only the resolution schedule: for the first 50% of steps, downsample each augmented batch to 24x24 (F.interpolate, bilinear, antialias=False) after flip and translate. The remaining steps run at 32 px. Keep the LR schedule tied to step count. Compile and capture CUDA graphs for both input shapes o What does the literature say about its effect in settings like ours, and what mechanism decides it? Our world models believe:\n  W1 (replays 100%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is a fixed overhead (~1s: data upload, whitening init) plus steps times per-step cost (scales with batch size, resolution\u00b2, params); about 0.016 s/step on A100 with bf16 and compile. Accuracy rises with log of epochs/steps, drops with heavy regularization (cutout, label smoothing 0.2) at short schedules, and benefits from alternating flip, translation, EMA and whitening init.\n  W2 (replays 100%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is roughly fixed overhead (~0.8s) plus linear in optimizer steps (~0.0165 s/step); cutout adds a small per-step cost. Accuracy rises with epochs (~0.9 pts per epoch near 10), heavy regularization (cutout, label smoothing 0.2) hurts at this short budget, and alternating flip beats random flip slightly.\n  W3 (replays 100%; premise: Assume interactions dominate: the effect of one setting depends on others. Find the pairs ): Time is roughly a fixed overhead (~0.8 s) plus per-step cost times optimizer steps (epochs\u00d750k/batch), scaled by batch size, resolution and model size. Accuracy rises about logarithmically with epochs. Cutout and heavy label smoothing hurt in very short schedules; alternating flip beats random flip slightly. Near the 0.753 threshold, seed noise (~0.002) decides outcomes.\n  W4 (replays 100%; premise: Assume diminishing returns and threshol",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791110954.703872,
+  "digest": "D003",
+  "plan": {
+    "question": "For short, under-fitting CIFAR-scale training runs (~8-10 epochs, small whitened CNN like airbench96, batch ~1024), what does the literature say about progressive resizing: training the early fraction of steps at reduced resolution (e.g. 24 px, then 32 px)? Specifically: (1) how much final accuracy does it cost or gain at a fixed step count, and how does that depend on the low-res step fraction, the low resolution, and the resize method (bilinear vs. random-resized crop vs. antialias)? (2) What decides it: the train/test resolution discrepancy (FixRes), the scale shift for BN statistics and first-layer filters (here a frozen 2x2 patch-whitening conv computed at 32 px), or coupling of regularization strength to resolution (as in progressive learning / EfficientNetV2)? (3) Do measured wall-clock savings match the ~44% FLOP cut per low-res step for small GPU-bound convnets, or do fixed per-step overheads erase them? Note: E004 is the 8.5-epoch, no-cutout, label-smoothing-0.1 recipe, not a 10-epoch one; the experiment should start from E004 as it actually ran.",
+    "queries": [
+      "progressive resizing training speedup image classification",
+      "progressive learning adaptive regularization image size EfficientNetV2",
+      "fixing train test resolution discrepancy",
+      "budgeted training low resolution early epochs CIFAR",
+      "mixed resolution training convolutional networks fast training",
+      "multigrid training schedule deep networks"
+    ],
+    "rubric": [
+      "Trains with a resolution schedule (low-res early, full-res late, or a mix of resolutions) and reports final accuracy against a fixed-resolution baseline at matched steps or matched wall-clock time.",
+      "Uses a short or compute-budgeted schedule, or small images (CIFAR, downsampled ImageNet, ImageNet at low res), so the results carry over to an ~8-10 epoch under-fitting regime.",
+      "Explains or ablates the mechanism: the low-res fraction, train/test resolution mismatch, BN statistic or receptive-field shift, the interpolation method, or regularization scaled with image size.",
+      "Reports measured wall-clock or throughput savings, not only FLOPs."
+    ],
+    "exclude": [
+      "Methods that need pretrained weights, transfer learning, or external or extra data (forbidden by RULES.md)",
+      "Test-time augmentation or test-set-dependent resolution tuning, e.g. FixRes fine-tuning on test-time statistics or multi-resolution test ensembles",
+      "Super-resolution or image-generation papers on resolution that do not deal with classifier training efficiency",
+      "Large-scale distributed or ViT-only token-dropping/patch-resizing work that has no convnet or small-image result",
+      "Fine-tuning a classifier at higher resolution after training is finished"
+    ]
+  },
+  "cost": 0.5943
+}

@@ -1,0 +1,36 @@
+{
+  "id": "R011",
+  "from": "committee",
+  "after": "E041",
+  "question": "None of our experiments has varied muon_newton_schulz_steps, so our world models have no evidence on this proposed change: Time lever at near-equal math, the one Muon-cost cut not yet tried. Start from tip E031 (commit 3797e1a). First read the Newton-Schulz iteration count in the code. Then profile about 50 steps at each resolution on synthetic data with torch.profiler, recording the NS bmm share per step; this answers H2.4.3 without a separate run. Then change only the iteration count: 5 -> 3 if the code runs 5, othe What does the literature say about its effect in settings like ours, and what mechanism decides it? Our world models believe:\n  W31 (replays 90%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is steps times a per-step cost: width-driven per-sample compute plus about 12% fixed per-step overhead, so smaller batches are slower per sample. Low-res phases cut pixel compute (24px about 0.56x, 28px about 0.77x). Muon adds fixed time but gains accuracy. Accuracy rises with epochs and width. Cutout, translate4, random flip, off-optimal label smoothing and low-res phases cost accuracy. E016 looks like an outlier (noise or glitch), so it is not modeled.\n  W32 (replays 93%; premise: Assume what this literature digest (D007) reports holds in this task, and build on it:\n# D): Time = fixed ~0.7s + steps \u00d7 per-step cost. Per-step cost is affine in stage widths (c1, c2 dominate; c3 cheap), sublinear in batch (~bs^0.8), reduced by low-res phases (~78% of pixel-ratio saving), plus Muon overhead. Accuracy rises with epochs (saturating), width, and Muon (+0.8pt). It falls with cutout, translate4, random flip, label smoothing away from 0.1, and low-res phases (~0.5pt).\n  W33 (replays 93%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is steps times per-step cost: a fixed launch/optimizer overhead, Muon overhead, and a batch-proportional term made of a small constant plus conv FLOPs (from channel widths) scaled by the resolution curriculum, where low-res steps cost about half. Accuracy rises with effec",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "running",
+  "created": 1791117119.3244145,
+  "digest": "",
+  "plan": {
+    "question": "How does the Newton-Schulz iteration count in Muon (e.g. 5 -> 3, or fewer with per-iteration-optimized coefficients) affect accuracy per step and wall-clock time in short, small-model training runs such as an ~200-step, batch-2048 CIFAR conv net? What mechanism decides whether looser orthogonalization is harmless? Candidates are the singular-value spread of the momentum matrix for small, wide conv filters (e.g. 704x6336), the changed effective update RMS (a hidden lr change), bf16 precision, and whether approximate orthogonalization acts as a useful regularizer. Also, what share of per-step time does NS take in practice?",
+    "queries": [
+      "Muon Newton-Schulz iterations ablation accuracy",
+      "approximate orthogonalization Muon fewer iterations",
+      "Polar Express optimal polynomial Newton-Schulz Muon",
+      "Turbo-Muon Newton-Schulz cost reduction",
+      "Muon optimizer convolution small batch speedrun CIFAR",
+      "inexact polar decomposition optimizer update RMS spectral norm"
+    ],
+    "rubric": [
+      "Varies the Newton-Schulz (or polar-approximation) iteration count or polynomial and reports the effect on training loss or accuracy at a fixed step count or a fixed budget",
+      "Reports the wall-clock or FLOP cost of the orthogonalization step relative to the total step time, or measures cost on small matrices or conv filters",
+      "Explains a mechanism for the accuracy effect, such as singular-value spread after the iterations, update-norm or RMS change acting as an lr change, or bf16 numerical error",
+      "Setting is short-horizon or small-model training (CIFAR or speedrun-scale, or small LM), or gives results that transfer to it"
+    ],
+    "exclude": [
+      "Pretrained weights, fine-tuning or transfer learning from external data",
+      "Test-time augmentation or any use of the test set during training",
+      "Methods requiring packages beyond PyTorch 2.4.0 / torchvision 0.19.0",
+      "Large-scale distributed Muon systems papers that only address communication or sharding cost",
+      "Second-order methods with full-matrix preconditioners (Shampoo/SOAP) unless they directly compare NS iteration counts"
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "R008",
+  "from": "committee",
+  "after": "E027",
+  "question": "None of our experiments has varied muon_learning_rate, muon_momentum, so our world models have no evidence on this proposed change: Exploit: spend Muon's margin on resize, the cheapest accuracy-for-time lever. Resize costs ~0.4 pp/s (E008/E013/E018); cutting epochs costs ~0.75 pp/s (E020). Start from the I032 result if it was kept as the fused-Muon base, otherwise from E025 (commit 50d39d6: E024 tip plus Muon on the block conv filters, lr 0.24, momentum 0.6, 11 ep, batch 1536). Change only the 24 px fraction, from the first 50 What does the literature say about its effect in settings like ours, and what mechanism decides it? Our world models believe:\n  W23 (replays 88%; premise: Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cli): Time is steps (epochs*50000/batch) times per-step cost, which is affine in the three stage widths (c1 and c2 dominate) and sublinear in batch size. Low-resolution phases cut cost by pixel ratio. Accuracy rises with epochs and saturates, falls with narrower widths, heavier augmentation (cutout, translate4), random flip, label smoothing away from 0.1, and low-res fraction. Knee near 75.3%.\n  W27 (replays 88%; premise: Assume interactions dominate: the effect of one setting depends on others. Find the pairs ): Time scales with total samples processed (steps \u00d7 batch size) times a width factor (mid-layer channels dominate), reduced by low-resolution phases. Accuracy rises with effective epochs (from steps, not the epochs label) and width, falls with heavy augmentation (cutout, translate4), and falls slightly with low-res fraction. Label smoothing near 0.1 is best, and Muon adds accuracy and some time. Some runs, such as E016, are unexplained outliers.\n  W28 (replays 92%; premise: Start from the experiments that missed a constraint or failed to improve. Write the bounda): Time is roughly epochs times a per-epoch cost that grows with conv FLOPs (the last stage counts at half weight), plus a per-step overhead. The low-resolution phase cuts that cost by (24/32)^2 over its fraction of steps, plus a fixed resize overhead. Muon adds about 0.8 s. Accuracy rises with ef",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791114963.776116,
+  "digest": "D008",
+  "plan": {
+    "question": "The proposed experiment raises the 24 px share of steps above 50%, with Muon on the conv filters at lr 0.24 and momentum 0.6. In a short, under-fitting training run (about 9-11 epochs, CIFAR-scale images, BN CNN with frozen whitening), how does accuracy change as the low-resolution share grows? Is the cost linear in compute saved, or does it steepen past a threshold? Three candidate mechanisms could set it: train/test resolution mismatch (FixRes-style apparent object size and BN statistics), weaker features learned at low resolution, or effective learning rate per step. Which one decides it? Also, should Muon's learning rate and momentum be retuned when the resolution schedule or step count changes, and how sensitive is Muon to those settings in short vision runs?",
+    "queries": [
+      "progressive resizing low resolution fraction training accuracy",
+      "train test resolution discrepancy FixRes",
+      "progressive learning image size adaptive regularization",
+      "budgeted training resolution schedule CIFAR fast training",
+      "Muon optimizer learning rate momentum sensitivity",
+      "orthogonalized momentum Newton-Schulz convolutional network training"
+    ],
+    "rubric": [
+      "Reports accuracy as a function of the share or schedule of training spent at reduced input resolution (ablation over at least 2 shares or curricula), ideally at a fixed or short compute budget",
+      "Uses image classification with CNNs (preferably CIFAR-scale or small images) trained from scratch, with time or FLOPs savings reported next to the accuracy change",
+      "Proposes or tests a mechanism for the low-resolution cost or benefit: resolution mismatch at test time, BN statistics, scale-dependent features, regularization strength tied to image size, or effective learning rate",
+      "Or, for Muon/orthogonalized optimizers: sweeps learning rate and/or momentum in short-budget vision training, or studies how the best settings shift with step count or batch size"
+    ],
+    "exclude": [
+      "Methods that rely on pretrained weights, transfer learning or fine-tuning from ImageNet checkpoints",
+      "External or extra training data, synthetic data from generative models, or distillation from a pretrained teacher",
+      "Test-time augmentation or any adaptation that uses test images (including test-resolution BN recalibration on test data)",
+      "Muon results limited to language-model pretraining with no vision or CNN experiments",
+      "Super-resolution or low-resolution recognition papers where test images are low resolution"
+    ]
+  },
+  "cost": 0.7499
+}

@@ -1,0 +1,28 @@
+{
+  "exp": "E020",
+  "commit": "87c2fad",
+  "pid": 1126111,
+  "start_ticks": 8936015,
+  "started": 1791112955.4767892,
+  "tag": "I026",
+  "description": "Exploit the flat per-epoch slope. E010 gave 0.31 pp/epoch and E017 gave 0.11 pp/epoch near 11 epochs, so cutting epochs may be the cheapest lever left. Start from the incumbent E012 (commit 6d40ead: 128/256/576, 3 convs per block, translate 2, no cutout, LS 0.1, alternating flip, max-autotune + CUDA graph, 11 epochs). Change only the epoch count, from 11 to 10, and rescale the LR/Lookahead schedule to the new step count so it still anneals fully. Report per-seed accuracy and the per-seed minimum. This measures this net's slope between 10 and 11 epochs: H1.1.4 asks the slope question of the wide net, and this asks it of the incumbent. If I023 (96/256/576) becomes the new tip first, apply the same 1-epoch cut to that tip instead.",
+  "log": "/home/jovyan/work/arena3/hypothesis-dr-unc/runs/E020.log",
+  "timeout_s": 1800,
+  "metrics": {
+    "accuracy": 0.7515333333333334,
+    "time": 7.006824001665033,
+    "complete": true
+  },
+  "row": {
+    "exp": "E020",
+    "commit": "87c2fad",
+    "accuracy": 0.7515333333333334,
+    "time": 7.006824001665033,
+    "complete": true,
+    "feasible": "no",
+    "improved": "no",
+    "status": "discard",
+    "tag": "I026",
+    "description": "Exploit the flat per-epoch slope. E010 gave 0.31 pp/epoch and E017 gave 0.11 pp/epoch near 11 epochs, so cutting epochs may be the cheapest lever left. Start from the incumbent E012 (commit 6d40ead: 128/256/576, 3 convs per block, translate 2, no cutout, LS 0.1, alternating flip, max-autotune + CUDA graph, 11 epochs). Change only the epoch count, from 11 to 10, and rescale the LR/Lookahead schedule to the new step count so it still anneals fully. Report per-seed accuracy and the per-seed minimum. This measures this net's slope between 10 and 11 epochs: H1.1.4 asks the slope question of the wide net, and this asks it of the incumbent. If I023 (96/256/576) becomes the new tip first, apply the same 1-epoch cut to that tip instead."
+  }
+}

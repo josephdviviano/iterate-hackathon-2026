@@ -1,0 +1,37 @@
+{
+  "id": "R002",
+  "from": "auto",
+  "after": "E001",
+  "question": "E001 refuted H1.1.1. The airbench96-style 128/384/576 net at 8.5 epochs without TTA reached only 0.7304, about 2.3 pp below the 0.753 target, at 7.77 s. The prior evidence (PR #3: 9 epochs gave 75.6%) probably relied on TTA or on settings that differ from ours, and TTA is forbidden here. The open question is the cheapest way to recover about 2.3 pp of CIFAR-100 test accuracy in a short (~8-15 epoch) from-scratch run. The candidates are more epochs (how steep is the accuracy-vs-epochs curve in this regime?), more width or depth, and training-only changes. Those include EMA or weight averaging, label smoothing and augmentation strength for 100 classes, lr schedule and batch size, and alternating flip. The answer decides whether the next experiments run the epoch sweep (H1.1.2), scale width (the opposite direction of H1.2), or retune regularization (H4.1). We want published accuracy-vs-epoch and accuracy-vs-width numbers for fast CIFAR-100 training without TTA.",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791110427.5134583,
+  "digest": "D002",
+  "plan": {
+    "question": "E001 refuted H1.1.1. The airbench96-style 128/384/576 net at 8.5 epochs without TTA reached only 0.7304, about 2.3 pp below the 0.753 target, at 7.77 s. The prior evidence (PR #3: 9 epochs gave 75.6%) probably relied on TTA or on settings that differ from ours, and TTA is forbidden here. The open question is the cheapest way to recover about 2.3 pp of CIFAR-100 test accuracy in a short (~8-15 epoch) from-scratch run. The candidates are more epochs (how steep is the accuracy-vs-epochs curve in this regime?), more width or depth, and training-only changes. Those include EMA or weight averaging, label smoothing and augmentation strength for 100 classes, lr schedule and batch size, and alternating flip. The answer decides whether the next experiments run the epoch sweep (H1.1.2), scale width (the opposite direction of H1.2), or retune regularization (H4.1). We want published accuracy-vs-epoch and accuracy-vs-width numbers for fast CIFAR-100 training without TTA.",
+    "queries": [
+      "fast CIFAR-100 training few epochs accuracy budget",
+      "airbench CIFAR-100 speedrun whitening",
+      "budgeted training learning rate schedule short epochs",
+      "weight averaging EMA short training budget image classification",
+      "label smoothing number of classes underfitting short schedule",
+      "width versus epochs compute-optimal small CNN CIFAR"
+    ],
+    "rubric": [
+      "Reports CIFAR-100 (or CIFAR-10 with a transferable ablation) test accuracy as a function of epochs, width, or a training-only intervention, under a short budget (roughly 20 epochs or fewer, or wall-clock under a few minutes).",
+      "Trains from scratch with no pretrained weights or external data, and reports accuracy without test-time augmentation (or reports the non-TTA number separately).",
+      "Gives quantitative deltas (pp accuracy or time/FLOPs) for a specific change, such as epochs, width, EMA/averaging, label smoothing, augmentation strength, LR schedule or batch size, that can be applied to an airbench-style ResNet-free CNN.",
+      "The setup is reproducible on a single GPU (architecture, optimizer and schedule are specified)."
+    ],
+    "exclude": [
+      "Methods using pretrained weights, transfer learning, distillation from a pretrained teacher, or external/synthetic extra data",
+      "Results that depend on test-time augmentation or any use of the test set during training or model selection",
+      "Large-scale ImageNet-only or ViT/foundation-model studies with no small-CNN/CIFAR transfer",
+      "Long-schedule (200+ epoch) SOTA accuracy papers with no short-budget results",
+      "Approaches that need extra packages beyond PyTorch 2.4/torchvision 0.19, or changes to GPU clocks/power"
+    ]
+  },
+  "cost": 0.6367
+}

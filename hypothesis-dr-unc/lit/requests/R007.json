@@ -1,0 +1,37 @@
+{
+  "id": "R007",
+  "from": "committee",
+  "after": "E025",
+  "question": "None of our experiments has varied muon_learning_rate, muon_momentum, so our world models have no evidence on this proposed change: Exploit: spend Muon's accuracy gain on epochs. Start from the I032 result if it was kept as the Muon base, otherwise from E025 (commit 50d39d6). Change only the epoch count, from 11 to 9.5. Rescale the LR, Lookahead and Muon schedules to the new step count so they still anneal fully, and keep the 24 px phase at the first 50% of steps. Report per-seed accuracy. If the 3-seed mean margin over 0.753  What does the literature say about its effect in settings like ours, and what mechanism decides it? Our world models believe:\n  W23 (replays 92%; premise: Assume diminishing returns and thresholds: metrics saturate with budget and fall off a cli): Time is steps (epochs*50000/batch) times per-step cost, which is affine in the three stage widths (c1 and c2 dominate) and sublinear in batch size. Low-resolution phases cut cost by pixel ratio. Accuracy rises with epochs and saturates, falls with narrower widths, heavier augmentation (cutout, translate4), random flip, label smoothing away from 0.1, and low-res fraction. Knee near 75.3%.\n  W25 (replays 88%; premise: Account for the objective as the sum of the costs of the process's parts. Derive each part): Time is roughly steps \u00d7 batch \u00d7 per-sample compute (conv FLOPs across the three stages, scaled down by the low-resolution phases) plus a small per-step overhead and a fixed cost. Muon and cutout add overhead. Accuracy rises with epochs and width. Low-resolution phases, cutout, translate4, random flip and no label smoothing cost accuracy. Muon adds accuracy. The 75.3% threshold sits close to most runs, so feasibility is marginal.\n  W26 (replays 88%; premise: Prefer the simplest model that fits: each setting moves each metric by a fixed amount or f): Time is roughly proportional to epochs times per-epoch cost, which grows with conv FLOPs (stage widths weighted by spatial resolution). A low-resolution early phase cuts cost by about 36% of the fraction used. Muon adds a fixed overhead. Accuracy rises with log epochs and width, and falls with low-res phases ",
+  "hypotheses": [],
+  "must_have": [],
+  "exclude": [],
+  "status": "done",
+  "created": 1791114049.1903536,
+  "digest": "D007",
+  "plan": {
+    "question": "Muon on the conv filters raised 3-seed accuracy by +0.79 pp at 11 epochs (E025: 0.7622 vs E012 0.7543) but added ~0.6 s of time (7.26 vs 6.65 s). Does that gain hold when the run is cut to ~9.5 epochs? In other words, does Muon's sample-efficiency advantage over Nesterov SGD stay the same, grow, or shrink as the training budget gets shorter? How should the Muon learning rate (~0.24) and momentum (0.6) be rescaled for fewer steps (~300-350 steps at batch 1024-1536)? What mechanism decides this: orthogonalized updates acting as larger effective steps early in training, Newton-Schulz overhead relative to step cost, or interaction with Lookahead and the LR decay-to-zero schedule? Also, is Muon's per-step overhead (Newton-Schulz in bf16) small enough on small CNNs that the epochs it saves more than pay for it?",
+    "queries": [
+      "Muon optimizer orthogonalized momentum Newton-Schulz convolutional networks",
+      "Muon versus SGD AdamW short training budget sample efficiency",
+      "Muon learning rate momentum scaling batch size training steps",
+      "CIFAR-10 speedrun airbench Muon",
+      "Muon optimizer token efficiency compute-optimal scaling",
+      "spectral norm steepest descent optimizer few epochs image classification"
+    ],
+    "rubric": [
+      "Compares Muon (or another orthogonalized/spectral-norm optimizer) against tuned SGD or AdamW at several training budgets or step counts, not only at one long schedule.",
+      "Reports how the best Muon learning rate, momentum, or schedule changes with the number of steps, the batch size or the run length.",
+      "Reports wall-clock or per-step overhead of the Newton-Schulz orthogonalization, or accuracy at matched wall-clock time.",
+      "Uses CNNs or small vision models (CIFAR-scale), or gives a mechanism that plausibly transfers to them (e.g. effective update size, conditioning of conv filter updates)."
+    ],
+    "exclude": [
+      "Methods that rely on pretrained weights, external data, or distillation from a pretrained teacher (forbidden by the rules)",
+      "Test-time augmentation or any use of test data during training",
+      "Large-scale LLM pretraining results with no step-budget or small-model analysis",
+      "Distributed or multi-GPU communication optimizations for Muon",
+      "Hardware clock or power tuning"
+    ]
+  },
+  "cost": 0.832
+}
