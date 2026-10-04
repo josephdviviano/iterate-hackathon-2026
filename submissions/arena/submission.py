@@ -18,7 +18,9 @@ HYP = {
     "weight_decay": 0.006,
     "bias_scaler": 64.0,
     "label_smoothing": 0.3,
-    "whiten_bias_epochs": 3,
+    # The whitening bias trains for this fraction of steps; afterwards the whitening output is
+    # detached (no bias grad, no input-grad through group 1's first conv).
+    "whiten_bias_frac": 0.2,
     "widths": [128, 384, 512],
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
@@ -94,12 +96,15 @@ class Net(nn.Module):
         self.head = nn.Linear(widths[2], num_classes, bias=False)
         self.scaling_factor = scaling_factor
 
-    def forward(self, x, freeze_stem=False):
+    def forward(self, x, freeze_stem=False, freeze_whiten=False):
         # Inputs are float [0, 1] RGB; normalization lives in the model.
         x = ((x - self.mean) / self.std).to(self.whiten.weight.dtype)
         x = x.contiguous(memory_format=torch.channels_last)
-        with torch.set_grad_enabled(torch.is_grad_enabled() and not freeze_stem):
-            x = self.groups[0](F.gelu(self.whiten(x)))
+        grad = torch.is_grad_enabled()
+        with torch.set_grad_enabled(grad and not (freeze_stem or freeze_whiten)):
+            x = F.gelu(self.whiten(x))
+        with torch.set_grad_enabled(grad and not freeze_stem):
+            x = self.groups[0](x)
         x = self.groups[2](self.groups[1](x))
         x = F.adaptive_max_pool2d(x, 1).flatten(1)
         return (self.head(x) * self.scaling_factor).float()
@@ -259,8 +264,8 @@ class Lookahead:
         torch._foreach_copy_(self.live, self.ema)
 
 
-def train_step(model, optimizer, x, y, label_smoothing, freeze_stem=False):
-    out = model(x, freeze_stem=freeze_stem)
+def train_step(model, optimizer, x, y, label_smoothing, freeze_stem=False, freeze_whiten=False):
+    out = model(x, freeze_stem=freeze_stem, freeze_whiten=freeze_whiten)
     loss = F.cross_entropy(out, y, label_smoothing=label_smoothing, reduction="none").sum()
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
@@ -270,6 +275,8 @@ def train_step(model, optimizer, x, y, label_smoothing, freeze_stem=False):
 def build(context: BuildContext):
     hyp = {**HYP, **context.parameters}
     torch.backends.cudnn.benchmark = True
+    # One graph per (resolution, freeze variant); more than Dynamo's default of 8.
+    torch._dynamo.config.cache_size_limit = 64
     model = make_model(context, hyp)
     # Training runs through the compiled module; evaluation uses the eager one (same parameters).
     compiled = model
@@ -287,11 +294,12 @@ def build(context: BuildContext):
         for _, res in hyp["resolutions"]:
             x = torch.rand(bs, 3, res, res, device=device, dtype=torch.float16)
             x = x.contiguous(memory_format=torch.channels_last)
-            for _ in range(3):
-                train_step(compiled, opt, x, y, hyp["label_smoothing"])
+            for freeze_whiten in (False, True):
+                for _ in range(3):
+                    train_step(compiled, opt, x, y, hyp["label_smoothing"], False, freeze_whiten)
         if hyp["freeze_stem_at"]:
             for _ in range(3):
-                train_step(compiled, opt, x, y, hyp["label_smoothing"], freeze_stem=True)
+                train_step(compiled, opt, x, y, hyp["label_smoothing"], True, True)
         # One short synthetic trial warms prepare's and train's first-call costs (transfer,
         # eigh, padding, gathers, interpolation, lookahead). prepare resets it all.
         fake = TrainingData(
@@ -344,7 +352,7 @@ def train(state) -> nn.Module:
     schedule = np.interp(
         np.arange(1 + total_steps), [0, int(0.23 * total_steps), total_steps], [0.2, 1.0, 0.07]
     )
-    whiten_bias_steps = hyp["whiten_bias_epochs"] * steps_per_epoch
+    whiten_bias_steps = int(hyp["whiten_bias_frac"] * total_steps)
     # Stem schedule: the same warmup to the peak, then linear to 0 at the freeze point.
     peak = int(0.23 * total_steps)
     freeze_step = int(hyp["freeze_stem_at"] * total_steps) if hyp["freeze_stem_at"] else total_steps + 1
@@ -384,7 +392,9 @@ def train(state) -> nn.Module:
                         g["lr"] = 0.0
             x = versions[resolution[step]][i * bs : (i + 1) * bs]
             y = epoch_labels[i * bs : (i + 1) * bs]
-            train_step(model, opt, x, y, hyp["label_smoothing"], freeze_stem=step >= freeze_step)
+            train_step(
+                model, opt, x, y, hyp["label_smoothing"], step >= freeze_step, step >= whiten_bias_steps
+            )
             step += 1
             if lookahead is not None and step % ema_every == 0:
                 lookahead.update(float(alpha[step]))
