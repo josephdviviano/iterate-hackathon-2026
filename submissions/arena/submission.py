@@ -210,6 +210,17 @@ def build(context: BuildContext):
             loss.backward()
             opt.step()
             opt.zero_grad(set_to_none=True)
+    # Warm the whole prepare/train path (H2D copy, whitening eigh, augmentation, fused SGD,
+    # Lookahead) on synthetic data of the real shape, so trial 1 pays no lazy-init cost.
+    synthetic = TrainingData(
+        torch.randint(0, 256, (50000, 3, 32, 32), dtype=torch.uint8),
+        torch.randint(0, context.num_classes, (50000,)),
+    )
+    prepare(state, synthetic, 0)
+    state.cfg = {**cfg, "epochs": 0.1}
+    train(state)
+    state.cfg = cfg
+    del state.padded, state.labels, state.flip_mask, state.optimizer, state.ema
     model.eval()
     with torch.inference_mode():
         for b in (1, 7, 1024):
