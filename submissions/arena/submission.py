@@ -16,7 +16,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 DEFAULTS = {
-    "epochs": 10,
+    "epochs": 11,
     "batch_size": 1024,
     "lr": 9.0,  # per 1024 examples
     "momentum": 0.85,
@@ -28,7 +28,7 @@ DEFAULTS = {
     "flip": "alternate",
     "translate": 2,
     "cutout": 0,
-    "widths": [128, 384, 576],
+    "widths": [128, 256, 576],
     "bn_momentum": 0.4,
     "scaling_factor": 1 / 9,
     "compile_mode": "max-autotune",
