@@ -1,0 +1,44 @@
+# Round 8 on the D-014 base (signal paths, after the stage-2 identity skip won): dense residual sum
+# in stages 1 and 3, stage-2 skip branch weight 0.5 / 2, and the stage-2 freeze re-tested now that
+# stage 2 has a skip (rejected at -0.2 pp without it, S50). 20 seeds, both GPUs.
+name = "s77-signal-paths"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [8000, 8001, 8002, 8003, 8004, 8005, 8006, 8007, 8008, 8009,
+         8010, 8011, 8012, 8013, 8014, 8015, 8016, 8017, 8018, 8019]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage_skips = [false, true, false]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+residual_dense = true
+[[configs]]
+skip_scale = 0.5
+[[configs]]
+skip_scale = 2.0
+[[configs]]
+stage2_cooldown = [0.75, 0.9]                 # stage-2 freeze from 90% (with skip)
+freeze_schedule = [[0.8, 1], [0.9, 2]]
+[[configs]]
+stage2_cooldown = [0.7, 0.85]
+freeze_schedule = [[0.8, 1], [0.85, 2]]

@@ -1,0 +1,53 @@
+# Round-8 agent hypotheses on the D-014 base: linear (pre-GELU) skips, sequential residual unit in
+# stage 3, parameter-free pooled shortcuts across the downsampling, and the two cheaper-structure
+# levers made plausible by the stage-2 skip (1x1 stage-2 conv2; 1x1 stage-1 residual). 20 seeds.
+name = "s78-signal-paths-r8"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [8100, 8101, 8102, 8103, 8104, 8105, 8106, 8107, 8108, 8109,
+         8110, 8111, 8112, 8113, 8114, 8115, 8116, 8117, 8118, 8119]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage_skips = [false, true, false]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+linear_skips = [true, true, true]
+[[configs]]
+linear_skips = [true, true, false]
+[[configs]]
+linear_skips = [false, false, true]
+[[configs]]
+linear_skips = [false, true, false]
+[[configs]]
+residual_units = [false, false, true]
+[[configs]]
+pool_shortcuts = [0.0, 1.0, 0.0]
+[[configs]]
+pool_shortcuts = [0.0, 0.0, 0.5]
+[[configs]]
+square_kernels = [3, 1, 3]                    # 1x1 stage-2 conv2 behind the skip
+[[configs]]
+square_kernels = [3, 1, 3]
+epochs = 8.5
+[[configs]]
+residual_kernels = [1, 3, 3]                  # 1x1 stage-1 residual conv

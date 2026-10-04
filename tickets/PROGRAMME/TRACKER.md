@@ -574,6 +574,25 @@
 - **Decision consequence:** Reject the multi-scale head.
 - **Resolution:** Rejected.
 
+### F-077 — resolved, material
+
+- **Observation:** S77 (20 seeds 8000-8019, D-014 base, control 75.21%): dense residual sum x + y + GELU(res(y)) in stages 1 and 3: 72.72% (seed SD 1.34 pp, unstable); stage-2 skip branch weight 0.5 / 2: 75.21 / 75.25%; stage-2 freeze (after its own cooldown) from 90% / 85%: 75.07 / 74.97%.
+- **Interpretation:** The stage-2 skip works as a plain identity (branch weight flat from 0.5 to 2); adding the conv2 output into the residual sum doubles the signal and destabilises training; freezing stage 2 still costs about as much accuracy as it saves time even with the skip.
+- **Decision consequence:** Reject all three; D-014 unchanged.
+- **Resolution:** Rejected.
+
+### F-078 — open, material
+
+- **Observation:** S78 (20 seeds 8100-8119, D-014 base, control 75.23% at 4.134 s on GPU 1): linear (pre-GELU) skips in all stages / stages 1-2 / stage 3 / stage 2: 74.42 / 74.41 / 75.28 / 74.66%; sequential residual unit in stage 3: 73.50% (unstable); pooled zero-padded shortcut across the downsampling at stage 2 (s=1) / stage 3 (s=0.5): 75.11 / 74.21%; 1x1 stage-2 conv2 at 8.25 / 8.5 epochs: 74.84 / 74.88%; 1x1 stage-1 residual conv: 75.19% at 4.057 s (GPU 1).
+- **Interpretation:** The GELU on the identity path is useful (linear skips lose 0.6-0.8 pp in early stages); extra residual paths destabilise; stage 2's 3x3 conv2 carries spatial capacity. Only the 1x1 stage-1 residual conv is promising: -0.04 pp for about -1.9% local time, above the exchange rate if it holds.
+- **Decision consequence:** Confirm the 1x1 stage-1 residual on 40 fresh seeds with same-GPU paired timing (S79/S80); reject the rest.
+
+### F-079 — open, material
+
+- **Observation:** S79 (40 fresh seeds 8200-8239, D-014 base): control 75.28% (SE 0.04); 1x1 stage-1 residual conv 75.13% (SE 0.04). S80 same-GPU paired timing (GPU 1, ABBA, medians excluding the first trial): -4.5% / -4.0%, mean -4.3%. S78 gave -0.04 pp on 20 seeds.
+- **Interpretation:** The 1x1 stage-1 residual saves a confirmed 4.3% for about -0.10 to -0.15 pp, a net gain at the exchange rate (4.3% is worth about 0.23 pp), but it spends the margin the stage-2 skip restored: expected accuracy would fall from about 75.25% to about 75.15%, raising P(official mean < 75%) from about 0.05% to about 0.4% centrally (about 3% under the pessimistic stack offset).
+- **Decision consequence:** Not adopted by default: a risk-tolerance decision for the user, best paired with an official-equivalent A100 run that would measure the real margin.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.

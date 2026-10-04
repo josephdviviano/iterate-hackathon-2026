@@ -1,0 +1,34 @@
+schema_version: '2.0'
+finding_id: F-079
+task_id: T-019
+result_kind: mixed
+importance: material
+observation: 'S79 (40 fresh seeds 8200-8239, D-014 base): control 75.28% (SE 0.04); 1x1 stage-1 residual
+  conv 75.13% (SE 0.04). S80 same-GPU paired timing (GPU 1, ABBA, medians excluding the first trial):
+  -4.5% / -4.0%, mean -4.3%. S78 gave -0.04 pp on 20 seeds.'
+interpretation: 'The 1x1 stage-1 residual saves a confirmed 4.3% for about -0.10 to -0.15 pp, a net gain
+  at the exchange rate (4.3% is worth about 0.23 pp), but it spends the margin the stage-2 skip restored:
+  expected accuracy would fall from about 75.25% to about 75.15%, raising P(official mean < 75%) from
+  about 0.05% to about 0.4% centrally (about 3% under the pessimistic stack offset).'
+decision_implication: 'Not adopted by default: a risk-tolerance decision for the user, best paired with
+  an official-equivalent A100 run that would measure the real margin.'
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: the local-vs-A100 accuracy offset decides whether the thinner margin is safe
+  discriminating_test: official-equivalent run
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s79-s80-stage1-pointwise.txt
+  locator: research/evidence/T-019/s79-s80-stage1-pointwise.txt
+  sha256: 9364495da13f3b1c373059665b72c8f39cd89823b3ccb6bbb5a6697f61bfa8fd
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

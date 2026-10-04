@@ -1,0 +1,33 @@
+schema_version: '2.0'
+finding_id: F-077
+task_id: T-019
+result_kind: negative
+importance: material
+observation: 'S77 (20 seeds 8000-8019, D-014 base, control 75.21%): dense residual sum x + y + GELU(res(y))
+  in stages 1 and 3: 72.72% (seed SD 1.34 pp, unstable); stage-2 skip branch weight 0.5 / 2: 75.21 / 75.25%;
+  stage-2 freeze (after its own cooldown) from 90% / 85%: 75.07 / 74.97%.'
+interpretation: The stage-2 skip works as a plain identity (branch weight flat from 0.5 to 2); adding
+  the conv2 output into the residual sum doubles the signal and destabilises training; freezing stage
+  2 still costs about as much accuracy as it saves time even with the skip.
+decision_implication: Reject all three; D-014 unchanged.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: mechanism
+  disposition: supported
+  rationale: with dirac-identity init, y ~ x at the start, so x + y + GELU(res(y)) roughly triples the
+    residual signal and inflates activations downstream
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s77-signal-paths-table.csv
+  locator: research/evidence/T-019/s77-signal-paths-table.csv
+  sha256: c1ec1f38b444a94b0840589f4e25d2c9352c3a3d7adc78973487ec95a1356dd3
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Rejected.

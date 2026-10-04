@@ -181,6 +181,12 @@ class RecipeConfig:
     identity_scale: float = 1.0
     translate_low: int | None = None
     head_multiscale: bool = False
+    # Round 8 (signal paths): branch weight of skipped stages, dense residual sum.
+    skip_scale: float = 1.0
+    residual_dense: bool = False
+    linear_skips: tuple[bool, bool, bool] = (False, False, False)
+    residual_units: tuple[bool, bool, bool] = (False, False, False)
+    pool_shortcuts: tuple[float, float, float] = (0.0, 0.0, 0.0)
     bias_scaler_final: float | None = None
     # Teammates' hypothesis-branch block: activation after the residual add.
     post_add_activation: bool = False
@@ -257,6 +263,9 @@ class RecipeConfig:
             values["selector_widths"] = tuple(values["selector_widths"])
         if values.get("thin_window") is not None:
             values["thin_window"] = tuple(values["thin_window"])
+        for key in ("linear_skips", "residual_units", "pool_shortcuts"):
+            if key in values:
+                values[key] = tuple(values[key])
         if "stage_skips" in values:
             values["stage_skips"] = tuple(values["stage_skips"])
         for key in ("square_kernels", "residual_kernels"):

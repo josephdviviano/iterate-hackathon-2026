@@ -158,6 +158,23 @@ LEVERS = {
         "stage1_cooldown": [0.4, 0.6],
         "freeze_schedule": [[0.6, 1]],
     },
+    "paths-r8": SMALL
+    | {
+        "block_depth": 3,
+        "stage_depths": [3, 2, 3],
+        "stage_skips": [False, True, False],
+        "linear_skips": [True, True, True],
+        "residual_units": [False, False, True],
+        "pool_shortcuts": [0.0, 1.0, 0.5],
+    },
+    "paths": SMALL
+    | {
+        "block_depth": 3,
+        "stage_depths": [3, 2, 3],
+        "stage_skips": [False, True, False],
+        "skip_scale": 0.5,
+        "residual_dense": True,
+    },
     "multiscale": SMALL
     | {
         "block_depth": 3,

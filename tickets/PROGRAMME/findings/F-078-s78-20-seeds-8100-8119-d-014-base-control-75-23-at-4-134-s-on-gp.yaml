@@ -1,0 +1,35 @@
+schema_version: '2.0'
+finding_id: F-078
+task_id: T-019
+result_kind: mixed
+importance: material
+observation: 'S78 (20 seeds 8100-8119, D-014 base, control 75.23% at 4.134 s on GPU 1): linear (pre-GELU)
+  skips in all stages / stages 1-2 / stage 3 / stage 2: 74.42 / 74.41 / 75.28 / 74.66%; sequential residual
+  unit in stage 3: 73.50% (unstable); pooled zero-padded shortcut across the downsampling at stage 2 (s=1)
+  / stage 3 (s=0.5): 75.11 / 74.21%; 1x1 stage-2 conv2 at 8.25 / 8.5 epochs: 74.84 / 74.88%; 1x1 stage-1
+  residual conv: 75.19% at 4.057 s (GPU 1).'
+interpretation: 'The GELU on the identity path is useful (linear skips lose 0.6-0.8 pp in early stages);
+  extra residual paths destabilise; stage 2''s 3x3 conv2 carries spatial capacity. Only the 1x1 stage-1
+  residual conv is promising: -0.04 pp for about -1.9% local time, above the exchange rate if it holds.'
+decision_implication: Confirm the 1x1 stage-1 residual on 40 fresh seeds with same-GPU paired timing (S79/S80);
+  reject the rest.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: 20-seed screen; time difference from unpaired runs
+  discriminating_test: S79/S80
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s78-signal-paths-r8-table.csv
+  locator: research/evidence/T-019/s78-signal-paths-r8-table.csv
+  sha256: b068ac1fb8f25215cb21eec9c502ed03b7ece34d71e0326e8c8aaf8b469c2430
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: open
+resolution: null

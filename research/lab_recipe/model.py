@@ -119,8 +119,21 @@ class ConvGroup(nn.Module):
         residual_kernel: int = 3,
         centre_tap_max: int = 0,
         skip: bool = False,
+        skip_scale: float = 1.0,
+        dense: bool = False,
+        linear_skip: bool = False,
+        residual_unit: bool = False,
+        pool_shortcut: float = 0.0,
     ) -> None:
         super().__init__()
+        # Round 8: ``linear_skip`` carries the pre-GELU BN output on the identity path;
+        # ``residual_unit`` makes the residual conv see the skip sum (z = x + y; z + g(z));
+        # ``pool_shortcut`` adds s * zero-channel-padded maxpool(stage input) to the output.
+        self.linear_skip, self.residual_unit = linear_skip, residual_unit
+        self.pool_shortcut = pool_shortcut
+        # ``skip_scale`` weights the branch of a skipped depth-2 stage (x + s * y); ``dense``
+        # adds the conv2 output to a depth-3 stage's sum (x + y + GELU(residual(y))).
+        self.skip_scale, self.dense = skip_scale, dense
         # Identity skip around a depth-2 stage (x + conv-BN-GELU(x)).
         self.skip = skip
         # Square convs on maps no larger than ``centre_tap_max`` use only their centre tap
@@ -157,18 +170,30 @@ class ConvGroup(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.pool_shortcut:
+            shortcut = max_pool2(x, self.pool_impl)
+            shortcut = F.pad(shortcut, (0, 0, 0, 0, 0, self.conv1.out_channels - x.size(1)))
+            return self._forward(x) + self.pool_shortcut * shortcut
+        return self._forward(x)
+
+    def _forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.pool_first:
-            x = activate(self.norm1(self.conv1(max_pool2(x, self.pool_impl))), self.activation)
+            pre = self.norm1(self.conv1(max_pool2(x, self.pool_impl)))
         else:
             if self.skip_discarded and x.size(-1) % 2:
                 conv = F.conv2d(F.pad(x, (1, 0, 1, 0)), self.conv1.weight)
             else:
                 conv = self.conv1(x)
             pooled = max_pool2(conv, self.pool_impl, self.pool_overlap, self.pool_ceil)
-            x = activate(self.norm1(pooled), self.activation)
+            pre = self.norm1(pooled)
+        x = activate(pre, self.activation)
         y = activate(self.norm2(self._square(self.conv2, x)), self.activation)
+        if self.linear_skip:
+            x = pre  # the identity path carries the signed pre-activation
         if self.residual is None or not self.residual_active:
-            return x + y if self.skip else y
+            if not self.skip:
+                return y
+            return x + y if self.skip_scale == 1 else x + self.skip_scale * y
         if self.centre_tap_max and y.size(-1) <= self.centre_tap_max:
             branch = self.residual[1](self._square(self.residual[0], y))
             return x + activate(branch, self.activation)
@@ -176,6 +201,11 @@ class ConvGroup(nn.Module):
             deep = activate(self.residual(y) + x, self.activation)
         elif self.skip_gate is not None:
             deep = x + self.skip_gate * activate(self.residual(y), self.activation)
+        elif self.dense:
+            deep = x + y + activate(self.residual(y), self.activation)
+        elif self.residual_unit:
+            z = x + y
+            deep = z + activate(self.residual(z), self.activation)
         else:
             deep = x + activate(self.residual(y), self.activation)
         if not self.residual_ramping:
@@ -227,6 +257,11 @@ class AirbenchNet(nn.Module):
                     config.residual_kernels[i],
                     config.centre_tap_max if i == 2 else 0,
                     config.stage_skips[i],
+                    config.skip_scale,
+                    config.residual_dense,
+                    config.linear_skips[i],
+                    config.residual_units[i],
+                    config.pool_shortcuts[i],
                 )
                 for i in range(3)
             )
