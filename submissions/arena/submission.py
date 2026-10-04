@@ -182,18 +182,10 @@ def build(context: BuildContext):
             images=torch.randint(0, 256, (50000, 3, 32, 32), dtype=torch.uint8),
             labels=torch.randint(0, context.num_classes, (50000,)),
         )
-        prepare(state, fake, 0)
-        train(state, max_steps=3 * (50000 // hyp["batch_size"]) // 2)
-        if hyp["res_schedule"]:
-            shapes = {stage_at(hyp, e) for e in range(int(math.ceil(hyp["epochs"])))}
-            for res, bs in shapes:
-                x = torch.randn(bs, 3, res, res, device=device, dtype=DTYPE[hyp["dtype"]])
-                x = x.contiguous(memory_format=torch.channels_last)
-                for _ in range(2):
-                    with torch.autocast("cuda", dtype=DTYPE[hyp["dtype"]]):
-                        loss = F.cross_entropy(step_fn(x), state.labels[:bs], reduction="sum")
-                    loss.backward()
-            model.zero_grad(set_to_none=True)
+        # Run every epoch (all resolutions/stages, CUDA graph recording) with a few steps each.
+        for _ in range(2):
+            prepare(state, fake, 0)
+            train(state, warmup_steps=8)
         # Warm up eval-mode shapes (cudnn.benchmark autotuning) on synthetic inputs.
         model.eval()
         with torch.inference_mode():
@@ -267,7 +259,7 @@ def stage_at(hyp, epoch):
     return 32, hyp["batch_size"]
 
 
-def train(state, max_steps=None) -> nn.Module:
+def train(state, warmup_steps=None) -> nn.Module:
     hyp = state.hyp
     model = state.model
     opt = state.optimizer
@@ -285,10 +277,9 @@ def train(state, max_steps=None) -> nn.Module:
     gen = state.generator
     ls = hyp["label_smoothing"]
     dtype = DTYPE[hyp["dtype"]]
-    step = 0
     epoch = 0
     flip_base = torch.rand(n, device=images.device, generator=gen) < 0.5
-    while epoch < epochs and (max_steps is None or step < max_steps):
+    while epoch < epochs:
         res, bs = stage_at(hyp, epoch)
         steps_per_epoch = n // bs
         epoch_images = batch_crop(images, 32, gen) if hyp["translate"] > 0 else images
@@ -307,7 +298,7 @@ def train(state, max_steps=None) -> nn.Module:
             opt.param_groups[1]["initial_lr"] = 0.0
         for i in range(steps_per_epoch):
             t = (epoch + i / steps_per_epoch) / epochs
-            if t >= 1 or (max_steps is not None and step >= max_steps):
+            if t >= 1 or (warmup_steps is not None and i >= warmup_steps):
                 break
             idx = perm[i * bs : (i + 1) * bs]
             f = lr_at(t)
@@ -319,6 +310,5 @@ def train(state, max_steps=None) -> nn.Module:
             loss.backward()
             opt.step()
             opt.zero_grad(set_to_none=True)
-            step += 1
         epoch += 1
     return model
