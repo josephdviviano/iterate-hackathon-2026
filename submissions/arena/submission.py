@@ -17,7 +17,7 @@ from benchmark.api import BuildContext, TrainingData
 HYP = {
     "widths": (128, 384, 576),
     "depth": 3,  # convs per group; depth 3 adds a residual around conv2/conv3
-    "epochs": 6.75,
+    "epochs": 6.875,
     "batch_size": 1536,
     "lr": 9.0,
     "momentum": 0.85,
@@ -30,11 +30,11 @@ HYP = {
     "scale": 1 / 9,
     "lookahead": True,
     "compile": True,
-    "freeze_block1_after": 5.4,  # epoch from which block 1's output is detached (no block-1 gradients)
+    "freeze_block1_after": 5.5,  # epoch from which block 1's output is detached (no block-1 gradients)
     "head_lr_mult": 2.0,
     "contrast": 0.13,  # per-image contrast/brightness jitter amplitudes (uniform +-)
     "brightness": 0.14,
-    "res_schedule": ((1.5, 20), (3.5, 28)),  # (until epoch, size): whole images downsampled; 32px afterwards
+    "res_schedule": ((1.5, 18), (3.5, 28)),  # (until epoch, size): whole images downsampled; 32px afterwards
     "muon_lr": 0.16,
     "muon_momentum": 0.8,
     "ns_steps": 3,
@@ -58,8 +58,12 @@ class Conv(nn.Conv2d):
         super().reset_parameters()
         if self.bias is not None:
             self.bias.data.zero_()
+        # Same values as torch.nn.init.dirac_(w[:cin]) but one indexed write instead of a per-channel Python loop.
         w = self.weight.data
-        torch.nn.init.dirac_(w[: w.size(1)])
+        cin, kh, kw = w.size(1), w.size(2), w.size(3)
+        w[:cin].zero_()
+        idx = torch.arange(cin, device=w.device)
+        w[idx, idx, kh // 2, kw // 2] = 1
 
 
 class ConvGroup(nn.Module):
@@ -128,6 +132,37 @@ def init_whitening(layer, images, eps=5e-4):
     eigenvectors = eigenvectors.T.reshape(c * h * w, c, h, w).flip(0)
     scaled = eigenvectors / torch.sqrt(eigenvalues + eps)
     layer.weight.copy_(torch.cat((scaled, -scaled)))
+
+
+@torch.compile(dynamic=False)
+def _augment_permuted(padded, perm, shifts, flip, c, b):
+    """One fused pass: sample perm[k], crop 32x32 at its shift, flip, contrast/brightness jitter around its mean."""
+    src = padded[perm]  # [n, 3, 32+2r, 32+2r]
+    sh, fl, ck, bk = shifts[perm], flip[perm], c[perm], b[perm]
+    base = torch.arange(32, device=padded.device)
+    rows = (base[None, :] + sh[:, :1])[:, None, :, None]
+    cols = base[None, :].expand(len(perm), 32)
+    cols = torch.where(fl[:, None], 31 - cols, cols) + sh[:, 1:]
+    idx_n = torch.arange(len(perm), device=padded.device)[:, None, None, None]
+    idx_c = torch.arange(3, device=padded.device)[None, :, None, None]
+    out = src[idx_n, idx_c, rows, cols[:, None, None, :]]
+    mean = out.mean(dim=(1, 2, 3), keepdim=True)
+    out = (out - mean) * ck[:, None, None, None] + mean + bk[:, None, None, None]
+    return out.contiguous(memory_format=torch.channels_last)
+
+
+def augment_and_permute(padded, flip_bits, epoch, r, contrast, brightness, translate):
+    """Same RNG draws, in the same order, as augment() followed by randperm; the image work is one compiled pass."""
+    n = len(padded)
+    device = padded.device
+    shifts = torch.randint(0, 2 * r + 1, (n, 2), device=device)
+    if not translate:
+        shifts = torch.full_like(shifts, r)
+    flip = flip_bits if epoch % 2 == 0 else ~flip_bits
+    c = 1 + (torch.rand(n, device=device) * 2 - 1) * contrast
+    b = (torch.rand(n, device=device) * 2 - 1) * brightness
+    perm = torch.randperm(n, device=device)
+    return _augment_permuted(padded, perm, shifts, flip, c, b), perm
 
 
 def augment(padded, flip_bits, epoch, r, contrast=0.0, brightness=0.0, translate=True):
@@ -316,6 +351,10 @@ def build(context: BuildContext):
         for _ in range(3):
             train_step(state, opt, xs, y)
     model.whiten_bias_grad, model.freeze_block1 = True, False
+    # Compile the fused per-epoch augment for the exact shapes prepare() produces (synthetic data).
+    r = hyp["translate"]
+    fake = torch.rand(50000, 3, 32 + 2 * r, 32 + 2 * r, device=device)
+    augment_and_permute(fake, torch.rand(50000, device=device) < 0.5, 0, r, hyp["contrast"], hyp["brightness"], True)
     if device.type == "cuda":
         torch.cuda.synchronize()
     return state
@@ -381,9 +420,7 @@ def train(state) -> nn.Module:
         whiten_on = epoch < hyp["whiten_bias_epochs"]
         model.whiten_bias_grad = whiten_on
         translate = epoch + 1 > hyp["res_schedule"][-1][0]  # no translate in epochs that are entirely low-res
-        imgs = augment(state.padded, state.flip_bits, epoch, r, hyp["contrast"], hyp["brightness"], translate)
-        perm = torch.randperm(n, device=imgs.device)
-        imgs = imgs[perm].contiguous(memory_format=torch.channels_last)
+        imgs, perm = augment_and_permute(state.padded, state.flip_bits, epoch, r, hyp["contrast"], hyp["brightness"], translate)
         labels = state.labels[perm]
         for i in range(n // bs):
             if step >= total:
