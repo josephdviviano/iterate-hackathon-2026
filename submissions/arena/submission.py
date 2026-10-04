@@ -36,6 +36,7 @@ DEFAULTS = dict(
     whiten_bias_epochs=3,
     compile_mode="max-autotune",  # CUDA graphs (the step is launch-bound) + kernel autotuning
     cudnn_benchmark=True,
+    half_weights=True,
     dtype="fp16",
     alt_flip=True,
     low_res_batch_size=None,  # batch size during res_schedule stages (None: batch_size)
@@ -127,7 +128,7 @@ class Net(nn.Module):
 
     def forward(self, x):
         # Evaluation entry point: float32 images in [0, 1].
-        x = ((x - self.mean) / self.std).contiguous(memory_format=torch.channels_last)
+        x = ((x - self.mean) / self.std).to(self.whiten.weight.dtype).contiguous(memory_format=torch.channels_last)
         return self.features(x).float()
 
 
@@ -178,6 +179,14 @@ def build(context: BuildContext):
     ACT[0] = hyp["act"]
     model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes, hyp["whiten_kernel"], hyp["depth"])
     model = model.to(device).to(memory_format=torch.channels_last)
+    if hyp["half_weights"] and device.type == "cuda":
+        # fp16 conv/linear weights (airbench-style, no fp32 master copy); BN stays fp32.
+        model.half()
+        for m in model.modules():
+            if isinstance(m, nn.BatchNorm2d):
+                m.float()
+        model.mean.data = model.mean.float()
+        model.std.data = model.std.float()
     use_cuda = device.type == "cuda"
     step_fn = torch.compile(model.features, mode=hyp["compile_mode"], dynamic=False) if use_cuda else model.features
     state = SimpleNamespace(model=model, context=context, hyp=hyp, step_fn=step_fn, device=device)
