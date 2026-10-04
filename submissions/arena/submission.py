@@ -30,6 +30,7 @@ HYP = {
     "scale": 1 / 9,
     "lookahead": True,
     "compile": True,
+    "freeze_block1_after": 5.4,  # epoch from which block 1's output is detached (no block-1 gradients)
     "head_lr_mult": 2.0,
     "contrast": 0.13,  # per-image contrast/brightness jitter amplitudes (uniform +-)
     "brightness": 0.14,
@@ -102,12 +103,16 @@ class Net(nn.Module):
         self.head = nn.Linear(widths[2], num_classes, bias=False)
         self.scale = scale
         self.whiten_bias_grad = True
+        self.freeze_block1 = False
 
     def forward(self, x):
         x = (x - self.mean) / self.std
         bias = self.whiten.bias if self.whiten_bias_grad else self.whiten.bias.detach()
         x = F.silu(F.conv2d(x, self.whiten.weight, bias))
-        x = self.groups(x)
+        x = self.groups[0](x)
+        if self.freeze_block1:
+            x = x.detach()
+        x = self.groups[2](self.groups[1](x))
         x = F.max_pool2d(x, x.shape[-1]).flatten(1)
         return self.head(x) * self.scale
 
@@ -207,8 +212,18 @@ class Muon:
 
     def step(self):
         self.lr_t.fill_(self.param_groups[0]["lr"])
-        grads = [p.grad for p in self.params]
-        _muon_update(self.params, grads, self.bufs, self.lr_t, self.momentum, self.ns_steps, self.shape_groups)
+        live = [i for i, p in enumerate(self.params) if p.grad is not None]
+        if len(live) == len(self.params):
+            grads = [p.grad for p in self.params]
+            _muon_update(self.params, grads, self.bufs, self.lr_t, self.momentum, self.ns_steps, self.shape_groups)
+        else:  # some filters are frozen (no grad): update the rest with their own shape groups
+            params = [self.params[i] for i in live]
+            groups = {}
+            for j, p in enumerate(params):
+                groups.setdefault(tuple(p.shape), []).append(j)
+            shape_groups = tuple(tuple(v) for v in groups.values())
+            bufs = [self.bufs[i] for i in live]
+            _muon_update(params, [p.grad for p in params], bufs, self.lr_t, self.momentum, self.ns_steps, shape_groups)
 
 
 class Lookahead:
@@ -276,12 +291,24 @@ def build(context: BuildContext):
     y = torch.randint(0, context.num_classes, (bs,), device=device)
     model.train()
     opt = make_optimizer(model, hyp, 10)
-    for xs in [downsample(x, size) for _, size in hyp["res_schedule"]] + [x]:
-        for bias_grad in (True, False):
-            model.whiten_bias_grad = bias_grad
-            for _ in range(3):
-                train_step(state, opt, xs, y)
-    model.whiten_bias_grad = True
+    # Warm up exactly the (resolution, whitening-bias grad, block-1 frozen) variants the timed run uses.
+    starts = [0.0] + [until for until, _ in hyp["res_schedule"]]
+    sizes = [size for _, size in hyp["res_schedule"]] + [32]
+    ends = starts[1:] + [hyp["epochs"]]
+    variants = set()
+    for start, end, size in zip(starts, ends, sizes):
+        if start < hyp["whiten_bias_epochs"]:
+            variants.add((size, True, False))
+        if end > hyp["whiten_bias_epochs"]:
+            variants.add((size, False, False))
+        if end > hyp["freeze_block1_after"]:
+            variants.add((size, False, True))
+    for size, bias_grad, frozen in sorted(variants):
+        xs = downsample(x, size) if size < 32 else x
+        model.whiten_bias_grad, model.freeze_block1 = bias_grad, frozen
+        for _ in range(3):
+            train_step(state, opt, xs, y)
+    model.whiten_bias_grad, model.freeze_block1 = True, False
     if device.type == "cuda":
         torch.cuda.synchronize()
     return state
@@ -340,6 +367,7 @@ def train(state) -> nn.Module:
     r = hyp["translate"]
     alpha = ((0.97**5) * (torch.arange(total + 1) / total) ** 3).tolist()
     res_steps = [(int((n // bs) * until), size) for until, size in hyp["res_schedule"]]
+    freeze_step = int((n // bs) * hyp["freeze_block1_after"])
     step = 0
     epoch = 0
     while step < total:
@@ -363,6 +391,7 @@ def train(state) -> nn.Module:
                 if step < until:
                     xb = downsample(xb, size)
                     break
+            model.freeze_block1 = step >= freeze_step
             train_step(state, optimizer, xb, labels[i * bs : (i + 1) * bs])
             step += 1
             if state.lookahead is not None and step % 5 == 0:
@@ -370,6 +399,6 @@ def train(state) -> nn.Module:
         epoch += 1
     if state.lookahead is not None:
         state.lookahead.update(model, decay=1.0)
-    model.whiten_bias_grad = True
+    model.whiten_bias_grad, model.freeze_block1 = True, False
     model.eval()
     return model
