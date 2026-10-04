@@ -19,7 +19,7 @@ MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
-    epochs=11,
+    epochs=11.25,
     batch_size=768,
     lr=14.0,  # per 1024 examples (summed loss)
     momentum=0.85,
