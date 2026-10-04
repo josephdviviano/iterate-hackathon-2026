@@ -221,20 +221,20 @@ def make_optimizer(model, hyp, batch_size):
     return opt
 
 
-def augment(padded, flip_mask, epoch, translate, generator=None):
-    """Random crop (from reflect-padded images) plus derandomized alternating flip."""
+def augment(padded, flip_mask, epoch, translate):
+    """Random crop (from reflect-padded images) plus derandomized alternating flip, sync-free."""
     n, c, hp, wp = padded.shape
     h, w = hp - 2 * translate, wp - 2 * translate
-    out = torch.empty((n, c, h, w), dtype=padded.dtype, device=padded.device)
-    span = 2 * translate + 1
-    shifts = torch.randint(0, span * span, (n,), device=padded.device)
-    for s in range(span * span):
-        dy, dx = divmod(s, span)
-        mask = shifts == s
-        out[mask] = padded[mask, :, dy : dy + h, dx : dx + w]
+    device = padded.device
+    dy = torch.randint(0, 2 * translate + 1, (n, 1), device=device)
+    dx = torch.randint(0, 2 * translate + 1, (n, 1), device=device)
+    rows = (dy + torch.arange(h, device=device)).view(n, 1, h, 1).expand(n, c, h, wp)
+    out = padded.gather(2, rows)
     flip = flip_mask if epoch % 2 == 0 else ~flip_mask
-    out = torch.where(flip.view(-1, 1, 1, 1), out.flip(3), out)
-    return out
+    # A flipped crop reads columns right to left.
+    cols = torch.arange(w, device=device).expand(n, w)
+    cols = torch.where(flip.view(n, 1), w - 1 - cols, cols) + dx
+    return out.gather(3, cols.view(n, 1, 1, w).expand(n, c, h, w))
 
 
 class Lookahead:
