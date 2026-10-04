@@ -268,16 +268,24 @@ class Muon:
             _muon_update(params, [p.grad for p in params], bufs, self.lr_t, self.momentum, self.ns_steps, shape_groups)
 
 
-class Lookahead:
-    def __init__(self, model):
-        self.ema = {k: v.detach().clone() for k, v in model.state_dict().items() if v.is_floating_point()}
+@torch.compile(dynamic=False)
+def _lookahead_blend(slow, fast, weight):
+    with torch.no_grad():
+        torch._foreach_lerp_(slow, fast, weight)
+        torch._foreach_copy_(fast, slow)
 
-    @torch.no_grad()
+
+class Lookahead:
+    """Slow weights; every update blends them toward the fast weights and copies them back (one compiled foreach pass)."""
+
+    def __init__(self, model):
+        self.fast = [v for v in model.state_dict().values() if v.is_floating_point()]
+        self.ema = [v.detach().clone() for v in self.fast]
+        self.weight = torch.zeros((), device=self.fast[0].device)
+
     def update(self, model, decay):
-        for k, v in model.state_dict().items():
-            if k in self.ema:
-                self.ema[k].lerp_(v, 1 - decay)
-                v.copy_(self.ema[k])
+        self.weight.fill_(1 - decay)
+        _lookahead_blend(self.ema, self.fast, self.weight)
 
 
 def make_optimizer(model, hyp, total_steps):
@@ -351,6 +359,26 @@ def build(context: BuildContext):
         for _ in range(3):
             train_step(state, opt, xs, y)
     model.whiten_bias_grad, model.freeze_block1 = True, False
+    Lookahead(model).update(model, decay=0.5)  # compile the lookahead blend (state is reset in prepare)
+    # Persistent GPU buffers for the train set (memory reuse; no data here) and first-use warmups of prepare()'s ops
+    # on synthetic values: parameter resets, uint8->float, mean/std, the whitening fit (eigh) and reflect padding.
+    state.img_u8, state.img_f = None, None
+    if device.type == "cuda":
+        state.img_u8 = torch.randint(0, 256, (50000, 3, 32, 32), dtype=torch.uint8, device=device)
+        state.img_f = torch.empty(50000, 3, 32, 32, device=device)
+        state.img_pinned = torch.empty(50000, 3, 32, 32, dtype=torch.uint8, pin_memory=True)
+        state.img_pinned.copy_(torch.randint(0, 256, (50000, 3, 32, 32), dtype=torch.uint8))  # synthetic contents
+        state.img_u8.copy_(state.img_pinned, non_blocking=True)  # warm the pinned H2D path
+        with torch.no_grad():
+            for m in model.modules():
+                if m is not model and hasattr(m, "reset_parameters"):
+                    m.reset_parameters()
+            fake = state.img_f.copy_(state.img_u8).div_(255)
+            mean, std = fake.mean(dim=(0, 2, 3), keepdim=True), fake.std(dim=(0, 2, 3), keepdim=True)
+            scratch = Conv(3, model.whiten.weight.size(0), kernel_size=2, padding=0, bias=True).to(device)
+            init_whitening(scratch, (fake[:5000] - mean) / std)
+            r = hyp["translate"]
+            F.pad(fake, (r, r, r, r), mode="reflect")
     # Compile the fused per-epoch augment for the exact shapes prepare() produces (synthetic data).
     r = hyp["translate"]
     fake = torch.rand(50000, 3, 32 + 2 * r, 32 + 2 * r, device=device)
@@ -384,7 +412,12 @@ def prepare(state, data: TrainingData, seed: int) -> None:
             m.reset_parameters()
         if isinstance(m, nn.BatchNorm2d):
             m.reset_running_stats()
-    images = data.images.to(device, non_blocking=True).float().div_(255)
+    if state.img_u8 is not None and state.img_u8.shape == data.images.shape:  # reuse build()-time buffers
+        state.img_pinned.copy_(data.images)  # host memcpy into pinned staging, then a fast async H2D
+        state.img_u8.copy_(state.img_pinned, non_blocking=True)
+        images = state.img_f.copy_(state.img_u8).div_(255)
+    else:
+        images = data.images.to(device, non_blocking=True).float().div_(255)
     labels = data.labels.to(device, non_blocking=True)
     mean = images.mean(dim=(0, 2, 3), keepdim=True)
     std = images.std(dim=(0, 2, 3), keepdim=True)
@@ -422,6 +455,12 @@ def train(state) -> nn.Module:
         translate = epoch + 1 > hyp["res_schedule"][-1][0]  # no translate in epochs that are entirely low-res
         imgs, perm = augment_and_permute(state.padded, state.flip_bits, epoch, r, hyp["contrast"], hyp["brightness"], translate)
         labels = state.labels[perm]
+        epoch_size = None  # resize the whole epoch at once if it lies entirely inside one low-res stage
+        for until, size in res_steps:
+            if (epoch + 1) * (n // bs) <= until and epoch * (n // bs) >= (res_steps[res_steps.index((until, size)) - 1][0] if res_steps.index((until, size)) else 0):
+                epoch_size = size
+                imgs = downsample(imgs, size)
+                break
         for i in range(n // bs):
             if step >= total:
                 break
@@ -431,10 +470,11 @@ def train(state) -> nn.Module:
             for g in optimizer[1].param_groups:
                 g["lr"] = g["base_lr"] * f
             xb = imgs[i * bs : (i + 1) * bs]
-            for until, size in res_steps:
-                if step < until:
-                    xb = downsample(xb, size)
-                    break
+            if epoch_size is None:
+                for until, size in res_steps:
+                    if step < until:
+                        xb = downsample(xb, size)
+                        break
             model.freeze_block1 = step >= freeze_step
             train_step(state, optimizer, xb, labels[i * bs : (i + 1) * bs])
             step += 1
