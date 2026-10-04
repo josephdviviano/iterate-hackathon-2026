@@ -17,8 +17,6 @@ A **Natural Language Autoencoder** (NLA — [Anthropic, 2026](https://transforme
 for **Qwen/Qwen3.8-27B** at residual-stream **layer 42/64**, trained with the EasyNLA recipe
 (AV/AR warm-start SFT on gold explanations → GRPO with a co-trained critic).
 
-> **Status: work in progress.** This repo is updated as training proceeds; see
-> `eval_*.json` and the table below for the checkpoint currently uploaded.
 
 - **AV (verbalizer)** — LoRA (r64, rsLoRA, all linear layers) on Qwen3.8-27B. An activation is
   added, norm-matched, at the marker token `㈜` after block 1, and the AV writes an
@@ -36,10 +34,18 @@ same harness).
 
 ## Results (held-out, doc-disjoint)
 
-| checkpoint | held-out FVE | shuffled-activation control |
-|---|---|---|
-| SFT warm-start (AV 1 epoch + AR 1 epoch) | **53.2%** (99.6% well-formed) | −76.3% |
-| GRPO | _in progress_ | |
+| checkpoint | held-out FVE | shuffled-activation control | mean length |
+|---|---|---|---|
+| SFT warm-start (AV 1 epoch + AR 1 epoch) | 53.2% (100% well-formed) | −76.3% | 124 tok |
+| **GRPO step 64** (`stage="rl"`), RL co-trained critic | **66.3%** (98% well-formed) | −85.8% | 160 tok |
+| GRPO step 64 AV, scored by the frozen SFT critic | 63.6% | −81.8% | 160 tok |
+
+The frozen-critic row isolates the verbalizer: with the scorer held fixed, RL improves the AV by
++10.4 points. Val FVE plateaued at about 65–66% from step 30 to step 64, while explanation length
+and KL kept rising, so we stopped there.
+
+As with NLAs generally, specific names and numbers in explanations can be confabulated. The
+structural and semantic content is the reliable part.
 
 Held-out = 256 rl-split prefixes whose docs never appear in training (doc-hash bucket). Greedy decoding; scored by the matching AR. AR alone on gold Claude explanations: 58.4% (val).
 
@@ -77,7 +83,7 @@ Needs `transformers>=5.5` (qwen3_5), `peft`, `safetensors`; install `flash-linea
   [`ceselder/qwen3-8b-nla-L24-finefineweb-100k`](https://huggingface.co/datasets/ceselder/qwen3-8b-nla-L24-finefineweb-100k);
   activations re-extracted from Qwen3.8-27B at layer 42 (last token of each prefix).
 - 120k (text, explanation) rows (45.8k docs) for both AV and AR SFT, one epoch, batch 64, lr 1e-4.
-- GRPO on 25k RL-split prefixes: reward = −reconstruction MSE, group size 8, k3 KL (β=0.01) to the
+- GRPO (64 steps; steps 1–30 on 8×B200 with 128 prompts × 8 rollouts, steps 31–64 on 4×H200 with 64 × 8) on 25k RL-split prefixes: reward = −reconstruction MSE, group size 8, k3 KL (β=0.01) to the
   SFT policy, hinged length penalty, critic co-trained every step.
 - Eval docs are doc-hash disjoint from all training docs.
 - Code: `modal_nla38.py` (Modal, data-parallel B200s), built on

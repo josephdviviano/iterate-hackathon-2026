@@ -1120,7 +1120,7 @@ def token_logps(model, pids, resp_list, acts, vref, pad, grad):
 def _rl(rank, world, av_sft="av38_sft", ar_sft="ar38_sft", run="rl38", num_steps=200, prompts_per_rank=16,
         group_size=8, max_new_tokens=256, lr=1e-4, critic_lr=8e-5, kl_beta=0.01, length_penalty=0.01,
         lora_r=64, mb=16, critic_mb=32, eval_every=10, eval_n=256, save_every=10, max_hours=10.0,
-        max_usd=1e9, usd_per_gpu_hour=6.25, resume=True):
+        max_usd=1e9, usd_per_gpu_hour=None, resume=True):
     import json
     import math
     import random
@@ -1135,11 +1135,14 @@ def _rl(rank, world, av_sft="av38_sft", ar_sft="ar38_sft", run="rl38", num_steps
     from nla.utils import register_karvonen_hook
 
     batch_prompts = prompts_per_rank * world
+    if usd_per_gpu_hour is None:   # price the GPU we actually got (Modal list prices)
+        name = torch.cuda.get_device_name()
+        usd_per_gpu_hour = 6.25 if "B200" in name else 4.54 if "H200" in name else 3.95 if "H100" in name else 6.25
     torch.manual_seed(0)
     t0 = time.time()
     P = lambda *a: print(f"[r{rank}]", *a, flush=True) if rank == 0 else None
     P(f"GRPO: {world} GPUs x {prompts_per_rank} prompts x {group_size} = {batch_prompts * group_size} rollouts/step; "
-      f"stop at {num_steps} steps / {max_hours}h / ${max_usd:.0f}")
+      f"stop at {num_steps} steps / {max_hours}h / ${max_usd:.0f} (@ ${usd_per_gpu_hour}/GPU-h)")
     tok, cfg = nla_cfg()
     sc = resolve_target_scale(cfg.mse_scale, cfg.d_model)
     pad = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
@@ -1442,9 +1445,9 @@ def export(av_sft: str = "av38_sft", ar_sft: str = "ar38_sft", rl_run: str = "rl
     shutil.copy("/root/nla_qwen38.py", f"{dst}/nla_qwen38.py")
     if os.path.exists("/root/pub/README_HF.md"):
         shutil.copy("/root/pub/README_HF.md", f"{dst}/README.md")
-    for r in ("eval_sft", "eval_rl"):
-        if os.path.exists(f"{VOL}/results/{r}.json"):
-            shutil.copy(f"{VOL}/results/{r}.json", f"{dst}/{r}.json")
+    import glob
+    for r in glob.glob(f"{VOL}/results/eval_*.json") + glob.glob(f"{VOL}/results/transfer_test.json"):
+        shutil.copy(r, f"{dst}/{os.path.basename(r)}")
     vol.commit()
     for root, _, files in os.walk(dst):
         for f in files:

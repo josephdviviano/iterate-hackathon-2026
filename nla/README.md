@@ -20,6 +20,16 @@ All GPU work runs on Modal. Training is data parallel over B200s.
 - AR: the explanation text goes to a `Linear(5120, 5120)` head, which outputs an activation.
   Metric: fraction of variance explained (FVE).
 
+## Results (held-out, 256 docs never seen in training)
+
+| model | FVE | shuffled-activation control |
+|---|---|---|
+| ceselder's Qwen3.6 NLA, run unchanged on Qwen3.8 | 0% parseable outputs | — |
+| SFT warm-start | 53.2% | −76.3% |
+| **SFT + GRPO (64 steps)** | **66.3%** (63.6% with the frozen SFT critic) | −85.8% |
+
+Metric, split, baseline and command for each number are in `RESULTS.md`.
+
 ## Layout
 
 | file | what |
@@ -41,19 +51,6 @@ python spawn.py train_rl '{"max_usd": 50}'                        # e.g. GRPO wi
 modal run modal_nla38.py::evaluate --tag eval_sft                 # held-out FVE + shuffled control
 modal run demo/demo_app.py::prefetch && modal deploy demo/demo_app.py   # live demo (prints the URL)
 ```
-
-### Moving to another Modal workspace
-
-All state lives in private Hugging Face repos, so a new workspace needs no local copy:
-
-```bash
-modal secret create huggingface HF_TOKEN=...                      # in the new workspace
-NLA_GPU=B200 modal run modal_nla38.py::restore                    # base model, data, all checkpoints
-NLA_GPU=B200 modal deploy modal_nla38.py && python spawn.py train_rl '{"max_usd": 20}'   # resumes at the saved step
-```
-
-`NLA_GPU=H200` also works. Hopper uses Triton 3.7.1; `check_hopper_triton` validates the gated-delta
-backward pass against an fp32 reference. A workspace needs a payment method on file to use any of these GPUs.
 
 Inference without Modal (one 141–180 GB GPU or two GPUs):
 

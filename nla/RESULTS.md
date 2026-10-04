@@ -23,9 +23,12 @@
 | 6 | AV SFT (1 epoch, 120k rows) | val CE **1.192** vs **1.780** with shuffled activations | val 512 | step 0: 2.898 | `train_av` (4→2×B200, resumed at step 800) |
 | 7 | Full SFT NLA (AV → AR) | **53.2% FVE**, 99.6% extraction | held-out 256 | shuffled-activation control: **−76.3%** | `modal run modal_nla38.py::evaluate --tag eval_sft` |
 | 8 | Early SFT snapshot (AV ≈ step 600), standalone `nla_qwen38.py` | 54.3% FVE, 100% extraction | held-out first 64 | — | `modal run modal_nla38.py::test_infer` |
-| 9 | GRPO, steps 0 → 10 → 20 → 30 (8×B200, 128 prompts × 8 rollouts/step), paused at step 30 | val FVE **52.6% → 61.8% → 64.2% → 65.8%**, 98–100% extraction | val 256 (buckets 5–25) | step 0 = SFT | `python spawn.py train_rl '{"max_usd": 50}'` |
+| 9 | GRPO val curve, steps 0/10/20/30/40/50/60 (steps 1–30: 8×B200, 128 prompts × 8; steps 31–64: 4×H200, 64 × 8) | val FVE 52.6 / 61.8 / 64.2 / 65.8 / 65.3 / 64.9 / 65.8%; plateau from step 30 | val 256 (buckets 5–25) | step 0 = SFT | `python spawn.py train_rl '{"max_usd": 19}'` (resumed from step 30) |
+| 10 | **Final RL NLA (step 64)**, co-trained critic | **66.3% FVE**, 98% extraction, mean 160 tokens | held-out 256 | row 7 (SFT 53.2%); shuffled-activation control −85.8% | `evaluate --rl-run rl38 --tag eval_rl` |
+| 11 | RL AV (step 64) scored by the **frozen SFT critic** | **63.6% FVE** (+10.4 over SFT with the same scorer) | held-out 256 | row 7; shuffled-activation control −81.8% | `evaluate --rl-run rl38 --critic /vol/ckpts/ar38_sft/ar_lora_value_head.safetensors --tag eval_rl_sftcritic` |
 
-Row 9 is scored by the AR critic, which is co-trained during RL (the standard NLA metric). The held-out-256 eval and the eval with the frozen SFT critic run when RL finishes.
+Row 9 is scored by the AR critic, which is co-trained during RL (the standard NLA metric). Row 11
+holds the scorer fixed, so its gain belongs to the verbalizer alone.
 
 The shuffled-activation control gives the AV the activation of a different row, and the AR scores
 the result against the true activation. The FVE falls far below 0, so the explanations carry
