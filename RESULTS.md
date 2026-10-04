@@ -3107,3 +3107,64 @@ Reading:
 | Baseline | `single_fixed` (one member, the paper's setting) and `committee_fixed` (same committee, no probe choice); the paper's frontier rows as the external reference |
 | Command | `uv run modal run -m scigym.modal_app --arm committee_probe,committee_fixed,single_fixed --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40` (and `--model gptoss`); `uv run python -m scigym.report --model qwen`; `uv run python -m scigym.ablations --model qwen` |
 | Commit | this commit (artifacts `artifacts/scigym/<arm>_<model>/`) |
+
+## B6. SciGym, questions 2 and 3: the committee's spread as a calibrated score, at the system and the reaction level
+
+On the B5 runs (`scigym.calibration`). System level: the committee's
+confidence that its answer is right (reaction F1 at least 0.5) is one minus
+the spread among members, the mean pairwise reaction-set distance; the R22
+wrapper turns the spread into a set over {right, wrong}: one label is a
+commitment, both is an abstention. Split conformal calibrates on half the
+systems, 500 random splits; the online rule (ACI, gamma 0.05) runs along the
+systems in id order. Reaction level: every reaction any member proposed,
+with the share of members behind it, against whether it is in the hidden
+network; the effect-row flag of the ARC committee, here per reaction.
+
+| Model, arm | n | Answers right | ECE of 1 - spread | AUROC spread vs wrong | Conformal coverage (target 0.90) | Committed | Accuracy when committed | Certified right (error) | Online coverage, committed, accuracy |
+|---|---|---|---|---|---|---|---|---|---|
+| Qwen, probe | 28 | 0.14 | 0.24 | 0.85 | 0.93 [0.64, 1.00] | 0.38 | 0.83 | 0.06 (1.00) | 0.79, 0.54, 0.80 |
+| Qwen, fixed | 28 | 0.14 | 0.27 | 0.66 | 0.93 [0.64, 1.00] | 0.19 | 0.53 | 0.06 (1.00) | 0.82, 0.25, 0.71 |
+| gpt-oss, probe | 30 | 0.07 | 0.38 | 0.61 | 0.98 [0.73, 1.00] | 0.03 | 0.43 | 0.02 (0.99) | 0.87, 0.07, 0.50 |
+| gpt-oss, fixed | 27 | 0.11 | 0.28 | 0.67 | 0.93 [0.64, 1.00] | 0.26 | 0.73 | 0.07 (0.77) | 0.93, 0.48, 0.85 |
+| single member, both | 30 | 0.07 to 0.13 | 0.87 | 0.50 | 1.00 | 0.00 | none | 0.00 | abstains on every system |
+
+| Model, arm | Proposed reactions | AUROC share vs true | Precision, unanimous (n) | Precision, split (n) | Precision by share quartile, low to high |
+|---|---|---|---|---|---|
+| Qwen, probe | 538 | 0.64 | 0.26 (68) | 0.11 (470) | 0.06, 0.14, 0.12, 0.20 |
+| Qwen, fixed | 508 | 0.59 | 0.11 (66) | 0.14 (442) | 0.10, 0.11, 0.14, 0.20 |
+| gpt-oss, probe | 300 | 0.51 | 0.19 (70) | 0.20 (230) | 0.19, 0.17, 0.23, 0.19 |
+| gpt-oss, fixed | 327 | 0.55 | 0.20 (45) | 0.18 (282) | 0.18, 0.12, 0.23, 0.20 |
+
+Reading:
+
+1. Question 3 holds at the system level on the arm whose experiments were
+   chosen by disagreement, and weakly elsewhere: Qwen probe AUROC 0.85,
+   with the agreement quartiles right 0.00, 0.00, 0.14 and 0.43 of the
+   time; the other committee arms 0.61 to 0.67. The raw confidence is not
+   a probability (ECE 0.24 to 0.38): the committee is right on 7 to 14
+   percent of systems and its most agreed quartile on 14 to 43 percent.
+2. Question 2: the wrapper keeps its guarantee (split coverage 0.93 to
+   0.98 at a 0.90 target; online 0.79 to 0.93 on 27 to 30 systems, where
+   the online rule has too few steps to settle) and it spends the guarantee
+   on rejections. On Qwen probe it commits on 38 percent of systems with
+   accuracy 0.83, and almost every commitment says "this answer is wrong";
+   it certifies an answer as right on 6 percent of systems and those are
+   wrong. On this benchmark the honest outputs are "I do not know" and
+   "this is wrong", rarely "this is right"; a single member has no spread,
+   so the wrapper abstains on every system.
+3. At the reaction level the flag is weak. A reaction every member proposes
+   is right 11 to 26 percent of the time, a split one 11 to 20 percent;
+   AUROC 0.51 to 0.64. Members share wrong reactions, so unanimity on a
+   reaction marks the model's prior more than the truth: the shared blind
+   spot of sk48 L2 (R34) is the common case here, not the exception. The
+   system-level spread works because it sums many small disagreements; no
+   single reaction's share does.
+
+| Item | Value |
+|---|---|
+| Metric | ECE (5 equal-mass bins), AUROC, conformal coverage and commitment at alpha 0.1; reaction-level precision by share |
+| Runs | The B5 runs; no new sessions |
+| Split | 27 to 30 systems per arm; split conformal over 500 half splits of the systems; online in id order |
+| Baseline | The single member (no spread); the ARC committee on the same measures (R35) |
+| Command | `uv run python -m scigym.calibration --model qwen` and `--model gptoss` (writes `artifacts/scigym/calibration_<model>.json`) |
+| Commit | this commit |
