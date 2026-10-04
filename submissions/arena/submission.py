@@ -28,11 +28,14 @@ DEFAULTS = {
     "flip": "alternate",
     "translate": 2,
     "cutout": 0,
-    "widths": [128, 256, 576],
+    "widths": [128, 256, 704],
     "bn_momentum": 0.4,
     "scaling_factor": 1 / 9,
     "compile_mode": "max-autotune",
     "warmup_steps": 3,
+    "lowres_frac": 0.5,  # fraction of steps trained at reduced resolution
+    "lowres_size": 24,
+    "lowres_antialias": True,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -91,7 +94,7 @@ class Net(nn.Module):
             ConvGroup(whiten_width, widths[0], bn_momentum),
             ConvGroup(widths[0], widths[1], bn_momentum),
             ConvGroup(widths[1], widths[2], bn_momentum),
-            nn.MaxPool2d(3),
+            nn.AdaptiveMaxPool2d(1),
             nn.Flatten(),
         )
         self.head = nn.Linear(widths[2], num_classes, bias=False)
@@ -189,7 +192,7 @@ def build(context: BuildContext):
     model = model.to(device).to(memory_format=torch.channels_last)
     loss_module = TrainLoss(model, cfg["label_smoothing"])
     if device.type == "cuda":
-        compiled = torch.compile(loss_module, mode=cfg["compile_mode"])
+        compiled = torch.compile(loss_module, mode=cfg["compile_mode"], dynamic=False)
     else:
         compiled = loss_module
     state = SimpleNamespace(model=model, compiled=compiled, context=context, cfg=cfg)
@@ -199,11 +202,14 @@ def build(context: BuildContext):
     y = torch.randint(0, context.num_classes, (bs,), device=device)
     opt = make_optimizer(model, cfg)
     model.train()
-    for _ in range(cfg["warmup_steps"]):
-        loss = compiled(x, y)
-        loss.backward()
-        opt.step()
-        opt.zero_grad(set_to_none=True)
+    sizes = [32] + ([cfg["lowres_size"]] if cfg["lowres_frac"] > 0 else [])
+    for size in sizes:
+        xs = downsample(x, size, cfg) if size != 32 else x
+        for _ in range(cfg["warmup_steps"]):
+            loss = compiled(xs, y)
+            loss.backward()
+            opt.step()
+            opt.zero_grad(set_to_none=True)
     model.eval()
     with torch.inference_mode():
         for b in (1, 7, 1024):
@@ -211,6 +217,12 @@ def build(context: BuildContext):
     if device.type == "cuda":
         torch.cuda.synchronize()
     return state
+
+
+def downsample(x, size, cfg):
+    return F.interpolate(
+        x, size=(size, size), mode="bilinear", antialias=cfg["lowres_antialias"]
+    )
 
 
 def make_optimizer(model, cfg):
@@ -267,6 +279,7 @@ def train(state) -> nn.Module:
     live = [t for t in list(model.parameters()) + list(model.buffers()) if t.is_floating_point()]
     ema = state.ema
     whiten_steps = cfg["whiten_bias_epochs"] * steps_per_epoch
+    lowres_steps = int(cfg["lowres_frac"] * total_steps)
 
     def lr_factor(step):
         if step < warmup:
@@ -290,7 +303,10 @@ def train(state) -> nn.Module:
                 g["lr"] = g["base_lr"] * f
                 if g.get("whiten") and step >= whiten_steps:
                     g["lr"] = 0.0
-            loss = state.compiled(aug[idx], state.labels[idx])
+            x = aug[idx]
+            if step < lowres_steps:
+                x = downsample(x, cfg["lowres_size"], cfg)
+            loss = state.compiled(x, state.labels[idx])
             loss.backward()
             opt.step()
             opt.zero_grad(set_to_none=True)
