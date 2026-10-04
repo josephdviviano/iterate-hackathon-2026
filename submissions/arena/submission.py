@@ -12,7 +12,7 @@ from benchmark.api import BuildContext, TrainingData
 
 HYP = {
     "epochs": 10.0,
-    "batch_size": 1024,
+    "batch_size": 2000,
     "lr": 9.0,
     "momentum": 0.85,
     "weight_decay": 0.012,
@@ -26,6 +26,8 @@ HYP = {
     "whiten_images": 5000,
     "compile": True,
     "ema_every": 5,
+    "muon_lr": 0.24,
+    "muon_momentum": 0.6,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -128,6 +130,68 @@ def make_model(context, hyp):
     return model
 
 
+def newton_schulz(G, steps=3, eps=1e-7):
+    """Approximately orthogonalize G (quintic Newton-Schulz, as in Muon)."""
+    a, b, c = (3.4445, -4.7750, 2.0315)
+    X = G.bfloat16()
+    X = X / (X.norm() + eps)
+    transpose = G.size(0) > G.size(1)
+    if transpose:
+        X = X.T
+    for _ in range(steps):
+        A = X @ X.T
+        B = b * A + c * A @ A
+        X = a * X + B @ X
+    if transpose:
+        X = X.T
+    return X
+
+
+@torch.no_grad()
+def muon_update(params, grads, bufs, lr, momentum: float):
+    for p, g, buf in zip(params, grads, bufs):
+        g = g.float()
+        buf.mul_(momentum).add_(g)
+        g = g.add(buf, alpha=momentum)
+        p.mul_(p.shape[0] ** 0.5 / p.float().norm())
+        update = newton_schulz(g.reshape(len(g), -1)).view(g.shape)
+        p.sub_(lr * update.float())
+
+
+class Muon(torch.optim.Optimizer):
+    """Muon on conv filters: Nesterov momentum, orthogonalized update, fixed-norm weights."""
+
+    def __init__(self, params, lr, momentum, compiled=True):
+        super().__init__(params, dict(lr=lr, momentum=momentum))
+        group = self.param_groups[0]
+        self.bufs = [torch.zeros_like(p, dtype=torch.float32) for p in group["params"]]
+        self.lr_t = torch.tensor(lr, device=group["params"][0].device)
+        self.update = torch.compile(muon_update) if compiled else muon_update
+
+    @torch.no_grad()
+    def step(self):
+        group = self.param_groups[0]
+        self.lr_t.fill_(group["lr"])
+        grads = [p.grad for p in group["params"]]
+        self.update(group["params"], grads, self.bufs, self.lr_t, group["momentum"])
+
+
+class Optimizers:
+    """SGD (biases, head) and Muon (conv filters) stepped together."""
+
+    def __init__(self, opts):
+        self.opts = opts
+        self.param_groups = [g for o in opts for g in o.param_groups]
+
+    def zero_grad(self, set_to_none=True):
+        for o in self.opts:
+            o.zero_grad(set_to_none=set_to_none)
+
+    def step(self):
+        for o in self.opts:
+            o.step()
+
+
 def make_optimizer(model, hyp, batch_size):
     kilostep_scale = 1024 * (1 + 1 / (1 - hyp["momentum"]))
     lr = hyp["lr"] / kilostep_scale
@@ -135,18 +199,21 @@ def make_optimizer(model, hyp, batch_size):
     lr_biases = lr * hyp["bias_scaler"]
     norm_biases = [p for n, p in model.named_parameters() if "norm" in n and p.requires_grad]
     whiten_bias = [model.whiten.bias]
+    filters = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim == 4]
     other = [
         p
         for n, p in model.named_parameters()
-        if p.requires_grad and "norm" not in n and not n.startswith("whiten.")
+        if p.requires_grad and "norm" not in n and not n.startswith("whiten.") and p.ndim != 4
     ]
     groups = [
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
-        dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases),
+        dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases, whiten=True),
         dict(params=other, lr=lr, weight_decay=wd / lr),
     ]
-    fused = next(model.parameters()).is_cuda
-    opt = torch.optim.SGD(groups, momentum=hyp["momentum"], nesterov=True, fused=fused)
+    cuda = next(model.parameters()).is_cuda
+    sgd = torch.optim.SGD(groups, momentum=hyp["momentum"], nesterov=True, fused=cuda)
+    muon = Muon(filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], compiled=cuda)
+    opt = Optimizers([sgd, muon])
     for g in opt.param_groups:
         g["base_lr"] = g["lr"]
     return opt
@@ -266,7 +333,9 @@ def train(state) -> nn.Module:
             for g in opt.param_groups:
                 g["lr"] = g["base_lr"] * schedule[step]
             if step >= whiten_bias_steps:
-                opt.param_groups[1]["lr"] = 0.0
+                for g in opt.param_groups:
+                    if g.get("whiten"):
+                        g["lr"] = 0.0
             x = epoch_images[i * bs : (i + 1) * bs]
             y = epoch_labels[i * bs : (i + 1) * bs]
             train_step(model, opt, x, y, hyp["label_smoothing"])
