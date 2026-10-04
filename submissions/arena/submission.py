@@ -27,9 +27,9 @@ DEFAULTS = dict(
     label_smoothing=0.2,
     widths=(256, 512, 768),
     whiten_kernel=2,
-    depth=3,
+    depth=(2, 3, 3),
     bn_momentum=0.6,
-    scaling_factor=0.25,
+    scaling_factor=0.2,
     translate=2,
     whiten_bias_epochs=3,
     compile_mode=None,
@@ -102,9 +102,9 @@ class Net(nn.Module):
         self.whiten = Conv(3, whiten_width, kernel_size=whiten_kernel, padding=0, bias=True)
         self.whiten.weight.requires_grad = False
         self.layers = nn.Sequential(
-            ConvGroup(whiten_width, widths[0], bn_momentum, depth),
-            ConvGroup(widths[0], widths[1], bn_momentum, depth),
-            ConvGroup(widths[1], widths[2], bn_momentum, depth),
+            ConvGroup(whiten_width, widths[0], bn_momentum, depth[0]),
+            ConvGroup(widths[0], widths[1], bn_momentum, depth[1]),
+            ConvGroup(widths[1], widths[2], bn_momentum, depth[2]),
         )
         self.head = nn.Linear(widths[2], num_classes, bias=False)
         self.scaling_factor = scaling_factor
@@ -154,6 +154,9 @@ def make_hyp(parameters):
     hyp = dict(DEFAULTS)
     hyp.update(parameters or {})
     hyp["widths"] = tuple(hyp["widths"])
+    if isinstance(hyp["depth"], int):
+        hyp["depth"] = (hyp["depth"],) * 3
+    hyp["depth"] = tuple(hyp["depth"])
     hyp["res_schedule"] = tuple(tuple(x) for x in hyp["res_schedule"])
     return hyp
 
