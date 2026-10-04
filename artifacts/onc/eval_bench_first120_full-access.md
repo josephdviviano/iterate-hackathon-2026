@@ -1,0 +1,3 @@
+| Condition | DS | 95% | Find | Restraint | Strict | Leak | Cost | Eff | Acq gap | ECE P(sig) | ECE P(drv) | Brier held-out | ACI cov / commit | R_task | R_cal | R_dis |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| full / likelihood | 0.438 | [+0.33, +0.54] | 0.54 | +0.81 | 0.44 | 0.00 | 0 | 1.00 | 0.00 | 0.08 | 0.57 | nan | n/a | +1.17 | -0.47 | +0.00 |
