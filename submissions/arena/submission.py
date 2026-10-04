@@ -18,14 +18,14 @@ MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
-    epochs=8.5,
+    epochs=9,
     batch_size=512,
     lr=11.5,  # per 1024 examples (summed loss)
     momentum=0.85,
     weight_decay=0.0153,
     bias_scaler=16.0,
     label_smoothing=0.2,
-    widths=(128, 512, 768),
+    widths=(128, 384, 768),
     whiten_kernel=2,
     depth=3,
     bn_momentum=0.6,
