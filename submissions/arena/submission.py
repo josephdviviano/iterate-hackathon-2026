@@ -11,7 +11,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 8.75,
+    "epochs": 9.25,
     "batch_size": 2000,
     "lr": 9.0,
     "momentum": 0.85,
@@ -30,6 +30,9 @@ HYP = {
     "muon_momentum": 0.6,
     # Progressive resizing: (start fraction of training, resolution); last entry wins.
     "resolutions": [[0.0, 20], [0.3, 24], [0.4, 28], [0.7, 32]],
+    # FreezeOut-style: the stem (whitening bias + group 1) LR decays to 0 at this fraction of
+    # steps, after which its backward and updates are skipped. 0 disables.
+    "freeze_stem_at": 0.75,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -91,12 +94,13 @@ class Net(nn.Module):
         self.head = nn.Linear(widths[2], num_classes, bias=False)
         self.scaling_factor = scaling_factor
 
-    def forward(self, x):
+    def forward(self, x, freeze_stem=False):
         # Inputs are float [0, 1] RGB; normalization lives in the model.
         x = ((x - self.mean) / self.std).to(self.whiten.weight.dtype)
         x = x.contiguous(memory_format=torch.channels_last)
-        x = F.gelu(self.whiten(x))
-        x = self.groups(x)
+        with torch.set_grad_enabled(torch.is_grad_enabled() and not freeze_stem):
+            x = self.groups[0](F.gelu(self.whiten(x)))
+        x = self.groups[2](self.groups[1](x))
         x = F.adaptive_max_pool2d(x, 1).flatten(1)
         return (self.head(x) * self.scaling_factor).float()
 
@@ -173,6 +177,8 @@ class Muon(torch.optim.Optimizer):
     @torch.no_grad()
     def step(self):
         group = self.param_groups[0]
+        if group["params"][0].grad is None:  # frozen
+            return
         self.lr_t.fill_(group["lr"])
         grads = [p.grad for p in group["params"]]
         self.update(group["params"], grads, self.bufs, self.lr_t, group["momentum"])
@@ -199,23 +205,26 @@ def make_optimizer(model, hyp, batch_size):
     lr = hyp["lr"] / kilostep_scale
     wd = hyp["weight_decay"] * batch_size / kilostep_scale
     lr_biases = lr * hyp["bias_scaler"]
-    norm_biases = [p for n, p in model.named_parameters() if "norm" in n and p.requires_grad]
+    named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
+    stem = lambda n: n.startswith("groups.0.")  # noqa: E731
+    norm_biases = [p for n, p in named if "norm" in n and not stem(n)]
+    stem_norm_biases = [p for n, p in named if "norm" in n and stem(n)]
     whiten_bias = [model.whiten.bias]
-    filters = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim == 4]
-    other = [
-        p
-        for n, p in model.named_parameters()
-        if p.requires_grad and "norm" not in n and not n.startswith("whiten.") and p.ndim != 4
-    ]
+    filters = [p for n, p in named if p.ndim == 4 and not stem(n)]
+    stem_filters = [p for n, p in named if p.ndim == 4 and stem(n)]
+    other = [p for n, p in named if "norm" not in n and not n.startswith("whiten.") and p.ndim != 4]
     groups = [
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases),
-        dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases, whiten=True),
+        dict(params=stem_norm_biases, lr=lr_biases, weight_decay=wd / lr_biases, stem=True),
+        dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases, whiten=True, stem=True),
         dict(params=other, lr=lr, weight_decay=wd / lr),
     ]
     cuda = next(model.parameters()).is_cuda
     sgd = torch.optim.SGD(groups, momentum=hyp["momentum"], nesterov=True, fused=cuda)
     muon = Muon(filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], compiled=cuda)
-    opt = Optimizers([sgd, muon])
+    stem_muon = Muon(stem_filters, lr=hyp["muon_lr"], momentum=hyp["muon_momentum"], compiled=cuda)
+    stem_muon.param_groups[0]["stem"] = True
+    opt = Optimizers([sgd, muon, stem_muon])
     for g in opt.param_groups:
         g["base_lr"] = g["lr"]
     return opt
@@ -250,8 +259,8 @@ class Lookahead:
         torch._foreach_copy_(self.live, self.ema)
 
 
-def train_step(model, optimizer, x, y, label_smoothing):
-    out = model(x)
+def train_step(model, optimizer, x, y, label_smoothing, freeze_stem=False):
+    out = model(x, freeze_stem=freeze_stem)
     loss = F.cross_entropy(out, y, label_smoothing=label_smoothing, reduction="none").sum()
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
@@ -280,6 +289,9 @@ def build(context: BuildContext):
             x = x.contiguous(memory_format=torch.channels_last)
             for _ in range(3):
                 train_step(compiled, opt, x, y, hyp["label_smoothing"])
+        if hyp["freeze_stem_at"]:
+            for _ in range(3):
+                train_step(compiled, opt, x, y, hyp["label_smoothing"], freeze_stem=True)
         model.eval()
         with torch.inference_mode():
             for b in (1, 784, 1024):
@@ -323,6 +335,12 @@ def train(state) -> nn.Module:
         np.arange(1 + total_steps), [0, int(0.23 * total_steps), total_steps], [0.2, 1.0, 0.07]
     )
     whiten_bias_steps = hyp["whiten_bias_epochs"] * steps_per_epoch
+    # Stem schedule: the same warmup to the peak, then linear to 0 at the freeze point.
+    peak = int(0.23 * total_steps)
+    freeze_step = int(hyp["freeze_stem_at"] * total_steps) if hyp["freeze_stem_at"] else total_steps + 1
+    stem_schedule = np.interp(
+        np.arange(1 + total_steps), [0, peak, freeze_step, total_steps + 1], [0.2, 1.0, 0.0, 0.0]
+    )
     ema_every = hyp["ema_every"]
     alpha = 0.95**5 * (np.arange(total_steps + 1) / total_steps) ** 3
     lookahead = Lookahead(state.model) if ema_every else None
@@ -349,14 +367,14 @@ def train(state) -> nn.Module:
             if step >= total_steps:
                 break
             for g in opt.param_groups:
-                g["lr"] = g["base_lr"] * schedule[step]
+                g["lr"] = g["base_lr"] * (stem_schedule if g.get("stem") else schedule)[step]
             if step >= whiten_bias_steps:
                 for g in opt.param_groups:
                     if g.get("whiten"):
                         g["lr"] = 0.0
             x = versions[resolution[step]][i * bs : (i + 1) * bs]
             y = epoch_labels[i * bs : (i + 1) * bs]
-            train_step(model, opt, x, y, hyp["label_smoothing"])
+            train_step(model, opt, x, y, hyp["label_smoothing"], freeze_stem=step >= freeze_step)
             step += 1
             if lookahead is not None and step % ema_every == 0:
                 lookahead.update(float(alpha[step]))
