@@ -13,6 +13,7 @@ from torch import nn
 
 from benchmark.api import BuildContext, TrainingData
 
+DTYPE = {"bf16": torch.bfloat16, "fp16": torch.float16}
 MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
@@ -32,7 +33,9 @@ DEFAULTS = dict(
     whiten_bias_epochs=3,
     compile_mode=None,
     cudnn_benchmark=True,
-    lookahead=False,
+    dtype="fp16",
+    alt_flip=False,
+    low_res_batch_size=None,  # batch size during res_schedule stages (None: batch_size)
     lr_peak=0.23,
     lr_start=0.2,
     lr_end=0.0,
@@ -159,12 +162,12 @@ def build(context: BuildContext):
         prepare(state, fake, 0)
         train(state, max_steps=3 * (50000 // hyp["batch_size"]) // 2)
         if hyp["res_schedule"]:
-            bs = hyp["batch_size"]
-            for res in [r for r, _ in hyp["res_schedule"]] + [32]:
-                x = torch.randn(bs, 3, res, res, device=device, dtype=torch.bfloat16)
+            shapes = {stage_at(hyp, e) for e in range(int(math.ceil(hyp["epochs"])))}
+            for res, bs in shapes:
+                x = torch.randn(bs, 3, res, res, device=device, dtype=DTYPE[hyp["dtype"]])
                 x = x.contiguous(memory_format=torch.channels_last)
                 for _ in range(2):
-                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                    with torch.autocast("cuda", dtype=DTYPE[hyp["dtype"]]):
                         loss = F.cross_entropy(step_fn(x), state.labels[:bs], reduction="sum")
                     loss.backward()
             model.zero_grad(set_to_none=True)
@@ -201,7 +204,7 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     pad = hyp["translate"]
     if pad > 0:
         images = F.pad(images, (pad,) * 4, mode="reflect")
-    state.images = images.to(torch.bfloat16)
+    state.images = images.to(DTYPE[hyp["dtype"]])
     state.labels = labels
 
     batch_size = hyp["batch_size"]
@@ -227,80 +230,68 @@ def prepare(state, data: TrainingData, seed: int) -> None:
         g["initial_lr"] = g["lr"]
 
 
+def stage_at(hyp, epoch):
+    """Resolution and batch size used in a given (integer) epoch."""
+    stage_end = 0
+    for res, epochs in hyp["res_schedule"]:
+        stage_end += epochs
+        if epoch < stage_end:
+            return res, hyp["low_res_batch_size"] or hyp["batch_size"]
+    return 32, hyp["batch_size"]
+
+
 def train(state, max_steps=None) -> nn.Module:
     hyp = state.hyp
     model = state.model
     opt = state.optimizer
     images, labels = state.images, state.labels
     n = len(images)
-    bs = hyp["batch_size"]
-    steps_per_epoch = n // bs
     epochs = hyp["epochs"]
-    total_steps = int(math.ceil(epochs * steps_per_epoch))
-    run_steps = total_steps if max_steps is None else min(max_steps, total_steps)
-    whiten_bias_steps = hyp["whiten_bias_epochs"] * steps_per_epoch
 
-    def lr_at(step):
-        # Triangle: 0.2 -> 1 over first 23%, then down to 0.07.
-        t = step / total_steps
+    def lr_at(t):
+        # Triangle over training progress t in [0, 1].
         peak, start, end = hyp["lr_peak"], hyp["lr_start"], hyp["lr_end"]
         if t < peak:
             return start + (1 - start) * t / peak
         return 1 + (end - 1) * (t - peak) / (1 - peak)
 
-    # Lookahead (airbench): every 5 steps pull weights toward a slow copy.
-    if hyp["lookahead"]:
-        la_params = [p for p in model.parameters()] + [b for n, b in model.named_buffers() if "running" in n]
-        la_slow = [p.detach().clone() for p in la_params]
-
-    crop = 32
-    step = 0
     gen = state.generator
     ls = hyp["label_smoothing"]
+    dtype = DTYPE[hyp["dtype"]]
+    step = 0
     epoch = 0
-    while step < run_steps:
-        if hyp["translate"] > 0:
-            epoch_images = batch_crop(images, crop, gen)
-        else:
-            epoch_images = images
-        res, stage_end = 32, 0
-        for r, e in hyp["res_schedule"]:
-            stage_end += e
-            if epoch < stage_end:
-                res = r
-                break
+    flip_base = torch.rand(n, device=images.device, generator=gen) < 0.5
+    while epoch < epochs and (max_steps is None or step < max_steps):
+        res, bs = stage_at(hyp, epoch)
+        steps_per_epoch = n // bs
+        epoch_images = batch_crop(images, 32, gen) if hyp["translate"] > 0 else images
         if res != 32:
             epoch_images = F.interpolate(epoch_images.float(), size=(res, res), mode="bilinear", antialias=True)
-            epoch_images = epoch_images.to(torch.bfloat16)
-        epoch += 1
-        flip = torch.rand(n, device=images.device, generator=gen) < 0.5
+            epoch_images = epoch_images.to(dtype)
+        if hyp["alt_flip"]:
+            # Alternating flip (airbench): each image is flipped in every other epoch.
+            flip = flip_base ^ bool(epoch % 2)
+        else:
+            flip = torch.rand(n, device=images.device, generator=gen) < 0.5
         epoch_images = torch.where(flip.view(-1, 1, 1, 1), epoch_images.flip(-1), epoch_images)
         epoch_images = epoch_images.contiguous(memory_format=torch.channels_last)
         perm = torch.randperm(n, device=images.device, generator=gen)
+        if epoch >= hyp["whiten_bias_epochs"]:
+            opt.param_groups[1]["initial_lr"] = 0.0
         for i in range(steps_per_epoch):
-            if step >= run_steps:
+            t = (epoch + i / steps_per_epoch) / epochs
+            if t >= 1 or (max_steps is not None and step >= max_steps):
                 break
             idx = perm[i * bs : (i + 1) * bs]
-            x = epoch_images[idx]
-            y = labels[idx]
-            f = lr_at(step)
-            for gi, g in enumerate(opt.param_groups):
+            f = lr_at(t)
+            for g in opt.param_groups:
                 g["lr"] = g["initial_lr"] * f
-                if gi == 1 and step >= whiten_bias_steps:
-                    g["lr"] = 0.0
-            with torch.autocast("cuda", dtype=torch.bfloat16):
-                out = state.step_fn(x)
-                loss = F.cross_entropy(out, y, label_smoothing=ls, reduction="sum")
+            with torch.autocast("cuda", dtype=dtype):
+                out = state.step_fn(epoch_images[idx])
+                loss = F.cross_entropy(out, labels[idx], label_smoothing=ls, reduction="sum")
             loss.backward()
             opt.step()
             opt.zero_grad(set_to_none=True)
             step += 1
-            if hyp["lookahead"] and step % 5 == 0:
-                decay = 0.95**5 * (step / total_steps) ** 3
-                with torch.no_grad():
-                    torch._foreach_lerp_(la_slow, [p.detach() for p in la_params], 1 - decay)
-                    torch._foreach_copy_(la_params, la_slow)
-    if hyp["lookahead"] and max_steps is None:
-        with torch.no_grad():
-            torch._foreach_copy_(la_params, la_slow)
+        epoch += 1
     return model
