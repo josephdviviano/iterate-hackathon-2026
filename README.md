@@ -1,6 +1,6 @@
 # Reflexive Autoresearch
 
-Track 1.1 (Autoresearch framework), shown on the Track 1.2 CIFAR-100 speedrun task.
+Track 1.1 (Autoresearch framework), run on two benchmarks: the Track 1.2 CIFAR-100 speedrun and ONC-AGI, a biomarker-discovery benchmark with known answers that we built to test it.
 
 **One sentence:** an autoresearch agent that acts like a scientist rather than a random searcher. It keeps a tree of hypotheses and a written world model, pre-registers a prediction before each experiment, and scores itself afterwards. A committee of independent world models measures where it is uncertain instead of asserting it.
 
@@ -41,6 +41,8 @@ The full run needs a GPU machine with the CIFAR-100 speedrun benchmark repositor
 
 ## Results
 
+### CIFAR-100 speedrun
+
 Arena3: six arms, one autonomous agent each, on the CIFAR-100 speedrun task. The objective is to minimise mean training time subject to mean accuracy ≥ 0.753 over 3 trials. See [RESULTS.md](RESULTS.md) for the full table, method and caveats.
 
 | Arm | Experiments | Fastest feasible |
@@ -52,6 +54,18 @@ Arena3: six arms, one autonomous agent each, on the CIFAR-100 speedrun task. The
 | hypothesis-unc | 66 | 4.99 s, acc 0.7555 |
 | baseline-r1 (greedy) | 37 | 5.05 s, acc 0.7559 |
 
+### ONC-AGI
+
+A speedrun measures speed, not whether the agent's explanations are right. ONC-AGI plants causal mechanisms in real cancer cohorts and scores whether an agent finds them and abstains when there are none (Discovery Score = Find × Restraint). First 120 full-access public-train worlds, from the `jdv` branch's RESULTS.md, entries O9 and O10:
+
+| Agent | Discovery Score |
+|---|---|
+| Our committee harness | 0.438 |
+| Forward selection (best benchmark baseline) | 0.373 |
+| GPT 6 Luna (the benchmark's published run) | 0.286 |
+| Same model (Qwen3-Coder-30B): committee of 8 programs | 0.147 |
+| Same model (Qwen3-Coder-30B): single program | 0.053 |
+
 ## Credits
 
 - [karpathy/autoresearch](https://github.com/karpathy/autoresearch): the greedy loop that `framework/baseline` follows, and the original idea.
@@ -61,3 +75,4 @@ Arena3: six arms, one autonomous agent each, on the CIFAR-100 speedrun task. The
 - arXiv API and OpenAlex API: the literature feed.
 - PyTorch, torchvision and uv: the speedrun task's environment.
 - [ONC-AGI](https://github.com/BradSegal/ONC-AGI) (BSD 3-Clause, Bradley Segal): ARC-style biomarker-discovery worlds with planted mechanisms, kept as a read-only reference in `external/onc-agi`.
+- Qwen3-Coder-30B-A3B (Alibaba Qwen): the model that writes the hypothesis programs in the ONC-AGI comparison.
