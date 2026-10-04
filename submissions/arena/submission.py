@@ -19,7 +19,7 @@ HYP = {
     "bias_scaler": 64.0,
     "label_smoothing": 0.3,
     "whiten_bias_epochs": 3,
-    "widths": [128, 384, 576],
+    "widths": [128, 384, 512],
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
     "translate": 2,
