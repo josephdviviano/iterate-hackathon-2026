@@ -158,6 +158,17 @@ LEVERS = {
         "stage1_cooldown": [0.4, 0.6],
         "freeze_schedule": [[0.6, 1]],
     },
+    "round7": SMALL
+    | {
+        "block_depth": 3,
+        "stage_depths": [3, 2, 3],
+        "stage_skips": [False, True, False],
+        "res_schedule": [[0.0, 24], [0.5, 32]],
+        "ls_low": 0.2,
+        "identity_scale": 0.577,
+        "translate": 2,
+        "translate_low": 3,
+    },
     "batch-ramp": SMALL | {"batch_schedule": [[0, 8], [1, 16]], "block_depth": 3},
     "floor-base": SMALL | {"lr_decay_end": 0.9, "lookahead_base": 0.97},
     "final-blend-fp32": SMALL | {"lookahead_final_decay": 0.5, "eval_fp32": True},

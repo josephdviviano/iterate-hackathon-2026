@@ -11,7 +11,7 @@ python -m benchmark.run --submission team_segal --n 40
 
 | Part | Choice |
 | --- | --- |
-| Network | Frozen 2×2 patch-whitening conv (24 channels), then three stages of conv–max-pool–BN–GELU and conv–BN–GELU at widths 128/384/640; stages 1 and 3 add a residual conv–BN–GELU branch (stage 2 runs without it). Global max-pool (flattened max) and a bias-free linear head whose logits are scaled by 1/6. BatchNorm scales are frozen at 1. |
+| Network | Frozen 2×2 patch-whitening conv (24 channels), then three stages of conv–max-pool–BN–GELU and conv–BN–GELU at widths 128/384/640; stages 1 and 3 add a residual conv–BN–GELU branch; stage 2 has no residual conv but keeps an identity skip (x + conv–BN–GELU(x)). Global max-pool (flattened max) and a bias-free linear head whose logits are scaled by 1/6. BatchNorm scales are frozen at 1. |
 | Initialisation | Identity (dirac) init of every 3×3 conv; the remaining output channels of each stage's widening conv start as a DCT filter bank (fixed 2-D DCT patterns with per-trial random orthonormal channel mixing, not learned); whitening weights from the eigen-decomposition of 2×2 patches of 5,000 training images, computed in `prepare` |
 | Data | Per-trial channel statistics; reflect-padded translation by up to 2 px; alternating flip (a fixed random flip per image, with all images flipped on odd epochs) |
 | Resolution | Bilinear (antialiased) downsampling to 20 px for the first half of training, then the native 32 px |

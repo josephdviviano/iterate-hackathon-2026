@@ -1,0 +1,27 @@
+schema_version: '2.0'
+finding_id: F-074
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S73 (local dev stack, the submission folder with D-014 defaults, 40 fresh random uint32
+  seeds over GPUs 0 and 1): 75.257% (SD 0.197, min 74.87) at 4.141 s and 75.248% (SD 0.265, min 74.77)
+  at 4.081 s; pooled 75.253% (SE 0.036).'
+interpretation: The submission reproduces the confirmed skip gain (about 75.25%, up from about 75.15-75.18%
+  at D-013) at unchanged local time within noise; the margin above 75% is back to about 7 SE.
+decision_implication: D-014 is the current entry.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s73-submission-check.txt
+  locator: research/evidence/T-019/s73-submission-check.txt
+  sha256: 60895115cf73c636ebbf4e0ffba8385e23a4927bdc5e101a83c63252034ba13f
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Submission verified locally.

@@ -57,8 +57,11 @@ class Conv(nn.Conv2d):
 class ConvGroup(nn.Module):
     """conv-pool-BN-GELU, then conv-BN-GELU; depth 3 adds a residual conv-BN-GELU branch."""
 
-    def __init__(self, cin: int, cout: int, depth: int, bn_momentum: float) -> None:
+    def __init__(
+        self, cin: int, cout: int, depth: int, bn_momentum: float, skip: bool = False
+    ) -> None:
         super().__init__()
+        self.skip = skip
         self.conv1 = Conv(cin, cout)
         self.norm1 = BatchNorm(cout, bn_momentum)
         self.conv2 = Conv(cout, cout)
@@ -71,7 +74,7 @@ class ConvGroup(nn.Module):
         x = F.gelu(self.norm1(F.max_pool2d(self.conv1(x), 2)))
         y = F.gelu(self.norm2(self.conv2(x)))
         if self.residual is None:
-            return y
+            return x + y if self.skip else y
         return x + F.gelu(self.residual(y))
 
 
@@ -87,10 +90,11 @@ class Net(nn.Module):
         self.whiten.weight.requires_grad = False
         momentum = config.bn_momentum
         d1, d2, d3 = config.stage_depths
+        s1, s2, s3 = config.stage_skips
         self.groups = nn.Sequential(
-            ConvGroup(whiten_width, w1, d1, momentum),
-            ConvGroup(w1, w2, d2, momentum),
-            ConvGroup(w2, w3, d3, momentum),
+            ConvGroup(whiten_width, w1, d1, momentum, s1),
+            ConvGroup(w1, w2, d2, momentum, s2),
+            ConvGroup(w2, w3, d3, momentum, s3),
         )
         # Set by ``fit``: stage 1 (and the whitening conv) run without autograd once frozen.
         self.stage1_frozen = False

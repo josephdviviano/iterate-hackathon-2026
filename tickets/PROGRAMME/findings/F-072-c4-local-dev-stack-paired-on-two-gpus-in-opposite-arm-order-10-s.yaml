@@ -1,0 +1,36 @@
+schema_version: '2.0'
+finding_id: F-072
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'C4 (local dev stack, paired on two GPUs in opposite arm order, 10 seeds per arm per GPU)
+  against the teammates'' youssef-arena3 snapshot tips: our submission 75.22% at 4.108 / 4.092 s; arena3
+  hypothesis 75.25% at +6.9%; hypothesis-dr 75.26% at +13.0%; baseline-r1 75.53% at +10.8%; hypothesis-lit
+  75.70% at +34.1%. Their own records (3 seeds 0-2, A100-SXM4) report 75.3-75.6% at 4.46 s for the hypothesis
+  arm''s tip.'
+interpretation: 'Our submission remains the team''s fastest entry at matched accuracy: the teammates''
+  best tip matches our accuracy but takes about 7% longer; the others buy accuracy below the exchange
+  rate. Their 3-seed headline accuracies regress toward about 75.25% over 20 seeds, as expected from selection
+  on 3-seed scores.'
+decision_implication: Keep our submission as the team entry; share C4 with the teammate.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: unresolved
+  rationale: dev stack (torch 2.7); relative ordering should transfer but magnitudes may differ on the
+    official stack
+  discriminating_test: official run if needed
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: c4-arena3-tips-report.txt
+  locator: research/evidence/T-019/c4-arena3-tips-report.txt
+  sha256: 3a4ea86e89d489b54b564960d6de9af4cb397927f8d8c8ba224a1fc46ded5389
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: Our submission leads.

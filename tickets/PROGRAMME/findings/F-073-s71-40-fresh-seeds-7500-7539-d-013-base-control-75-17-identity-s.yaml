@@ -1,0 +1,29 @@
+schema_version: '2.0'
+finding_id: F-073
+task_id: T-019
+result_kind: positive
+importance: material
+observation: 'S71 (40 fresh seeds 7500-7539, D-013 base, control 75.17%): identity skip around stage 2
+  75.30%; translate 1 in the 20 px epochs 75.20%; both 75.28%. S72 same-GPU paired timing (GPU 1, ABBA,
+  10 seeds per block, medians excluding the first trial): skip +0.6%, translate-1 +1.0%, both +0.9%. S70
+  gave the skip +0.10 pp.'
+interpretation: Restoring stage 2's identity skip (lost with its residual conv in D-012) is a confirmed
+  +0.10-0.13 pp for about +0.6% time, well above the exchange rate; it recovers most of the margin the
+  recent adoptions cost. Translate-1 at low resolution does not confirm.
+decision_implication: Adopt the stage-2 identity skip (D-014); reject translate-1 at low resolution.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths: []
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s71-skip-translate-confirm-table.csv
+  locator: research/evidence/T-019/s71-skip-translate-confirm-table.csv
+  sha256: 7e223c49bfb229bb7892f17d2142590fecb10fd4cbb96443fa34b7a7decbf7b0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: 'Adopted: stage-2 identity skip.'

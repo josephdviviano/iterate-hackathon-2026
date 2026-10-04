@@ -1,0 +1,49 @@
+# Round-7 agent hypotheses (zero-cost accuracy) on the D-013 base, 40 seeds directly (arms are
+# cheap): label smoothing tied to the resolution phase, an identity skip around the depth-2 stage
+# 2, balanced initial row norms (identity rows scaled to the Kaiming norm) or init gain 0.5, and
+# the translation radius in the 20 px phase.
+name = "s70-zero-cost-r7"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [7300, 7301, 7302, 7303, 7304, 7305, 7306, 7307, 7308, 7309, 7310, 7311, 7312, 7313, 7314, 7315, 7316, 7317, 7318, 7319, 7320, 7321, 7322, 7323, 7324, 7325, 7326, 7327, 7328, 7329, 7330, 7331, 7332, 7333, 7334, 7335, 7336, 7337, 7338, 7339]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+ls_low = 0.2                                  # LS 0.2 at 20 px, 0.4 at 32 px
+[[configs]]
+ls_low = 0.3                                  # LS 0.3 at 20 px, 0.45 at 32 px
+label_smoothing = 0.45
+[[configs]]
+ls_low = 0.4                                  # direction check: 0.4 at 20 px, 0.3 at 32 px
+label_smoothing = 0.3
+[[configs]]
+stage_skips = [false, true, false]            # identity skip around stage 2
+[[configs]]
+identity_scale = 0.577                        # identity rows at the Kaiming row norm
+[[configs]]
+init_gain = 0.5
+[[configs]]
+translate_low = 1                             # translate 1 in the 20 px epochs
+[[configs]]
+translate_low = 3

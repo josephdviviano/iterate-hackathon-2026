@@ -1,0 +1,32 @@
+schema_version: '2.0'
+finding_id: F-070
+task_id: T-019
+result_kind: 'null'
+importance: contextual
+observation: 'S69 (20 seeds 7200-7219, D-013 base, control 75.19%): logit scale 0.2 / 0.14: 75.14 / 75.07%;
+  BN momentum 0.5 / 0.7: 75.20 / 75.17%; lookahead power 2.5 / 3.5: 75.10 / 75.09%; whitening from 10k
+  images: 75.15%; 8.375 epochs: 75.21%.'
+interpretation: No zero-cost scalar lever moves accuracy on the D-013 base; the logit-scale optimum did
+  not shift with label smoothing 0.4. The base sits at a flat optimum on every tuned scalar.
+decision_implication: Keep D-013; margin can only be bought with budget (8.5 epochs, +0.21 pp for +5.4%)
+  or confirmed on the official stack.
+requirement_ids:
+- R-004
+effect: observes
+interpretation_paths:
+- kind: data_measurement
+  disposition: supported
+  rationale: all arms within about 2 SE of control at 20 seeds
+  discriminating_test: none
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s69-zero-cost-ls04-table.csv
+  locator: research/evidence/T-019/s69-zero-cost-ls04-table.csv
+  sha256: b55d97fa048aba0f317611c2ead86bf9c8c6e99b96c7d80ff25f6f8c8099efa8
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+disposition: resolved
+resolution: No change.

@@ -174,6 +174,12 @@ class RecipeConfig:
     lookahead_base: float = 0.95
     # Batch-size schedule ((start_epoch, size), ...); schedules stay on a step basis.
     batch_schedule: tuple[tuple[float, int], ...] = ()
+    # Round 7 (zero-cost accuracy): phase-tied label smoothing, identity skips around depth-2
+    # stages, identity-row scale at init, translation radius in the low-resolution phase.
+    ls_low: float | None = None
+    stage_skips: tuple[bool, bool, bool] = (False, False, False)
+    identity_scale: float = 1.0
+    translate_low: int | None = None
     bias_scaler_final: float | None = None
     # Teammates' hypothesis-branch block: activation after the residual add.
     post_add_activation: bool = False
@@ -250,6 +256,8 @@ class RecipeConfig:
             values["selector_widths"] = tuple(values["selector_widths"])
         if values.get("thin_window") is not None:
             values["thin_window"] = tuple(values["thin_window"])
+        if "stage_skips" in values:
+            values["stage_skips"] = tuple(values["stage_skips"])
         for key in ("square_kernels", "residual_kernels"):
             if key in values:
                 values[key] = tuple(values[key])
@@ -306,6 +314,12 @@ class RecipeConfig:
             self.bn_freeze_frac is not None and not 0 < self.bn_freeze_frac < 1
         ):
             raise ValueError("lookahead_outer_momentum in [0, 1); bn_freeze_frac in (0, 1)")
+        if (self.ls_low is not None and not 0 <= self.ls_low < 1) or self.identity_scale <= 0:
+            raise ValueError("ls_low must be in [0, 1) and identity_scale positive")
+        if len(self.stage_skips) != 3 or (
+            self.translate_low is not None and self.translate_low < 0
+        ):
+            raise ValueError("stage_skips needs three flags; translate_low must be >= 0")
         if any(len(e) != 2 or e[0] < 0 or e[1] < 1 for e in self.batch_schedule):
             raise ValueError("batch_schedule entries are (start_epoch >= 0, size >= 1)")
         if not 0.5 <= self.lr_decay_end <= 1 or not 0 < self.lookahead_base < 1:

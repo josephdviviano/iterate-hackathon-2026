@@ -600,7 +600,9 @@ def fit(
                     loss = training_loss(outputs, labels, config, soft=soft, ls=ls)
                     targets.observe(outputs, labels, stream)
                 else:
-                    loss = training_loss(outputs, labels, config)
+                    # ``ls_low``: label smoothing before the final resolution switch.
+                    low = config.ls_low is not None and not switched
+                    loss = training_loss(outputs, labels, config, ls=config.ls_low if low else None)
             loss.backward()
             sniffing = not switched and step >= switch_step - config.saliency_steps
             if saliency is not None and sniffing:

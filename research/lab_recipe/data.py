@@ -95,7 +95,8 @@ class TrainingStream:
             # Alternating flip fixes a random flip per image in epoch 0, then flips every image
             # on odd epochs; random flip redraws the mask every epoch.
             base = self._random_flip(images)
-        pad = config.translate
+        pad = max(config.translate, config.translate_low or 0)
+        self.pad = pad
         self.base = F.pad(base, (pad,) * 4, mode="reflect") if pad else base
         self.size = images.size(-1)
         self.steps_per_epoch = len(images) // config.batch_size
@@ -171,10 +172,18 @@ class TrainingStream:
         config = self.config
         images = self.base
         clean = config.clean_tail_epochs is not None and index >= config.clean_tail_epochs
-        if config.translate and clean:
+        radius = config.translate
+        if config.translate_low is not None and config.res_schedule:
+            # Epochs wholly before the final resolution switch use ``translate_low``.
+            if index + 1 <= config.res_schedule[-1][0] * config.epochs:
+                radius = config.translate_low
+        if self.pad != radius:
+            trim = self.pad - radius
+            images = images[:, :, trim : images.size(-2) - trim, trim : images.size(-1) - trim]
+        if radius and clean:
             r = config.translate  # clean tail: centre crop, no translation
             images = images[:, :, r:-r, r:-r]
-        elif config.translate:
+        elif radius:
             images = batch_crop(images, self.size, self.generator)
         if config.flip == "alternating" and index % 2 == 1:
             images = images.flip(-1)

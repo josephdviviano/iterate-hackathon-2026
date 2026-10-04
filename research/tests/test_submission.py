@@ -30,6 +30,7 @@ LAB_EQUIVALENT = SMALL | {
     "freeze_schedule": [[0.8, 1]],
     "trim_tail": True,
     "label_smoothing": 0.4,
+    "stage_skips": [False, True, False],
 }
 
 

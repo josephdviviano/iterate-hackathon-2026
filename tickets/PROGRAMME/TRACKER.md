@@ -526,6 +526,40 @@
 - **Interpretation:** The 8.5-epoch fallback adds about +0.21 pp for about 5% time, restoring roughly the M8-era margin; at 8.25 epochs P(official 40-seed mean < 75%) is about 0.5% at the central offset and 3-4% under the worst measured offset.
 - **Decision consequence:** Margin, not speed, is now binding: either confirm 8.25 epochs on an official-equivalent A100 run or move to an intermediate budget; a zero-cost accuracy lever would be the most valuable find.
 
+### F-070 — resolved, contextual
+
+- **Observation:** S69 (20 seeds 7200-7219, D-013 base, control 75.19%): logit scale 0.2 / 0.14: 75.14 / 75.07%; BN momentum 0.5 / 0.7: 75.20 / 75.17%; lookahead power 2.5 / 3.5: 75.10 / 75.09%; whitening from 10k images: 75.15%; 8.375 epochs: 75.21%.
+- **Interpretation:** No zero-cost scalar lever moves accuracy on the D-013 base; the logit-scale optimum did not shift with label smoothing 0.4. The base sits at a flat optimum on every tuned scalar.
+- **Decision consequence:** Keep D-013; margin can only be bought with budget (8.5 epochs, +0.21 pp for +5.4%) or confirmed on the official stack.
+- **Resolution:** No change.
+
+### F-071 — open, material
+
+- **Observation:** S70 (40 seeds 7300-7339, D-013 base, control 75.14%): label smoothing tied to the resolution phase (20 px \| 32 px) 0.2\|0.4 / 0.3\|0.45 / 0.4\|0.3: 75.04 / 75.09 / 75.13%; identity skip around the depth-2 stage 2: 75.24%; identity rows scaled to the Kaiming norm: 75.07%; init gain 0.5: 75.04%; translate radius 1 / 3 in the 20 px epochs: 75.21 / 75.15%.
+- **Interpretation:** Phase-tied smoothing and row-norm balancing are null. Two arms sit near the best-of-8 noise ceiling: restoring stage 2's identity skip (+0.10 pp, about 1.9 SE) and weaker translation in the low-resolution phase (+0.08 pp), the latter matching the teammates' independent finding (arena3 hypothesis-dr E052).
+- **Decision consequence:** Confirm the stage-2 skip, translate-1 at low resolution and their stack on 40 fresh seeds with same-GPU paired timing (S71) before adoption.
+
+### F-072 — resolved, material
+
+- **Observation:** C4 (local dev stack, paired on two GPUs in opposite arm order, 10 seeds per arm per GPU) against the teammates' youssef-arena3 snapshot tips: our submission 75.22% at 4.108 / 4.092 s; arena3 hypothesis 75.25% at +6.9%; hypothesis-dr 75.26% at +13.0%; baseline-r1 75.53% at +10.8%; hypothesis-lit 75.70% at +34.1%. Their own records (3 seeds 0-2, A100-SXM4) report 75.3-75.6% at 4.46 s for the hypothesis arm's tip.
+- **Interpretation:** Our submission remains the team's fastest entry at matched accuracy: the teammates' best tip matches our accuracy but takes about 7% longer; the others buy accuracy below the exchange rate. Their 3-seed headline accuracies regress toward about 75.25% over 20 seeds, as expected from selection on 3-seed scores.
+- **Decision consequence:** Keep our submission as the team entry; share C4 with the teammate.
+- **Resolution:** Our submission leads.
+
+### F-073 — resolved, material
+
+- **Observation:** S71 (40 fresh seeds 7500-7539, D-013 base, control 75.17%): identity skip around stage 2 75.30%; translate 1 in the 20 px epochs 75.20%; both 75.28%. S72 same-GPU paired timing (GPU 1, ABBA, 10 seeds per block, medians excluding the first trial): skip +0.6%, translate-1 +1.0%, both +0.9%. S70 gave the skip +0.10 pp.
+- **Interpretation:** Restoring stage 2's identity skip (lost with its residual conv in D-012) is a confirmed +0.10-0.13 pp for about +0.6% time, well above the exchange rate; it recovers most of the margin the recent adoptions cost. Translate-1 at low resolution does not confirm.
+- **Decision consequence:** Adopt the stage-2 identity skip (D-014); reject translate-1 at low resolution.
+- **Resolution:** Adopted: stage-2 identity skip.
+
+### F-074 — resolved, material
+
+- **Observation:** S73 (local dev stack, the submission folder with D-014 defaults, 40 fresh random uint32 seeds over GPUs 0 and 1): 75.257% (SD 0.197, min 74.87) at 4.141 s and 75.248% (SD 0.265, min 74.77) at 4.081 s; pooled 75.253% (SE 0.036).
+- **Interpretation:** The submission reproduces the confirmed skip gain (about 75.25%, up from about 75.15-75.18% at D-013) at unchanged local time within noise; the margin above 75% is back to about 7 SE.
+- **Decision consequence:** D-014 is the current entry.
+- **Resolution:** Submission verified locally.
+
 ### B-001 — external, resolved
 
 - **Issue:** No A100 80GB PCIe is available: the local GPUs are Blackwell (sm_120), which the pinned torch 2.4.0 cannot run, and renting an A100 requires team-lead approval of provider and budget.
@@ -630,6 +664,13 @@
 - **Decision:** Label smoothing 0.4 with 8.25 epochs (396-step schedule, 395 trained steps).
 - **Rationale:** LS 0.3-0.4 is consistently better than 0.2 on the new structure (S54, S55, S58); LS 0.4 at 8.25 epochs matches the 8.5-epoch control over 80 seeds (75.19 vs 75.15%), about 2.5% fewer steps; 0.5 and 8.0 epochs fall short.
 - **Alternatives:** LS 0.3 at 8.25 epochs (75.13%, slightly less margin); Keep LS 0.2 at 8.5 epochs (no time gain)
+
+### D-014 — settled
+
+- **Question:** Does the identity skip around the depth-2 stage 2 enter the submission?
+- **Decision:** Adopt: stage 2 returns x + conv-BN-GELU(x).
+- **Rationale:** +0.10 pp (S70, 40 seeds) and +0.13 pp (S71, 40 fresh seeds, 2.6 SE) for +0.6% same-GPU paired time; raises the expected accuracy from about 75.15% to about 75.26%, restoring qualification margin.
+- **Alternatives:** Keep D-013 (thinner margin); Buy margin with 8.5 epochs (+0.21 pp for +5.4% time)
 
 ## Deferred or rejected work
 

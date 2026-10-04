@@ -1,0 +1,22 @@
+schema_version: '1.0'
+decision_id: D-014
+task_id: T-019
+question: Does the identity skip around the depth-2 stage 2 enter the submission?
+decision: 'Adopt: stage 2 returns x + conv-BN-GELU(x).'
+rationale: +0.10 pp (S70, 40 seeds) and +0.13 pp (S71, 40 fresh seeds, 2.6 SE) for +0.6% same-GPU paired
+  time; raises the expected accuracy from about 75.15% to about 75.26%, restoring qualification margin.
+alternatives:
+- Keep D-013 (thinner margin)
+- Buy margin with 8.5 epochs (+0.21 pp for +5.4% time)
+evidence:
+- evidence_id: E-001
+  kind: file
+  label: s71-skip-translate-confirm-table.csv
+  locator: research/evidence/T-019/s71-skip-translate-confirm-table.csv
+  sha256: 7e223c49bfb229bb7892f17d2142590fecb10fd4cbb96443fa34b7a7decbf7b0
+  state: verified
+  candidate_identity: null
+  obligation_ids: []
+  note: null
+affected_outcome_ids: []
+state: settled

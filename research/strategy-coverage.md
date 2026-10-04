@@ -205,3 +205,17 @@ and 19→9→4→2 at 20 px. Stage 3's conv2 and residual conv run on a **3×3 g
 | Teammates' latest tips (youssef-baseline / -hypothesis / -lit / -dr) | team branches | ours leads at matched accuracy (+16.6% / +4.8% / +76% time; dr fails to compile) | C3 (F-064) |
 | Fable-style lr floor; lookahead base 0.93/0.97; 28 px phase | team branches | rejected | S65 (F-066) |
 | uint8 data on GPU; pinned upload | team branches, audit agent | not pursued (not exact / 5-10 ms) | — |
+
+### Rounds 6-7 (T-019), 2026-10-04
+
+| Strategy | Source | Status | Evidence |
+| --- | --- | --- | --- |
+| Batch-size ramp (768/512 then 1024) | literature agent | rejected | S66 (F-067) |
+| Stack of sub-threshold positives (momentum 0.8, lr 13, wide-early) | lead | rejected (+0.07 pp; does not fund an epoch cut) | S67 (F-067) |
+| Red-team review of evidence, margin, compliance | agent r6 | done: no violations; margin re-estimated | F-068 |
+| 8.5-epoch fallback | red-team | measured (+0.21 pp for +5.4%) | S68 (F-069) |
+| Logit scale, BN momentum, lookahead power, whitening samples re-tuned for LS 0.4 | lead | null | S69 (F-070) |
+| Label smoothing tied to the resolution phase; balanced row norms; init gain 0.5 | agent r7 | rejected | S70 (F-071) |
+| Weaker translation (radius 1) in the 20 px phase | agent r7, teammates (dr E052) | rejected on fresh seeds (+0.03 pp) | S70, S71 (F-071, F-073) |
+| **Identity skip around the depth-2 stage 2** | agent r7 | **adopted** (+0.10 / +0.13 pp, +0.6% time) | S70-S73 (F-071, F-073, F-074) |
+| Teammates' arena3 tips (hypothesis, -dr, -lit, baseline-r1) | team branches | ours leads (+6.9% to +34% time at matched or lower efficiency) | C4 (F-072) |

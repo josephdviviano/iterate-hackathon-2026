@@ -118,8 +118,11 @@ class ConvGroup(nn.Module):
         square_kernel: int = 3,
         residual_kernel: int = 3,
         centre_tap_max: int = 0,
+        skip: bool = False,
     ) -> None:
         super().__init__()
+        # Identity skip around a depth-2 stage (x + conv-BN-GELU(x)).
+        self.skip = skip
         # Square convs on maps no larger than ``centre_tap_max`` use only their centre tap
         # (exact while the dirac-initialised off-centre taps are still zero).
         self.centre_tap_max = centre_tap_max
@@ -165,7 +168,7 @@ class ConvGroup(nn.Module):
             x = activate(self.norm1(pooled), self.activation)
         y = activate(self.norm2(self._square(self.conv2, x)), self.activation)
         if self.residual is None or not self.residual_active:
-            return y
+            return x + y if self.skip else y
         if self.centre_tap_max and y.size(-1) <= self.centre_tap_max:
             branch = self.residual[1](self._square(self.residual[0], y))
             return x + activate(branch, self.activation)
@@ -223,6 +226,7 @@ class AirbenchNet(nn.Module):
                     config.square_kernels[i],
                     config.residual_kernels[i],
                     config.centre_tap_max if i == 2 else 0,
+                    config.stage_skips[i],
                 )
                 for i in range(3)
             )
@@ -247,6 +251,7 @@ class AirbenchNet(nn.Module):
         self.init_gain = config.init_gain
         self.conv_init = config.conv_init
         self.square_init, self.square_beta = config.square_init, config.square_beta
+        self.identity_scale = config.identity_scale
         # Head-feature centring: BatchNorm1d (no affine) on the pooled features, fp32.
         self.center = (
             nn.BatchNorm1d(head_in, affine=False, momentum=1 - config.bn_momentum)
@@ -533,6 +538,10 @@ def reset_model(model: nn.Module) -> None:
             for module in model.modules():
                 if isinstance(module, Conv) and module.dirac:
                     structured_init_(module.weight, model.conv_init)
+        if model.identity_scale != 1:
+            for module in model.modules():
+                if isinstance(module, Conv) and module.dirac:
+                    module.weight[: module.weight.size(1)].mul_(model.identity_scale)
         if model.square_init != "dirac" and model.square_beta:
             for module in model.modules():
                 if isinstance(module, Conv) and module.dirac:

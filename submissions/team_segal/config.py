@@ -35,6 +35,8 @@ class RecipeConfig:
     res_schedule: tuple[tuple[float, int], ...] = ((0.0, 20), (0.5, 32))
     # Convs per stage; 3 adds the residual conv-BN-GELU branch.
     stage_depths: tuple[int, int, int] = (3, 2, 3)
+    # Identity skip around depth-2 stages (x + conv-BN-GELU(x)).
+    stage_skips: tuple[bool, bool, bool] = (False, True, False)
     # (start, end) fractions of training: stage 1's lr ramps to zero between them, and from
     # ``end`` stage 1 runs without autograd (exact, since its lr is already zero).
     stage1_freeze: tuple[float, float] | None = (0.6, 0.8)
@@ -55,6 +57,8 @@ class RecipeConfig:
             values["widths"] = tuple(values["widths"])
         if "stage_depths" in values:
             values["stage_depths"] = tuple(values["stage_depths"])
+        if "stage_skips" in values:
+            values["stage_skips"] = tuple(values["stage_skips"])
         if values.get("stage1_freeze") is not None:
             values["stage1_freeze"] = tuple(values["stage1_freeze"])
         if "res_schedule" in values:

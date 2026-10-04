@@ -1,0 +1,47 @@
+# Round 7 (margin-bound): zero-cost accuracy levers on the D-013 base. Label smoothing 0.4 changes
+# the effective temperature, so the logit scale (tuned at LS 0.2) may have moved; also BN momentum,
+# lookahead decay power, whitening sample size, and an intermediate 8.375-epoch budget. 20 seeds.
+name = "s69-zero-cost-ls04"
+submission = "research/lab_recipe"
+python = ".venv-blackwell/bin/python"
+seeds = [7200, 7201, 7202, 7203, 7204, 7205, 7206, 7207, 7208, 7209,
+         7210, 7211, 7212, 7213, 7214, 7215, 7216, 7217, 7218, 7219]
+devices = [0, 1]
+slots_per_device = 1
+
+[base]
+widths = [128, 384, 640]
+block_depth = 3
+translate = 2
+res_schedule = [[0.0, 20], [0.5, 32]]
+scaling_factor = 0.16666666666666666
+global_pool = "flatmax"
+compile = true
+fused_sgd = true
+whiten_grad_off = true
+bias_scaler = 16.0
+conv_init = "dct"
+stage_depths = [3, 2, 3]
+stage1_cooldown = [0.6, 0.8]
+freeze_schedule = [[0.8, 1]]
+trim_tail = true
+label_smoothing = 0.4
+epochs = 8.25
+
+[[configs]]                                   # control (= submission)
+[[configs]]
+scaling_factor = 0.2
+[[configs]]
+scaling_factor = 0.14
+[[configs]]
+bn_momentum = 0.5
+[[configs]]
+bn_momentum = 0.7
+[[configs]]
+lookahead_power = 2.5
+[[configs]]
+lookahead_power = 3.5
+[[configs]]
+whiten_samples = 10000
+[[configs]]
+epochs = 8.375
