@@ -25,6 +25,8 @@ every cell matches). Seven levels of six ARC-AGI-3 games, temporal 40% split,
 | 4. Does resynthesis after the probes help? | Yes on two of three levels and live: m0r0 0.64 to 0.91 and sk48 0.83 to 0.98 on rows no arm saw, live ar25 L3 0.84 to 1.00 over 75 moves; ka59 loses, 0.95 to 0.86, where round 1 was already right on 40 of 42 rows. A passive control with the same rows in time order and no counterexample lifts as much (1.000 on both lifting levels), so the gain is from the observations the loop collects. | R36 |
 | 5. Does naming the new mechanism help more? | No: mechanism statement 0.976, object diff 0.929, no counterexample 1.000 on sk48; 0.909 against 1.000 on m0r0. The statement narrows the committee to 1 or 2 behaviours and its disagreement AUROC falls (0.48 against 0.83). | R36 |
 
+Figures for the five questions, the ablations and the frame examples:
+`uv run python -m committee.figures` writes `artifacts/figures/*.png`.
 `uv run python -m committee.summary` and `uv run python -m committee.calibrate
 --condition committee_opine_devin` regenerate questions 1 to 3;
 `uv run python -m committee.cegis GAME --level L --train-frac 0.4 --report
