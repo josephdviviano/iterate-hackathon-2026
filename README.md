@@ -414,7 +414,16 @@ product multisets, and the trajectory SMAPE on held-out perturbations.
 Three arms on the same systems, experiment budget and model: the committee
 with disagreement-chosen experiments, the same committee with a fixed
 experiment order, and a single member with the fixed order. The paper's
-frontier-model rows are the external reference. See RESULTS.md B5.
+frontier-model rows are the external reference. Result (RESULTS.md B5, 27
+paired systems per model, 4 experiments): every arm sits at 0.17 to 0.24
+reaction F1 with overlapping intervals, so the committee is not more accurate
+than one member here; on the Qwen probe arm the spread among members ranks
+the systems the committee gets wrong at AUROC 0.85, and acting on the agreed
+half gives F1 0.35 instead of 0.24. At the admission tolerance 0.15 at most
+one member survived an experiment, so the loop resynthesized the whole
+committee at every step; `scigym.ablations` shows about 40 percent would be
+admitted at 0.5, and `--eps 0.5` reruns the arms there (not run before the
+deadline).
 
 ```
 uv run modal run -m scigym.modal_app --arm committee_probe --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40

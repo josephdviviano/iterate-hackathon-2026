@@ -443,3 +443,15 @@
     - A live round on sk48, where every live error is unanimous: the explorer finds no disagreement to probe there; the time-order fallback is the only route.
   ABANDONED:
     - Reading the live counterexample as an object diff: in frame_out the refutation was one HUD cell the object view does not show; the mechanism statement now carries the frame cells.
+
+- [jdv] - Figures, the programs in the report, SciGym B5 and the tolerance finding - this commit
+  Plots for the five questions and the ablations, the report doc's program section, and the SciGym write-up from the stored runs.
+  DONE:
+    - `committee.figures` writes six figures (accuracy per level with the object-contract ablation; the flag with the K sweep and the object-contract baselines; conformal sets; the rounds; frame examples of agreement, disagreement and the sk48 shared blind spot on sk48 and ka59). All in the report doc under their questions, with one whole admitted program and the sk48 counterexample statement.
+    - K sweep on the frame_out committees (`evaluate.k_sweep`, k_sweep.json per level): AUROC rises with K on five of six levels with errors and falls on sk48.
+    - B5 written from the stored SciGym runs (27 paired systems per model): committee F1 equals one member at 4 experiments; the Qwen probe arm's spread ranks wrong systems at AUROC 0.85 (agreed half F1 0.35 against 0.24 overall).
+    - `scigym.ablations`: admission against tolerance, selective prediction by spread, per-step curves. Finding: at tolerance 0.15 at most one member survives an experiment, so the loop resynthesized the whole committee at every step and never selected.
+    - `SCIGYM_EPS` override and tagged result directories (`--eps`, `--tag`) for a tolerance arm; test mutant-checked.
+  DEFERRED:
+    - The tolerance-0.5 arms (B6): launched at 09:20 BST, but the vLLM servers were cold (503 for every call), the empty results were removed from the volume, and at 09:37 the 90 minute run could not finish before the 11:00 deadline. Command ready: `uv run modal run -m scigym.modal_app --arm committee_probe,committee_fixed,single_fixed --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40 --eps 0.5`, then `SCIGYM_EPS=0.5 uv run python -m scigym.report --model qwen --tag _eps50`. Warm the servers first.
+    - Learned-ensemble baselines in frame_out: `committee.baselines` pairs objects and cannot read predicted frames; the baseline panel is labelled object contract.
