@@ -780,7 +780,10 @@ def unexplored(cfg, tip_cfg, trans):
         for c in (cfg_all.get(tr["exp"]), cfg_all.get(tr["parent"])):
             for k, v in plain(c).items():
                 seen.setdefault(k, set()).add(json.dumps(v))
-    return sorted(k for k, v in plain(cfg).items() if plain(tip_cfg).get(k) != v and len(seen.get(k, ())) < 2)
+    moved = [k for k, v in plain(cfg).items() if plain(tip_cfg).get(k) != v]
+    if not moved:
+        return ["(the change is not captured by any setting)"]  # every member predicts the parent: no evidence
+    return sorted(k for k in moved if len(seen.get(k, ())) < 2)
 
 
 def forecast(ar, t, idea_cfgs, tip_key, tip_cfg):
@@ -834,10 +837,11 @@ def act(stats, kind):
             if live:
                 d, iid = max(live)
                 for i in ideas:
-                    if d >= 0.5 and i["id"] == iid and int(i["priority"] or 0) < 5 and "most disputed" not in i["note"]:
+                    if d >= 0.5 and i["id"] == iid and int(i["priority"] or 0) < 5 and "most informative" not in i["note"]:
                         i["priority"] = str(int(i["priority"] or 0) + 1)
-                        i["note"] = (i["note"] + " | " if i["note"] else "") + f"committee: most disputed (disagreement {d:.2f}), +1 priority"
-                        done.append(f"raised {iid} (disagreement {d:.2f})")
+                        why = "outside the evidence" if stats[iid].get("unexplored") else f"disagreement {d:.2f}"
+                        i["note"] = (i["note"] + " | " if i["note"] else "") + f"committee: most informative ({why}), +1 priority"
+                        done.append(f"raised {iid} ({why})")
         R.write_tsv(R.IDEAS_FILE, R.IDEA_COLS, ideas)
     set_state(vetoes=st.get("vetoes", 0), audits=st.get("audits", []))
     return done
