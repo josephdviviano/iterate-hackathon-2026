@@ -154,15 +154,21 @@ def augment(padded, flip_bits, epoch, r, contrast=0.0, brightness=0.0, translate
 
 
 
+# Per-iteration quintic coefficients from a greedy minimax (Polar Express style) composition on [0.012, 1]
+# (drafts/polar_express.py), and per-shape factors that rescale the result to NS3's mean output norm (measured on the
+# E058 recipe's real momentum matrices) so only the spectrum shape changes, not the step size.
+PE_COEFFS = ((7.934617, -22.621886, 16.362605), (3.504426, -2.573436, 0.50288), (2.505927, -1.813921, 0.419256))
+PE_NORM_MATCH = {(128, 216): 0.874, (128, 1152): 0.969, (384, 1152): 0.853, (384, 3456): 0.863, (576, 3456): 0.861, (576, 5184): 0.827}
+
+
 def _newtonschulz(G, steps: int, eps: float = 1e-7):
-    """Quintic Newton-Schulz on a stack of matrices G [k, m, n], in bf16."""
-    a, b, c = (3.4445, -4.7750, 2.0315)
+    """Quintic Newton-Schulz on a stack of matrices G [k, m, n], in bf16, with per-iteration coefficients."""
     X = G.bfloat16()
     X = X / (X.norm(dim=(1, 2), keepdim=True) + eps)
     transposed = G.size(1) > G.size(2)
     if transposed:
         X = X.mT
-    for _ in range(steps):
+    for a, b, c in PE_COEFFS[:steps]:
         A = X @ X.mT
         B = b * A + c * A @ A
         X = a * X + B @ X
@@ -181,6 +187,7 @@ def _muon_update(params, grads, bufs, lr, momentum: float, ns_steps: int, shape_
             G = torch.stack([updates[i].reshape(len(updates[i]), -1) for i in idx])
             scale = max(1.0, G.size(1) / G.size(2)) ** 0.5
             U = _newtonschulz(G, ns_steps)
+            U = U * PE_NORM_MATCH[(min(G.shape[1:]), max(G.shape[1:]))]
             for j, i in enumerate(idx):
                 p = params[i]
                 p.mul_(len(p) ** 0.5 / p.norm())
