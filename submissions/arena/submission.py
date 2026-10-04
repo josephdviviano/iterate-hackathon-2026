@@ -17,7 +17,7 @@ MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
-    epochs=6.5,
+    epochs=8,
     batch_size=512,
     lr=11.5,  # per 1024 examples (summed loss)
     momentum=0.85,
@@ -34,6 +34,8 @@ DEFAULTS = dict(
     lr_peak=0.23,
     lr_start=0.2,
     lr_end=0.0,
+    low_res=20,  # train the first low_res_epochs at this resolution
+    low_res_epochs=4,
 )
 
 
@@ -142,7 +144,7 @@ def build(context: BuildContext):
     model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes)
     model = model.to(device).to(memory_format=torch.channels_last)
     use_cuda = device.type == "cuda"
-    step_fn = torch.compile(model.features, mode=hyp["compile_mode"]) if use_cuda else model.features
+    step_fn = torch.compile(model.features, mode=hyp["compile_mode"], dynamic=False) if use_cuda else model.features
     state = SimpleNamespace(model=model, context=context, hyp=hyp, step_fn=step_fn, device=device)
     # Warm up compilation and lazy CUDA init by running the real prepare/train path
     # on synthetic data for a few steps. prepare() resets everything afterwards.
@@ -153,6 +155,16 @@ def build(context: BuildContext):
         )
         prepare(state, fake, 0)
         train(state, max_steps=3 * (50000 // hyp["batch_size"]) // 2)
+        if hyp["low_res"] != 32:
+            bs = hyp["batch_size"]
+            for res in (hyp["low_res"], 32):
+                x = torch.randn(bs, 3, res, res, device=device, dtype=torch.bfloat16)
+                x = x.contiguous(memory_format=torch.channels_last)
+                for _ in range(2):
+                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                        loss = F.cross_entropy(step_fn(x), state.labels[:bs], reduction="sum")
+                    loss.backward()
+            model.zero_grad(set_to_none=True)
         torch.cuda.synchronize()
         state.images = state.labels = state.optimizer = None
     return state
@@ -234,11 +246,17 @@ def train(state, max_steps=None) -> nn.Module:
     step = 0
     gen = state.generator
     ls = hyp["label_smoothing"]
+    epoch = 0
     while step < run_steps:
         if hyp["translate"] > 0:
             epoch_images = batch_crop(images, crop, gen)
         else:
             epoch_images = images
+        if epoch < hyp["low_res_epochs"]:
+            res = hyp["low_res"]
+            epoch_images = F.interpolate(epoch_images.float(), size=(res, res), mode="bilinear", antialias=True)
+            epoch_images = epoch_images.to(torch.bfloat16)
+        epoch += 1
         flip = torch.rand(n, device=images.device, generator=gen) < 0.5
         epoch_images = torch.where(flip.view(-1, 1, 1, 1), epoch_images.flip(-1), epoch_images)
         epoch_images = epoch_images.contiguous(memory_format=torch.channels_last)
