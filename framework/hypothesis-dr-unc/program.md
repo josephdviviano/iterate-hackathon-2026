@@ -116,6 +116,19 @@ After setup, launch the baseline while the first tree is being built:
 `python research.py log --status keep --verdict -`. If the queue is still empty afterwards,
 `python research.py meta wait` waits for the first tree and ideas.
 
+### Deep research after every experiment
+
+After every experiment you log, a deep-research step runs automatically in the background
+(`lit.py`; it never runs experiments or touches your files). It picks the most decision-relevant
+open question from the tree and the latest result, searches papers, scores them with a fast model,
+reads the best in full, keeps only claims it can quote exactly, and writes a one-page digest that
+maps the claims to the hypothesis tree and to your results. Fresh ideas are generated right after
+it, with the digest as an input.
+
+- **Read** new digests while an experiment runs (`status` lists them):
+  `python research.py lit read D003`. Use what holds in your regime, cite claim cards in your
+  notes and world model as `lit:C0012`, and note which claims did not transfer.
+
 ### The committee of world models
 
 A committee of world models runs beside you (`committee.py`; it never runs experiments or touches

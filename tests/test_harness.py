@@ -177,7 +177,8 @@ class TestTaskSpecs(unittest.TestCase):
         for rel in ["framework/core/ar.py", "framework/baseline/program.md", "framework/hypothesis/program.md",
                     "framework/hypothesis/research.py", "framework/hypothesis/lit.py",
                     "framework/hypothesis-lit/program.md", "framework/hypothesis-dr/program.md",
-                    "framework/hypothesis/committee.py", "framework/hypothesis-unc/program.md"]:  # fmt: skip
+                    "framework/hypothesis/committee.py", "framework/hypothesis-unc/program.md",
+                    "framework/hypothesis-dr-unc/program.md"]:  # fmt: skip
             text = open(os.path.join(ROOT, rel)).read().lower()
             hits = [w for w in words if w in text]
             self.assertEqual(hits, [], f"{rel} mentions {hits}")
@@ -374,85 +375,82 @@ class TestCommittee(HypothesisBase):
 
     def setUp(self):
         super().setUp()
-        os.environ.pop("FAKE_COMMITTEE", None)
+        os.environ.pop("FAKE_SYNTH", None)
 
-    def run_idea(self, k, status="discard"):
+    def run_idea(self, width=8, status="discard"):
         self.ok("research.py", "snapshot")
-        iid = self.ok("research.py", "idea", "next").split()[0]
-        self.edit(width=20 + k)
+        out = self.ok("research.py", "idea", "next")
+        iid, desc = out.split()[0], out.split(": ", 1)[1].splitlines()[0]
+        self.edit(lr=float(desc.split()[1]) if desc.startswith("lr ") else 0.1, width=width)  # the idea as described
         out = self.ok("research.py", "launch", "--idea", iid, "--prereg", self.prereg_draft(iid, 0.0, 9.0))
         self.ok("ar.py", "wait")
-        log = self.ok("research.py", "log", "--status", status, "--verdict", "inconclusive")
+        self.ok("research.py", "log", "--status", status, "--verdict", "inconclusive")
         if status != "keep":
             self.git("reset", "-q", "--hard", "HEAD~1")
         self.ok("research.py", "meta", "wait", "--max", "120")
-        return iid, out, log
+        return iid, out
 
-    def test_members_forecast_every_idea_independently(self):
+    def members(self):
+        return json.load(open(os.path.join(self.ws, "committee", "members.json")))
+
+    def test_verified_members_vote_on_the_queue(self):
         self.start()
-        members = json.load(open(os.path.join(self.ws, "committee", "members.json")))
-        self.assertEqual([m["lens"] for m in members], ["mechanism", "empirical", "cost", "skeptic"])
-        calls = [c for c in self.calls() if c["role"] == "committee-member"]
-        self.assertEqual(sorted({c["model"] for c in calls}), ["claude-opus-5-5", "claude-sonnet-5-5"])
+        for _ in range(5):
+            self.run_idea()
+        ms = self.members()
+        self.assertEqual([m["status"] for m in ms], ["active"] * 6)
+        self.assertTrue(all(m["replay"] == 1.0 for m in ms))
+        self.assertTrue(os.path.exists(os.path.join(self.ws, "committee", "members", "W1.py")))
+        calls = [c for c in self.calls() if c["role"].startswith("committee")]
+        self.assertEqual({c["model"] for c in calls}, {"claude-sonnet-5-5"})  # no Opus in the committee
         self.assertTrue(all(c["cwd_files"] == [] and c["tools"] == "" for c in calls))
         fc = [json.loads(line) for line in open(os.path.join(self.ws, "committee", "forecasts.jsonl"))]
         queued = {i["id"] for i in self.results_of("ideas.tsv") if i["status"] == "queued"}
-        self.assertEqual({f["idea"] for f in fc}, queued)
-        self.assertEqual(sorted(fc[0]["metrics"]), ["loss", "time"])
-        iid, launched, _ = self.run_idea(1)
-        self.assertIn(f"committee forecast for {iid}", launched)  # shown only once the prediction is sealed
+        self.assertTrue(queued <= {f["idea"] for f in fc})
+        self.assertEqual(fc[-1]["n"], 6)
+        self.assertIn("6/6 verified world models", self.ok("research.py", "unc"))
+        iid, launched = self.run_idea()
+        self.assertIn(f"committee vote for {iid}", launched)  # shown once the prediction is sealed
         led = [json.loads(line) for line in open(os.path.join(self.ws, "committee", "ledger.jsonl"))]
-        self.assertEqual((led[0]["exp"], led[0]["counterexample"], led[0]["consensus_hit"]), ("E001", [], True))
-        self.assertTrue(os.path.exists(os.path.join(self.ws, "committee", "W1.md")))
-        self.assertIn("Calibration: 1 results scored", self.ok("research.py", "unc"))
-        self.assertIn("committee (4 members)", self.ok("research.py", "status"))
+        self.assertEqual(led[-1]["exp"], "E006")
+        self.assertTrue(led[-1]["correct"])
+        self.assertIn("committee: 6/6", self.ok("research.py", "status"))
 
-    def test_counterexamples_trigger_literature_and_revise(self):
+    def test_models_that_do_not_replay_are_rejected(self):
+        os.environ["FAKE_SYNTH"] = "bad"
         self.start()
-        os.environ["FAKE_COMMITTEE"] = "far"
-        self.ok("research.py", "meta", "wait", "--max", "120")
-        research = load_research(self.ws)
-        import importlib  # re-forecast the queue under the new fake
-        sys.path.insert(0, self.ws)
-        committee = importlib.import_module("committee")
-        importlib.reload(committee)
-        committee.run_round("forecast")
-        self.run_idea(1)
-        led = [json.loads(line) for line in open(os.path.join(self.ws, "committee", "ledger.jsonl"))]
-        self.assertEqual(sorted(led[-1]["counterexample"]), ["loss", "time"])
-        self.wait_for(os.path.join(self.ws, "lit", "digests", "D001.md"))  # its own background process
-        req = json.load(open(os.path.join(self.ws, "lit", "requests", "R001.json")))
-        self.assertEqual((req["from"], req["status"]), ("committee", "done"))
-        self.assertIn("none of our forecasters predicted", req["question"])
-        self.run_idea(2)
+        for w in (9, 10, 11, 12, 13):
+            self.run_idea(w)
+        ms = self.members()
+        self.assertTrue(ms and all(m["status"] == "rejected" for m in ms))
+        synth = [c for c in self.calls() if c["role"] == "committee-synth"]
+        self.assertEqual(len(synth), 6 * 3)  # each candidate: written, then repaired twice
+        self.assertIn("0/6 verified world models", self.ok("research.py", "unc"))
+
+
+class TestCommitteeDeepResearch(TestCommittee):
+    framework = "hypothesis-dr-unc"
+
+    def test_counterexample_steers_literature_and_rewrites_members(self):
+        os.environ["FAKE_SYNTH"] = "narrow"  # right for width <= 20 only
+        self.start()
+        for w in (9, 10, 11, 12, 13):
+            self.run_idea(w)
+        self.assertEqual(len([m for m in self.members() if m["status"] == "active"]), 6)
+        os.environ["FAKE_SYNTH"] = "good"  # rewritten members see the counterexample and get it right
+        self.run_idea(30)  # time doubles past width 20: no member replays it
+        st = json.load(open(os.path.join(self.ws, "committee", "state.json")))
+        self.assertEqual(st["counterexamples"], ["E006"])
+        ms = self.members()
+        # with 6 experiments one miss is below the replay bar: every old member is retired and rewritten around it
+        self.assertEqual(len([m for m in ms if "E006" in m.get("retired", "")]), 6)
+        self.assertEqual(len([m for m in ms if m["status"] == "active"]), 6)
+        reqs = sorted(os.listdir(os.path.join(self.ws, "lit", "requests")))
+        req = json.load(open(os.path.join(self.ws, "lit", "requests", reqs[-1])))
+        self.assertEqual(req["from"], "committee")
+        self.assertIn("none of our verified world models predicted", req["question"])
         kinds = [m["kind"] for m in self.results_of("meta.tsv")]
-        self.assertIn("literature", kinds)
-        self.assertEqual([k for k in kinds if k != "literature"][-4:], ["committee", "revise", "ideate", "committee"])
-        revise = [c for c in self.calls() if c["role"] == "revise"][-1]
-        self.assertTrue(revise["has_committee"] and revise["has_literature"])
-        self.assertIn("veto inactive", self.ok("research.py", "unc"))  # the ranges keep missing
-        self.assertTrue([c for c in self.calls() if c["role"] == "ideate"][-1]["has_committee"])
-        sys.path.remove(self.ws)
-        del research
-
-    def test_veto_with_audits(self):
-        self.start()
-        os.environ["FAKE_COMMITTEE"] = "harm"
-        self.run_idea(1, status="keep")
-        self.assertEqual([i for i in self.results_of("ideas.tsv") if "veto" in i["note"]], [])  # no track record yet
-        os.environ["FAKE_COMMITTEE"] = "wide"
-        for k in range(5):
-            self.run_idea(2 + k)
-        self.assertIn("veto active", self.ok("research.py", "unc"))
-        os.environ["FAKE_COMMITTEE"] = "harm"
-        self.run_idea(8)
-        ideas = self.results_of("ideas.tsv")
-        vetoed = [i for i in ideas if i["note"].startswith("committee veto:")]
-        audits = [i for i in ideas if "veto AUDIT" in i["note"]]
-        self.assertGreaterEqual(len(vetoed), 3)
-        self.assertEqual(len(audits), (len(vetoed) + len(audits)) // 4)  # every 4th veto is audited
-        self.assertTrue(all(i["status"] == "dropped" for i in vetoed))
-        self.assertTrue(all(i["status"] == "queued" for i in audits))
+        self.assertIn("deepresearch", kinds)
 
 
 def load_research(ws):

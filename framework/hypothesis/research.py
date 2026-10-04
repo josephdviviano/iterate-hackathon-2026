@@ -645,10 +645,10 @@ Lvl2 mechanisms and Lvl3 predictions."""
     return summary
 
 
-def run_deepresearch():
+def run_deepresearch(question=""):
     import lit
 
-    req = lit.new_request("", [], [], [], "auto", last_exp())
+    req = lit.new_request(question, [], [], [], "committee" if question else "auto", last_exp())
     did = lit.run_request(req)
     cost = (lit.R.read_json(os.path.join(lit.REQ_DIR, f"{req['id']}.json")) or {}).get("cost", 0.0)
     journal("deepresearch", float(cost), f"{req['id']} -> {did}: {req.get('question', '')[:200]}")
@@ -709,8 +709,24 @@ def jobs():
     return {k: v for k, v in (read_json(JOBS_FILE, {}) or {}).items() if pid_alive(v.get("pid"))}
 
 
+@contextlib.contextmanager
+def jobs_locked():
+    os.makedirs(STATE_DIR, exist_ok=True)
+    with open(JOBS_FILE + ".lock", "w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
 def start_meta(kind, reason):
     """Start a meta-step in the background (revise is always followed by ideate)."""
+    with jobs_locked():  # check and spawn atomically: two chains must never run at once
+        return _start_meta(kind, reason)
+
+
+def _start_meta(kind, reason):
     running = jobs()
     if running:
         return None
@@ -1084,16 +1100,25 @@ def run_committee_chain():
     except Exception as exc:  # a failed round must not block the due meta-steps
         journal("committee-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
     kind, why = meta_due(read_tsv(HYPO_FILE, HYPO_COLS), read_tsv(IDEAS_FILE, IDEA_COLS), read_tsv(META_FILE, META_COLS))
-    q = committee.lit_question() if lit_mode() == "triggered" else None
-    if q:  # its own background process: the meta-steps below do not wait for the digest
-        import lit
+    if lit_mode() == "forced":  # the literature step after every experiment, on the committee's question
+        try:
+            print(run_deepresearch(committee.dr_question() or ""), flush=True)
+        except Exception as exc:
+            journal("deepresearch-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
+        kind = kind or "ideate"  # as in the deep-research framework: fresh ideas after every digest
+    try:
+        q = committee.lit_question() if lit_mode() == "triggered" else None
+        if q:  # its own background process: the meta-steps below do not wait for the digest
+            import lit
 
-        req = lit.new_request(q, [], [], [], "committee", last_exp())
-        os.makedirs(META_DIR, exist_ok=True)
-        log = open(os.path.join(META_DIR, f"{time.strftime('%Y%m%dT%H%M%S')}-literature.log"), "w")
-        subprocess.Popen([sys.executable, os.path.abspath(__file__), "meta", "_lit", req["id"]], cwd=ROOT,
-                         stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)  # fmt: skip
-        print(f"literature request {req['id']} started in the background", flush=True)
+            req = lit.new_request(q, [], [], [], "committee", last_exp())
+            os.makedirs(META_DIR, exist_ok=True)
+            log = open(os.path.join(META_DIR, f"{time.strftime('%Y%m%dT%H%M%S')}-literature.log"), "w")
+            subprocess.Popen([sys.executable, os.path.abspath(__file__), "meta", "_lit", req["id"]], cwd=ROOT,
+                             stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)  # fmt: skip
+            print(f"literature request {req['id']} started in the background", flush=True)
+    except Exception as exc:
+        journal("literature-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
     if kind == "revise":
         print(run_revise(), flush=True)
     if kind:

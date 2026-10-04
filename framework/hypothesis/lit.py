@@ -284,7 +284,7 @@ meet; and exclusions (including anything the task's rules forbid).""",
         PLAN_SCHEMA,
         SLOW_MODEL,
         "medium",
-        0.25 * BUDGET,
+        0.5 * BUDGET,  # the plan reads the whole tree, which grows: 0.25 failed after ~3 h
     )
     req.update(
         question=req["question"] or plan["question"], plan=plan, status="running"
@@ -294,7 +294,7 @@ meet; and exclusions (including anything the task's rules forbid).""",
     papers = harvest(plan["queries"][:6])
     scored = []
     for start in range(0, len(papers), BATCH):
-        if spent > 0.45 * BUDGET:
+        if spent > 0.7 * BUDGET:
             break
         batch = papers[start : start + BATCH]
         listing = "\n".join(
@@ -320,7 +320,7 @@ Exclude (score 0): {'; '.join(plan['exclude'])}
 
     cards = []
     for p in best:
-        if spent > 0.6 * BUDGET:
+        if spent > 0.85 * BUDGET:
             break
         text = full_text(p)
         try:

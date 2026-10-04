@@ -3,8 +3,8 @@
 
 Logs each call (role, tools flag, cwd, files in cwd) to $FAKE_LLM_LOG as JSON lines.
 $FAKE_LLM_REFUTE=H1 makes revise refute that hypothesis when the tree is not empty.
-$FAKE_COMMITTEE: committee members forecast wide ranges (default), "far" ranges no result can hit,
-or "harm": ranges entirely worse than the tip.
+$FAKE_SYNTH: committee members are written as the toy task's true formula ("good", default), a formula
+that is right only for width <= 20 ("narrow"), or a constant that replays nothing ("bad").
 """
 import json
 import os
@@ -20,7 +20,34 @@ with open(os.environ["FAKE_LLM_LOG"], "a") as f:
                         "model": argv[argv.index("--model") + 1], "has_results": "=== RESULTS" in prompt, "prompt_bytes": len(prompt.encode()), "has_literature": "=== LITERATURE" in prompt,
                         "has_committee": "=== UNCERTAINTY COMMITTEE" in prompt}) + "\n")
 tree = re.findall(r"^(H[\d.]+)\t\d\t[^\t]*\topen\t", prompt, re.MULTILINE)
-if role == "committee-member":
+if role == "committee-featurize":
+    keys = ("LR", "WIDTH", "EPOCHS")
+    parent = re.search(r"=== PARENT CONFIGURATION \(.*?\) ===\n(\{.*?\})\n", prompt)
+    base = json.loads(parent.group(1)) if parent else {}
+    new_keys = [{"key": k.lower(), "description": f"{k} in model/params.py"} for k in keys]
+    if "=== PROPOSED CHANGES" in prompt:
+        ideas = re.findall(r"^(I\d+): lr ([\d.]+)", prompt, re.MULTILINE)
+        out = {"ideas": [{"id": i, "config": [{"key": k, "value": v} for k, v in {**base, "lr": float(lr)}.items()]}
+                         for i, lr in ideas], "new_keys": new_keys}
+    else:
+        body = prompt.split("=== THE CODE")[-1] if "=== THE CODE" in prompt else prompt.split("=== THE CHANGE")[-1]
+        cfg = dict(base)
+        for k in keys:
+            vals = re.findall(rf"^[+ ]?{k} = ([\d.]+)", body, re.MULTILINE)
+            if vals:
+                cfg[k.lower()] = float(vals[-1])
+        out = {"config": [{"key": k, "value": v} for k, v in cfg.items()], "new_keys": new_keys}
+elif role == "committee-synth":
+    mode = os.environ.get("FAKE_SYNTH", "good")
+    if mode == "bad":
+        src = "def predict(config):\n    return {'time': 99.0, 'loss': 9.0}\n"
+    else:
+        t = "w * e * 0.01" if mode == "good" else "(w * e * 0.01 if w <= 20 else w * e * 0.005)"
+        src = ("import math\n\ndef predict(config):\n    lr = float(config.get('lr', 0.1))\n"
+               "    w = float(config.get('width', 8))\n    e = float(config.get('epochs', 5))\n"
+               f"    return {{'time': {t}, 'loss': (math.log10(lr) + 1.5) ** 2 + 4.0 / w + 2.0 / e}}\n")
+    out = {"source": src, "mechanisms": f"{mode}: time is width x epochs; loss from lr, width and epochs"}
+elif role == "committee-member":
     mode = os.environ.get("FAKE_COMMITTEE", "wide")
     metrics = re.search(r"^The forecast metrics: (.*?)\. ", prompt, re.MULTILINE).group(1).split(", ")
     tip = json.loads(re.search(r"The current best \(the branch tip\): (\{.*?\})", prompt).group(1) or "{}")
