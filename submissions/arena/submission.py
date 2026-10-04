@@ -17,7 +17,7 @@ from benchmark.api import BuildContext, TrainingData
 
 DEFAULTS = {
     "epochs": 9.5,
-    "batch_size": 1536,
+    "batch_size": 2048,
     "lr": 9.0,  # per 1024 examples
     "momentum": 0.85,
     "weight_decay": 0.012,  # per 1024 examples, decoupled from lr
