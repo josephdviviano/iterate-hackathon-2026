@@ -38,6 +38,42 @@ dies, `committee.recover` collects its Devin sessions. What is done and left:
   `uv run python -m committee.live ar25 --level 3 --steps 75 --brief
   --members-dir ar25/L3_f40_probe0_live70/live_opine_devin` and compare
   with `artifacts/ar25/live/ar25_L3_f40_committee_opine_devin_seed0.json`.
+- 12:45 BST, 2026-10-04: the queue for the last hours, in order. Deadline
+  15:00; stop launching at 14:00 so the write-up, demo check and merge fit.
+  1. K sweep (running, launched 12:34; must finish first). 8 more seeded
+     members per level (`committee16_opine_devin`, `--start 8`, seeds of a
+     16-member batch) and 8 unseeded (`unseeded_opine_devin`) on the seven
+     R34 levels, 112 Devin sessions. When every runner has exited:
+     `uv run python -m committee.ksweep` (K 1, 2, 4, 8, 12, 16; seeded arm =
+     committee + committee16, unseeded arm = baseline + unseeded; writes
+     `artifacts/ksweep_opine.json`), then R37 and a figure. A level with
+     fewer admitted members than K uses all of them (`levels_capped`).
+     Early read: several new members reach 1.00 on m0r0 and sk48 where the
+     first eight did not, so the shared blind spot thins with K.
+  2. Compute-matched baseline at K = 8 only: 8 seeded against 8 unseeded
+     members on each level, from the K sweep's runs (no new sessions). Report
+     vote, best member chosen by shortest program, AUROC and unanimous error
+     side by side; this answers "seeds or committee".
+  3. ONC-AGI on Devin, the stores not yet run there (O10 ran Devin on the
+     first 30 full-access worlds only, 4 seeds). Use `onc.synth` with
+     `--model devin --workers 10` (about 25 minutes per 120 sessions), then
+     `onc.evaluate` with `--members synth:4:devin,synth:1:devin,both:4:devin`
+     on the same worlds against the template committee and the benchmark's
+     baselines. Do not rerun the local template or baseline scripts.
+     a. `sequential` store, first 30 worlds, k 4, `--mode seq` (120 sessions).
+     b. `expressive-full-access`, first 30, k 4 (120 sessions).
+     c. `expressive-sequential`, first 30, k 4, `--mode seq` (120 sessions).
+     d. `full-access`, the same first 30 worlds, seeds 5 to 8 (`--k 8`; the
+        cache keeps seeds 1 to 4), 120 sessions: the ONC K sweep, since four
+        Devin seeds collapsed to two driver sets (O10).
+     e. `full-access` worlds 31 to 120 at k 4 (360 sessions) only if a to d
+        are in.
+     Command shape: `uv run python -m onc.synth --store
+     artifacts/onc/benchmark/<store> --mode <full|seq> --first 30 --k 4
+     --model devin --workers 10`; `uv run python -m onc.evaluate --store
+     artifacts/onc/benchmark/<store> --mode <full|seq> --weighting likelihood
+     --first 30 --members synth:4:devin,synth:1:devin,both:4:devin --out
+     artifacts/onc/eval_bench --tag devin_<store>_first30`. Record as O11.
 - 10:25 BST, 2026-10-04: SciGym B5 and B6 written; the tolerance-0.5 arms
   (three arms on gpt-oss, four on Qwen with `committee_probe_nocx`) are
   running on Modal, results in `artifacts/scigym/*_eps50/`; report with
