@@ -302,7 +302,7 @@ Every prompt, judge or reward change shifts the state distribution mid-run.
    - uid/gid were hardcoded. (Since fixed: the sandboxes use the invoking user's ids.)
    - Assert that the GPU minor number matches the UUID; `ar_run.gpu_minor()` exists but `runner.py` does not use it.
    - `TASK_TEMPLATE` hardcodes this GPU (`driver.py:61,83`).
-   - `ar_calibrate.sh` is stale (no `--no-autotune`, fresh cache or `--gpu-minor`).
+   - `ar_calibrate.sh` is stale (no `--no-autotune`, fresh cache or `--gpu-minor`). (Since fixed: it reads all three from `config.json` and is the documented calibration and baseline path.)
    - `causal_conv1d` is missing from the trainer env.
    - Add the parity tests to `SETUP.md`.
 9. **Full fine-tuning** only if LoRA capacity is shown to be the limit. It needs bf16 serving, because FP8 erases small updates, and roughly halves the runners.

@@ -1,0 +1,90 @@
+sm_120 attention patch for karpathy/autoresearch (RLTL;DR autoresearch baseline).
+
+The kernels-hub FA3 builds contain only sm_80/sm_90a code and abort on sm_120 (RTX PRO 6000 Blackwell, RTX 50xx).
+Hopper keeps FA3; every other GPU uses FlexAttention for the sliding-window layers and SDPA for the full-causal
+layers, with FA3's window semantics (key j visible to query i iff 0 <= i-j <= w), so WINDOW_PATTERN keeps its
+meaning. Block masks are built before torch.compile. program.md gets a one-line GPU note (superseded by
+patches/harness_program.md). Written by us against upstream commit 228791f; apply in the autoresearch checkout:
+
+  git apply /path/to/patches/sm120_attention.patch
+
+diff --git a/program.md b/program.md
+index dea9bcc..493e408 100644
+--- a/program.md
++++ b/program.md
+@@ -22,6 +22,8 @@ Once you get confirmation, kick off the experimentation.
+ 
+ Each experiment runs on a single GPU. The training script runs for a **fixed time budget of 5 minutes** (wall clock training time, excluding startup/compilation). You launch it simply as: `uv run train.py`.
+ 
++**GPU note**: This GPU is sm_120 (RTX PRO 6000 Blackwell, 96 GB). FA3 is unavailable; attention uses FlexAttention (sliding-window layers) / SDPA (full-causal layers) via `attention()` in `train.py`.
++
+ **What you CAN do:**
+ - Modify `train.py` — this is the only file you edit. Everything is fair game: model architecture, optimizer, hyperparameters, training loop, batch size, model size, etc.
+ 
+diff --git a/train.py b/train.py
+index 2e74397..96e7f71 100644
+--- a/train.py
++++ b/train.py
+@@ -17,11 +17,38 @@ import torch
+ import torch.nn as nn
+ import torch.nn.functional as F
+ 
+-from kernels import get_kernel
++from torch.nn.attention.flex_attention import flex_attention, create_block_mask
++
++# Attention backend. The kernels-hub FA3 builds only contain sm_80/sm_90a code: on sm_120
++# (RTX PRO 6000 / RTX 50xx) the first call hard-aborts the process ("no kernel image is available").
++# Hopper -> FA3. Everything else -> FlexAttention for sliding-window layers, SDPA for full-causal layers.
+ cap = torch.cuda.get_device_capability()
+-# varunneal's FA3 is Hopper only, use kernels-community on non-Hopper GPUs
+-repo = "varunneal/flash-attention-3" if cap == (9, 0) else "kernels-community/flash-attn3"
+-fa3 = get_kernel(repo).flash_attn_interface
++USE_FA3 = cap == (9, 0)
++if USE_FA3:
++    from kernels import get_kernel
++    fa3 = get_kernel("varunneal/flash-attention-3").flash_attn_interface
++_BLOCK_MASKS = {}
++
++def get_block_mask(T, w, device):
++    """Causal sliding-window block mask with FA3 semantics: key j visible to query i iff 0 <= i-j <= w."""
++    if (T, w) not in _BLOCK_MASKS:
++        def sliding_causal(b, h, q_idx, kv_idx):
++            return (q_idx >= kv_idx) & (q_idx - kv_idx <= w)
++        _BLOCK_MASKS[(T, w)] = create_block_mask(sliding_causal, B=None, H=None, Q_LEN=T, KV_LEN=T, device=device)
++    return _BLOCK_MASKS[(T, w)]
++
++def attention(q, k, v, window_size):
++    """q, k, v: (B, T, H, D) -> (B, T, H, D). window_size = (left, right) as in FA3."""
++    if USE_FA3:
++        return fa3.flash_attn_func(q, k, v, causal=True, window_size=window_size)
++    T, w = q.size(1), window_size[0]
++    q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
++    gqa = q.size(1) != k.size(1)
++    if w < 0 or w >= T:
++        y = F.scaled_dot_product_attention(q, k, v, is_causal=True, enable_gqa=gqa)
++    else:
++        y = flex_attention(q, k, v, block_mask=get_block_mask(T, w, q.device), enable_gqa=gqa)
++    return y.transpose(1, 2)
+ 
+ from prepare import MAX_SEQ_LEN, TIME_BUDGET, Tokenizer, make_dataloader, evaluate_bpb
+ 
+@@ -90,7 +117,7 @@ class CausalSelfAttention(nn.Module):
+         q, k = apply_rotary_emb(q, cos, sin), apply_rotary_emb(k, cos, sin)
+         q, k = norm(q), norm(k)
+ 
+-        y = fa3.flash_attn_func(q, k, v, causal=True, window_size=window_size)
++        y = attention(q, k, v, window_size)
+         y = y.contiguous().view(B, T, -1)
+         y = self.c_proj(y)
+         return y
+@@ -505,6 +532,10 @@ optimizer = model.setup_optimizer(
+     weight_decay=WEIGHT_DECAY,
+ )
+ 
++if not USE_FA3:  # build block masks eagerly, outside the compiled graph
++    for (w, _) in set(model.window_sizes):
++        if 0 <= w < MAX_SEQ_LEN:
++            get_block_mask(MAX_SEQ_LEN, w, device)
+ model = torch.compile(model, dynamic=False)
+ 
+ train_loader = make_dataloader(tokenizer, DEVICE_BATCH_SIZE, MAX_SEQ_LEN, "train")

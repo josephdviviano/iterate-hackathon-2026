@@ -1,6 +1,6 @@
 # Results
 
-Every number in README.md and in the pitch comes from this file.
+Every number in README.md comes from this file.
 
 All numbers here are derived from the run data with one command:
 
@@ -21,7 +21,7 @@ next to each number below is that row. `--until` fixes the snapshot of R3, which
 | Data split | Training uses autoresearch's training shards (24 shards were downloaded). Evaluation uses the pinned validation shard `shard_06542`, with `EVAL_TOKENS` = 40 × 524,288 tokens. This is upstream's split. There is no separate test split. If training reads the validation data, the run is detected and voided. |
 | Hardware | 4× RTX PRO 6000 Blackwell (96 GB, sm_120). GPUs 0–1 serve the policy with vLLM. The 5-minute nanochat runs train on GPU 2, and the second h2h/frz arm trains on GPU 3. |
 | Baseline | The unmodified autoresearch `train.py`, plus an sm_120 attention patch (FA3 → FlexAttention/SDPA). Result: **1.079941**, the mean of 4 runs (sd 0.000102). This baseline gets only 505–506 optimizer steps in 5 minutes on this GPU. Keys: `rl_run/baseline_*`. |
-| Commit | tldr-autoresearch branch, initial commit |
+| Commit | `25a8965` (branch `tldr-autoresearch`): the commit that added `results/` and `tools/export_results.py`. Re-running the command above from that tree on our run data reproduces `results/` byte for byte. |
 
 ---
 

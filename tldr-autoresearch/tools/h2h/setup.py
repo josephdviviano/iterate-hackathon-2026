@@ -171,7 +171,8 @@ def create_start(cfg) -> str:
         run_sh = f.read()
     if ROOT_TOKEN not in run_sh:
         raise SetupError(f"{h2h_dir}/run.sh has no {ROOT_TOKEN.decode()} token")
-    run_sh = run_sh.replace(ROOT_TOKEN, os.path.abspath(cfg.root).encode())
+    # physical path: tools/h2h_sandbox.sh re-exposes tools/ at its symlink-free path (pwd -P)
+    run_sh = run_sh.replace(ROOT_TOKEN, os.path.realpath(cfg.root).encode())
     with tempfile.TemporaryDirectory(prefix="h2h_start_") as td:
         env = {**os.environ, **GIT_ENV, "GIT_INDEX_FILE": os.path.join(td, "index"),
                "GIT_AUTHOR_NAME": START_IDENTITY[0], "GIT_AUTHOR_EMAIL": START_IDENTITY[1],

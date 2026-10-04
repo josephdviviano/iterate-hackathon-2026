@@ -107,6 +107,14 @@ def unit_tests():
           and S.run_marker(None) is None and S.run_marker({"n_runs": 0, "last": None}) == (0, None), m0)
     check("invokes_run_sh misses `bash -c \"./run.sh ...\"` (why the runner's state decides the back-off)",
           not S.invokes_run_sh(B_CMD))
+    # pi's environment carries the project root: the guard's default protected dir (pi/agent/extensions/guard.ts)
+    from rltldr.h2h_config import H2HConfig
+    sup = S.Supervisor.__new__(S.Supervisor)
+    sup.cfg = H2HConfig(root="/x/proj")
+    sup.arm = sup.cfg.arm("base")
+    sup.sandbox, sup.sess_root, sup.sess = "sandbox", "/x/proj/data/h2h/base", "/x/proj/data/h2h/base/session"
+    argv = sup.pi_cmd(False)
+    check("pi_cmd passes RLTLDR_ROOT=cfg.root (guard default)", "RLTLDR_ROOT=/x/proj" in argv, argv)
 
 
 B_CMD = 'bash -c "./run.sh nudge-run > run.log 2>&1"'      # a run the command-text heuristic cannot see
@@ -291,6 +299,7 @@ def main():
                   and "AR_GUARD_LOG=" + os.path.join(arm, "session", "guard_blocks.jsonl") in first_argv
                   and "AR_GUARD_WRITABLE=train.py,results.tsv" in first_argv
                   and "AR_GUARD_ALLOW_VENV_EXEC=1" in first_argv and "UV_CACHE_DIR=/tmp/uv-cache" in first_argv
+                  and "RLTLDR_ROOT=" + tmp in first_argv
                   and "PI_CODING_AGENT_DIR=" + os.path.join(arm, "session", "agent") in first_argv, first_argv)
         dup = start_sup()
         rc = dup.wait(timeout=20)

@@ -95,7 +95,7 @@ Caveats (detailed in RESULTS.md):
 - uv, Node 24 and the pi coding agent.
 - Two Python environments: serving (vLLM 0.30) and training (torch, transformers, PEFT).
 - Qwen3.8-27B-FP8 weights.
-- An autoresearch checkout with its data.
+- An autoresearch checkout with its data, plus our two changes in [`patches/`](patches/README.md).
 
 The step-by-step setup and the baseline measurement are in [`docs/SETUP.md`](docs/SETUP.md).
 
@@ -123,15 +123,16 @@ FRZ_GPU_x1=<uuid>:<minor> FRZ_GPU_x2=<uuid>:<minor> ./ctl_frz.sh init --seed <st
 ./ctl_frz.sh baseline x1 && ./ctl_frz.sh baseline x2 && ./ctl_frz.sh start driver-x1 driver-x2
 ```
 
-**Environment variables.**
+**Environment variables.** The main ones are below. The full list, including `RLTLDR_CUDA_HOME`, `SERVE_GPUS`,
+`H2H_CONFIG`, `FRZ_GPU_x1`/`FRZ_GPU_x2` and `PI_BIN`, is in [`docs/SETUP.md`](docs/SETUP.md).
 
 | variable | default |
 |---|---|
-| `RLTLDR_ROOT` (project root: data, logs, repos) | the directory of `ctl.sh` |
+| `RLTLDR_ROOT`: the project root. It must be this checkout (the directory that holds `tools/` and `rltldr/`), because code is loaded from it as well as data, logs and repos. | the directory of `ctl.sh` |
 | `RLTLDR_CONFIG` | `$RLTLDR_ROOT/config.json` |
 | `RLTLDR_SERVE_PY` | `~/envs/serve/bin/python` |
 | `RLTLDR_TRAIN_PY` | `~/envs/train/bin/python` |
-| `RLTLDR_TRUSTED_PY` (stdlib-only trusted scripts) | `/usr/bin/python3` |
+| `RLTLDR_TRUSTED_PY`: runs the stdlib-only trusted wrapper `tools/ar_run.py` | `/usr/bin/python3` |
 | `UV_BIN` | `uv` |
 
 **Reproducing the result tables:**
@@ -142,11 +143,20 @@ python3 tools/export_results.py --until 2026-10-04T12:00:00Z
 
 It reads `$RLTLDR_ROOT/data` and writes `results/`.
 
-**Tests that need no GPU:**
-- `node pi/tests/guard.test.mjs`
-- `/usr/bin/python3 tests/test_h2h_dashboard.py`
-- `tests/test_h2h_setup.py` and `tests/test_h2h_runner.py`
-- `tools/test_ar_run.py` (needs sudo and the autoresearch venv)
+**Tests that need no GPU, sudo or running services:**
+- `node pi/tests/guard.test.mjs` (the guard extension)
+- `python3 tools/test_ar_run.py --unit`
+- `python3 tests/test_h2h_dashboard.py`
+- `python3 tests/test_h2h_setup.py --create-start-only`
+- `bash tests/test_ctl_h2h.sh` (fake components on free ports)
+- `$RLTLDR_SERVE_PY tests/test_h2h_gateway.py --part c` (a fake vLLM on ports 18999 and 18111)
+
+**Tests that need sudo and machine setup** (`canon.git`, uv, the autoresearch venv, configured GPUs):
+- the full `tools/test_ar_run.py` (a GPU UUID, sudo, the venv)
+- the full `tests/test_h2h_setup.py` (the real `canon.git` and uv)
+- `tests/test_h2h_runner.py` (trains a fake `train.py` on the arms' GPUs; refuses while production runners run)
+- `tests/test_h2h_supervisor.py` and `tests/test_h2h_sandbox.sh` (pi and sudo)
+- `tests/trainer/*` (the trainer GPU and the real weights)
 
 ## Repository layout
 
@@ -160,6 +170,7 @@ tools/                      trusted run wrapper (ar_run.py), eval bootstrap (ar_
                             template + client, dashboards, export_results.py, FP8 -> bf16 dequantisation, h2h/ setup
 pi/agent/                   pi configuration and the guard extension that blocks off-limits tool calls
 examples/frz/               templates for the frz arms' configs
+patches/                    our sm_120 attention patch and harness program.md for autoresearch
 tests/                      h2h, sandbox and trainer tests
 docs/                       DESIGN (method + deviations), SETUP, RETROSPECTIVE (mid-run analysis), H2H_SPEC, AR_RUN
 results/                    derived result tables (see RESULTS.md)
@@ -170,8 +181,9 @@ results/                    derived result tables (see RESULTS.md)
 - **Qwen3.8-27B-FP8** (Qwen team): the policy model.
 - **RLTL;DR**, "Self-improvement by Internalizing Self-generated Feedback" (arXiv 2609.37633): the method. Our
   implementation was written from the paper.
-- **autoresearch** and **nanochat** by Andrej Karpathy: the research task. Our harness `program.md` and the h2h
-  `tools/h2h/program.md` are adapted from autoresearch's `program.md`.
+- **autoresearch** and **nanochat** by Andrej Karpathy: the research task. Our harness
+  `patches/harness_program.md` and the h2h `tools/h2h/program.md` are adapted from autoresearch's `program.md`.
+  `patches/sm120_attention.patch` is our diff against its `train.py` (see [`patches/README.md`](patches/README.md)).
 - **pi coding agent** (`@earendil-works/pi-coding-agent`, earendil-works): the agent harness.
 - **vLLM**: serving with runtime LoRA loading.
 - **PyTorch**, Hugging Face **transformers**, **PEFT**, **accelerate**, **safetensors** and **tokenizers**, and
@@ -182,3 +194,7 @@ results/                    derived result tables (see RESULTS.md)
 - **pyarrow**: autoresearch data loading.
 - **uv**, **Node.js**, **NumPy** and the Hugging Face **hf** CLI (`huggingface_hub`, model download).
 - **IBM Plex** fonts (Google Fonts) in the dashboards.
+- **Dr. GRPO** (Liu et al., "Understanding R1-Zero-Like Training: A Critical Perspective", 2025): the advantage
+  `r - mean(r)` without division by the standard deviation.
+- **DAPO** (Yu et al., "DAPO: An Open-Source LLM Reinforcement Learning System at Scale", 2025): token-level loss
+  averaging.

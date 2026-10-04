@@ -2,7 +2,8 @@
 
 This file covers installing and configuring the harness. The design is in `docs/DESIGN.md`; results are in
 `RESULTS.md`. All paths below are relative to the project root (`$RLTLDR_ROOT`, by default the directory that holds
-`ctl.sh`).
+`ctl.sh`). The project root must be this checkout (the directory that holds `tools/` and `rltldr/`): the scripts and the
+driver load `tools/`, `rltldr/` and `serve.sh` from the root as well as `data/`, `logs/` and the repositories.
 
 ## Requirements
 
@@ -50,14 +51,17 @@ FlashInfer's JIT needs a consistent CUDA toolkit of version 12.9 or later. If th
 
 | variable | default | used for |
 |---|---|---|
-| `RLTLDR_ROOT` | directory of `ctl.sh` / the `rltldr/` package | project root: data, logs, sockets, repos |
+| `RLTLDR_ROOT` | directory of `ctl.sh` / the `rltldr/` package | project root: the checkout (code under `tools/`, `rltldr/`) plus data, logs, sockets, repos. Do not point it at a data-only directory. |
 | `RLTLDR_CONFIG` | `$RLTLDR_ROOT/config.json` | machine-specific settings (see below) |
-| `RLTLDR_SERVE_PY` | `~/envs/serve/bin/python` | vLLM, gateway, runner, driver |
+| `RLTLDR_SERVE_PY` | `~/envs/serve/bin/python` | vLLM, gateway, runner, driver, the h2h/frz components, `python -m rltldr.config` in the scripts |
 | `RLTLDR_TRAIN_PY` | `~/envs/train/bin/python` | trainer |
-| `RLTLDR_TRUSTED_PY` | `/usr/bin/python3` | stdlib-only trusted scripts (`tools/ar_run.py`, `tools/run_client.py`) |
+| `RLTLDR_TRUSTED_PY` | `/usr/bin/python3` | the stdlib-only trusted wrapper `tools/ar_run.py` (started by the runner, the h2h runner, `tools/ar_calibrate.sh` and `tools/test_ar_run.py`), and the fallback for bringing up loopback in the sandboxes. The agent's `run.sh` always uses `/usr/bin/python3`, because the sandbox hides `$HOME`. |
 | `RLTLDR_CUDA_HOME` | `~/envs/cuda13` | CUDA toolkit for vLLM / FlashInfer JIT |
+| `SERVE_GPUS` | `0,1` | the serving GPUs (`serve.sh`) |
 | `UV_BIN` | `uv` | uv executable |
 | `H2H_CONFIG` | `$RLTLDR_ROOT/h2h_config.json` | head-to-head arms (GPUs, ports); template `h2h_config.example.json` |
+| `FRZ_GPU_x1`, `FRZ_GPU_x2` | none (required by `ctl_frz.sh init`) | the frz arms' GPUs, as `<uuid>:<minor>` |
+| `PI_BIN` | `pi` | the pi binary for `pi/tests/e2e_run.sh` (the harness uses config `pi_bin`) |
 
 ## Configure
 
@@ -70,7 +74,8 @@ Set these fields in `config.json`:
 - `agent_gpu_uuid` and `agent_gpu_minor` (the `/dev/nvidia<N>` of that GPU) for the experiment GPU.
 - `trainer_gpu_uuid` for the policy-update GPU.
 - `model_dir`, `tokenizer_dir` and `trainer_base_dir` if the models live elsewhere.
-- `pi_bin` if `pi` is not on `PATH`.
+- `pi_bin`: the pi executable. The code default is `pi`, looked up on `PATH`. The example sets `~/.local/bin/pi`,
+  where the install step above puts it. `h2h_config.json` has its own `pi_bin`, default `pi`.
 
 Paths may start with `~`. The GPU UUIDs have no default: anything that needs one stops with a clear error. Check a
 value with `python -m rltldr.config get <key>`. `serve.sh` takes the serving GPUs from `SERVE_GPUS` (default `0,1`).
@@ -87,13 +92,22 @@ cd autoresearch && git checkout -b autoresearch/oct3
 uv sync && uv run prepare.py --num-shards 24                        # 24 training shards + validation shard + tokenizer
 ```
 
-Commit two changes on that branch before the first start:
+Commit two changes on that branch before the first start. Both are in [`patches/`](../patches/README.md):
 
 1. **GPU patch (only on GPUs without FA3 kernels, such as sm_120).** Upstream's FA3 kernels abort on sm_120. Our
    patch uses FlexAttention for the sliding-window layers and SDPA for the full-causal layers, so
    `WINDOW_PATTERN` keeps its meaning. Hopper keeps FA3.
 2. **Harness `program.md`.** One experiment per session, run with `./run.sh "<description>"`. Training happens on
    the runner's GPU, not in the agent's sandbox. The keep/discard decision belongs to the harness.
+
+```bash
+cd autoresearch
+git apply ../patches/sm120_attention.patch && git commit -qam "sm120 attention patch (baseline)"
+cp ../patches/harness_program.md program.md && git commit -qam "harness: program.md for one-experiment sessions"
+```
+
+The first commit is the h2h `baseline_commit` (set it in `h2h_config.json`). The second is the `--seed` for
+`ctl_frz.sh init`.
 
 `prepare.py` must stay byte-identical to upstream: the runner checks its sha256 (`prepare_sha256` in
 `rltldr/config.py`).
@@ -104,20 +118,15 @@ Before the driver starts, the ledger needs an `attempt_id: "baseline"` entry. Me
 sandboxed, trusted evaluation, `--no-autotune`, and a fresh compile cache for each run.
 
 ```bash
-GPU=$(python -m rltldr.config get agent_gpu_uuid); SHA=$(python -m rltldr.config get prepare_sha256)
-for i in 1 2 3; do   # noise calibration runs
-  AR_ATTEMPT_ID=noise-$i ${RLTLDR_TRUSTED_PY:-/usr/bin/python3} -I tools/ar_run.py --repo autoresearch \
-    --ledger data/calib_ledger.jsonl --gpu "$GPU" --gpu-minor 2 --prepare-sha "$SHA" --no-autotune \
-    --cache-dir "$(mktemp -d)" --desc "noise $i"
-done
-AR_ATTEMPT_ID=baseline ${RLTLDR_TRUSTED_PY:-/usr/bin/python3} -I tools/ar_run.py --repo autoresearch \
-  --ledger data/ledger.jsonl --gpu "$GPU" --gpu-minor 2 --prepare-sha "$SHA" --no-autotune \
-  --cache-dir "$(mktemp -d)" --desc baseline
+tools/ar_calibrate.sh 3 --baseline     # 3 noise runs -> data/calib_ledger.jsonl, then 1 baseline -> data/ledger.jsonl
+python3 tools/ar_stats.py data/calib_ledger.jsonl
 ```
 
-Run these from the project root with the serve env's python on `PATH` (for `python -m rltldr.config`). Use your
-`agent_gpu_minor` in place of `2`. The task prompt's starting best is the mean of these runs. Check their spread:
-on our machine the sd was 0.0001 with autotuning off.
+`tools/ar_calibrate.sh` reads the GPU (`agent_gpu_uuid`, `agent_gpu_minor`), `no_autotune` and `prepare_sha256`
+from the config. It runs `tools/ar_run.py` under `$RLTLDR_TRUSTED_PY` with a fresh compile cache under `data/` for
+each run, and it refuses to run on an uncommitted repo. Stop the runner first, because both use the agent GPU. The
+task prompt's starting best is the mean of these runs. Check their spread: on our machine the sd was 0.0001 with
+autotuning off.
 
 `val_bpb` after a fixed 5-minute budget depends on the GPU, because a faster GPU trains more steps. **Numbers from
 different hardware are not comparable.**
@@ -141,7 +150,7 @@ On start, the trainer re-publishes its latest version to the gateway.
 
 ## Using more compute
 
-The loop is sequential by design: one experiment at a time, and GPU 2 is idle while the agent thinks. With more GPUs
+The loop is sequential by design: one experiment at a time, and the agent GPU is idle while the agent thinks. With more GPUs
 the natural extensions are:
 - **Parallel lanes.** Several independent runner/agent lanes, each with its own branch and best, give more rollouts
   per hour.

@@ -63,7 +63,9 @@ class Config:
     insight_success_threshold: float = 0.5   # insert insights while running success rate <= this
     max_insights_in_context: int = 16    # n_fb; most recent kept
     insights_enabled: bool = True        # False: no insight generation, nothing injected (ablation)
-    keep_margin: float = 0.0005          # keep iff confirmed val_bpb < best - keep_margin (~5 sigma)
+    keep_margin: float = 0.0005          # keep iff confirmed val_bpb < best - keep_margin (~5 sd of the
+                                         # autotune-off baseline noise; ~1 sigma once the agent enables max-autotune,
+                                         # see RESULTS.md "Noise")
     reward_mode: str = "binary"          # "binary" (paper) | "delta" (clip(delta/sigma, -3, 3))
     reward_sigma: float = 0.0002         # val_bpb noise std: 0.0001 measured with no_autotune (0.0039 with autotuning)
     screen_margin: float = 0.0           # agent's run must beat best by this to trigger confirmation re-runs

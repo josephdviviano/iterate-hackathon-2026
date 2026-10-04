@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Control script for the head-to-head (h2h) run: base model vs RLTL;DR v5, two continuous autoresearch
 # sessions that share the vLLM server of ./ctl.sh; each arm has its own nanochat GPU, runner, gateway socket,
-# sandbox, pi session and repo (see rltldr/h2h_config.py; machine settings in h2h_config.json, template
-# h2h_config.example.json). One-time setup: tools/h2h/make_adapters.py, then tools/h2h/setup.py --create-start.
+# sandbox, pi session and repo (see docs/H2H_SPEC.md and rltldr/h2h_config.py; machine settings in h2h_config.json,
+# template h2h_config.example.json). One-time setup: tools/h2h/make_adapters.py, then
+# tools/h2h/setup.py --create-start.
 #   ./ctl_h2h.sh start   [component...]  start, supervised (auto-restart with back-off); default: all, in order
 #   ./ctl_h2h.sh stop    [component...]  stop; default: all, both agents first (at the same time), then the rest
 #   ./ctl_h2h.sh restart [component...]  stop, then start in dependency order

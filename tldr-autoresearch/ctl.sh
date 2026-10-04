@@ -7,6 +7,7 @@
 #   ./ctl.sh report                  research progress: best val_bpb trajectory, group metrics, insights, updates
 # Components: vllm (GPUs 0,1 = $SERVE_GPUS) | gateway | runner (trains on config agent_gpu_uuid) |
 #             trainer (config trainer_gpu_uuid) | driver (pi attempts, sandboxed)
+# $RLTLDR_ROOT must be this checkout (default): serve.sh, tools/ and the rltldr/ modules are loaded from it.
 # Machine-specific settings: $RLTLDR_ROOT/config.json (see config.example.json). Python envs: $RLTLDR_SERVE_PY
 # (default ~/envs/serve/bin/python: vLLM, gateway, runner, driver) and $RLTLDR_TRAIN_PY (default ~/envs/train/bin/python).
 set -uo pipefail

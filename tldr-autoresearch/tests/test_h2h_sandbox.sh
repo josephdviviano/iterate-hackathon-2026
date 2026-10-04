@@ -147,12 +147,13 @@ HOME_HIDDEN = [".claude", ".claude.json", ".pi", "models", "envs", "work", "logs
 ROOT_HIDDEN = [  # relative to the project root (checked when it lies under the home)
           "data", "data/ledger.jsonl", "data/adapters", "data/h2h/adapters",
           f"data/h2h/{arm}/ledger.jsonl", f"data/h2h/{arm}/runner_ws", f"data/h2h/{other}",
-          "canon.git", "logs", "RETROSPECTIVE.md", "README.md", "SETUP.md",
-          "ctl.sh", "serve.sh", "autoresearch", "pi_sessions", "runner_ws",
+          "canon.git", "logs", "README.md", "RESULTS.md", "results", "examples", "docs", "docs/AR_RUN.md",
+          "docs/DESIGN.md", "docs/RETROSPECTIVE.md", "docs/SETUP.md", "config.json", "config.example.json",
+          "h2h_config.json", "h2h_config.example.json", "ctl.sh", "serve.sh", "autoresearch", "pi_sessions", "runner_ws",
           "canon_ws", "policy", "pi", "rltldr", "run", "run/gateway.sock",
           f"run/h2h/{other}", "scratch", "dashboard", "tests", "agent_venv",
           "tools/h2h", "tools/h2h/program.md", "tools/h2h_dashboard",
-          "tools/dashboard", "tools/README_autoresearch.md", "tools/report.py",
+          "tools/dashboard", "tools/export_results.py", "tools/report.py",
           "tools/h2h_sandbox.sh", "tools/sandbox.sh", "tools/sandbox_lib.sh",
           "tools/ar_run.py", "tools/run.sh", "tools/__pycache__"]
 HIDDEN = HOME_HIDDEN + ([os.path.join(root_rel, p) for p in ROOT_HIDDEN] if root_rel else [])

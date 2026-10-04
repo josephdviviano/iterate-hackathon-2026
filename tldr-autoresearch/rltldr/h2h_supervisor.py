@@ -440,6 +440,8 @@ class Supervisor:
             "PI_CODING_AGENT_DIR": os.path.join(sd, "agent"), "PI_OFFLINE": "1", "PI_SKIP_VERSION_CHECK": "1",
             "PI_TELEMETRY": "0", "CUDA_VISIBLE_DEVICES": "",
             "AR_GUARD_LOG": os.path.join(sd, "guard_blocks.jsonl"),
+            # the guard's default protected dir (pi/agent/extensions/guard.ts): the project root
+            "RLTLDR_ROOT": self.cfg.root,
             # program.md has the agent write results.tsv itself (the guard's default only allows train.py)
             "AR_GUARD_WRITABLE": "train.py,results.tsv",
             # program.md: "`.venv/bin/python` has torch (CPU only in your shell) ... for quick checks". The guard

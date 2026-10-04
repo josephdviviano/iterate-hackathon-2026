@@ -343,7 +343,7 @@ class Runner:
         free = disk_free_gb(self.arm.dir)
         if free is not None and free < DISK_WARN_GB:
             log.warning("only %.1f GB free on the data filesystem", free)
-        env = {**BASE_ENV, "RLTLDR_ROOT": ROOT_DIR, "AR_MAX_RUNS": "0", "AR_AGENT_HEAD": head}
+        env = {**BASE_ENV, "RLTLDR_ROOT": self.cfg.root, "AR_MAX_RUNS": "0", "AR_AGENT_HEAD": head}
         t0 = time.time()
         proc = await asyncio.create_subprocess_exec(
             *self.ar_run_cmd(desc), cwd=self.ws, env=env, stdin=asyncio.subprocess.DEVNULL,

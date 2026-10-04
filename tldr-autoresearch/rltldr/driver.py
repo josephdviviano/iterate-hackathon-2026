@@ -227,9 +227,10 @@ class Canon:
         os.makedirs(os.path.join(tmp, ".git", "info"), exist_ok=True)
         with open(os.path.join(tmp, ".git", "info", "exclude"), "w") as f:
             f.write("run.log\nresults.tsv\nrun.sh\n.venv\n")
-        # tools/run.sh is a template: @RLTLDR_ROOT@ -> this installation's root (where run_client.py lives)
+        # tools/run.sh is a template: @RLTLDR_ROOT@ -> this installation's root (where run_client.py lives), as a
+        # physical path: h2h_sandbox.sh re-exposes tools/ at its symlink-free path (pwd -P)
         with open(os.path.join(self.cfg.root, "tools", "run.sh")) as f:
-            run_sh = f.read().replace("@RLTLDR_ROOT@", self.cfg.root)
+            run_sh = f.read().replace("@RLTLDR_ROOT@", os.path.realpath(self.cfg.root))
         with open(os.path.join(tmp, "run.sh"), "w") as f:
             f.write(run_sh)
         shutil.copymode(os.path.join(self.cfg.root, "tools", "run.sh"), os.path.join(tmp, "run.sh"))
@@ -378,6 +379,8 @@ class Driver:
             "PI_CODING_AGENT_DIR": os.path.join(sess, "agent"), "PI_OFFLINE": "1",
             "PI_SKIP_VERSION_CHECK": "1", "PI_TELEMETRY": "0",
             "CUDA_VISIBLE_DEVICES": "", "AR_GUARD_LOG": os.path.join(sess, "guard_blocks.jsonl"),
+            # the guard's default protected dir (pi/agent/extensions/guard.ts): the project root
+            "RLTLDR_ROOT": cfg.root,
         }
         pi_cmd = [cfg.pi_bin, "--mode", "json", "--no-approve", "--no-context-files", "--provider", "rl",
                   "--model", "policy", "--thinking", cfg.agent_thinking,

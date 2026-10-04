@@ -13,6 +13,7 @@ SERVE_PY=${RLTLDR_SERVE_PY:-$HOME/envs/serve/bin/python}
 TRUSTED_PY=${RLTLDR_TRUSTED_PY:-/usr/bin/python3}
 cfg() { PYTHONPATH="$HERE" "$SERVE_PY" -m rltldr.config get "$1"; }   # honours $RLTLDR_ROOT / $RLTLDR_CONFIG
 N=${1:-5}
+ROOT=$(cfg root) || exit 1      # passed to ar_run: its default GPU lock dir is $RLTLDR_ROOT/data/locks
 REPO=$(cfg repo) || exit 1
 DATA=$(cfg data) || exit 1
 CALIB_LEDGER=$DATA/calib_ledger.jsonl
@@ -26,10 +27,11 @@ EXTRA=()
 mkdir -p "$DATA"
 cd "$REPO" || exit 1
 # ar <ledger> <attempt id> <desc>: one run through the trusted wrapper, fresh compile cache. env -i proves it
-# needs nothing from the caller's environment (PATH, venv, CUDA_*).
+# needs nothing from the caller's environment (PATH, venv, CUDA_*). RLTLDR_ROOT = the RL runner's, so the per-GPU
+# flock is shared with it.
 ar() {
   local cache; cache=$(mktemp -d -p "$DATA" cache-XXXXXX)
-  env -i HOME="$HOME" PATH=/usr/bin:/bin AR_ATTEMPT_ID="$2" "$TRUSTED_PY" -I "$HERE/tools/ar_run.py" \
+  env -i HOME="$HOME" PATH=/usr/bin:/bin RLTLDR_ROOT="$ROOT" AR_ATTEMPT_ID="$2" "$TRUSTED_PY" -I "$HERE/tools/ar_run.py" \
     --repo "$REPO" --ledger "$1" --gpu "$GPU" --gpu-minor "$GPU_MINOR" --prepare-sha "$PREPARE_SHA" \
     --cache-dir "$cache" "${EXTRA[@]}" --desc "$3"
   local rc=$?
