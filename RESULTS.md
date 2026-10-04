@@ -3419,3 +3419,55 @@ Reading:
 | Baseline | Single member; the same committee on a fixed order; B5 at tolerance 0.15 |
 | Command | `uv run modal run -m scigym.modal_app --arm committee_probe,committee_fixed,single_fixed,committee_probe_nocx --model qwen --n-systems 30 --k 4 --budget 4 --rounds 2 --max-calls 40 --eps 0.5` (gpt-oss without `_nocx`); `SCIGYM_EPS=0.5 uv run python -m scigym.report --model qwen --tag _eps50`; `... scigym.calibration ... --tag _eps50` |
 | Commit | this commit (artifacts `artifacts/scigym/*_eps50/`) |
+
+## R37. Committee size: K from 1 to 16, seeded against unseeded members
+
+The R34 levels under OPINE-World's program contract, with 8 more seeded
+members per level (`committee16_opine_devin`, the seeds of a 16-member
+batch, 56 Devin sessions) and 8 more unseeded (`unseeded_opine_devin`, 56
+sessions); 111 of 112 admitted. Seeded arm: up to 16 members per level (15 on
+ar25 L3). Unseeded arm: the 3 R34 single programs plus 8, 11 per level. For
+each K, 200 draws; each draw takes one random K-subset on every level and
+pools the 376 held-out transitions. Mean and 95 percent interval over draws.
+
+| K | Seeded: vote | any member right | AUROC | unanimous share | unanimous error | split error | Unseeded: vote | AUROC | unanimous error |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 0.880 | 0.880 | | 1.00 | 0.120 | | 0.876 | | 0.124 |
+| 2 | 0.881 | 0.911 | 0.68 [0.52, 0.87] | 0.92 | 0.077 | 0.62 | 0.875 | 0.65 [0.51, 0.83] | 0.087 |
+| 4 | 0.885 | 0.933 | 0.79 [0.67, 0.92] | 0.86 | 0.048 | 0.53 | 0.882 | 0.76 [0.60, 0.88] | 0.056 |
+| 8 | 0.883 | 0.952 | 0.88 [0.78, 0.96] | 0.81 | 0.022 | 0.52 | 0.876 | 0.86 [0.78, 0.90] | 0.034 |
+| 12 | 0.886 | 0.961 | 0.92 [0.83, 0.95] | 0.78 | 0.010 | 0.49 | | | |
+| 16 | 0.887 | 0.963 | 0.92 | 0.77 | 0.007 | 0.47 | | | |
+
+Reading:
+
+1. The flag sharpens with K and does not saturate by 16: AUROC 0.68, 0.79,
+   0.88, 0.92, 0.92 and unanimous error 0.120, 0.077, 0.048, 0.022, 0.010,
+   0.007. At K = 16 the committee is unanimous on 77 percent of transitions
+   and wrong on 0.7 percent of those. This is the shared-blind-spot failure
+   (R34, sk48) shrinking: more members make it less likely that all of them
+   share one wrong prior. On sk48 L2 two of the eight new seeded members
+   carry the blocks with the arm (1.00), where none of the first eight did.
+2. Accuracy does not move: the vote stays at 0.88 to 0.89 from K = 1 to 16,
+   while the share of transitions some member gets right rises from 0.88 to
+   0.96. More members find the right answer, but as a minority; the vote
+   cannot pick it. The value of K is in the uncertainty, not the answer,
+   which is the method's claim.
+3. Compute-matched at K = 8: seeded against unseeded, vote 0.883 against
+   0.876, AUROC 0.88 against 0.86, unanimous error 0.022 against 0.034.
+   Seeds help a little and inside the intervals; most of the gain is the
+   number of independent programs. (Unseeded K = 8 draws from 11 members per
+   level, so its draws overlap more than the seeded arm's.)
+4. The original R34 batch of eight sits low in the K = 8 distribution
+   (AUROC 0.756 against the draw mean 0.88 and lower bound 0.78): the
+   first batch's seeds were more alike than a random 8 of 16. Batch variance
+   is real and R34's AUROC is the conservative end.
+
+| Item | Value |
+|---|---|
+| Metric | Pooled vote accuracy, any-member-right accuracy, AUROC of uniform disagreement, unanimous and split error |
+| Runs | 112 new Devin sessions; 200 subset draws per K |
+| Split | Temporal 40 percent, seven levels, 376 held-out transitions |
+| Baseline | K = 1 (one program); unseeded members at equal K |
+| Command | `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --backend devin --frame-out --runs 8 --start 8 --seeded --condition committee16_opine_devin --parallel 4`; `... --runs 8 --condition unseeded_opine_devin --parallel 4`; `uv run python -m committee.ksweep` (writes `artifacts/ksweep_opine.json`, figure `artifacts/figures/ksweep.png`) |
+| Commit | this commit |

@@ -36,6 +36,12 @@ every committee result with the same columns), so both follow new results.
 
 Figures for the five questions, the ablations and the frame examples:
 `uv run python -m committee.figures` writes `artifacts/figures/*.png`.
+Committee size (R37, 112 more Devin members): from K = 1 to 16 the
+disagreement AUROC rises 0.68, 0.79, 0.88, 0.92 and the error when unanimous
+falls from 0.12 to 0.007, while vote accuracy stays at 0.88; more members
+shrink the shared blind spot without changing the answer. Seeded against
+unseeded at K = 8: AUROC 0.88 against 0.86.
+
 `uv run python -m committee.summary` and `uv run python -m committee.calibrate
 --condition committee_opine_devin` regenerate questions 1 to 3;
 `uv run python -m committee.cegis GAME --level L --train-frac 0.4 --report

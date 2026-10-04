@@ -102,3 +102,38 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def figure(result: dict, out: Path) -> Path:
+    """Pooled AUROC, unanimous error and accuracy against K, seeded and unseeded, with 95 percent bands."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
+    panels = [("auroc", "AUROC, disagreement vs error"), ("unanimous_error", "error when unanimous"),
+              ("vote_accuracy", "accuracy")]
+    for arm, color in (("seeded", "#1E6FD9"), ("unseeded", "#E8871E")):
+        rows = [r for r in result[arm]["by_k"] if r["k"] > 1 or True]
+        ks = [r["k"] for r in rows]
+        for ax, (key, label) in zip(axes, panels):
+            pts = [(r["k"], r[key]) for r in rows if r[key] is not None and not (key == "auroc" and r["k"] == 1)]
+            ax.plot([k for k, _ in pts], [v["mean"] for _, v in pts], marker="o", color=color, label=arm)
+            ax.fill_between([k for k, _ in pts], [v["lo"] for _, v in pts], [v["hi"] for _, v in pts], color=color, alpha=0.15)
+            if key == "vote_accuracy":
+                o = [(r["k"], r["oracle_accuracy"]["mean"]) for r in rows]
+                ax.plot([k for k, _ in o], [v for _, v in o], linestyle="--", color=color, label=f"{arm}, any member right")
+    for ax, (_, label) in zip(axes, panels):
+        ax.set_xscale("log", base=2)
+        ax.set_xticks([1, 2, 4, 8, 16], ["1", "2", "4", "8", "16"])
+        ax.set_xlabel("committee size K")
+        ax.set_title(label, loc="left", fontsize=10.5, fontweight="bold")
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.grid(axis="y", color="#E6E6E6")
+    axes[0].legend(frameon=False, fontsize=8)
+    axes[2].legend(frameon=False, fontsize=7.5)
+    fig.suptitle("Committee size, seven levels pooled, 200 random draws per K (R37)", x=0.01, ha="left", fontsize=11)
+    fig.tight_layout()
+    fig.savefig(out, dpi=160)
+    return out
