@@ -68,6 +68,15 @@ checked.
 The integrity checks have fired on policy-written code. For example, a prefetch thread that trained past the budget
 was flagged and its re-run refused (RESULTS.md, R3).
 
+## Demo (no GPU needed)
+
+`demo/rl_replay.html` is an animated replay of the online RL run (R1), built from its records: the four GPUs
+working, each experiment's idea, score and keep/discard verdict, the TL;DR insight the policy writes after every
+failure and the lessons piling up in the next prompts, and each policy update being trained and swapped into vLLM.
+Open it in any browser (offline, one file), e.g. `python3 -m webbrowser demo/rl_replay.html`. About 70 s at 5×,
+2 min at the default 3×. Space plays/pauses, ←/→ step through experiments, H hides the controls, F goes full screen.
+Rebuild it from the records with `python3 tools/replay/build.py`.
+
 ## Results
 
 All numbers are from [`RESULTS.md`](RESULTS.md), which lists the metric, runs, split, baseline, command and commit
@@ -174,6 +183,7 @@ patches/                    our sm_120 attention patch and harness program.md fo
 tests/                      h2h, sandbox and trainer tests
 docs/                       DESIGN (method + deviations), SETUP, RETROSPECTIVE (mid-run analysis), H2H_SPEC, AR_RUN
 results/                    derived result tables (see RESULTS.md)
+demo/rl_replay.html         animated replay of the RL run (tools/replay/build.py)
 runs/                       raw run records: ledgers, experiment prompts, rollouts, agent transcripts, train.py + logs (runs/README.md)
 ```
 

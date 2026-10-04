@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RLTL;DR × autoresearch — replay</title>
+<style>
+:root {
+  --bg: #0A0D14; --panel: #121826; --line: #263042; --line2: #34405A;
+  --ink: #F3F0E8; --muted: #98A2B3; --faint: #5C6678;
+  --blue: #5B9BF0; --white: #E8E4DA; --amber: #F5A524; --amber-bg: #2A1F0B; --red: #E57F6E;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #05070B; overflow: hidden; }
+body { color: var(--ink); font-family: var(--sans); }
+#stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center center;
+  background: radial-gradient(circle at 85% 8%, #1A2232 0%, #0A0D14 55%); padding: 44px 64px 28px; display: grid;
+  grid-template-rows: auto auto 1fr auto; gap: 22px; }
+.mono { font-family: var(--mono); }
+
+/* header */
+header { display: flex; justify-content: space-between; align-items: flex-end; }
+.eyebrow { font: 500 20px/1 var(--mono); letter-spacing: 4px; color: var(--amber); }
+h1 { margin: 10px 0 0; font-size: 46px; font-weight: 650; letter-spacing: -1px; }
+.clock { text-align: right; }
+.clock .big { font: 600 44px/1 var(--mono); letter-spacing: -1px; }
+.clock .small { font: 20px/1.4 var(--mono); color: var(--muted); margin-top: 6px; }
+
+/* GPU strip */
+#gpus { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 18px; }
+.gpu { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; display: flex;
+  gap: 18px; align-items: center; transition: box-shadow .35s, border-color .35s, opacity .35s; opacity: .55; }
+.gpu.on { opacity: 1; }
+.gpu.on.blue { border-color: var(--blue); box-shadow: 0 0 28px rgba(91,155,240,.35); }
+.gpu.on.white { border-color: var(--white); box-shadow: 0 0 28px rgba(232,228,218,.25); }
+.gpu.on.amber { border-color: var(--amber); box-shadow: 0 0 32px rgba(245,165,36,.4); }
+.gpu svg { flex: none; }
+.gpu .t { font: 600 22px/1.2 var(--sans); white-space: nowrap; }
+.gpu > div { min-width: 0; }
+.gpu .s { font: 17px/1.35 var(--mono); color: var(--muted); margin-top: 4px; min-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gpu .fan { transform-origin: 96px 34px; }
+.gpu.on .fan { animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* main */
+main { display: grid; grid-template-columns: 1080px 1fr; gap: 24px; min-height: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px 26px; min-height: 0; }
+.card h2 { margin: 0; font: 500 18px/1 var(--mono); letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+#chartcard { display: flex; flex-direction: column; gap: 10px; }
+#chartcard .legend { display: flex; gap: 20px; font-size: 18px; color: var(--muted); align-items: center; white-space: nowrap; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; }
+svg text { font-family: var(--sans); }
+#right { display: grid; grid-template-rows: 350px 1fr; gap: 16px; min-height: 0; }
+#now, #insight { overflow: hidden; }
+#now .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+#now .exp { font: 600 30px/1.1 var(--sans); }
+#now .pol { font: 20px/1 var(--mono); color: var(--blue); white-space: nowrap; }
+.chips { display: flex; gap: 8px; margin: 12px 0 10px; flex-wrap: wrap; }
+.chip { font: 17px/1 var(--mono); padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line2); color: var(--faint); }
+.chip.done { color: var(--muted); }
+.chip.on { color: #0A0D14; background: var(--white); border-color: var(--white); }
+.chip.on.amber { background: var(--amber); border-color: var(--amber); }
+.chip.on.blue { background: var(--blue); border-color: var(--blue); }
+.idea { font: 500 24px/1.3 var(--sans); min-height: 62px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.idea .lbl { display: block; font: 18px/1.4 var(--mono); color: var(--muted); margin-bottom: 4px; }
+.caret { display: inline-block; width: 3px; height: 26px; background: var(--ink); vertical-align: -4px; margin-left: 2px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.bar { height: 10px; border-radius: 6px; background: #1C2433; overflow: hidden; margin-top: 12px; }
+.bar > div { height: 100%; background: var(--white); width: 0; }
+.resultline { display: flex; gap: 18px; align-items: baseline; margin-top: 12px; min-height: 36px; flex-wrap: wrap; }
+.resultline .v { font: 600 30px/1 var(--mono); }
+.resultline .d { font: 18px/1.2 var(--mono); color: var(--muted); }
+.verdict { display: inline-block; margin-top: 12px; font: 600 20px/1 var(--sans); padding: 9px 14px; border-radius: 12px; }
+.verdict.keep { background: var(--amber); color: #0A0D14; }
+.verdict.no { background: #1C2433; color: var(--muted); }
+#upd { display: none; }
+#upd .row { font: 20px/1.3 var(--sans); color: var(--muted); padding: 8px 0; border-top: 1px solid var(--line); opacity: .25; transition: opacity .3s, color .3s; }
+#upd .row.on { opacity: 1; color: var(--ink); }
+#upd .row b { color: var(--amber); font-weight: 600; }
+#insight { border-color: #4A3A16; background: var(--amber-bg); }
+#insight h2 { color: var(--amber); }
+#insight .src { font: 17px/1.3 var(--mono); color: #C99A4A; margin-top: 8px; min-height: 22px; }
+#insight { display: flex; flex-direction: column; }
+#insight .txt { flex: none; font: 500 23px/1.35 var(--sans); margin-top: 10px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+#ctx { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #4A3A16; padding-top: 12px; flex: none; }
+#ctx .sub { font-size: 18px; line-height: 1.35; color: #D9C9A8; }
+#ctx ol { margin: 0; padding-left: 26px; display: flex; flex-direction: column; gap: 4px; }
+#ctx li { font-size: 17px; line-height: 1.3; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+#ctx li.old { color: #B8A88A; }
+.pips { display: flex; gap: 10px; align-items: center; }
+.pip { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line2); }
+.pip.ok { background: var(--amber); border-color: var(--amber); }
+.pip.no { background: #3A4558; border-color: #3A4558; }
+.pip.cur { border-color: var(--ink); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(243,240,232,.12); } }
+
+/* controls */
+footer { display: flex; gap: 14px; align-items: center; transition: opacity .3s; }
+footer.hide { opacity: 0; }
+footer button { font: 600 18px/1 var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line2);
+  border-radius: 10px; padding: 10px 14px; cursor: pointer; }
+footer button.on { background: var(--white); color: #0A0D14; }
+#scrub { flex: 1; accent-color: var(--amber); height: 6px; }
+#hint { font: 16px/1 var(--mono); color: var(--faint); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div>
+      <div class="eyebrow">RLTL;DR × KARPATHY AUTORESEARCH · ONLINE RUN, OCT 3</div>
+      <h1>A local model learning to do research, replayed</h1>
+    </div>
+    <div class="clock"><div class="big" id="clk">T+ 0h 00m</div><div class="small" id="clk2"></div></div>
+  </header>
+
+  <section id="gpus">
+    <div class="gpu blue" id="g0"><svg width="120" height="68" viewBox="0 0 120 68"><rect x="6" y="6" width="110" height="52" rx="8" fill="#151B27" stroke="#34405A" stroke-width="2"/><rect x="6" y="6" width="110" height="4" rx="2" fill="#5B9BF0"/><path d="M18 18V48M26 18V48M34 18V48M42 18V48M50 18V48" stroke="#2B3448" stroke-width="3" stroke-linecap="round"/><circle cx="96" cy="34" r="19" fill="#0D121B" stroke="#34405A" stroke-width="2"/><g class="fan" fill="#5B9BF0"><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(72 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(144 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(216 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(288 96 34)"/></g><rect x="26" y="58" width="56" height="7" rx="1" fill="#B8912F"/></svg>
+      <div><div class="t">GPU 0 · pi agent</div><div class="s" id="g0s">waiting</div></div></div>
+    <div class="gpu blue" id="g1"><svg width="120" height="68" viewBox="0 0 120 68"><rect x="6" y="6" width="110" height="52" rx="8" fill="#151B27" stroke="#34405A" stroke-width="2"/><rect x="6" y="6" width="110" height="4" rx="2" fill="#5B9BF0"/><path d="M18 18V48M26 18V48M34 18V48M42 18V48M50 18V48" stroke="#2B3448" stroke-width="3" stroke-linecap="round"/><circle cx="96" cy="34" r="19" fill="#0D121B" stroke="#34405A" stroke-width="2"/><g class="fan" fill="#5B9BF0"><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(72 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(144 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(216 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(288 96 34)"/></g><rect x="26" y="58" width="56" height="7" rx="1" fill="#B8912F"/></svg>
+      <div><div class="t">GPU 1 · vLLM</div><div class="s" id="g1s">Qwen3.8-27B · v0</div></div></div>
+    <div class="gpu white" id="g2"><svg width="120" height="68" viewBox="0 0 120 68"><rect x="6" y="6" width="110" height="52" rx="8" fill="#151B27" stroke="#34405A" stroke-width="2"/><rect x="6" y="6" width="110" height="4" rx="2" fill="#E8E4DA"/><path d="M18 18V48M26 18V48M34 18V48M42 18V48M50 18V48" stroke="#2B3448" stroke-width="3" stroke-linecap="round"/><circle cx="96" cy="34" r="19" fill="#0D121B" stroke="#34405A" stroke-width="2"/><g class="fan" fill="#E8E4DA"><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(72 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(144 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(216 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(288 96 34)"/></g><rect x="26" y="58" width="56" height="7" rx="1" fill="#B8912F"/></svg>
+      <div><div class="t">GPU 2 · autoresearch</div><div class="s" id="g2s">idle</div></div></div>
+    <div class="gpu amber" id="g3"><svg width="120" height="68" viewBox="0 0 120 68"><rect x="6" y="6" width="110" height="52" rx="8" fill="#151B27" stroke="#34405A" stroke-width="2"/><rect x="6" y="6" width="110" height="4" rx="2" fill="#F5A524"/><path d="M18 18V48M26 18V48M34 18V48M42 18V48M50 18V48" stroke="#2B3448" stroke-width="3" stroke-linecap="round"/><circle cx="96" cy="34" r="19" fill="#0D121B" stroke="#34405A" stroke-width="2"/><g class="fan" fill="#F5A524"><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(72 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(144 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(216 96 34)"/><path d="M96 31 C99 22 107 21 110 26 C105 25 100 27 98 32 Z" transform="rotate(288 96 34)"/></g><rect x="26" y="58" width="56" height="7" rx="1" fill="#B8912F"/></svg>
+      <div><div class="t">GPU 3 · policy update</div><div class="s" id="g3s">waiting for 8 experiments</div></div></div>
+  </section>
+
+  <main>
+    <section class="card" id="chartcard">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2>val_bpb · lower is better</h2>
+        <div class="legend"><span><i style="background:var(--amber)"></i>kept</span><span><i style="border:2px solid #7A8496;width:13px;height:13px"></i>discarded</span><span><svg width="34" height="10"><line x1="1" y1="5" x2="33" y2="5" stroke="#F5A524" stroke-width="4" stroke-linecap="round"/></svg> best so far</span><span><svg width="16" height="14"><path d="M8 1 l -7 12 h 14 z" fill="none" stroke="#7A8496" stroke-width="2"/></svg> above scale</span></div>
+      </div>
+      <svg id="chart" width="1028" height="690" viewBox="0 0 1028 690"></svg>
+    </section>
+    <section id="right">
+      <div class="card" id="now">
+        <div id="nowbody">
+          <div class="head"><div class="exp" id="exp">Experiment 1</div><div class="pol" id="pol">policy v0</div></div>
+          <div class="chips" id="chips"></div>
+          <div class="lbl" id="idealbl" style="font:18px/1.4 var(--mono);color:var(--muted)"></div><div class="idea" id="idea"></div>
+          <div class="bar" id="bar"><div></div></div>
+          <div class="resultline" id="res"></div>
+          <div id="verd"></div>
+        </div>
+        <div id="upd"></div>
+      </div>
+      <div class="card" id="insight">
+        <h2 id="insh">TL;DR insight</h2>
+        <div class="src" id="inssrc"></div>
+        <div class="txt" id="inst"></div>
+        <div style="flex:1"></div>
+        <div id="ctx">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:16px"><h2 style="color:#C99A4A">lessons in the prompt</h2><div class="pips" id="pips"></div></div>
+          <div class="sub" id="ctxsub"></div>
+          <ol id="ctxlist"></ol>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer id="ctl">
+    <button id="bplay">❚❚</button><button id="bback">◀</button><button id="bfwd">▶</button><button id="brst">⟲</button>
+    <button data-s="1">1×</button><button data-s="2">2×</button><button data-s="3">3×</button><button data-s="5">5×</button>
+    <input id="scrub" type="range" min="0" max="1000" step="0.1" value="0">
+    <span id="hint">space play · ←/→ experiment · H hide controls · F full screen</span>
+  </footer>
+</div>
+
+<script>
+const D = /*__DATA__*/null;
+const E = D.experiments, UPD = {};
+D.updates.forEach(u => { UPD[u.g] = u; });
+const PH = { think: 1.5, train: 1.7, result: 1.0, confirm: 1.2, verdict: 1.0, update: 5.5 };
+const CHIPS = ["thinking", "training", "result", "confirm", "verdict", "insight"];
+
+// timeline segments ---------------------------------------------------------------------------------
+const segs = [];
+let T = 0;
+E.forEach((e, i) => {
+  const add = (t, d, extra) => { segs.push(Object.assign({ t, i, s: T, d }, extra || {})); T += d; };
+  add("think", PH.think); add("train", PH.train); add("result", PH.result);
+  if (e.confirm != null) add("confirm", PH.confirm);
+  add("verdict", PH.verdict);
+  if (e.insight) add("insight", 1.2 + e.insight.length * 0.012);
+  if (e.k === 8 && UPD[e.g]) add("update", PH.update, { g: e.g });
+});
+const TOTAL = T;
+const firstSeg = E.map((_, i) => segs.findIndex(s => s.i === i));
+
+// helpers -------------------------------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+const f4 = x => x == null ? "–" : x.toFixed(4);
+const f6 = x => x == null ? "–" : x.toFixed(6);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const bestAfter = i => (i + 1 < E.length ? E[i + 1].best_before : D.final_best);
+const kept = e => e.success;
+
+// chart geometry ------------------------------------------------------------------------------------
+const CW = 1028, CH = 690, X0 = 78, X1 = CW - 14, Y0 = 44, Y1 = CH - 48, YT = 1.030, YB = 1.005;
+const N = E.length;
+const xOf = i => X0 + (i + 0.5) * (X1 - X0) / N;
+const yOf = v => Y0 + (YT - Math.min(Math.max(v, YB), YT)) / (YT - YB) * (Y1 - Y0);
+const svgNS = "http://www.w3.org/2000/svg";
+function staticChart() {
+  let h = "";
+  // group bands
+  const groups = [...new Set(E.map(e => e.g))];
+  groups.forEach((g, gi) => {
+    const idx = E.map((e, i) => e.g === g ? i : -1).filter(i => i >= 0);
+    const xa = X0 + idx[0] * (X1 - X0) / N, xb = X0 + (idx[idx.length - 1] + 1) * (X1 - X0) / N;
+    h += `<rect x="${xa}" y="${Y0}" width="${xb - xa}" height="${Y1 - Y0}" fill="${gi % 2 ? "#141B29" : "#10161F"}"/>`;
+    h += `<text x="${(xa + xb) / 2}" y="${Y0 - 14}" text-anchor="middle" font-size="18" fill="#98A2B3" font-family="ui-monospace,Menlo,monospace">group ${g} · v${E[idx[0]].v}</text>`;
+  });
+  for (let v = 1.010; v <= 1.0301; v += 0.005) {
+    h += `<line x1="${X0}" x2="${X1}" y1="${yOf(v)}" y2="${yOf(v)}" stroke="#263042" stroke-width="1.5"/>`;
+    h += `<text x="${X0 - 12}" y="${yOf(v) + 6}" text-anchor="end" font-size="18" fill="#5C6678" font-family="ui-monospace,Menlo,monospace">${v.toFixed(3)}</text>`;
+  }
+  for (let i = 0; i < N; i += 1) if ((i + 1) % 8 === 1) h += `<text x="${xOf(i)}" y="${Y1 + 28}" text-anchor="middle" font-size="17" fill="#5C6678" font-family="ui-monospace,Menlo,monospace">${i + 1}</text>`;
+  h += `<text x="${X1}" y="${Y1 + 28}" text-anchor="end" font-size="17" fill="#5C6678" font-family="ui-monospace,Menlo,monospace">experiment</text>`;
+  h += `<g id="dyn"></g>`;
+  $("chart").innerHTML = h;
+}
+staticChart();
+
+let chartKey = "";
+function drawChart(i, phaseIdx, segType, p) {
+  const key = i + ":" + phaseIdx + ":" + (segType === "update" ? Math.floor(p * 4) : "");
+  if (key === chartKey) return;
+  chartKey = key;
+  let h = "";
+  // update markers for finished updates
+  E.forEach((e, j) => {
+    const done = j < i || (j === i && segType === "update" && p > 0.75);
+    if (e.k === 8 && UPD[e.g] && done) {
+      const xb = X0 + (j + 1) * (X1 - X0) / N;
+      h += `<line x1="${xb}" x2="${xb}" y1="${Y0}" y2="${Y1}" stroke="#F5A524" stroke-width="2" stroke-dasharray="6 6" opacity=".8"/>`;
+      h += `<text x="${xb + 8}" y="${Y1 - 12}" text-anchor="start" font-size="19" font-weight="700" fill="#F5A524">→ v${UPD[e.g].v}</text>`;
+    }
+  });
+  // best-so-far step line
+  let d = `M ${X0} ${yOf(D.baseline)}`, last = D.baseline;
+  E.forEach((e, j) => {
+    const shown = j < i || (j === i && phaseIdx >= 4);
+    if (shown && kept(e)) { const nb = bestAfter(j); d += ` H ${xOf(j)} V ${yOf(nb)}`; last = nb; }
+  });
+  d += ` H ${xOf(Math.min(i, N - 1)) + (i >= N - 1 ? 14 : 0)}`;
+  h += `<path d="${d}" fill="none" stroke="#F5A524" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // dots
+  E.forEach((e, j) => {
+    const shown = j < i || (j === i && phaseIdx >= 2);
+    if (!shown || e.val == null) return;
+    const x = xOf(j), above = e.val > YT, y = above ? Y0 + 8 : yOf(e.val);
+    const isKept = kept(e) && (j < i || phaseIdx >= 4);
+    const cur = j === i;
+    if (above) h += `<path d="M ${x} ${Y0 + 1} l -7 12 h 14 z" fill="#0A0D14" stroke="#7A8496" stroke-width="2"/>`;
+    else if (isKept) h += `<circle cx="${x}" cy="${y}" r="9" fill="#F5A524" stroke="#0A0D14" stroke-width="2.5"/>`;
+    else h += `<circle cx="${x}" cy="${y}" r="7" fill="#0A0D14" stroke="#7A8496" stroke-width="2.5"/>`;
+    if (cur) h += `<circle cx="${x}" cy="${y}" r="17" fill="none" stroke="#F3F0E8" stroke-width="2"><animate attributeName="r" values="13;19;13" dur="1.2s" repeatCount="indefinite"/></circle>`;
+  });
+  // callout for the most recent keep
+  let lk = -1;
+  E.forEach((e, j) => { if (kept(e) && (j < i || (j === i && phaseIdx >= 4))) lk = j; });
+  if (lk >= 0) {
+    const x = xOf(lk), y = yOf(bestAfter(lk));
+    const txt = E[lk].desc.replace(/\s*\[.*$/, "");
+    const short = txt.length > 46 ? txt.slice(0, 45) + "…" : txt;
+    const bw = Math.max(26 * 12.5, short.length * 10.2) + 28;
+    h += `<rect x="${X1 - 12 - bw + 14}" y="${Y0 + 10}" width="${bw}" height="64" rx="10" fill="#0A0D14" opacity=".82"/>`;
+    h += `<text x="${X1 - 12}" y="${Y0 + 34}" text-anchor="end" font-size="22" font-weight="700" fill="#F5A524">new best ${f4(bestAfter(lk))} · experiment ${lk + 1}</text>`;
+    h += `<text x="${X1 - 12}" y="${Y0 + 62}" text-anchor="end" font-size="19" fill="#C9C4B8">${esc(short)}</text>`;
+    h += `<circle cx="${x}" cy="${y}" r="13" fill="none" stroke="#F5A524" stroke-width="2" opacity=".7"/>`;
+  }
+  document.getElementById("dyn").innerHTML = h;
+}
+
+// panel rendering -----------------------------------------------------------------------------------
+function typed(text, p) {
+  const n = Math.max(0, Math.min(text.length, Math.round(text.length * p)));
+  return esc(text.slice(0, n)) + (n < text.length ? '<span class="caret"></span>' : "");
+}
+function setGpu(id, on, status) {
+  $(id).classList.toggle("on", on);
+  if (status != null) $(id + "s").textContent = status;
+}
+function phaseIndex(t) { return { think: 0, train: 1, result: 2, confirm: 3, verdict: 4, insight: 5, update: 6 }[t]; }
+
+function render(t) {
+  t = Math.max(0, Math.min(TOTAL - 1e-6, t));
+  let si = segs.length - 1;
+  for (let k = 0; k < segs.length; k++) if (t < segs[k].s + segs[k].d) { si = k; break; }
+  const sg = segs[si], p = (t - sg.s) / sg.d, i = sg.i, e = E[i], ph = phaseIndex(sg.t);
+  // clock: interpolate between experiment end times
+  const tPrev = i > 0 ? E[i - 1].t_end : 0;
+  const segsOfI = segs.filter(s => s.i === i && s.t !== "update");
+  const startI = segsOfI[0].s, endI = segsOfI[segsOfI.length - 1].s + segsOfI[segsOfI.length - 1].d;
+  let secs = sg.t === "update" ? (UPD[sg.g].t_pub || e.t_end) - (UPD[sg.g].sec || 0) * (1 - p)
+    : tPrev + (e.t_end - tPrev) * Math.min(1, (t - startI) / (endI - startI));
+  const hh = Math.floor(secs / 3600), mm = Math.floor((secs % 3600) / 60);
+  $("clk").textContent = `T+ ${hh}h ${String(mm).padStart(2, "0")}m`;
+  const wall = new Date((D.t0 + secs) * 1000);
+  $("clk2").textContent = `${wall.toISOString().slice(11, 16)} UTC · experiment ${i + 1} of ${N}`;
+
+  // GPUs
+  const thinking = sg.t === "think" || sg.t === "insight";
+  const training = sg.t === "train" || sg.t === "confirm";
+  const vNow = sg.t === "update" && p > 0.8 ? UPD[sg.g].v : e.v;
+  setGpu("g0", thinking, sg.t === "insight" ? "writing the TL;DR insight" : thinking ? "reads code, edits train.py" : "waiting for the score");
+  setGpu("g1", thinking, `Qwen3.8-27B · policy v${vNow}` + (vNow ? "" : " (base)"));
+  setGpu("g2", training, sg.t === "train" ? `training ${Math.floor(p * 5)}:${String(Math.floor((p * 300) % 60)).padStart(2, "0")} / 5:00` : sg.t === "confirm" ? "fresh-compile confirmation re-run" : "idle");
+  const upd = sg.t === "update";
+  const remaining = 8 - ((e.k - 1) + (ph >= 4 ? 1 : 0));
+  setGpu("g3", upd, upd ? `training v${UPD[sg.g].v} · GRPO + SFT` : remaining <= 0 ? "update next" : `update in ${remaining} experiment${remaining > 1 ? "s" : ""}`);
+
+  // now / update card
+  $("nowbody").style.display = upd ? "none" : "block";
+  $("upd").style.display = upd ? "block" : "none";
+  if (upd) {
+    const u = UPD[sg.g];
+    const rows = [
+      `Group ${u.g} closed: <b>${u.succ} of 8</b> experiments kept`,
+      `GRPO on the 8 rollouts: <b>${(u.grpo / 1000).toFixed(1)}k</b> tokens (positive-ratio filtered)`,
+      `SFT on the TL;DR insights: <b>${u.sft}</b> tokens`,
+      `<b>${u.steps}</b> optimizer steps on GPU 3 in <b>${u.sec} s</b>`,
+      `Publish <b>policy v${u.v}</b> → hot-swapped into vLLM at the next experiment`,
+    ];
+    $("upd").innerHTML = `<div class="head" style="display:flex;justify-content:space-between"><div class="exp" style="font:600 30px/1.1 var(--sans)">Policy update → v${u.v}</div><div class="pol" style="color:var(--amber)">GPU 3</div></div>` +
+      rows.map((r, k) => `<div class="row${p * (rows.length + 0.5) > k ? " on" : ""}">${r}</div>`).join("");
+  } else {
+    $("exp").textContent = `Experiment ${i + 1} · ${e.id}`;
+    $("pol").textContent = `policy v${e.v}`;
+    const chipsHtml = CHIPS.map((c, k) => {
+      if (c === "confirm" && e.confirm == null) return "";
+      if (c === "insight" && !e.insight) return "";
+      const cls = k === ph ? " on" + (c === "insight" ? " amber" : c === "thinking" ? " blue" : "") : k < ph ? " done" : "";
+      return `<span class="chip${cls}">${k < ph ? "✓ " : ""}${c}</span>`;
+    }).join("");
+    $("chips").innerHTML = chipsHtml;
+    const idea = e.desc.replace(/\s*\[.*$/, "");
+    $("idealbl").textContent = `policy v${e.v} proposes`;
+    $("idea").innerHTML = ph === 0 ? typed(idea, Math.min(1, p * 1.25)) : esc(idea);
+    $("bar").style.visibility = ph >= 1 ? "visible" : "hidden";
+    $("bar").firstElementChild.style.width = (ph === 1 ? p * 100 : ph > 1 ? 100 : 0) + "%";
+    let res = "";
+    if (ph >= 2) {
+      const dlt = e.val != null ? e.best_before - e.val : null;
+      res += `<span class="v">${e.val != null ? f6(e.val) : "crash"}</span>`;
+      if (dlt != null) res += `<span class="d">${dlt > 0 ? "−" : "+"}${Math.abs(dlt).toFixed(4)} vs best ${f4(e.best_before)}${e.steps && e.confirm == null ? " · " + e.steps + " steps" : ""}</span>`;
+    }
+    if (ph >= 3 && e.confirm != null) res += `<span class="d">re-run: <b style="color:var(--ink)">${f6(e.confirm)}</b></span>`;
+    $("res").innerHTML = res;
+    let vd = "";
+    if (ph >= 4) {
+      if (kept(e)) vd = `<span class="verdict keep">KEPT · new best ${f4(bestAfter(i))}</span>`;
+      else if (e.confirm != null) vd = `<span class="verdict no">Win not confirmed by the re-run · discarded</span>`;
+      else if (e.val == null) vd = `<span class="verdict no">Crashed · discarded</span>`;
+      else vd = `<span class="verdict no">Not better than ${f4(e.best_before)} − 0.0005 · discarded</span>`;
+    }
+    $("verd").innerHTML = vd;
+  }
+
+  // insight card: the latest insight, typed while it is written
+  let src = "", txt = "";
+  if (sg.t === "insight") { src = `written by policy v${e.v} after ${e.id} failed`; txt = typed(e.insight, Math.min(1, p * 1.15)); }
+  else {
+    let j = (ph >= 6 || (ph >= 5)) ? i : i - 1;
+    while (j >= 0 && !E[j].insight) j--;
+    if (j >= 0 && E[j].g === e.g || (j >= 0 && upd)) { src = `latest · after ${E[j].id} failed`; txt = esc(E[j].insight); }
+    else { src = `group ${e.g} · insights reset at every group`; txt = '<span style="color:#C99A4A">No lesson yet in this group: the first experiment runs without hints.</span>'; }
+  }
+  $("inssrc").textContent = src;
+  $("inst").innerHTML = txt;
+  $("insh").textContent = sg.t === "insight" ? "TL;DR insight · being written" : "TL;DR insight";
+
+  // group progress + insights in context
+  const gi = E.map((x, j) => x.g === e.g ? j : -1).filter(j => j >= 0);
+  $("pips").innerHTML = gi.map(j => {
+    const done = j < i || (j === i && ph >= 4);
+    const cls = done ? (kept(E[j]) ? "ok" : "no") : j === i ? "cur" : "";
+    return `<span class="pip ${cls}" title="${E[j].id}"></span>`;
+  }).join("");
+  const written = gi.filter(j => j < i && E[j].insight).length;
+  if (upd) {
+    $("ctxsub").innerHTML = `The insights of group ${e.g} are trained into the weights (SFT), then cleared for the next group.`;
+    $("ctxlist").innerHTML = gi.filter(j => E[j].insight).slice(-2).map(j => `<li class="old">${esc(E[j].insight.length > 120 ? E[j].insight.slice(0, 119) + "…" : E[j].insight)}</li>`).join("");
+  } else if (e.ctx.length) {
+    $("ctxsub").innerHTML = `<b style="color:var(--ink)">${e.ctx.length} lesson${e.ctx.length > 1 ? "s" : ""}</b> from this group's earlier failures:`;
+    const shown = e.ctx.slice(-2);
+    $("ctxlist").innerHTML = (e.ctx.length > 2 ? `<li class="old" style="list-style:none;margin-left:-26px">+ ${e.ctx.length - 2} earlier lesson${e.ctx.length > 3 ? "s" : ""}</li>` : "") +
+      shown.map((h, k) => `<li class="${k < shown.length - 1 ? "old" : ""}">${esc(h.length > 120 ? h.slice(0, 119) + "…" : h)}</li>`).join("");
+  } else {
+    $("ctxsub").innerHTML = e.k === 1 ? "New group: the prompt carries no lessons yet." :
+      written ? `Hints withheld: more than half of this group's experiments succeeded (paper rule: hints only while success ≤ 50%).` : "No lessons written in this group yet.";
+    $("ctxlist").innerHTML = "";
+  }
+  drawChart(i, ph, sg.t, p);
+  $("scrub").value = (t / TOTAL * 1000).toFixed(1);
+}
+
+// playback ------------------------------------------------------------------------------------------
+const Q = new URLSearchParams(location.search);
+let t = Math.max(0, +(Q.get("t") || 0)), playing = !Q.has("paused"), speed = +(Q.get("speed") || 3), last = null;
+function frame(ts) {
+  if (last != null && playing) { t += (ts - last) / 1000 * speed; if (t >= TOTAL) { t = TOTAL - 1e-3; playing = false; syncBtns(); } }
+  last = ts; render(t); requestAnimationFrame(frame);
+}
+function syncBtns() {
+  $("bplay").textContent = playing ? "❚❚" : "▶";
+  document.querySelectorAll("footer button[data-s]").forEach(b => b.classList.toggle("on", +b.dataset.s === speed));
+}
+function jumpExp(delta) {
+  let si = segs.findIndex(s => t < s.s + s.d); if (si < 0) si = segs.length - 1;
+  const i = Math.max(0, Math.min(N - 1, segs[si].i + delta));
+  t = segs[firstSeg[i]].s + 0.001;
+}
+$("bplay").onclick = () => { if (t >= TOTAL - 0.01) t = 0; playing = !playing; syncBtns(); };
+$("brst").onclick = () => { t = 0; playing = true; syncBtns(); };
+$("bback").onclick = () => jumpExp(-1);
+$("bfwd").onclick = () => jumpExp(1);
+document.querySelectorAll("footer button[data-s]").forEach(b => b.onclick = () => { speed = +b.dataset.s; syncBtns(); });
+$("scrub").oninput = ev => { t = ev.target.value / 1000 * TOTAL; };
+document.addEventListener("keydown", ev => {
+  if (ev.key === " ") { ev.preventDefault(); $("bplay").click(); }
+  else if (ev.key === "ArrowRight") jumpExp(1);
+  else if (ev.key === "ArrowLeft") jumpExp(-1);
+  else if (ev.key === "h" || ev.key === "H") $("ctl").classList.toggle("hide");
+  else if (ev.key === "f" || ev.key === "F") { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+  else if (ev.key === "+" || ev.key === "=") { speed = Math.min(8, speed + 1); syncBtns(); }
+  else if (ev.key === "-") { speed = Math.max(1, speed - 1); syncBtns(); }
+});
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  $("stage").style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+addEventListener("resize", fit); fit(); syncBtns();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
