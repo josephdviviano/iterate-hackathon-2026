@@ -24,6 +24,7 @@ HYP = {
     "scaling_factor": 1 / 9,
     "translate": 2,
     "whiten_images": 5000,
+    "compile": True,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -143,7 +144,8 @@ def make_optimizer(model, hyp, batch_size):
         dict(params=whiten_bias, lr=lr_biases, weight_decay=wd / lr_biases),
         dict(params=other, lr=lr, weight_decay=wd / lr),
     ]
-    opt = torch.optim.SGD(groups, momentum=hyp["momentum"], nesterov=True)
+    fused = next(model.parameters()).is_cuda
+    opt = torch.optim.SGD(groups, momentum=hyp["momentum"], nesterov=True, fused=fused)
     for g in opt.param_groups:
         g["base_lr"] = g["lr"]
     return opt
@@ -177,17 +179,23 @@ def build(context: BuildContext):
     hyp = {**HYP, **context.parameters}
     torch.backends.cudnn.benchmark = True
     model = make_model(context, hyp)
-    state = SimpleNamespace(model=model, context=context, hyp=hyp)
+    # Training runs through the compiled module; evaluation uses the eager one (same parameters).
+    compiled = model
+    if context.device.type == "cuda" and hyp["compile"]:
+        compiled = torch.compile(model, mode="max-autotune-no-cudagraphs")
+    state = SimpleNamespace(model=model, compiled=compiled, context=context, hyp=hyp)
     # Warm up kernels and cuDNN autotuning on synthetic data; everything is reset in prepare.
     device = context.device
     bs = hyp["batch_size"]
     if device.type == "cuda":
         opt = make_optimizer(model, hyp, bs)
+        # Same layout as training batches (channels_last slices); compile guards on strides.
         x = torch.rand(bs, 3, 32, 32, device=device, dtype=torch.float16)
+        x = x.contiguous(memory_format=torch.channels_last)
         y = torch.randint(0, context.num_classes, (bs,), device=device)
         model.train()
         for _ in range(3):
-            train_step(model, opt, x, y, hyp["label_smoothing"])
+            train_step(compiled, opt, x, y, hyp["label_smoothing"])
         model.eval()
         with torch.inference_mode():
             for b in (1, 784, 1024):
@@ -221,7 +229,7 @@ def prepare(state, data: TrainingData, seed: int) -> None:
 
 def train(state) -> nn.Module:
     hyp = state.hyp
-    model, opt = state.model, state.optimizer
+    model, opt = state.compiled, state.optimizer
     n, bs = state.n, state.batch_size
     steps_per_epoch = n // bs
     total_steps = math.ceil(hyp["epochs"] * steps_per_epoch)
@@ -247,4 +255,4 @@ def train(state) -> nn.Module:
             train_step(model, opt, x, y, hyp["label_smoothing"])
             step += 1
     state.padded = None
-    return model
+    return state.model
