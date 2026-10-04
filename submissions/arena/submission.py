@@ -29,7 +29,7 @@ HYP = {
     "muon_lr": 0.24,
     "muon_momentum": 0.6,
     # Progressive resizing: (start fraction of training, resolution); last entry wins.
-    "resolutions": [[0.0, 24], [0.4, 28], [0.7, 32]],
+    "resolutions": [[0.0, 20], [0.15, 24], [0.4, 28], [0.7, 32]],
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
