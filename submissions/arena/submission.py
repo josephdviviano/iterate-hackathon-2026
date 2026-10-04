@@ -38,6 +38,9 @@ HYP = {
     # Group 2 follows the main schedule to 75%, anneals to 0 by this fraction, then is frozen
     # (its output detached) like the stem. 0 disables.
     "freeze_g2_at": 0.9,
+    # Steps removed from the start of the lowest-resolution phase; later phases, the
+    # whitening detach step and the frozen tails keep their absolute positions/lengths.
+    "trim_first_steps": 12,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -363,18 +366,22 @@ def train(state) -> nn.Module:
     model, opt = state.compiled, state.optimizer
     n, bs = state.n, state.batch_size
     steps_per_epoch = n // bs
-    total_steps = math.ceil(hyp["epochs"] * steps_per_epoch)
+    planned_steps = math.ceil(hyp["epochs"] * steps_per_epoch)
+    trim = hyp["trim_first_steps"]
+    total_steps = planned_steps - trim
     schedule = np.interp(
         np.arange(1 + total_steps), [0, int(0.23 * total_steps), total_steps], [0.2, 1.0, 0.07]
     )
-    whiten_bias_steps = int(hyp["whiten_bias_frac"] * total_steps)
+    whiten_bias_steps = int(hyp["whiten_bias_frac"] * planned_steps)
     # Stem schedule: the same warmup to the peak, then linear to 0 at the freeze point.
     peak = int(0.23 * total_steps)
-    freeze_step = int(hyp["freeze_stem_at"] * total_steps) if hyp["freeze_stem_at"] else total_steps + 1
+    freeze_step = (
+        int(hyp["freeze_stem_at"] * planned_steps) - trim if hyp["freeze_stem_at"] else total_steps + 1
+    )
     stem_schedule = np.interp(
         np.arange(1 + total_steps), [0, peak, freeze_step, total_steps + 1], [0.2, 1.0, 0.0, 0.0]
     )
-    g2_step = int(hyp["freeze_g2_at"] * total_steps) if hyp["freeze_g2_at"] else total_steps + 1
+    g2_step = int(hyp["freeze_g2_at"] * planned_steps) - trim if hyp["freeze_g2_at"] else total_steps + 1
     g2_schedule = np.interp(
         np.arange(1 + total_steps),
         [0, freeze_step, g2_step, total_steps + 1],
@@ -384,10 +391,10 @@ def train(state) -> nn.Module:
     ema_every = hyp["ema_every"]
     alpha = 0.95**5 * (np.arange(total_steps + 1) / total_steps) ** 3
     lookahead = Lookahead(state.model) if ema_every else None
-    # Resolution switches at fixed fractions of the total step count.
+    # Resolution switches at fixed fractions of the planned step count, minus the trimmed start.
     resolution = [
-        [r for start, r in hyp["resolutions"] if k >= start * total_steps][-1]
-        for k in range(total_steps)
+        [r for start, r in hyp["resolutions"] if k >= start * planned_steps][-1]
+        for k in range(trim, planned_steps)
     ]
     step = 0
     for epoch in range(math.ceil(hyp["epochs"])):
