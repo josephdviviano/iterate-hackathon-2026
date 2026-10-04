@@ -15,7 +15,8 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 10.5,
+    "epochs": 9.5,
+    "schedule_anchor_steps": 336,  # E061 step count: fixes warmup and Lookahead ramp
     "batch_size": 1536,
     "lr": 9.0,
     "momentum": 0.85,
@@ -29,7 +30,7 @@ HYP = {
     "bn_momentum": 0.6,
     "scaling_factor": 2 / 9,
     "compile": True,
-    "res_schedule": ((20, 2), (24, 3), (28, 3)),  # (resolution, epochs) stages before full 32 px
+    "res_schedule": ((20, 2), (24, 2), (28, 3)),  # (resolution, epochs) stages before full 32 px
     "freeze_first_full_res": True,  # freeze group 1's first conv block in the 32 px epochs
     "optimizer": "muon",  # "sgd" or "muon" (Muon on conv filters, SGD on the rest)
     "muon_lr": 0.205,
@@ -420,8 +421,8 @@ def prepare(state, data: TrainingData, seed: int) -> None:
         g["base_lr"] = g["lr"]
 
 
-def lr_factor(step, total):
-    warmup = int(total * 0.23)
+def lr_factor(step, total, anchor=None):
+    warmup = int((anchor or total) * 0.23)
     if step < warmup:
         frac = step / warmup
         return 0.2 * (1 - frac) + 1.0 * frac
@@ -436,7 +437,9 @@ def train(state) -> nn.Module:
     n = len(state.labels)
     steps_per_epoch = n // bs
     total = math.ceil(steps_per_epoch * hyp["epochs"])
-    alpha = [0.95**5 * (s / total) ** 3 for s in range(total + 1)]
+    # Warmup length and Lookahead ramp in absolute steps (anchor) when set, else over total.
+    anchor = hyp["schedule_anchor_steps"] or total
+    alpha = [0.95**5 * min(s / anchor, 1.0) ** 3 for s in range(total + 1)]
     live = [t for t in net.state_dict().values() if t.dtype in (torch.half, torch.float)]
     ema = [t.detach().clone() for t in live]
     ls = hyp["label_smoothing"]
@@ -461,7 +464,7 @@ def train(state) -> nn.Module:
             out = train_net(inputs_all[idx], *flags)
             loss = F.cross_entropy(out, state.labels[idx], label_smoothing=ls, reduction="none").sum()
             loss.backward()
-            f = lr_factor(step, total)
+            f = lr_factor(step, total, anchor)
             for g in opt.param_groups:
                 g["lr"] = g["base_lr"] * f
             opt.step()
