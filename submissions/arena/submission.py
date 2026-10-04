@@ -168,7 +168,7 @@ class Muon(torch.optim.Optimizer):
         group = self.param_groups[0]
         self.bufs = [torch.zeros_like(p, dtype=torch.float32) for p in group["params"]]
         self.lr_t = torch.tensor(lr, device=group["params"][0].device)
-        self.update = torch.compile(muon_update) if compiled else muon_update
+        self.update = torch.compile(muon_update, mode="reduce-overhead") if compiled else muon_update
 
     @torch.no_grad()
     def step(self):
@@ -265,7 +265,7 @@ def build(context: BuildContext):
     # Training runs through the compiled module; evaluation uses the eager one (same parameters).
     compiled = model
     if context.device.type == "cuda" and hyp["compile"]:
-        compiled = torch.compile(model, mode="max-autotune-no-cudagraphs", dynamic=False)
+        compiled = torch.compile(model, mode="max-autotune", dynamic=False)
     state = SimpleNamespace(model=model, compiled=compiled, context=context, hyp=hyp)
     # Warm up kernels and cuDNN autotuning on synthetic data; everything is reset in prepare.
     device = context.device
