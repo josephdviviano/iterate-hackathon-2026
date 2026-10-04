@@ -20,7 +20,7 @@ HYP = {
     "label_smoothing": 0.3,
     # The whitening bias trains for this fraction of steps; afterwards the whitening output is
     # detached (no bias grad, no input-grad through group 1's first conv).
-    "whiten_bias_frac": 0.2,
+    "whiten_bias_frac": 0.06,
     "widths": [128, 384, 512],
     "bn_momentum": 0.6,
     "scaling_factor": 1 / 9,
