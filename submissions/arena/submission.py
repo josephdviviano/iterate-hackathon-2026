@@ -16,7 +16,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 DEFAULTS = {
-    "epochs": 8.5,
+    "epochs": 10,
     "batch_size": 1024,
     "lr": 9.0,  # per 1024 examples
     "momentum": 0.85,
