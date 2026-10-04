@@ -31,7 +31,7 @@ DEFAULTS = {
     "lr": 9.0,  # per 1024 examples, decoupled from momentum (airbench convention)
     "momentum": 0.85,
     "weight_decay": 0.012,  # per 1024 examples, decoupled from the learning rate
-    "bias_scaler": 64.0,  # learning-rate multiplier for BatchNorm biases
+    "bias_scaler": 32.0,  # learning-rate multiplier for BatchNorm biases
     "label_smoothing": 0.3,
     "warmup": 0.23,  # fraction of steps spent ramping the learning rate up
     "final_lr": 0.07,  # learning-rate multiplier reached at the last step
