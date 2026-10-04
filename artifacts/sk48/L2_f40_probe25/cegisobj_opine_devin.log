@@ -1,0 +1,26 @@
+probes [53, 1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23] (steps [118, 64, 63, 65, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87]); train 70, held out 43
+artifacts: artifacts/sk48/L2_f40_probe25/cegisobj_opine_devin
+
+Objects of type `arm` under action ACTION4 with touching neighbours [block,block,block,block,player] show mixed outcomes: pixels,w x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample. The last transition in transitions.md (step 87, action 4) refuted every program of an earlier committee of 4 programs. Each replayed all the other transitions exactly and predicted this one wrong:
+
+4 program(s) predicted:
+  64 cells differ: (12,25) want 4 got e, (13,25) want 4 got e, (14,25) want 4 got e, (15,25) want 4 got e, (18,25) want e got 9, (19,25) want e got 9
+  observed but not predicted: {"name": "block_12", "type": "block", "x": 30, "y": 25, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_14", "type": "block", "x": 18, "y": 25, "w": 4, "h": 4, "layer": 3}
+  observed but not predicted: {"name": "block_9", "type": "block", "x": 24, "y": 25, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_12", "type": "block", "x": 24, "y": 25, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_14", "type": "block", "x": 12, "y": 25, "w": 4, "h": 4, "layer": 3}
+  predicted but not observed: {"name": "block_9", "type": "block", "x": 18, "y": 25, "w": 4, "h": 4, "layer": 3}
+
+Find the mechanic those programs missed. It must explain this transition and every earlier one, and it must not be a special case keyed to this step.
+
+sk48 L2 cegisobj_opine_devin run0: consistent=True train=70/70 test_acc=0.9302325581395349 turns=None wall=62.7s err=None
+sk48 L2 cegisobj_opine_devin run2: consistent=True train=70/70 test_acc=0.9302325581395349 turns=None wall=104.0s err=None
+sk48 L2 cegisobj_opine_devin run1: consistent=True train=70/70 test_acc=0.9767441860465116 turns=None wall=104.0s err=None
+sk48 L2 cegisobj_opine_devin run4: consistent=True train=70/70 test_acc=0.9302325581395349 turns=None wall=83.3s err=None
+sk48 L2 cegisobj_opine_devin run3: consistent=True train=70/70 test_acc=0.9767441860465116 turns=None wall=165.8s err=None
+sk48 L2 cegisobj_opine_devin run6: consistent=True train=70/70 test_acc=0.9767441860465116 turns=None wall=83.3s err=None
+sk48 L2 cegisobj_opine_devin run5: consistent=True train=70/70 test_acc=0.9302325581395349 turns=None wall=103.9s err=None
+sk48 L2 cegisobj_opine_devin run7: consistent=True train=70/70 test_acc=0.9767441860465116 turns=None wall=104.0s err=None

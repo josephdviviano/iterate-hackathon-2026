@@ -1,0 +1,27 @@
+probes [32, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31] (steps [117, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116]); train 63, held out 11
+artifacts: artifacts/m0r0/L3_f40_probe33/cegis_opine_devin
+
+Objects of type `wall` under action ACTION6 with touching neighbours [hazard,marker,marker,player,wall] show mixed outcomes: gone x1, no_change x1. Find the condition in the before state that decides the outcome. Start from this kind of condition: a field of the object itself, such as its tags, pixels, visibility or layer. Verify it against every transition before you keep it.
+
+Counterexample at the mechanism level. Step 116, action 1, refuted every program of a committee of 4. Rows where every program was wrong; this is the mechanic to repair:
+  - row `wall | ACTION1 | [hazard]`, object wall_0_2: observed no_change; predicted w 17 -> 18, x 47 -> 46 (4 programs)
+  - row `wall | ACTION1 | [wall]`, object wall_0_8: observed no_change; predicted w 17 -> 18 (4 programs)
+Rows where every program was right on this transition; keep these mechanics as the earlier programs had them:
+  - player | ACTION1 | [hazard]: y 14 -> 10
+  - player | ACTION1 | [wall]: y 26 -> 22
+  - wall | ACTION1 | [hazard,marker,marker,player,wall]: no_change
+  - hazard | ACTION1 | [marker,player,wall,wall]: no_change
+  - marker | ACTION1 | [wall]: no_change
+  - marker | ACTION1 | [hazard]: no_change
+  - marker | ACTION1 | [wall]: no_change
+
+Repair hypothesis for this seed: the rule for the row(s) above is decided by a field of the object itself, such as its tags, pixels, visibility or layer. Write that rule first and verify it on the counterexample and on every earlier transition. Keep every other mechanic as the earlier programs had it; do not key the rule to this step.
+
+m0r0 L3 cegis_opine_devin run3: consistent=True train=63/63 test_acc=0.9090909090909091 turns=None wall=214.9s err=None
+m0r0 L3 cegis_opine_devin run2: consistent=True train=63/63 test_acc=0.9090909090909091 turns=None wall=277.7s err=None
+m0r0 L3 cegis_opine_devin run1: consistent=True train=63/63 test_acc=0.9090909090909091 turns=None wall=278.1s err=None
+m0r0 L3 cegis_opine_devin run0: consistent=True train=63/63 test_acc=0.9090909090909091 turns=None wall=341.7s err=None
+m0r0 L3 cegis_opine_devin run4: consistent=True train=63/63 test_acc=0.9090909090909091 turns=None wall=183.8s err=None
+m0r0 L3 cegis_opine_devin run5: consistent=True train=63/63 test_acc=0.9090909090909091 turns=None wall=158.8s err=None
+m0r0 L3 cegis_opine_devin run6: consistent=True train=63/63 test_acc=0.9090909090909091 turns=None wall=247.8s err=None
+m0r0 L3 cegis_opine_devin run7: consistent=True train=63/63 test_acc=0.9090909090909091 turns=None wall=268.0s err=None
