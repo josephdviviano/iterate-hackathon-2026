@@ -1,0 +1,9 @@
+You are doing a small optimization study in this git repo. train.py fits y = w*x + b by gradient descent and prints `val_mse:` (currently nan).
+Goal: the lowest val_mse you can get with STEPS = 200 unchanged.
+Rules: only edit train.py; prepare.py is fixed. Always run training as `python3 train.py > run.log 2>&1` using the bash tool with its timeout parameter set to 60, then read the result with `grep '^val_mse:' run.log`.
+Plan:
+1. Read the code and fix the divergence bug. Run it and record val_mse.
+2. Replace plain gradient descent with Adam (beta1=0.9, beta2=0.999, eps=1e-8) and try at least two learning rates, running each.
+3. Keep the best version in train.py and commit it with git (one commit).
+4. Write a short markdown summary of every run (config and val_mse) to /tmp/notes_task2.md using the write tool.
+5. Reply with the best val_mse and the commit hash.

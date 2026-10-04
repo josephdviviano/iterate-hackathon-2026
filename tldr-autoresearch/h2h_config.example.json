@@ -1,0 +1,20 @@
+{"_comment": "Template for h2h_config.json (base vs v5 head-to-head, ./ctl_h2h.sh): copy it to <RLTLDR_ROOT>/h2h_config.json (gitignored) or point H2H_CONFIG at a copy, and fill in each arm's GPU (gpu_uuid from `nvidia-smi -L`, gpu_minor = N of /dev/nvidiaN; the runner refuses an arm without them). Relative paths are resolved against RLTLDR_ROOT, ~ is expanded. baseline_commit is the canon.git commit both arms start from (h2h/start is built on it: tools/h2h/setup.py --create-start). Keys starting with _ are ignored.",
+ "vllm_url": "http://127.0.0.1:8000",
+ "gateway_port": 8110,
+ "canon_dir": "canon.git",
+ "baseline_commit": "c7666de87837da189c70f11541486c9c42240ceb",
+ "start_ref": "h2h/start",
+ "agent_branch": "autoresearch/h2h",
+ "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+ "no_autotune": true,
+ "pi_bin": "pi",
+ "pi_agent_template": "pi/agent",
+ "agent_thinking": "medium",
+ "zero_adapter": "data/h2h/adapters/base0",
+ "v5_adapter_src": "data/adapters/policy-v5",
+ "arms": [
+  {"name": "base", "served_model": "h2h-base0", "adapter_dir": "data/h2h/adapters/base0",
+   "gpu_uuid": "", "gpu_minor": 2, "runner_port": 8210},
+  {"name": "v5", "served_model": "h2h-v5", "adapter_dir": "data/h2h/adapters/v5",
+   "gpu_uuid": "", "gpu_minor": 3, "runner_port": 8220}
+ ]}

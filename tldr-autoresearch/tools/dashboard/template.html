@@ -1,0 +1,446 @@
+<title>RLTL;DR autoresearch run</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: an instrument panel — status strip, hero figure + tiles, one full-width timeline, then tables
+   (policy drops | groups), insights | trainer updates, and the experiment log as the table view. */
+:root {
+  --plane: #f6f6f3;          /* page */
+  --surface: #fcfcfb;        /* panels, chart surface */
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6f6d67;
+  --grid: #e7e6e0;
+  --axis: #c3c2b7;
+  --line: rgba(11, 11, 11, 0.09);
+  --accent: #2a78d6;         /* series 1: best-so-far + kept experiments */
+  --accent-wash: rgba(42, 120, 214, 0.07);
+  --band: rgba(42, 120, 214, 0.045);
+  --discard: #898781;
+  --good: #0ca30c;  --good-ink: #006300;
+  --critical: #d03b3b;
+  --warn: #fab219;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane: #0f0f0e; --surface: #1a1a19; --ink: #f4f4f1; --ink-2: #c3c2b7; --muted: #8f8d86;
+    --grid: #2a2a28; --axis: #3d3d3a; --line: rgba(255, 255, 255, 0.09);
+    --accent: #3987e5; --accent-wash: rgba(57, 135, 229, 0.12); --band: rgba(57, 135, 229, 0.07);
+    --discard: #6f6d67; --good-ink: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane: #0f0f0e; --surface: #1a1a19; --ink: #f4f4f1; --ink-2: #c3c2b7; --muted: #8f8d86;
+  --grid: #2a2a28; --axis: #3d3d3a; --line: rgba(255, 255, 255, 0.09);
+  --accent: #3987e5; --accent-wash: rgba(57, 135, 229, 0.12); --band: rgba(57, 135, 229, 0.07);
+  --discard: #6f6d67; --good-ink: #0ca30c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--plane); color: var(--ink); font: 14px/1.5 var(--font-ui); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 48px; display: grid; gap: 16px; }
+h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+h1 { font-size: 20px; letter-spacing: -0.01em; }
+h2 { font-size: 15px; }
+.eyebrow { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.sub { color: var(--ink-2); font-size: 13px; }
+.mono { font-family: var(--font-data); font-size: 12.5px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* status strip */
+.strip { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.strip .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ink-2); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); white-space: nowrap; }
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.pill.live i { background: var(--good); }
+.pill.stale i { background: var(--warn); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
+
+/* hero + tiles */
+.top { display: grid; grid-template-columns: minmax(260px, 1.25fr) repeat(4, minmax(150px, 1fr)); gap: 12px; }
+@media (max-width: 1080px) { .top { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hero { grid-column: 1 / -1; } }
+@media (max-width: 460px) { .top { grid-template-columns: 1fr; } }
+.tile { display: grid; gap: 4px; align-content: start; }
+.tile .label { font-size: 12.5px; color: var(--ink-2); }
+.tile .value { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+.tile .detail { font-size: 12.5px; color: var(--muted); }
+.hero .value { font-size: 52px; line-height: 1.05; letter-spacing: -0.02em; }
+.delta-good { color: var(--good-ink); font-weight: 500; }
+.bar { height: 4px; border-radius: 2px; background: var(--grid); overflow: hidden; margin-top: 4px; }
+.bar > span { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+
+/* chart */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart-box { position: relative; overflow-x: auto; }
+svg text { font-family: var(--font-ui); }
+.tip { position: absolute; width: max-content; pointer-events: none; z-index: 5; background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 11px; font-size: 12.5px; box-shadow: 0 6px 22px rgba(0,0,0,0.16); max-width: 300px; display: grid; gap: 3px; }
+.tip .v { font-size: 15px; font-weight: 600; }
+.tip .d { color: var(--ink-2); }
+.tip .m { color: var(--muted); font-size: 12px; }
+.pt { cursor: pointer; outline: none; }
+.pt:focus-visible .hit { stroke: var(--accent); stroke-width: 2; }
+.pt:focus-visible { outline: none; }
+
+/* tables */
+.cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 1240px) { .cols { grid-template-columns: 1fr; } }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-weight: 500; color: var(--muted); font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--axis); vertical-align: bottom; }
+#versions td, #groups td, #updates td, #log td { white-space: nowrap; }
+#log td:nth-child(5) { white-space: normal; }
+td { padding: 7px 10px 7px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+td.r, th.r { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; color: var(--ink-2); }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--discard); }
+.tag.keep { color: var(--ink); } .tag.keep::before { background: var(--good); }
+.tag.crash::before, .tag.invalid::before, .tag.norun::before { background: var(--critical); }
+.tag.running { color: var(--ink); border-color: var(--accent); } .tag.running::before { background: var(--accent); }
+.ver { font-family: var(--font-data); font-size: 12px; padding: 1px 6px; border-radius: 4px; background: var(--accent-wash); color: var(--ink); white-space: nowrap; }
+.desc { display: block; min-width: 200px; max-width: 420px; }
+.hint-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.hint-list li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; }
+.hint-list .k { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); padding-top: 2px; min-width: 22px; }
+details summary { cursor: pointer; color: var(--ink-2); font-size: 13px; margin-top: 12px; }
+details[open] summary { margin-bottom: 8px; }
+.empty { color: var(--muted); font-size: 13px; }
+.foot { color: var(--muted); font-size: 12px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .tip { transition: opacity 80ms linear; } }
+</style>
+
+<div class="wrap">
+  <header class="strip">
+    <div>
+      <div class="eyebrow">Qwen3.8-27B · pi harness · Karpathy autoresearch · RLTL;DR</div>
+      <h1>RLTL;DR autoresearch run</h1>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="top" id="tiles" aria-label="Run summary"></section>
+
+  <section class="panel" aria-labelledby="t-chart">
+    <div class="panel-head">
+      <div>
+        <h2 id="t-chart">val_bpb of every experiment</h2>
+        <div class="sub">Lower is better. Shaded bands mark which policy version the agent ran on; a new band starts when a freshly trained policy goes live.</div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="chart-box" id="chart"></div>
+  </section>
+
+  <div class="cols">
+    <section class="panel" aria-labelledby="t-ver">
+      <div class="panel-head">
+        <div><h2 id="t-ver">After each policy drop</h2>
+        <div class="sub">What each version achieved while it was live. "Without insights" counts experiments that had no insight in context — the paper's deconfounded measure.</div></div>
+      </div>
+      <div class="scroll"><table id="versions"></table></div>
+    </section>
+    <section class="panel" aria-labelledby="t-grp">
+      <div class="panel-head">
+        <div><h2 id="t-grp">Groups of 8</h2>
+        <div class="sub">Each closed group is one policy update. Success rates split by whether insights were in context.</div></div>
+      </div>
+      <div class="scroll"><table id="groups"></table></div>
+    </section>
+  </div>
+
+  <div class="cols">
+    <section class="panel" aria-labelledby="t-ins">
+      <div class="panel-head"><div><h2 id="t-ins">Insights in play</h2>
+        <div class="sub">One-sentence lessons the policy wrote after failed experiments in the current group. They are injected into later experiments and trained into the next policy.</div></div></div>
+      <ul class="hint-list" id="insights"></ul>
+      <details id="past-insights"><summary>Insights from earlier groups</summary><ul class="hint-list" id="past"></ul></details>
+    </section>
+    <section class="panel" aria-labelledby="t-upd">
+      <div class="panel-head"><div><h2 id="t-upd">Policy updates</h2>
+        <div class="sub">LoRA updates on GPU 3: GRPO on the positive-ratio-filtered rollouts (all kept plus some discarded) and 0.5 × SFT on insight tokens. Insight loss is the mean per epoch.</div></div></div>
+      <div class="scroll"><table id="updates"></table></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="t-log">
+    <div class="panel-head"><div><h2 id="t-log">Experiment log</h2>
+      <div class="sub">Newest first. The re-run column is the harness's independent confirmation of an apparent win; the decision uses it.</div></div></div>
+    <div class="scroll"><table id="log"></table></div>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script id="run-data" type="application/json">/*__DATA__*/{}</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById("run-data").textContent);
+  const S = D.summary, E = D.experiments, V = D.versions, G = D.groups;
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, attrs = {}, text) => { const n = document.createElement(tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text != null) n.textContent = text; return n; };
+  const sv = (tag, attrs = {}) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); return n; };
+  const f4 = (x) => x == null ? "–" : x.toFixed(4);
+  const f6 = (x) => x == null ? "–" : x.toFixed(6);
+  const pct = (x) => x == null ? "–" : Math.round(x * 100) + "%";
+  const hm = (t) => t == null ? "–" : new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const dt = (t) => t == null ? "–" : new Date(t * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const ago = (t) => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 1 ? "just now" : m < 60 ? m + " min ago" : (m / 60).toFixed(1) + " h ago"; };
+  const dur = (s) => s == null ? "–" : s < 3600 ? Math.round(s / 60) + " min" : (s / 3600).toFixed(1) + " h";
+  const vname = (v) => v === 0 ? "base" : "v" + v;
+  const KIND = { keep: "kept", discard: "discarded", invalid: "invalid", crash: "crashed", norun: "no run" };
+
+  // ---- status strip
+  const stale = Date.now() / 1000 - S.generated_at > 45 * 60;
+  const meta = $("meta");
+  const p = el("span", { class: "pill " + (stale ? "stale" : "live") }); p.append(el("i"), document.createTextNode(stale ? "data may be stale" : "running"));
+  meta.append(p);
+  meta.append(el("span", {}, "Updated " + ago(S.generated_at) + " · " + dt(S.generated_at)));
+  if (S.run_started) meta.append(el("span", {}, "Started " + dt(S.run_started) + " (" + dur(S.generated_at - S.run_started) + ")"));
+
+  // ---- tiles
+  const tiles = $("tiles");
+  const tile = (label, value, detail, cls = "", extra) => {
+    const t = el("div", { class: "panel tile " + cls }); t.append(el("div", { class: "label" }, label));
+    t.append(el("div", { class: "value" }, value)); if (detail) { const d = el("div", { class: "detail" }); if (typeof detail === "string") d.textContent = detail; else d.append(detail); t.append(d); }
+    if (extra) t.append(extra); tiles.append(t); return t;
+  };
+  const gain = S.baseline && S.best ? S.baseline - S.best : null;
+  const hd = el("span");
+  if (gain != null) { hd.append(el("span", { class: "delta-good" }, "▼ " + gain.toFixed(4) + " (" + (100 * gain / S.baseline).toFixed(1) + "%)")); hd.append(document.createTextNode(" vs baseline " + f4(S.baseline))); }
+  tile("Best val_bpb", f4(S.best), hd, "hero");
+  tile("Experiments", String(S.n_exps), S.n_kept + " kept (" + pct(S.n_exps ? S.n_kept / S.n_exps : null) + ")" + (S.n_void ? " · " + S.n_void + " voided" : ""));
+  const live = V.find(v => v.version === S.policy_live);
+  tile("Live policy", vname(S.policy_live), (S.policy_live === 0 ? "untrained base model" : (live && live.live_from ? "since " + hm(live.live_from) : "just went live")) + (S.policy_pending ? " · " + vname(S.policy_pending) + " pending" : ""));
+  const prog = el("div", { class: "bar", role: "progressbar", "aria-valuemin": 0, "aria-valuemax": 8, "aria-valuenow": S.k_done, "aria-label": "experiments done in the current group" });
+  prog.append(el("span", { style: "width:" + (100 * S.k_done / 8) + "%" }));
+  tile("Next policy update", S.next_update_eta ? "≈ " + hm(S.next_update_eta) : (S.next_update_note ? "soon" : "–"), S.next_update_note || ("group " + S.group + ": " + S.k_done + " of 8 done"), "", prog);
+  const ip = S.in_progress;
+  tile("Throughput", S.per_hour ? S.per_hour.toFixed(1) + " / h" : "–",
+       (S.avg_exp_min ? "≈ " + Math.round(S.avg_exp_min) + " min per experiment" : "") + (ip && ip.id ? " · now " + ip.id + " (" + ip.phase + ")" : ""));
+
+  // ---- chart
+  function drawChart() {
+    const box = $("chart"); box.textContent = "";
+    const W = Math.max(640, box.clientWidth || 900), H = 340;
+    const m = { l: 58, r: 84, t: 30, b: 34 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const now = S.generated_at;
+    const tMin = S.run_started || (E[0] && E[0].t_start) || now - 3600;
+    const tMax = Math.max(now, ...E.map(e => e.t_end || 0));
+    const vals = E.filter(e => e.val != null).map(e => e.val);
+    const lo = Math.min(S.best || 9, ...vals) - 0.003;
+    const hi = (S.baseline || Math.max(...vals)) + 0.008;              // outliers above are pinned to the top edge
+    const x = (t) => m.l + (t - tMin) / (tMax - tMin || 1) * iw;
+    const y = (v) => m.t + (hi - Math.min(Math.max(v, lo), hi)) / (hi - lo) * ih;
+    const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img",
+      "aria-label": "val_bpb of each experiment over time with the best-so-far line and policy version bands" });
+    box.append(svg);
+    let labR = -Infinity;
+
+    // policy bands + drop markers
+    V.filter(v => v.live_from).forEach((v, i, arr) => {
+      const x0 = x(Math.max(v.live_from, tMin)), x1 = x(v.superseded_at || tMax);
+      if (i % 2 === 1) svg.append(sv("rect", { x: x0, y: m.t, width: Math.max(0, x1 - x0), height: ih, fill: "var(--band)" }));
+      if (v.version > 0) {
+        svg.append(sv("line", { x1: x0, x2: x0, y1: m.t - 6, y2: m.t + ih, stroke: "var(--accent)", "stroke-width": 1, opacity: 0.6 }));
+      }
+      const room = (v.superseded_at ? x1 : W) - x0 - 8;
+      for (const label of [v.version === 0 ? "base policy" : vname(v.version) + " live " + hm(v.live_from), vname(v.version)]) {
+        const tx = sv("text", { x: x0 + 6, y: m.t - 10, "font-size": 11.5, fill: "var(--ink-2)", "font-weight": 500 });
+        tx.textContent = label; svg.append(tx);
+        const w = tx.getComputedTextLength();
+        if (w <= room && x0 + 6 >= labR + 6) { labR = x0 + 6 + w; break; }
+        tx.remove();
+      }
+    });
+
+    // grid + y ticks
+    const step = (hi - lo) > 0.04 ? 0.01 : 0.005;
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) {
+      svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: "var(--grid)", "stroke-width": 1 }));
+      const t = sv("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
+      t.textContent = v.toFixed(3); t.style.fontVariantNumeric = "tabular-nums"; svg.append(t);
+    }
+    // x ticks (hours)
+    const span = tMax - tMin, every = [1800, 3600, 7200, 10800, 21600, 43200, 86400].find(s => iw * s / (span || 1) >= 64) || 86400;
+    for (let t = Math.ceil(tMin / every) * every; t <= tMax; t += every) {
+      const tx = sv("text", { x: x(t), y: m.t + ih + 20, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" });
+      tx.textContent = hm(t); svg.append(tx);
+      svg.append(sv("line", { x1: x(t), x2: x(t), y1: m.t + ih, y2: m.t + ih + 4, stroke: "var(--axis)" }));
+    }
+    svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: m.t + ih, y2: m.t + ih, stroke: "var(--axis)", "stroke-width": 1 }));
+
+    // baseline reference
+    if (S.baseline) {
+      svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: y(S.baseline), y2: y(S.baseline), stroke: "var(--axis)", "stroke-width": 1 }));
+      const t = sv("text", { x: m.l + iw - 4, y: y(S.baseline) - 6, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
+      t.textContent = "baseline " + f4(S.baseline); svg.append(t);
+    }
+
+    // best-so-far step line
+    let pts = [[tMin, S.baseline]], cur = S.baseline;
+    E.filter(e => e.kind === "keep").forEach(e => { pts.push([e.t_end, cur]); cur = e.best_after; pts.push([e.t_end, cur]); });
+    pts.push([tMax, cur]);
+    if (S.baseline) {
+      const dpath = pts.map((q, i) => (i ? "L" : "M") + x(q[0]).toFixed(1) + "," + y(q[1]).toFixed(1)).join("");
+      svg.append(sv("path", { d: dpath, fill: "none", stroke: "var(--accent)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      const end = pts[pts.length - 1];
+      svg.append(sv("circle", { cx: x(end[0]), cy: y(end[1]), r: 4.5, fill: "var(--accent)", stroke: "var(--surface)", "stroke-width": 2 }));
+      const lt = sv("text", { x: x(end[0]) + 9, y: y(end[1]) + 4, "text-anchor": "start", "font-size": 12, "font-weight": 600, fill: "var(--ink)" });
+      lt.textContent = "best " + f4(end[1]); svg.append(lt);
+    }
+
+    // experiments
+    const tip = el("div", { class: "tip", role: "tooltip" }); tip.style.opacity = 0; box.append(tip);
+    const show = (e, cx, cy) => {
+      tip.textContent = "";
+      tip.append(el("div", { class: "v" }, e.val != null ? f6(e.val) : (KIND[e.kind] || e.kind)));
+      if (e.confirm.length) tip.append(el("div", { class: "m" }, "re-run " + e.confirm.map(c => c == null ? "crashed" : f6(c)).join(", ")));
+      tip.append(el("div", { class: "d" }, e.desc));
+      tip.append(el("div", { class: "m" }, `${e.id} · ${KIND[e.kind]} · policy ${vname(e.policy)} · ${e.n_insights} insight${e.n_insights === 1 ? "" : "s"} in context · ${hm(e.t_end)}`));
+      if (e.val != null && e.val > hi) tip.append(el("div", { class: "m" }, "off the chart's scale (pinned to top edge)"));
+      tip.style.opacity = 1;
+      const sl = box.scrollLeft, bw = box.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+      const fitsR = cx + 14 + tw <= sl + bw - 4, fitsL = cx - 14 - tw >= sl + 4;
+      let left, top;
+      if (fitsR || fitsL) { left = fitsR ? cx + 14 : cx - 14 - tw; top = cy - 20; }
+      else { left = cx - tw / 2; top = cy > H / 2 ? cy - 14 - th : cy + 14; }
+      left = Math.max(sl + 4, Math.min(left, sl + bw - tw - 4));
+      top = Math.max(0, Math.min(top, H - th));
+      tip.style.left = left + "px"; tip.style.top = top + "px";
+    };
+    const hide = () => { tip.style.opacity = 0; };
+    E.forEach(e => {
+      const cx = x(e.t_end);
+      const g = sv("g", { class: "pt", tabindex: 0, role: "img",
+        "aria-label": `${e.id}: ${e.desc}. ${e.val != null ? "val_bpb " + f4(e.val) : KIND[e.kind]}, ${KIND[e.kind]}.` });
+      let cy;
+      if (e.val == null || e.kind === "invalid") {
+        cy = m.t + 8;
+        const s = 4;
+        g.append(sv("path", { d: `M${cx - s},${cy - s}L${cx + s},${cy + s}M${cx - s},${cy + s}L${cx + s},${cy - s}`, stroke: "var(--critical)", "stroke-width": 2, "stroke-linecap": "round" }));
+      } else {
+        cy = y(e.val);
+        if (e.val > hi) {
+          g.append(sv("path", { d: `M${cx},${m.t - 1}l-5,8h10z`, fill: "var(--discard)" }));
+          cy = m.t + 4;
+        } else if (e.kind === "keep") {
+          g.append(sv("circle", { cx, cy, r: 5, fill: "var(--accent)", stroke: "var(--surface)", "stroke-width": 2 }));
+        } else {
+          g.append(sv("circle", { cx, cy, r: 4, fill: "var(--surface)", stroke: "var(--discard)", "stroke-width": 2 }));
+        }
+      }
+      const hit = sv("circle", { class: "hit", cx, cy, r: 12, fill: "transparent" });
+      g.append(hit);
+      g.addEventListener("pointerenter", () => show(e, cx, cy));
+      g.addEventListener("pointerleave", hide);
+      g.addEventListener("focus", () => requestAnimationFrame(() => show(e, cx, cy)));
+      g.addEventListener("blur", hide);
+      svg.append(g);
+    });
+    box.scrollLeft = box.scrollWidth;      // narrow screens open on the newest data
+  }
+  // legend
+  const lg = $("legend");
+  const key = (svgInner, label) => { const s = el("span"); const k = sv("svg", { width: 18, height: 12, "aria-hidden": "true" }); svgInner.forEach(n => k.append(n)); s.append(k, document.createTextNode(label)); lg.append(s); };
+  key([sv("line", { x1: 1, x2: 17, y1: 6, y2: 6, stroke: "var(--accent)", "stroke-width": 2, "stroke-linecap": "round" })], "best so far");
+  key([sv("circle", { cx: 9, cy: 6, r: 4.5, fill: "var(--accent)" })], "kept");
+  key([sv("circle", { cx: 9, cy: 6, r: 3.5, fill: "var(--surface)", stroke: "var(--discard)", "stroke-width": 2 })], "discarded");
+  key([sv("path", { d: "M5,2L13,10M5,10L13,2", stroke: "var(--critical)", "stroke-width": 2, "stroke-linecap": "round" })], "crashed / invalid");
+  key([sv("path", { d: "M9,2l-5,8h10z", fill: "var(--discard)" })], "above the scale");
+  key([sv("line", { x1: 9, x2: 9, y1: 0, y2: 12, stroke: "var(--accent)", "stroke-width": 1 })], "new policy live");
+  drawChart();
+  let rt, lastW = $("chart").clientWidth;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const w = $("chart").clientWidth; if (w !== lastW) { lastW = w; drawChart(); } }, 150); });
+
+  // ---- tables
+  const table = (id, head, rows) => {
+    const t = $(id); t.textContent = "";
+    const thead = el("thead"), tr = el("tr");
+    head.forEach(h => tr.append(el("th", h.r ? { class: "r" } : {}, h.t)));
+    thead.append(tr); t.append(thead);
+    const tb = el("tbody");
+    if (!rows.length) { const r = el("tr"); r.append(el("td", { colspan: head.length, class: "empty" }, "Nothing yet.")); tb.append(r); }
+    rows.forEach(cells => { const r = el("tr"); cells.forEach((c, i) => { const td = el("td", head[i].r ? { class: "r num" } : {}); if (c instanceof Node) td.append(c); else td.textContent = c; r.append(td); }); tb.append(r); });
+    t.append(tb);
+  };
+  const ver = (v) => el("span", { class: "ver" }, vname(v));
+  const tag = (k) => el("span", { class: "tag " + k }, KIND[k] || k);
+
+  table("versions",
+    [{ t: "Policy" }, { t: "Trained on" }, { t: "Live" }, { t: "Exp.", r: 1 }, { t: "Kept", r: 1 }, { t: "Without insights", r: 1 }, { t: "Best at drop → latest" }, { t: "Gain", r: 1 }],
+    V.filter(v => v.n || v.version === S.policy_live || v.version === S.policy_pending).map(v => [
+      ver(v.version),
+      v.group_trained == null ? "–" : "group " + v.group_trained,
+      v.live_from ? hm(v.live_from) + (v.superseded_at ? "–" + hm(v.superseded_at) : " → now") : (v.version === S.policy_pending ? "pending" : "–"),
+      String(v.n), v.n ? v.kept + " (" + pct(v.kept / v.n) + ")" : "–",
+      v.n_noins ? v.kept_noins + " / " + v.n_noins : "–",
+      v.best_start != null ? f4(v.best_start) + " → " + f4(v.best_end) : "–",
+      v.best_start != null && v.best_end != null ? (v.best_start - v.best_end > 0 ? "▼ " : "") + (v.best_start - v.best_end).toFixed(4) : "–",
+    ]));
+
+  table("groups",
+    [{ t: "Group" }, { t: "Policy" }, { t: "Kept", r: 1 }, { t: "With ins.", r: 1 }, { t: "Without", r: 1 }, { t: "Best at end", r: 1 }, { t: "Update" }],
+    G.slice().reverse().map(g => [
+      String(g.group),
+      (() => { const s = el("span"); g.policies.forEach((p, i) => { if (i) s.append(" "); s.append(ver(p)); }); return s; })(),
+      g.kept + " / " + g.n + (g.closed ? "" : " so far"),
+      pct(g.succ_ins), pct(g.succ_noins), f4(g.best),
+      g.closed ? (g.updated ? "→ " + vname(g.update_version) : g.training ? "training…" : "no update") : "in progress",
+    ]));
+
+  table("updates",
+    [{ t: "Version" }, { t: "From" }, { t: "GRPO tokens", r: 1 }, { t: "Insight tokens", r: 1 }, { t: "Insight loss", r: 1 }, { t: "Clip", r: 1 }, { t: "Time", r: 1 }],
+    V.filter(v => v.update).slice().reverse().map(v => {
+      const u = v.update, ls = u.loss_sft || [];
+      const ep = (u.clipfrac && u.clipfrac.length) || 1, per = Math.max(1, Math.round(ls.length / ep));
+      const means = [];   // logged per-minibatch loss = 0.5 x mean NLL; minibatches without insight tokens log 0
+      for (let i = 0; i < ls.length; i += per) { const xs = ls.slice(i, i + per).filter(x => x > 0); if (xs.length) means.push(xs.reduce((a, b) => a + b, 0) / xs.length / 0.5); }
+      return [ver(v.version), "group " + v.group_trained,
+        (u.grpo_tokens || 0).toLocaleString() + (u.grpo_rollouts ? " (" + u.grpo_rollouts + " rollouts)" : ""),
+        (u.sft_tokens || 0).toLocaleString(),
+        means.length ? means.map(x => x.toFixed(2)).join(" → ") : "–",
+        u.clipfrac && u.clipfrac.length ? (100 * (u.clipfrac[u.clipfrac.length - 1] || 0)).toFixed(2) + "%" : "–",
+        u.t_update ? Math.round(u.t_update) + " s" : "–"];
+    }));
+
+  // insights
+  const ins = $("insights"); ins.textContent = "";
+  if (!S.current_insights.length) ins.append(el("li", { class: "empty" }, S.insights_injected ? "The current experiment runs without insights (the group's success rate is above 50% or none were written yet)." : "No insights yet in this group: they appear after an experiment fails."));
+  S.current_insights.forEach(h => { const li = el("li"); li.append(el("span", { class: "k" }, "#" + h.idx), el("span", {}, h.hint)); ins.append(li); });
+  const past = $("past"); past.textContent = "";
+  G.filter(g => g.closed).slice().reverse().forEach(g => g.hints.forEach(h => {
+    const li = el("li"); li.append(el("span", { class: "k" }, "g" + g.group + "·" + h.k), el("span", {}, h.hint)); past.append(li);
+  }));
+  if (!past.children.length) $("past-insights").hidden = true;
+
+  // experiment log (the table view of the chart)
+  const running = [];
+  if (ip && ip.id) {
+    const pill = el("span", { class: "tag running" }, ip.phase || "running");
+    running.push(["now", el("span", { class: "mono" }, ip.id), ip.policy != null ? ver(ip.policy) : "–",
+      ip.n_insights != null ? String(ip.n_insights) : "–",
+      el("span", { class: "desc" }, ip.desc || "(agent is choosing and implementing an idea)"),
+      ip.val != null ? f6(ip.val) : (ip.run_status && ip.run_status !== "ok" ? ip.run_status : "–"),
+      ip.confirm && ip.confirm.length ? ip.confirm.map(c => c == null ? "crashed" : f6(c)).join(", ") : "–", pill]);
+  }
+  table("log",
+    [{ t: "Time" }, { t: "Experiment" }, { t: "Policy" }, { t: "Insights", r: 1 }, { t: "Change" }, { t: "val_bpb", r: 1 }, { t: "Re-run", r: 1 }, { t: "Decision" }],
+    running.concat(E.slice().reverse().map(e => [hm(e.t_end), el("span", { class: "mono" }, e.id), ver(e.policy), String(e.n_insights),
+      el("span", { class: "desc" }, e.desc), e.val != null ? f6(e.val) : "–", e.confirm.length ? e.confirm.map(c => c == null ? "crashed" : f6(c)).join(", ") : "–", tag(e.kind)])));
+
+  $("foot").textContent = "Baseline = mean of " + S.baseline_runs + " runs of the unmodified train.py. A win counts only if a fresh re-run beats the best by more than 0.0005 bpb. Best commit " + (S.best_commit || "–") + ". Refreshed from the run every ~20 minutes while the session that maintains it is open.";
+})();
+</script>

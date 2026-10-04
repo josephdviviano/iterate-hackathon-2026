@@ -1,0 +1,494 @@
+<title>Base vs v5 head-to-head</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: status strip + one-line verdict, the two arms side by side (cards), two full-width charts (time and
+   experiment index), the GPU calibration note, then one run table per arm. Arm colours are fixed by config
+   order: slot 1 = first arm (base), slot 2 = second arm (v5). Text never wears a series colour. */
+:root {
+  --plane: #f6f6f3;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6f6d67;
+  --grid: #e7e6e0;
+  --axis: #c3c2b7;
+  --line: rgba(11, 11, 11, 0.09);
+  --s1: #2a78d6;             /* arm 1 (base) */
+  --s2: #eb6834;             /* arm 2 (v5) */
+  --discard: #898781;
+  --good: #0ca30c;  --good-ink: #006300;
+  --critical: #d03b3b;
+  --warn: #fab219;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane: #0f0f0e; --surface: #1a1a19; --ink: #f4f4f1; --ink-2: #c3c2b7; --muted: #8f8d86;
+    --grid: #2a2a28; --axis: #3d3d3a; --line: rgba(255, 255, 255, 0.09);
+    --s1: #3987e5; --s2: #d95926; --discard: #6f6d67; --good-ink: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane: #0f0f0e; --surface: #1a1a19; --ink: #f4f4f1; --ink-2: #c3c2b7; --muted: #8f8d86;
+  --grid: #2a2a28; --axis: #3d3d3a; --line: rgba(255, 255, 255, 0.09);
+  --s1: #3987e5; --s2: #d95926; --discard: #6f6d67; --good-ink: #0ca30c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--plane); color: var(--ink); font: 14px/1.5 var(--font-ui); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; display: grid; gap: 16px; }
+h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+h1 { font-size: 20px; letter-spacing: -0.01em; }
+h2 { font-size: 15px; }
+.eyebrow { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.sub { color: var(--ink-2); font-size: 13px; }
+.mono { font-family: var(--font-data); font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+/* status strip */
+.strip { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.strip .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ink-2); font-size: 13px; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); white-space: nowrap; }
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.pill.live i { background: var(--good); }
+.pill.stale i { background: var(--warn); }
+.verdict { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink); }
+.verdict b { font-weight: 600; }
+.key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: baseline; margin-right: 5px; position: relative; top: 0.5px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; margin-bottom: 10px; }
+
+/* arm cards */
+.arms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .arms { grid-template-columns: 1fr; } }
+.arm { display: grid; gap: 12px; align-content: start; }
+.arm-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.arm-head h2 { font-size: 17px; }
+.arm-head .pill { margin-left: auto; }
+.arm .label { font-size: 12.5px; color: var(--ink-2); }
+.arm .value { font-size: 44px; font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; }
+.arm .detail { font-size: 12.5px; color: var(--muted); }
+.delta-good { color: var(--good-ink); font-weight: 500; }
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 12px 16px; margin: 0;
+  border-top: 1px solid var(--grid); padding-top: 12px; }
+.stats div { display: grid; gap: 1px; align-content: start; min-width: 0; }
+.stats dt { font-size: 12px; color: var(--ink-2); }
+.stats dd { margin: 0; font-size: 17px; font-weight: 600; }
+.stats .d { font-size: 12px; color: var(--muted); font-weight: 400; overflow-wrap: anywhere; }
+.now { font-size: 12.5px; color: var(--ink-2); border-top: 1px solid var(--grid); padding-top: 10px; overflow-wrap: anywhere; }
+
+/* charts */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart-box { position: relative; overflow-x: auto; }
+.chart-box svg { display: block; }
+.chart-box svg:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+svg text { font-family: var(--font-ui); }
+.tip { position: absolute; width: max-content; pointer-events: none; z-index: 5; background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 11px; font-size: 12.5px; box-shadow: 0 6px 22px rgba(0,0,0,0.16); max-width: min(320px, 80vw); display: grid; gap: 3px; }
+.tip .v { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip .a { display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.tip .a i { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+.tip .d { color: var(--ink); }
+.tip .m { color: var(--muted); font-size: 12px; }
+
+/* tables */
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 1180px) { .cols { grid-template-columns: 1fr; } }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-weight: 500; color: var(--muted); font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--axis); vertical-align: bottom; white-space: nowrap; }
+td { padding: 7px 10px 7px 0; border-bottom: 1px solid var(--grid); vertical-align: top; white-space: nowrap; }
+td.chg { white-space: normal; min-width: 170px; overflow-wrap: anywhere; }
+td.r, th.r { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+.runs td:nth-child(1) { color: var(--muted); }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; color: var(--ink-2); }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--discard); }
+.tag.keep { color: var(--ink); } .tag.keep::before { background: var(--good); }
+.tag.bad::before { background: var(--critical); }
+.tag.ok::before { background: var(--axis); }
+.tag.running { color: var(--ink); } .tag.running::before { background: var(--warn); }
+.tag.none { border-color: transparent; padding-left: 0; color: var(--muted); } .tag.none::before { display: none; }
+.flags { display: block; font-family: var(--font-data); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.flags > span { display: block; white-space: nowrap; }
+.flags b { color: var(--ink); font-weight: 500; }
+td.res { white-space: normal; min-width: 96px; max-width: 200px; }
+.small { display: block; font-size: 11.5px; color: var(--muted); white-space: normal; overflow-wrap: anywhere; }
+.inv { color: var(--muted); text-decoration: line-through; }
+.empty { color: var(--muted); font-size: 13px; }
+.foot { color: var(--muted); font-size: 12px; }
+:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .tip { transition: opacity 80ms linear; } }
+</style>
+
+<div class="wrap">
+  <header class="strip">
+    <div>
+      <div class="eyebrow">Qwen3.8-27B-FP8 · pi harness · Karpathy autoresearch · head-to-head</div>
+      <h1>Base model vs RLTL;DR v5</h1>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+  <p class="verdict" id="verdict"></p>
+
+  <section class="arms" id="arms" aria-label="The two arms"></section>
+
+  <section class="panel" aria-labelledby="t-time">
+    <div class="panel-head">
+      <div>
+        <h2 id="t-time">val_bpb over time</h2>
+        <div class="sub">Every valid run, by hours since that arm's session started. Lower is better. The step line is the agent's own frontier: the trusted val_bpb of the latest run it logged as keep.</div>
+      </div>
+      <div class="legend" id="legend-time"></div>
+    </div>
+    <div class="chart-box" id="chart-time"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="t-idx">
+    <div class="panel-head">
+      <div>
+        <h2 id="t-idx">val_bpb by experiment number</h2>
+        <div class="sub">The same runs by their position in each arm's sequence (crashed and invalid runs take a number too but have no dot): progress per experiment rather than per hour.</div>
+      </div>
+      <div class="legend" id="legend-idx"></div>
+    </div>
+    <div class="chart-box" id="chart-idx"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="t-cal">
+    <div class="panel-head"><div><h2 id="t-cal">GPU calibration</h2>
+      <div class="sub">The first baseline run of each arm: the unmodified train.py on that arm's nanochat GPU. It shows whether the two GPUs give the same numbers for the same code.</div></div></div>
+    <div class="scroll"><table id="calib"></table></div>
+    <p class="sub" id="calib-note" style="margin: 10px 0 0"></p>
+  </section>
+
+  <div class="cols" id="tables"></div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script id="run-data" type="application/json">/*__DATA__*/{}</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById("run-data").textContent);
+  const A = D.arms || [];
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, attrs = {}, text) => { const n = document.createElement(tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text != null) n.textContent = text; return n; };
+  const sv = (tag, attrs = {}) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); return n; };
+  const f4 = (x) => x == null ? "–" : x.toFixed(4);
+  const f6 = (x) => x == null ? "–" : x.toFixed(6);
+  const multiDay = D.t0 && ((D.live ? D.generated_at : D.last || D.generated_at) - D.t0) > 20 * 3600;
+  const hm = (t) => t == null ? "–" : new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const when = (t) => t == null ? "–" : multiDay ? new Date(t * 1000).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" }) : hm(t);
+  const dtl = (t) => t == null ? "–" : new Date(t * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const ago = (t) => { if (t == null) return "–"; const m = Math.round((Date.now() / 1000 - t) / 60); return m < 1 ? "just now" : m < 60 ? m + " min ago" : (m / 60).toFixed(1) + " h ago"; };
+  const dur = (s) => s == null ? "–" : s < 3600 ? Math.round(s / 60) + " min" : (s / 3600).toFixed(1) + " h";
+  const compact = (x) => x == null ? "–" : x >= 1e9 ? (x / 1e9).toFixed(2) + "B" : x >= 1e6 ? (x / 1e6).toFixed(2) + "M" : x >= 1e4 ? (x / 1e3).toFixed(1) + "K" : Math.round(x).toLocaleString();
+  const int = (x) => x == null ? "–" : String(Math.round(x));
+  const SLOT = ["var(--s1)", "var(--s2)"];
+  A.forEach((a, k) => { a.col = SLOT[k % SLOT.length]; });
+  const DEC = { keep: "keep", discard: "discard", crash: "crash" };
+  const INVALID = ["over_time_budget", "no_trusted_eval", "multiple_evals", "val_leak", "non_causal", "eval_unverifiable", "prepare_py_modified"];
+  const keyDot = (a) => el("span", { class: "key", style: "background:" + a.col, "aria-hidden": "true" });
+
+  // ---- status strip
+  const stale = Date.now() / 1000 - D.generated_at > 45 * 60;
+  const meta = $("meta");
+  const pill = el("span", { class: "pill " + (stale ? "stale" : D.live ? "live" : "") });
+  pill.append(el("i"), document.createTextNode(stale ? "data may be stale" : D.live ? "running" : "stopped"));
+  meta.append(pill, el("span", {}, "Updated " + ago(D.generated_at) + " · " + dtl(D.generated_at)));
+  if (D.t0) meta.append(el("span", {}, "Started " + dtl(D.t0) + " · " + (D.live ? "running for " : "ran ") + dur((D.live ? D.generated_at : D.last || D.generated_at) - D.t0)));
+
+  // ---- verdict
+  const vd = $("verdict");
+  const named = (a, txt) => { const s = el("span"); s.append(keyDot(a), el("b", {}, a.label)); if (txt) s.append(document.createTextNode(" " + txt)); return s; };
+  const bk = A.map(a => a.summary.best_kept);
+  if (A.length === 2 && bk[0] && bk[1]) {
+    const d = bk[0].val - bk[1].val, lead = d > 0 ? 1 : 0, lag = 1 - lead;
+    if (Math.abs(d) < 0.0005) vd.append(document.createTextNode("Level so far: "), named(A[0], f4(bk[0].val)), document.createTextNode(" vs "), named(A[1], f4(bk[1].val)), document.createTextNode(" (current bests within 0.0005 bpb)."));
+    else vd.append(named(A[lead], "leads by " + Math.abs(d).toFixed(4) + " bpb"), document.createTextNode(" on the agents' current best: " + A[lead].label + " " + f4(bk[lead].val) + " vs " + A[lag].label + " " + f4(bk[lag].val) + "."));
+    const bv = A.map(a => a.summary.best_valid && a.summary.best_valid.val);
+    vd.append(document.createTextNode(" Best single runs: " + A.map((a, k) => a.label + " " + f4(bv[k])).join(", ") + ". Runs so far: " + A.map(a => a.label + " " + a.summary.n_runs).join(", ") + "."));
+  } else {
+    vd.append(document.createTextNode("Waiting for both agents to keep a run. Runs so far: " + A.map(a => a.label + " " + a.summary.n_runs).join(", ") + "."));
+  }
+
+  // ---- arm cards
+  const arms = $("arms");
+  A.forEach(a => {
+    const s = a.summary;
+    const card = el("article", { class: "panel arm", "aria-label": "Arm " + a.label });
+    const head = el("div", { class: "arm-head" });
+    const st = el("span", { class: "pill " + (s.live ? "live" : "") }); st.append(el("i"), document.createTextNode(s.live ? (s.state || "active") : "idle"));
+    head.append(keyDot(a), el("h2", {}, a.label), st);
+    card.append(head, el("div", { class: "sub" }, a.model + " · nanochat GPU " + a.gpu));
+    const hero = el("div");
+    hero.append(el("div", { class: "label" }, "Current best (latest run the agent kept)"), el("div", { class: "value" }, f4(s.best_kept && s.best_kept.val)));
+    const det = el("div", { class: "detail" });
+    if (s.best_kept) {
+      const base = s.baseline && s.baseline.val;
+      if (base != null) {
+        const g = base - s.best_kept.val;
+        det.append(el("span", { class: g > 0 ? "delta-good" : "" }, (g > 0 ? "▼ " : g < 0 ? "▲ " : "") + Math.abs(g).toFixed(4) + " (" + (100 * Math.abs(g) / base).toFixed(1) + "%)"),
+          document.createTextNode(" vs its baseline " + f4(base) + " · "));
+      }
+      det.append(document.createTextNode("run #" + s.best_kept.i + ": " + s.best_kept.desc));
+    } else det.textContent = s.n_runs ? "No run logged as keep yet." : "No runs yet.";
+    if (s.last_keep_unmatched) det.append(el("span", { class: "small" }, "The agent's latest keep row (" + f6(s.last_keep_claimed) + ") matches no run in the ledger; it is not counted."));
+    if (s.last_keep_invalid != null) det.append(el("span", { class: "small" }, "The agent's latest keep is run #" + s.last_keep_invalid + ", which is not a valid run; it is not counted."));
+    hero.append(det); card.append(hero);
+    const dl = el("dl", { class: "stats" });
+    const stat = (label, value, detail) => { const d = el("div"); d.append(el("dt", {}, label)); const dd = el("dd", {}, value); if (detail) dd.append(el("span", { class: "d" }, " " + detail)); d.append(dd); dl.append(d); };
+    stat("Runs", String(s.n_runs), s.runs_per_hour ? s.runs_per_hour.toFixed(1) + " / h" : "");
+    stat("Valid runs", String(s.n_valid), s.n_crash + " crashed · " + s.n_invalid + " invalid");
+    stat("Best single run", f4(s.best_valid && s.best_valid.val), s.best_valid ? "#" + s.best_valid.i : "");
+    stat("Kept", String(s.n_keep), "of " + s.n_tsv + " logged");
+    stat("Tokens generated", compact(s.tokens_out), s.n_calls != null ? compact(s.n_calls) + " calls" + (s.n_call_err ? " · " + s.n_call_err + " failed" : "") : "");
+    stat("Decode", s.decode_tok_s != null ? s.decode_tok_s.toFixed(1) : "–", s.decode_tok_s != null ? "tok/s" + (s.decode_recent != null ? " · recent " + s.decode_recent.toFixed(1) : "") : "");
+    stat("Nudges", int(s.nudges), s.prompts != null ? "of " + int(s.prompts) + " prompts" : "");
+    stat("Restarts", int(s.restarts), "");
+    stat("Compactions", int(s.compactions), s.context_tokens != null ? "context " + compact(s.context_tokens) + (s.context_percent != null ? " (" + Math.round(s.context_percent) + "%)" : "") : "");
+    card.append(dl);
+    const now = el("div", { class: "now" });
+    if (a.inflight) now.append(el("b", {}, "Training: "), document.createTextNode(a.inflight.desc + (a.inflight.since ? " (started " + ago(a.inflight.since) + ")" : "")));
+    else now.append(document.createTextNode(s.last_event ? "Last activity " + ago(s.last_event) + (s.last_event_type ? " (" + s.last_event_type + ")" : "") : "No activity recorded yet."));
+    card.append(now);
+    arms.append(card);
+  });
+
+  // ---- charts: one shared y-scale for both, so the two figures read the same
+  const valid = [];
+  A.forEach(a => a.runs.forEach(r => { if (r.kind === "valid") valid.push(r.val); }));
+  const refs = [];
+  A.forEach(a => { if (a.calib) refs.push(a.calib.val); if (a.frontier.length) refs.push(a.frontier[0].val); });
+  const sortedV = valid.slice().sort((p, q) => p - q);
+  let lo = sortedV.length ? sortedV[0] : 0.95, hiRef = refs.length ? Math.max(...refs) : sortedV.length ? sortedV[Math.floor(0.85 * (sortedV.length - 1))] : 1.1;
+  if (hiRef - lo < 0.004) { const mid = (hiRef + lo) / 2; lo = mid - 0.002; hiRef = mid + 0.002; }
+  const hi = hiRef + 0.15 * (hiRef - lo) + 0.001;
+  lo = lo - 0.06 * (hi - lo);
+  const niceStep = (raw) => { const p = Math.pow(10, Math.floor(Math.log10(raw))); return [1, 2, 5, 10].map(k => k * p).find(s => s >= raw) || 10 * p; };
+
+  function legend(id) {
+    const lg = $(id); lg.textContent = "";
+    const key = (inner, label) => { const s = el("span"); const k = sv("svg", { width: 22, height: 12, "aria-hidden": "true" }); inner.forEach(n => k.append(n)); s.append(k, document.createTextNode(label)); lg.append(s); };
+    A.forEach(a => key([sv("line", { x1: 1, x2: 21, y1: 6, y2: 6, stroke: a.col, "stroke-width": 2, "stroke-linecap": "round" }), sv("circle", { cx: 11, cy: 6, r: 4, fill: a.col, stroke: "var(--surface)", "stroke-width": 1.5 })], a.label));
+    key([sv("circle", { cx: 11, cy: 6, r: 4, fill: "var(--ink-2)" })], "kept by the agent");
+    key([sv("circle", { cx: 11, cy: 6, r: 3.2, fill: "var(--surface)", stroke: "var(--ink-2)", "stroke-width": 1.6 })], "discarded / not logged");
+    key([sv("path", { d: "M11,2l-4.5,8h9z", fill: "none", stroke: "var(--ink-2)", "stroke-width": 1.4, "stroke-linejoin": "round" })], "above the scale");
+  }
+
+  function drawChart(boxId, mode) {
+    const box = $(boxId); box.textContent = "";
+    const W = Math.max(320, box.clientWidth || 900), narrow = W < 560, H = narrow ? 270 : 330;
+    const m = { l: 50, r: narrow ? 90 : 104, t: 14, b: 40 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const xOf = (a, r) => mode === "time" ? ((r.te || a.t0) - a.t0) / 3600 : r.i;
+    const endOf = (a) => mode === "time" ? (((D.live ? D.generated_at : a.last) || a.t0 || 0) - (a.t0 || 0)) / 3600 : a.summary.n_runs;
+    const xEndAll = Math.max(mode === "time" ? 0.5 : 2, ...A.filter(a => a.t0).map(endOf));
+    const x0 = mode === "time" ? 0 : 0.5, x1 = mode === "time" ? xEndAll : xEndAll + 0.5;
+    const x = (v) => m.l + (v - x0) / (x1 - x0 || 1) * iw;
+    const y = (v) => m.t + (hi - Math.min(Math.max(v, lo), hi)) / (hi - lo) * ih;
+    const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", tabindex: 0,
+      "aria-label": "val_bpb of every valid run by " + (mode === "time" ? "hours since start" : "experiment number") + " for " + A.map(a => a.label).join(" and ") + ", with each agent's kept frontier. Use the arrow keys to step through the runs; the tables below list every run." });
+    box.append(svg);
+
+    // grid + y ticks
+    const ys = niceStep((hi - lo) / 5), dec = Math.min(4, Math.max(2, -Math.floor(Math.log10(ys) + 1e-9)));
+    for (let v = Math.ceil(lo / ys) * ys; v <= hi + 1e-9; v += ys) {
+      svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: "var(--grid)", "stroke-width": 1 }));
+      const t = sv("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
+      t.textContent = v.toFixed(dec); t.style.fontVariantNumeric = "tabular-nums"; svg.append(t);
+    }
+    // x ticks
+    const minGap = mode === "time" ? 56 : 36;
+    const steps = mode === "time" ? [0.25, 0.5, 1, 2, 3, 6, 12, 24, 48, 96] : [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000];
+    const xs = steps.find(s => iw * s / (x1 - x0 || 1) >= minGap) || steps[steps.length - 1];
+    for (let v = mode === "time" ? 0 : Math.max(xs, 1) === 1 ? 1 : xs; v <= x1 + 1e-9; v += xs) {
+      if (mode !== "time" && v < 1) continue;
+      const tx = sv("text", { x: x(v), y: m.t + ih + 18, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" });
+      tx.textContent = mode === "time" ? (Number.isInteger(v) ? v : v.toFixed(v * 4 % 2 ? 2 : 1)) + " h" : String(v);
+      tx.style.fontVariantNumeric = "tabular-nums"; svg.append(tx);
+      svg.append(sv("line", { x1: x(v), x2: x(v), y1: m.t + ih, y2: m.t + ih + 4, stroke: "var(--axis)" }));
+    }
+    svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: m.t + ih, y2: m.t + ih, stroke: "var(--axis)", "stroke-width": 1 }));
+    const xt = sv("text", { x: m.l + iw, y: m.t + ih + 34, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
+    xt.textContent = mode === "time" ? "hours since the arm's session started" : "experiment number (every run, in order)"; svg.append(xt);
+
+    // baseline reference: one hairline when both arms' baselines agree, else one per arm
+    const cal = A.filter(a => a.calib);
+    const refLines = cal.length === 2 && Math.abs(cal[0].calib.val - cal[1].calib.val) < 0.002
+      ? [{ v: (cal[0].calib.val + cal[1].calib.val) / 2, t: "baseline" }] : cal.map(a => ({ v: a.calib.val, t: a.label + " baseline" }));
+    refLines.forEach((r, k) => {
+      if (r.v > hi || r.v < lo) return;
+      svg.append(sv("line", { x1: m.l, x2: m.l + iw, y1: y(r.v), y2: y(r.v), stroke: "var(--axis)", "stroke-width": 1 }));
+      const t = sv("text", { x: m.l + iw - 4, y: y(r.v) - 5 - 12 * k, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
+      t.textContent = r.t + " " + f4(r.v); svg.append(t);
+    });
+
+    // frontier step lines + end labels
+    const ends = [];
+    A.forEach(a => {
+      if (!a.frontier.length || !a.t0) return;
+      let px = xOf(a, a.frontier[0]), d = "M" + x(px).toFixed(1) + "," + y(a.frontier[0].val).toFixed(1);
+      a.frontier.slice(1).forEach(f => { px = Math.max(px, xOf(a, f)); d += "H" + x(px).toFixed(1) + "V" + y(f.val).toFixed(1); });
+      const xe = Math.max(px, endOf(a)), last = a.frontier[a.frontier.length - 1].val;
+      d += "H" + x(xe).toFixed(1);
+      svg.append(sv("path", { d, fill: "none", stroke: a.col, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      ends.push({ a, xe: x(xe), yv: y(last), ly: y(last), val: last });
+    });
+    ends.sort((p, q) => p.yv - q.yv);
+    for (let k = 1; k < ends.length; k++) if (ends[k].ly - ends[k - 1].ly < 15) {   // separate converging labels; leader lines keep them attached
+      const mid = (ends[k].ly + ends[k - 1].ly) / 2; ends[k - 1].ly = mid - 7.5; ends[k].ly = mid + 7.5;
+    }
+    ends.forEach(e => {
+      e.ly = Math.min(Math.max(e.ly, m.t + 4), m.t + ih);
+      const moved = Math.abs(e.ly - e.yv) > 1.5, lx = e.xe + (moved ? 16 : 9);
+      if (moved) svg.append(sv("path", { d: `M${e.xe + 5},${e.yv}L${lx - 3},${e.ly - 4}`, stroke: "var(--muted)", "stroke-width": 1, fill: "none" }));
+      const t = sv("text", { x: lx, y: e.ly + 4, "font-size": narrow ? 11 : 12, "font-weight": 600, fill: "var(--ink)" });
+      t.style.fontVariantNumeric = "tabular-nums";
+      t.textContent = e.a.label + " " + f4(e.val); svg.append(t);
+      if (lx + t.getComputedTextLength() > W - 2) t.textContent = f4(e.val);      // no room for the name: legend + dot carry it
+    });
+
+    // runs
+    const pts = [];
+    A.forEach(a => a.runs.forEach(r => {
+      if (r.kind !== "valid" || !a.t0) return;
+      const cx = x(xOf(a, r)), above = r.val > hi, cy = above ? m.t + 5 : y(r.val);
+      pts.push({ a, r, cx, cy, above });
+    }));
+    const kept = (p) => p.r.dec === "keep";
+    pts.filter(p => !kept(p)).concat(pts.filter(kept)).forEach(p => {
+      if (p.above) svg.append(sv("path", { d: `M${p.cx},${m.t}l-4.5,8h9z`, fill: "var(--surface)", stroke: p.a.col, "stroke-width": 1.5, "stroke-linejoin": "round" }));
+      else if (kept(p)) svg.append(sv("circle", { cx: p.cx, cy: p.cy, r: 4.5, fill: p.a.col, stroke: "var(--surface)", "stroke-width": 2 }));
+      else svg.append(sv("circle", { cx: p.cx, cy: p.cy, r: 3.4, fill: "var(--surface)", stroke: p.a.col, "stroke-width": 1.7 }));
+    });
+    ends.forEach(e => svg.append(sv("circle", { cx: e.xe, cy: e.yv, r: 3.5, fill: e.a.col, stroke: "var(--surface)", "stroke-width": 2 })));
+
+    // hover / keyboard layer: nearest run within reach
+    const ring = sv("circle", { r: 8, fill: "none", stroke: "var(--ink)", "stroke-width": 1.5, opacity: 0 });
+    svg.append(ring);
+    const tip = el("div", { class: "tip", role: "tooltip" }); tip.style.opacity = 0; box.append(tip);
+    const show = (p) => {
+      tip.textContent = "";
+      tip.append(el("div", { class: "v" }, f6(p.r.val)));
+      const an = el("div", { class: "a" }); const sw = el("i"); sw.style.background = p.a.col;
+      an.append(sw, document.createTextNode(p.a.label + " · run #" + p.r.i)); tip.append(an);
+      tip.append(el("div", { class: "d" }, p.r.desc || "(no description)"));
+      tip.append(el("div", { class: "m" }, "agent: " + (p.r.dec ? (DEC[p.r.dec] || p.r.dec) : "not logged yet") + " · " + (p.r.te && p.a.t0 ? ((p.r.te - p.a.t0) / 3600).toFixed(1) + " h · " : "") + dtl(p.r.te)));
+      if (p.above) tip.append(el("div", { class: "m" }, "above the chart's scale (pinned to the top edge)"));
+      tip.style.opacity = 1;
+      ring.setAttribute("cx", p.cx); ring.setAttribute("cy", p.cy); ring.setAttribute("opacity", 1);
+      const sl = box.scrollLeft, bw = box.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+      const fitsR = p.cx + 14 + tw <= sl + bw - 4, fitsL = p.cx - 14 - tw >= sl + 4;
+      let left, top;
+      if (fitsR || fitsL) { left = fitsR ? p.cx + 14 : p.cx - 14 - tw; top = p.cy - 20; }
+      else { left = p.cx - tw / 2; top = p.cy > H / 2 ? p.cy - 14 - th : p.cy + 14; }
+      tip.style.left = Math.max(sl + 4, Math.min(left, sl + bw - tw - 4)) + "px";
+      tip.style.top = Math.max(0, Math.min(top, H - th)) + "px";
+    };
+    const hide = () => { tip.style.opacity = 0; ring.setAttribute("opacity", 0); };
+    const toSvg = (ev) => { const b = svg.getBoundingClientRect(); return [(ev.clientX - b.left) * W / b.width, (ev.clientY - b.top) * H / b.height]; };
+    svg.addEventListener("pointermove", (ev) => {
+      const [px, py] = toSvg(ev);
+      let best = null, bd = 28 * 28;
+      pts.forEach(p => { const d = (p.cx - px) ** 2 + (p.cy - py) ** 2; if (d < bd) { bd = d; best = p; } });
+      if (best) show(best); else hide();
+    });
+    svg.addEventListener("pointerleave", hide);
+    const order = pts.slice().sort((p, q) => p.cx - q.cx || p.cy - q.cy);
+    let cur = -1;
+    svg.addEventListener("keydown", (ev) => {
+      if (!order.length) return;
+      const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+      if (k) cur = cur < 0 ? (k > 0 ? 0 : order.length - 1) : Math.min(order.length - 1, Math.max(0, cur + k));
+      else if (ev.key === "Home") cur = 0; else if (ev.key === "End") cur = order.length - 1;
+      else if (ev.key === "Escape") { hide(); return; } else return;
+      ev.preventDefault(); show(order[cur]);
+    });
+    svg.addEventListener("blur", hide);
+    if (!pts.length) {
+      const t = sv("text", { x: m.l + iw / 2, y: m.t + ih / 2, "text-anchor": "middle", "font-size": 13, fill: "var(--muted)" });
+      t.textContent = "No valid runs yet."; svg.append(t);
+    }
+  }
+  legend("legend-time"); legend("legend-idx");
+  const drawAll = () => { drawChart("chart-time", "time"); drawChart("chart-idx", "index"); };
+  drawAll();
+  let rt, lastW = $("chart-time").clientWidth;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const w = $("chart-time").clientWidth; if (w !== lastW) { lastW = w; drawAll(); } }, 150); });
+
+  // ---- tables
+  const table = (t, head, rows) => {
+    t.textContent = "";
+    const thead = el("thead"), tr = el("tr");
+    head.forEach(h => tr.append(el("th", h.r ? { class: "r" } : {}, h.t)));
+    thead.append(tr); t.append(thead);
+    const tb = el("tbody");
+    if (!rows.length) { const r = el("tr"); r.append(el("td", { colspan: head.length, class: "empty" }, "Nothing yet.")); tb.append(r); }
+    rows.forEach(cells => { const r = el("tr"); cells.forEach((c, i) => { const td = el("td", { class: (head[i].r ? "r num " : "") + (head[i].cls || "") }); if (c instanceof Node) td.append(c); else td.textContent = c; r.append(td); }); tb.append(r); });
+    t.append(tb);
+  };
+
+  // calibration
+  const cl = A.filter(a => a.calib);
+  table($("calib"), [{ t: "Arm" }, { t: "GPU", r: 1 }, { t: "val_bpb", r: 1 }, { t: "Steps", r: 1 }, { t: "Tokens/s", r: 1 }, { t: "MFU", r: 1 }, { t: "Training", r: 1 }, { t: "Peak VRAM", r: 1 }, { t: "Run" }],
+    cl.map(a => { const c = a.calib; const n = el("span"); n.append(keyDot(a), document.createTextNode(a.label));
+      return [n, String(a.gpu), f6(c.val), int(c.steps), c.tok_s != null ? compact(c.tok_s) : "–", c.mfu != null ? c.mfu.toFixed(1) + "%" : "–", c.t_train != null ? c.t_train.toFixed(1) + " s" : "–", c.vram_gb != null ? c.vram_gb.toFixed(1) + " GB" : "–", "#" + c.i + " · " + dtl(c.te)]; }));
+  const cn = $("calib-note");
+  if (cl.length === 2) {
+    const [p, q] = cl.map(a => a.calib), dv = Math.abs(p.val - q.val), ds = p.steps && q.steps ? 100 * Math.abs(p.steps - q.steps) / Math.max(p.steps, q.steps) : null;
+    cn.textContent = "Same code on both GPUs: val_bpb differs by " + dv.toFixed(4) + (ds != null ? ", training steps by " + ds.toFixed(1) + "%" : "") + ". " +
+      (dv < 0.001 ? "Differences between the arms well above this are not a GPU effect." : "The GPUs differ noticeably: read small gaps between the arms with this offset in mind.");
+  } else cn.textContent = "Waiting for the first baseline run of " + (cl.length ? "the other arm." : "each arm.");
+
+  // per-arm run tables, newest first
+  const tables = $("tables");
+  A.forEach(a => {
+    const sec = el("section", { class: "panel", "aria-label": a.label + " runs" });
+    const ph = el("div", { class: "panel-head" }), hd = el("div"), h2 = el("h2");
+    h2.append(keyDot(a), document.createTextNode(a.label + " · every run"));
+    hd.append(h2, el("div", { class: "sub" }, "Newest first. val_bpb is the harness's trusted measurement; Agent is the agent's own keep/discard log (results.tsv, matched to runs by git commit)."));
+    ph.append(hd); sec.append(ph);
+    const t = el("table", { class: "runs" }); const sc = el("div", { class: "scroll" }); sc.append(t); sec.append(sc);
+    tables.append(sec);
+    const rows = [];
+    if (a.inflight) rows.push(["now", a.inflight.since ? when(a.inflight.since) : "–", a.inflight.desc || "(training)", "–", el("span", { class: "tag running" }, "training"), el("span", { class: "tag none" }, "–")]);
+    a.runs.slice().reverse().forEach(r => {
+      let val, res;
+      if (r.kind === "valid") { val = f6(r.val); res = el("span", { class: "tag ok" }, "ok"); }
+      else if (r.kind === "invalid") { val = el("span", { class: "inv", title: "not counted: invalid run" }, f6(r.val_raw)); res = el("span", { class: "tag bad" }, "invalid"); }
+      else { val = "–"; res = el("span", { class: "tag bad", title: r.err || "" }, r.kind === "refused" ? "refused" : (r.status || "crash")); }
+      const resCell = el("span"); resCell.append(res);
+      if (r.err) resCell.append(el("span", { class: "small" }, r.err.length > 70 ? r.err.slice(0, 69) + "…" : r.err));
+      const fl = el("span", { class: "flags" });
+      (r.flags || []).forEach(f => { const sp = el("span"); sp.append(INVALID.includes(f) ? el("b", {}, f) : document.createTextNode(f)); fl.append(sp); });
+      const ag = el("span");
+      if (r.dec) {
+        ag.append(el("span", { class: "tag " + (r.dec === "keep" ? "keep" : r.dec === "crash" ? "bad" : "") }, DEC[r.dec] || r.dec));
+        if (r.claimed != null && r.val_raw != null && Math.abs(r.claimed - r.val_raw) > 1.5e-6) ag.append(el("span", { class: "small" }, "logged " + f6(r.claimed)));
+        if (r.match && r.match !== "head") ag.append(el("span", { class: "small" }, "matched by " + (r.match === "train_sha" ? "train.py" : "value")));
+      } else ag.append(el("span", { class: "tag none" }, "–"));
+      const desc = el("span", {}, r.desc || "(no description)");
+      if (r.agent_desc && r.agent_desc !== r.desc) desc.title = "results.tsv: " + r.agent_desc;
+      if (fl.childNodes.length) resCell.append(fl);
+      rows.push([r.i == null ? "–" : String(r.i), when(r.te), desc, val, resCell, ag]);
+    });
+    table(t, [{ t: "#", r: 1 }, { t: "Time" }, { t: "Change", cls: "chg" }, { t: "val_bpb", r: 1 }, { t: "Result · flags", cls: "res" }, { t: "Agent" }], rows);
+  });
+
+  $("foot").textContent = "val_bpb comes from the harness's trusted evaluation (ledger); invalid runs (time budget, evaluation or causality violations) are listed but never plotted or counted as best. " +
+    "Keep/discard is the agent's own results.tsv, which it may edit freely: rows are matched to runs by git commit, else by train.py content, else by the exact logged value. " +
+    "Runs per hour count every run except refused submissions. Both arms share one vLLM server and differ only in the LoRA adapter.";
+})();
+</script>

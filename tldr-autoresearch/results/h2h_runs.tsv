@@ -1,0 +1,145 @@
+arm	run	t_end_utc	hours	status	val_bpb	num_steps	flags	agent_decision	desc
+base	1	2026-10-04T02:07:36Z	0.10	valid	1.079700	506	empty_diff	keep	baseline
+base	2	2026-10-04T02:13:50Z	0.20	valid	1.078666	522		keep	all-L full causal attention
+base	3	2026-10-04T02:20:04Z	0.31	valid	1.110612	310		discard	depth 10
+base	4	2026-10-04T02:26:16Z	0.41	valid	1.103383	379		discard	aspect 80 (dim 640)
+base	5	2026-10-04T02:32:35Z	0.52	valid	1.022054	1028		keep	batch 2^18
+base	6	2026-10-04T02:38:32Z	0.62	valid	1.020630	1990		keep	batch 2^17
+base	7	2026-10-04T02:44:29Z	0.71	valid	1.031733	3742		discard	batch 2^16
+base	8	2026-10-04T02:50:26Z	0.81	valid	1.023583	1990		discard	warmdown 0.35
+base	9	2026-10-04T02:58:02Z	0.94	valid	1.017722	2094		keep	max-autotune compile
+base	10	2026-10-04T03:05:49Z	1.07	valid	1.016914	2104		keep	ns_steps 4
+base	11	2026-10-04T03:13:33Z	1.20	valid	1.019431	2105		discard	matrix_lr 0.05
+base	12	2026-10-04T03:20:58Z	1.32	valid	1.017943	2104		discard	embedding_lr 0.8
+base	13	2026-10-04T03:28:23Z	1.45	valid	1.015496	2104		keep	warmdown 0.65
+base	14	2026-10-04T03:35:46Z	1.57	valid	1.015036	2103		keep	warmdown 0.75
+base	15	2026-10-04T03:43:09Z	1.69	valid	1.014770	2103		keep	warmdown 0.85
+base	16	2026-10-04T03:50:30Z	1.81	valid	1.014803	2103		discard	warmdown 0.95
+base	17	2026-10-04T03:58:15Z	1.94	valid	1.014951	2103	reeval	keep	warmdown 0.85 recheck
+base	18	2026-10-04T04:05:44Z	2.07	valid	1.025430	2146		discard	no qk norm
+base	19	2026-10-04T04:13:08Z	2.19	valid	1.020178	2103		discard	softcap 30
+base	20	2026-10-04T04:21:06Z	2.32	valid	1.018898	2183	startup_long	discard	GQA 2 kv heads
+base	21	2026-10-04T04:22:40Z	2.35	crash					no value embeddings
+base	22	2026-10-04T04:29:45Z	2.47	valid	1.027039	2141		discard	no value embeddings (fixed)
+base	23	2026-10-04T04:37:17Z	2.59	valid	1.016141	2103		discard	unembedding_lr 0.006
+base	24	2026-10-04T04:44:41Z	2.72	valid	1.018651	2108		discard	warmup 0.05
+base	25	2026-10-04T04:52:01Z	2.84	valid	1.014019	2108		keep	weight_decay 0.1
+base	26	2026-10-04T04:59:25Z	2.96	valid	1.015774	2102		discard	weight_decay 0.05
+base	27	2026-10-04T05:07:07Z	3.09	valid	1.022002	1086		discard	batch 2^18 retest
+base	28	2026-10-04T05:14:31Z	3.22	valid	1.015672	2101		discard	final_lr_frac 0.1
+base	29	2026-10-04T05:22:17Z	3.34	valid	1.012257	1879		keep	depth 9 dim 512
+base	30	2026-10-04T05:29:55Z	3.47	valid	1.015617	1713		discard	depth 10 dim 512
+base	31	2026-10-04T05:37:42Z	3.60	valid	1.014212	1880		discard	muon momentum 0.97
+base	32	2026-10-04T05:45:21Z	3.73	valid	1.013162	1883		discard	embedding_lr 0.4
+base	33	2026-10-04T05:53:02Z	3.86	valid	1.020282	1861		discard	head_dim 64
+base	34	2026-10-04T06:00:35Z	3.98	valid	1.014760	1878		discard	adam beta1 0.9
+base	35	2026-10-04T06:08:41Z	4.12	valid	1.013268	1850	startup_long	discard	SSSL retest
+base	36	2026-10-04T06:16:23Z	4.25	valid	1.012225	1879		keep	matrix_lr 0.035
+base	37	2026-10-04T06:24:03Z	4.37	valid	1.012736	1879	reeval	discard	matrix_lr 0.035 recheck
+base	38	2026-10-04T06:31:56Z	4.51	valid	1.012751	1880		discard	softcap 10
+base	39	2026-10-04T06:39:32Z	4.63	valid	1.012222	1879		discard	scalar_lr 1.0
+base	40	2026-10-04T06:47:38Z	4.77	valid	1.017391	1888		discard	ns_steps 3
+base	41	2026-10-04T06:48:19Z	4.78	crash				crash	triton cudagraphs
+base	42	2026-10-04T06:54:50Z	4.89	valid	1.014962	1852		discard	cudagraphs via options
+base	43	2026-10-04T07:02:46Z	5.02	valid	1.025272	1616		discard	loader buffer 10000
+base	44	2026-10-04T07:11:01Z	5.16	valid	1.015868	1808		discard	swiglu mlp
+base	45	2026-10-04T07:19:21Z	5.30	valid	1.015564	1840		discard	fused qkv
+base	46	2026-10-04T07:27:21Z	5.43	valid	1.012144	1880			profile
+base	47	2026-10-04T07:35:12Z	5.56	valid	1.012575	1880			profile2
+base	48	2026-10-04T07:42:51Z	5.69	valid	1.012212	1884			profile3
+base	49	2026-10-04T07:49:16Z	5.79	valid	1.082619	769		discard	eager no compile
+base	50	2026-10-04T07:57:04Z	5.92	valid	1.018524	1884		discard	no softcap
+base	51	2026-10-04T08:05:42Z	6.07	valid	1.013648	1879		discard	ve_lr 0.9
+base	52	2026-10-04T08:13:22Z	6.20	valid	1.012467	1879		keep	ve_lr 0.6 sanity
+base	53	2026-10-04T08:21:30Z	6.33	valid	1.019750	1874		discard	muon lm_head
+base	54	2026-10-04T08:29:23Z	6.46	valid	1.012557	1878		discard	bf16 logits
+base	55	2026-10-04T08:36:58Z	6.59	valid	1.012620	1878		discard	momentum warmup 150
+base	56	2026-10-04T08:44:36Z	6.72	valid	1.012722	1882		discard	wd 0.15
+base	57	2026-10-04T08:52:34Z	6.85	valid	1.013329	1879		discard	embedding_lr 0.5
+base	58	2026-10-04T09:00:10Z	6.98	valid	1.012476	1880		discard	muon beta2 0.98
+base	59	2026-10-04T09:08:35Z	7.12	valid	1.016442	1880		discard	depth10 mlp3x
+base	60	2026-10-04T09:16:45Z	7.25	valid	1.012084	1881		keep	softcap 12
+base	61	2026-10-04T09:24:13Z	7.38	valid	1.013000	1884	reeval	discard	softcap 12 recheck
+base	62	2026-10-04T09:31:46Z	7.50	valid	1.022185	1769		discard	2x256 heads
+base	63	2026-10-04T09:39:27Z	7.63	valid	1.018164	1888		discard	ve last4
+base	64	2026-10-04T09:47:22Z	7.76	valid	1.020759	971		discard	batch 2^18 at d9
+base	65	2026-10-04T09:55:04Z	7.89	valid	1.015831	1877		discard	warmup 0.02
+base	66	2026-10-04T10:02:47Z	8.02	valid	1.012371	1875		keep	fullgraph
+base	67	2026-10-04T10:10:35Z	8.15	valid	1.013425	1878		discard	x0 init 0.2
+base	68	2026-10-04T10:18:12Z	8.28	valid	1.013202	1879		discard	softcap 18
+base	69	2026-10-04T10:24:30Z	8.38	crash			interrupted		profile4
+v5	1	2026-10-04T02:07:40Z	0.10	valid	1.079779	505	empty_diff	keep	baseline
+v5	2	2026-10-04T02:14:10Z	0.21	valid	1.024218	993		keep	halve batch size to 2^18
+v5	3	2026-10-04T02:20:13Z	0.31	valid	1.021767	1924		keep	halve batch again to 2^17
+v5	4	2026-10-04T02:26:42Z	0.42	valid	1.030678	1131			increase depth to 10
+v5	5	2026-10-04T02:32:40Z	0.52	valid	1.020785	1989		keep	full attention all layers (L)
+v5	6	2026-10-04T02:38:43Z	0.62	valid	1.027583	1990			matrix lr to 0.06
+v5	7	2026-10-04T02:44:35Z	0.72	valid	1.018630	1989		keep	matrix lr to 0.03
+v5	8	2026-10-04T02:50:25Z	0.81	valid	1.017200	1989		keep	matrix lr to 0.02
+v5	9	2026-10-04T02:56:17Z	0.91	valid	1.019114	1988			matrix lr to 0.015
+v5	10	2026-10-04T03:02:17Z	1.01	valid	1.018495	1989			warmdown ratio 0.4
+v5	11	2026-10-04T03:08:22Z	1.11	valid	1.040756	3430			depth 6
+v5	12	2026-10-04T03:14:15Z	1.21	valid	1.021299	3738			batch 2^16
+v5	13	2026-10-04T03:20:10Z	1.31	valid	1.016649	1989		keep	embedding lr 1.0
+v5	14	2026-10-04T03:26:01Z	1.41	valid	1.017772	1989			embedding lr 2.0
+v5	15	2026-10-04T03:31:52Z	1.50	valid	1.019148	1989			unembedding lr 0.008
+v5	16	2026-10-04T03:37:42Z	1.60	valid	1.018980	1988			unembedding lr 0.002
+v5	17	2026-10-04T03:43:50Z	1.70	valid	1.021927	1989			warmup 0.05
+v5	18	2026-10-04T03:49:39Z	1.80	valid	1.021002	1988			weight decay 0.0
+v5	19	2026-10-04T03:55:52Z	1.90	valid	1.024932	1989			remove softcap
+v5	20	2026-10-04T04:01:43Z	2.00	valid	1.021967	1989			softcap 30
+v5	21	2026-10-04T04:07:42Z	2.10	valid	1.021728	1427			wider: dim 640
+v5	22	2026-10-04T04:13:41Z	2.20	valid	1.019364	1989			adam beta1 0.9
+v5	23	2026-10-04T04:21:15Z	2.33	valid	1.013395	2089		keep	max-autotune compile
+v5	24	2026-10-04T04:28:37Z	2.45	valid	1.013371	2092			max-autotune with cudagraphs
+v5	25	2026-10-04T04:36:05Z	2.57	valid	1.014590	2089			embedding lr 1.5
+v5	26	2026-10-04T04:44:11Z	2.71	valid	1.020129	2131	startup_long		remove x0 residual
+v5	27	2026-10-04T04:44:27Z	2.71	crash				crash	remove value embeddings
+v5	28	2026-10-04T04:45:58Z	2.74	crash					remove value embeddings
+v5	29	2026-10-04T04:53:02Z	2.86	valid	1.026081	2128		discard	remove value embeddings
+v5	30	2026-10-04T04:53:35Z	2.87	crash				crash	device batch 128 grad accum 2
+v5	31	2026-10-04T05:01:01Z	2.99	valid	1.014139	2087			final lr frac 0.1
+v5	32	2026-10-04T05:08:47Z	3.12	valid	1.013452	2088	startup_long		warmdown 0.6
+v5	33	2026-10-04T05:16:21Z	3.25	valid	1.014085	2101			muon ns_steps 4
+v5	34	2026-10-04T05:23:39Z	3.37	valid	1.013541	2089			muon ns_steps 6
+v5	35	2026-10-04T05:31:11Z	3.49	valid	1.013744	2088			muon momentum ramp 150
+v5	36	2026-10-04T05:39:08Z	3.63	valid	1.018904	2165	startup_long		gqa kv heads 4 -> 2
+v5	37	2026-10-04T05:46:45Z	3.75	valid	1.020519	1083			retest batch 2^18
+v5	38	2026-10-04T05:54:35Z	3.88	valid	1.014213	2089	startup_long		softcap 12
+v5	39	2026-10-04T06:02:43Z	4.02	valid	1.013953	2084	startup_long		norMuon off
+v5	40	2026-10-04T06:10:45Z	4.15	valid	1.014724	2086	startup_long		matrix lr 0.022
+v5	41	2026-10-04T06:18:49Z	4.29	valid	1.024995	2076	startup_long		muon for lm_head
+v5	42	2026-10-04T06:26:21Z	4.41	valid	1.015140	2089			value embeds lr 0.5x
+v5	43	2026-10-04T06:33:46Z	4.54	valid	1.014197	2090			embedding lr 0.8
+v5	44	2026-10-04T06:41:33Z	4.67	valid	1.013300	1870		keep	depth 9 width 512
+v5	45	2026-10-04T06:49:11Z	4.79	valid	1.013216	1871	reeval		depth 9 width 512 (repeat)
+v5	46	2026-10-04T06:56:50Z	4.92	valid	1.017157	1701			depth 10 width 512
+v5	47	2026-10-04T07:04:38Z	5.05	valid	1.013413	1868			embedding lr 1.2
+v5	48	2026-10-04T07:12:19Z	5.18	valid	1.014688	2045			mlp ratio 3
+v5	49	2026-10-04T07:20:01Z	5.31	valid	1.013568	1871			unembedding lr 0.006
+v5	50	2026-10-04T07:28:01Z	5.44	valid	1.014069	1867	startup_long		muon momentum 0.97
+v5	51	2026-10-04T07:35:35Z	5.57	valid	1.013896	1870			scalar lr 1.0
+v5	52	2026-10-04T07:43:35Z	5.70	valid	1.077311	1230	startup_long		batch 196608
+v5	53	2026-10-04T07:51:27Z	5.83	valid	1.032347	1452			prefetch batches
+v5	54	2026-10-04T08:00:07Z	5.98	valid	1.013782	1867			double-buffered prefetch
+v5	55	2026-10-04T08:08:05Z	6.11	valid	1.016856	1866			cosine warmdown
+v5	56	2026-10-04T08:15:42Z	6.23	valid	1.013959	1870			value embeds lr 1.5x
+v5	57	2026-10-04T08:23:14Z	6.36	valid	1.013604	1867			x0 init 0.2
+v5	58	2026-10-04T08:30:47Z	6.49	valid	1.013635	1871			matrix lr 0.018
+v5	59	2026-10-04T08:38:55Z	6.62	valid	1.017000	1866	startup_long		constant weight decay
+v5	60	2026-10-04T08:46:46Z	6.75	valid	1.048831	1839			muon for wte+ve
+v5	61	2026-10-04T08:54:22Z	6.88	valid	1.013362	1871			normuon beta2 0.98
+v5	62	2026-10-04T09:01:54Z	7.00	valid	1.012210	1871		keep	rotary base 50000
+v5	63	2026-10-04T09:09:27Z	7.13	valid	1.013056	1871			rotary base 100000
+v5	64	2026-10-04T09:16:54Z	7.25	valid	1.012517	1871			rotary base 30000
+v5	65	2026-10-04T09:24:31Z	7.38	valid	1.016908	1702			depth 10 width 512
+v5	66	2026-10-04T09:25:01Z	7.39	crash				crash	muon mlp only
+v5	67	2026-10-04T09:32:36Z	7.52	valid	1.172436	1885			muon mlp only
+v5	68	2026-10-04T09:32:53Z	7.52	crash					muon mlp only, attn adamw 0.02
+v5	69	2026-10-04T09:40:46Z	7.65	valid	1.054896	1878		discard	muon mlp only, attn adamw 0.02
+v5	70	2026-10-04T09:48:22Z	7.78	valid	1.012732	1865			embedding lr 1.2 retest
+v5	71	2026-10-04T09:55:55Z	7.91	valid	1.013587	1865			embedding lr 0.8 retest
+v5	72	2026-10-04T10:03:21Z	8.03	valid	1.021153	1904			remove qk norm
+v5	73	2026-10-04T10:11:04Z	8.16	valid	1.012832	1865			x0 init 0.05
+v5	74	2026-10-04T10:18:36Z	8.28	valid	1.013196	1865			unembedding lr 0.005
+v5	75	2026-10-04T10:24:30Z	8.38	crash			interrupted		wd 0.15

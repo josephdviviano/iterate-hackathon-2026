@@ -1,0 +1,17 @@
+arm	n	attempt_id	group	k	policy	insights_in_context	screen_val_bpb	confirm_val_bpb	best_before	decision	reward	best_after	num_steps	flags	t_end_utc	hours	agent_min	desc
+x1	1	g0000-a1	0	1	v5	0	1.112880		1.079925	discard	0.0	1.079925	302		2026-10-04T10:48:16Z	0.15	9.07	scale up: DEPTH 8->10, n_embd 512->640
+x1	2	g0000-a2	0	2	v5	1	1.064026	1.067101	1.079925	keep	1.0	1.067101	1015		2026-10-04T11:03:13Z	0.40	7.65	shrink model: DEPTH 8->5 (n_embd 512->384) to increase tokens/param
+x1	3	g0000-a3	0	3	v5	1	1.118889		1.067101	discard	0.0	1.067101	1585		2026-10-04T11:10:19Z	0.52	7.11	shrink model: DEPTH 5->4 (n_embd 384->256) to increase tokens/param
+x1	4	g0000-a4	0	4	v5	2	1.056138	1.059184	1.067101	keep	1.0	1.059184	1014		2026-10-04T11:23:53Z	0.74	6.28	shorten LR warmdown: WARMDOWN_RATIO 0.5 -> 0.25
+x1	5	g0000-a5	0	5	v5	2	1.047798	1.048194	1.059184	keep	1.0	1.048194	2005		2026-10-04T11:36:11Z	0.95	6.60	halve TOTAL_BATCH_SIZE 2^19 -> 2^18 for more optimizer steps (grad_accum 2->1)
+x1	6	g0000-a6	0	6	v5	0	1.050861		1.048194	discard	0.0	1.048194	3863		2026-10-04T11:42:57Z	1.06	6.76	halve TOTAL_BATCH_SIZE 2^18 -> 2^17 (device batch 64) for more optimizer steps
+x1	7	g0000-a7	0	7	v5	3	1.048922		1.048194	discard	0.0	1.048194	2007		2026-10-04T11:50:41Z	1.19	6.15	raise Muon MATRIX_LR 0.04 -> 0.05
+x1	8	g0000-a8	0	8	v5	4	1.051749		1.048194	discard	0.0	1.048194	2007		2026-10-04T11:58:39Z	1.32	6.43	shorten LR warmdown: WARMDOWN_RATIO 0.25 -> 0.15
+x2	1	g0000-a1	0	1	v5	0	1.113336		1.079925	discard	0.0	1.079925	301		2026-10-04T10:48:05Z	0.15	8.89	scale model up: DEPTH 8 -> 10
+x2	2	g0000-a2	0	2	v5	0	1.106269		1.079925	discard	0.0	1.079925	875		2026-10-04T10:55:32Z	0.27	7.45	shrink model: DEPTH 8 -> 6 (more tokens in fixed budget)
+x2	3	g0000-a3	0	3	v5	0	1.024207	1.024208	1.079925	keep	1.0	1.024208	992		2026-10-04T11:08:00Z	0.48	6.57	halve TOTAL_BATCH_SIZE 2^19 -> 2^18
+x2	4	g0000-a4	0	4	v5	0	1.021718	1.021257	1.024208	keep	1.0	1.021257	1923		2026-10-04T11:20:16Z	0.68	6.43	halve TOTAL_BATCH_SIZE 2^18 -> 2^17
+x2	5	g0000-a5	0	5	v5	0	1.028319		1.021257	discard	0.0	1.021257	1924		2026-10-04T11:27:59Z	0.81	7.71	raise Muon MATRIX_LR 0.04 -> 0.06 (match 4x smaller batch)
+x2	6	g0000-a6	0	6	v5	0	1.032891		1.021257	discard	0.0	1.021257	3625		2026-10-04T11:34:34Z	0.92	6.59	halve TOTAL_BATCH_SIZE 2^17 -> 2^16
+x2	7	g0000-a7	0	7	v5	0	1.021071		1.021257	discard	0.0	1.021257	1983		2026-10-04T11:43:29Z	1.07	8.92	WINDOW_PATTERN SSSL -> LLLL (full attention)
+x2	8	g0000-a8	0	8	v5	0	1.021469		1.021257	discard	0.0	1.021257	1924	over_time_budget	2026-10-04T11:54:16Z	1.25	10.78	async dataloader prefetch: overlap CPU packing with GPU compute

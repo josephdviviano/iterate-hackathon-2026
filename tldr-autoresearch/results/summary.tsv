@@ -1,0 +1,90 @@
+section	metric	value	n	note
+rl_run	baseline_val_bpb	1.079941	4	unmodified train.py, mean of calibration runs (no autotune)
+rl_run	baseline_sd	0.000102	4	run-to-run sd, unmodified train.py
+rl_run	baseline_num_steps	506 506 505 506		optimizer steps the unmodified train.py gets in the 5-minute budget on this GPU
+rl_run	n_experiments	40		one fresh pi session per experiment
+rl_run	n_keeps	9	40	confirmed: fresh-compile re-run beats best by keep_margin 0.0005
+rl_run	final_best_val_bpb	1.007697		unselected confirmation re-run of g0004-a3
+rl_run	experiments_to_final_best	35		
+rl_run	hours_to_final_best	6.54		from the first experiment's session start
+rl_run	hours_total	7.41	40	
+rl_run	gain_total	0.072245		6.7% relative
+rl_run	gain_from_batch_halving	0.058305	2	81% of the total gain
+rl_run	gpu_training_runs	51		agent runs + confirmation re-runs (refused re-run requests excluded)
+rl_run	refused_rerun_requests	1		
+rl_run	gpu_training_runs_to_final_best	46		including confirmation re-runs
+rl_run	unfinished_attempt_runs	1		runs of an attempt still in progress when the run was stopped (excluded)
+rl_run	agent_runs_crashed_or_invalid	0	40	
+rl_run	noise_sigma_before_autotune	0.000204	7	per-run sd = rms(screen - confirm) / sqrt(2)
+rl_run	noise_sigma_with_autotune	0.000504	4	per-run sd = rms(screen - confirm) / sqrt(2)
+rl_run	apparent_wins_reversed_by_confirmation	2	11	g0001-a5,g0002-a4
+rl_run	keeps_by_policy_version	v0:3/9 v1:2/8 v2:1/8 v3:1/8 v4:2/7		
+rl_run	fisher_p_v0_vs_later	0.39	40	v0 3/9 vs v1+ 6/31
+rl_run	keeps_with_insights	8/33		
+rl_run	keeps_without_insights	1/7		insights are injected only while the group's running success rate is <= 50% (not randomised)
+rl_run	fisher_p_with_vs_without_insights	1.00	40	
+rl_run	insights_written	31		0 retracted
+rl_run	insight_mean_words	27.9	31	
+rl_run	insights_with_digits	15	31	
+rl_run	policy_updates	5		LoRA r=32, Dr.GRPO + 0.5 * insight-SFT, one per group of 8
+rl_run	grpo_tokens_total	44134	5	
+rl_run	sft_tokens_total	3672	5	
+rl_run	optimizer_steps_total	16	5	
+rl_run	update_seconds_mean	110	5	
+h2h_base	start_utc	2026-10-04T02:01:36Z		
+h2h_base	end_utc	2026-10-04T10:24:30Z		last run finished (stopped by the operator)
+h2h_base	hours	8.38		
+h2h_base	runs	68		excluding the baseline run: valid 65, crash 2, interrupted at stop 1, invalid 0
+h2h_base	runs_per_hour	8.11		
+h2h_base	baseline_val_bpb	1.079700	1	first run, unmodified train.py on this GPU
+h2h_base	gpu_calibration_baselines	1.080038 1.079978	2	unmodified train.py on this arm's GPU before the start
+h2h_base	agent_logged_rows	63	68	results.tsv rows matched to runs
+h2h_base	agent_keeps	15		excluding the baseline row
+h2h_base	repeat_pairs	3		same train.py measured twice (the agent's own re-checks)
+h2h_base	final_kept_val_bpb	1.012371	1	trusted value of the agent's latest keep (run 66); single run, selected
+h2h_base	best_kept_val_bpb	1.012084	15	min over the agent's keeps
+h2h_base	best_single_run_val_bpb	1.012084	65	min over all valid runs (run 60)
+h2h_base	best_single_run_within_rl_time_to_best	1.012144	51	first 6.54 h, the RL run's time to its final best
+h2h_base	best_single_run_within_rl_runs_to_best	1.012144	44	first 46 runs, the RL run's GPU runs to its final best
+h2h_v5	start_utc	2026-10-04T02:01:36Z		
+h2h_v5	end_utc	2026-10-04T10:24:30Z		last run finished (stopped by the operator)
+h2h_v5	hours	8.38		
+h2h_v5	runs	74		excluding the baseline run: valid 68, crash 5, interrupted at stop 1, invalid 0
+h2h_v5	runs_per_hour	8.83		
+h2h_v5	baseline_val_bpb	1.079779	1	first run, unmodified train.py on this GPU
+h2h_v5	gpu_calibration_baselines	1.080244 1.080157	2	unmodified train.py on this arm's GPU before the start
+h2h_v5	agent_logged_rows	14	74	results.tsv rows matched to runs
+h2h_v5	agent_keeps	9		excluding the baseline row
+h2h_v5	repeat_pairs	1		same train.py measured twice (the agent's own re-checks)
+h2h_v5	final_kept_val_bpb	1.012210	1	trusted value of the agent's latest keep (run 62); single run, selected
+h2h_v5	best_kept_val_bpb	1.012210	9	min over the agent's keeps
+h2h_v5	best_single_run_val_bpb	1.012210	68	min over all valid runs (run 62)
+h2h_v5	best_single_run_within_rl_time_to_best	1.013216	54	first 6.54 h, the RL run's time to its final best
+h2h_v5	best_single_run_within_rl_runs_to_best	1.013216	43	first 46 runs, the RL run's GPU runs to its final best
+h2h	noise_sigma_repeat_pairs	0.000378	4	per-run sd = rms(run1 - run2) / sqrt(2), both arms, autotune on
+frz_x1	insights_enabled	1		
+frz_x1	gpu_minor	2		
+frz_x1	snapshot_utc	2026-10-04T11:58:39Z		last finished experiment included
+frz_x1	baseline_val_bpb	1.079925	6	mean of calibration runs, unmodified train.py
+frz_x1	n_experiments	8		
+frz_x1	n_keeps	3	8	
+frz_x1	best_val_bpb	1.048194		unselected confirmation re-run of the latest keep
+frz_x1	hours	1.32	8	
+frz_x1	insights_written	5		
+frz_x1	integrity_flagged_runs	0	12	
+frz_x1	refused_rerun_requests	0		
+frz_x2	insights_enabled	0		
+frz_x2	gpu_minor	3		
+frz_x2	snapshot_utc	2026-10-04T11:54:16Z		last finished experiment included
+frz_x2	baseline_val_bpb	1.079925	6	mean of calibration runs, unmodified train.py
+frz_x2	n_experiments	8		
+frz_x2	n_keeps	2	8	
+frz_x2	best_val_bpb	1.021257		unselected confirmation re-run of the latest keep
+frz_x2	hours	1.25	8	
+frz_x2	insights_written	0		
+frz_x2	integrity_flagged_runs	1	12	g0000-a8:over_time_budget
+frz_x2	refused_rerun_requests	1		
+frz_matched	experiments_compared	8		per arm, from the same baseline train.py
+frz_matched	rl_run_best_after_n	1.019860	8	RL run, insights on, policy v0 for the first group
+frz_matched	x1_best_after_n	1.048194	8	frozen v5, insights on
+frz_matched	x2_best_after_n	1.021257	8	frozen v5, insights off

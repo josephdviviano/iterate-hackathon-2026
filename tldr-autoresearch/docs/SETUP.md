@@ -1,0 +1,151 @@
+# Setup on a new machine
+
+This file covers installing and configuring the harness. The design is in `docs/DESIGN.md`; results are in
+`RESULTS.md`. All paths below are relative to the project root (`$RLTLDR_ROOT`, by default the directory that holds
+`ctl.sh`).
+
+## Requirements
+
+- Linux with 4 GPUs of at least 80 GB each:
+  - 2 for serving (TP=2),
+  - 1 for the nanochat experiments,
+  - 1 for the policy trainer.
+
+  We used 4× RTX PRO 6000 Blackwell (96 GB, sm_120).
+- About 250 GB of disk.
+- **Passwordless sudo.** The agent and training sandboxes use `sudo unshare` and `setpriv`. They drop to the invoking
+  user's uid/gid, which is read before sudo. Do not run the loop without the sandboxes, because the reward would
+  then be hackable.
+- Internet access once, for models, packages and the autoresearch data.
+
+## Install
+
+```bash
+# tools: uv, Node 24, pi
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install Node 24 LTS (e.g. the official tarball under ~/.local), then pi:
+npm install -g --ignore-scripts --prefix ~/.local @earendil-works/pi-coding-agent@1.0.0
+
+# serving env (vLLM 0.30.0, torch 2.13 cu130); default location used by the scripts: ~/envs/serve
+uv venv ~/envs/serve --python 3.12 && uv pip install --python ~/envs/serve/bin/python "vllm==0.30.0"
+
+# trainer env; default location: ~/envs/train
+uv venv ~/envs/train --python 3.12 && uv pip install --python ~/envs/train/bin/python \
+  "torch==2.13.0" "transformers==5.18.0" "peft==0.21.2" "accelerate==1.15.0" "liger-kernel==0.8.4" \
+  "flash-linear-attention==0.5.2" "trl==1.14.1" aiohttp requests safetensors numpy
+
+# model, plus the bf16 dequantisation the trainer uses as its base (= the served weights)
+hf download Qwen/Qwen3.8-27B-FP8 --local-dir ~/models/Qwen3.8-27B-FP8
+~/envs/train/bin/python tools/dequant_fp8.py      # -> ~/models/Qwen3.8-27B-FP8-dequant-bf16
+```
+
+FlashInfer's JIT needs a consistent CUDA toolkit of version 12.9 or later. If the system `nvcc` is older:
+1. Pin the serve venv's CUDA wheels to 13.0 (`nvidia-cuda-nvcc`, `crt`, `cccl` and `nvvm`, all `13.0.*`).
+2. Build a symlink overlay with `bin`, `include`, `nvvm`, and a `lib64` that holds `libcudart.so` and
+   `stubs/libcuda.so`.
+3. `serve.sh` points `CUDA_HOME` at `$RLTLDR_CUDA_HOME`, which defaults to `~/envs/cuda13`. See the comments in
+   `serve.sh`.
+
+### Environment variables (all optional)
+
+| variable | default | used for |
+|---|---|---|
+| `RLTLDR_ROOT` | directory of `ctl.sh` / the `rltldr/` package | project root: data, logs, sockets, repos |
+| `RLTLDR_CONFIG` | `$RLTLDR_ROOT/config.json` | machine-specific settings (see below) |
+| `RLTLDR_SERVE_PY` | `~/envs/serve/bin/python` | vLLM, gateway, runner, driver |
+| `RLTLDR_TRAIN_PY` | `~/envs/train/bin/python` | trainer |
+| `RLTLDR_TRUSTED_PY` | `/usr/bin/python3` | stdlib-only trusted scripts (`tools/ar_run.py`, `tools/run_client.py`) |
+| `RLTLDR_CUDA_HOME` | `~/envs/cuda13` | CUDA toolkit for vLLM / FlashInfer JIT |
+| `UV_BIN` | `uv` | uv executable |
+| `H2H_CONFIG` | `$RLTLDR_ROOT/h2h_config.json` | head-to-head arms (GPUs, ports); template `h2h_config.example.json` |
+
+## Configure
+
+```bash
+cp config.example.json config.json      # gitignored; then edit it
+nvidia-smi -L                           # GPU UUIDs
+```
+
+Set these fields in `config.json`:
+- `agent_gpu_uuid` and `agent_gpu_minor` (the `/dev/nvidia<N>` of that GPU) for the experiment GPU.
+- `trainer_gpu_uuid` for the policy-update GPU.
+- `model_dir`, `tokenizer_dir` and `trainer_base_dir` if the models live elsewhere.
+- `pi_bin` if `pi` is not on `PATH`.
+
+Paths may start with `~`. The GPU UUIDs have no default: anything that needs one stops with a clear error. Check a
+value with `python -m rltldr.config get <key>`. `serve.sh` takes the serving GPUs from `SERVE_GPUS` (default `0,1`).
+
+## The autoresearch repository
+
+The research task is Karpathy's autoresearch. The harness needs a checkout at `autoresearch/` whose branch
+`autoresearch/oct3` (config `branch`) is the baseline. On first start the driver imports it into the canonical bare
+repository `canon.git`.
+
+```bash
+git clone https://github.com/karpathy/autoresearch autoresearch     # we used upstream commit 228791f
+cd autoresearch && git checkout -b autoresearch/oct3
+uv sync && uv run prepare.py --num-shards 24                        # 24 training shards + validation shard + tokenizer
+```
+
+Commit two changes on that branch before the first start:
+
+1. **GPU patch (only on GPUs without FA3 kernels, such as sm_120).** Upstream's FA3 kernels abort on sm_120. Our
+   patch uses FlexAttention for the sliding-window layers and SDPA for the full-causal layers, so
+   `WINDOW_PATTERN` keeps its meaning. Hopper keeps FA3.
+2. **Harness `program.md`.** One experiment per session, run with `./run.sh "<description>"`. Training happens on
+   the runner's GPU, not in the agent's sandbox. The keep/discard decision belongs to the harness.
+
+`prepare.py` must stay byte-identical to upstream: the runner checks its sha256 (`prepare_sha256` in
+`rltldr/config.py`).
+
+## Baseline and noise calibration
+
+Before the driver starts, the ledger needs an `attempt_id: "baseline"` entry. Measure it with the final pipeline:
+sandboxed, trusted evaluation, `--no-autotune`, and a fresh compile cache for each run.
+
+```bash
+GPU=$(python -m rltldr.config get agent_gpu_uuid); SHA=$(python -m rltldr.config get prepare_sha256)
+for i in 1 2 3; do   # noise calibration runs
+  AR_ATTEMPT_ID=noise-$i ${RLTLDR_TRUSTED_PY:-/usr/bin/python3} -I tools/ar_run.py --repo autoresearch \
+    --ledger data/calib_ledger.jsonl --gpu "$GPU" --gpu-minor 2 --prepare-sha "$SHA" --no-autotune \
+    --cache-dir "$(mktemp -d)" --desc "noise $i"
+done
+AR_ATTEMPT_ID=baseline ${RLTLDR_TRUSTED_PY:-/usr/bin/python3} -I tools/ar_run.py --repo autoresearch \
+  --ledger data/ledger.jsonl --gpu "$GPU" --gpu-minor 2 --prepare-sha "$SHA" --no-autotune \
+  --cache-dir "$(mktemp -d)" --desc baseline
+```
+
+Run these from the project root with the serve env's python on `PATH` (for `python -m rltldr.config`). Use your
+`agent_gpu_minor` in place of `2`. The task prompt's starting best is the mean of these runs. Check their spread:
+on our machine the sd was 0.0001 with autotuning off.
+
+`val_bpb` after a fixed 5-minute budget depends on the GPU, because a faster GPU trains more steps. **Numbers from
+different hardware are not comparable.**
+
+## Run
+
+```bash
+./ctl.sh start      # vllm -> gateway -> runner -> trainer -> driver, each supervised
+./ctl.sh status     # processes, GPUs, current policy, group progress
+./ctl.sh report     # best val_bpb trajectory, group metrics, insights, updates
+python3 tools/dashboard/build.py    # static dashboard
+```
+
+**Continuing from trained adapters.** To start from a trained policy instead of the base model:
+1. Copy a trainer checkpoint to `data/trainer_ckpt/` and its adapters to `data/adapters/`.
+2. Write `data/trainer_state.json` with the checkpoint's version.
+
+On start, the trainer re-publishes its latest version to the gateway.
+
+**Head-to-head and frozen-policy ablation.** See `README.md` ("Running").
+
+## Using more compute
+
+The loop is sequential by design: one experiment at a time, and GPU 2 is idle while the agent thinks. With more GPUs
+the natural extensions are:
+- **Parallel lanes.** Several independent runner/agent lanes, each with its own branch and best, give more rollouts
+  per hour.
+- **A bigger update.** A larger LoRA rank, or full fine-tuning sharded over several trainer GPUs.
+- **A bigger task.** The higher-compute nanochat settings: a longer budget and deeper models.
+
+`docs/RETROSPECTIVE.md` §3(iii) lists the code changes the lanes need.
