@@ -17,7 +17,7 @@ MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
-    epochs=7.5,
+    epochs=6.5,
     batch_size=512,
     lr=11.5,  # per 1024 examples (summed loss)
     momentum=0.85,
@@ -30,6 +30,10 @@ DEFAULTS = dict(
     translate=2,
     whiten_bias_epochs=3,
     compile_mode=None,
+    lookahead=False,
+    lr_peak=0.23,
+    lr_start=0.2,
+    lr_end=0.0,
 )
 
 
@@ -216,10 +220,15 @@ def train(state, max_steps=None) -> nn.Module:
     def lr_at(step):
         # Triangle: 0.2 -> 1 over first 23%, then down to 0.07.
         t = step / total_steps
-        peak = 0.23
+        peak, start, end = hyp["lr_peak"], hyp["lr_start"], hyp["lr_end"]
         if t < peak:
-            return 0.2 + (1 - 0.2) * t / peak
-        return 1 + (0.07 - 1) * (t - peak) / (1 - peak)
+            return start + (1 - start) * t / peak
+        return 1 + (end - 1) * (t - peak) / (1 - peak)
+
+    # Lookahead (airbench): every 5 steps pull weights toward a slow copy.
+    if hyp["lookahead"]:
+        la_params = [p for p in model.parameters()] + [b for n, b in model.named_buffers() if "running" in n]
+        la_slow = [p.detach().clone() for p in la_params]
 
     crop = 32
     step = 0
@@ -252,4 +261,12 @@ def train(state, max_steps=None) -> nn.Module:
             opt.step()
             opt.zero_grad(set_to_none=True)
             step += 1
+            if hyp["lookahead"] and step % 5 == 0:
+                decay = 0.95**5 * (step / total_steps) ** 3
+                with torch.no_grad():
+                    torch._foreach_lerp_(la_slow, [p.detach() for p in la_params], 1 - decay)
+                    torch._foreach_copy_(la_params, la_slow)
+    if hyp["lookahead"] and max_steps is None:
+        with torch.no_grad():
+            torch._foreach_copy_(la_params, la_slow)
     return model
