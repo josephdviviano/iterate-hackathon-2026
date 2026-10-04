@@ -1442,6 +1442,8 @@ def export(av_sft: str = "av38_sft", ar_sft: str = "ar38_sft", rl_run: str = "rl
                "ar_lora_r": json.load(open(f"{CKPT}/{ar_sft}/train_log.json"))["lora_r"],
                "ar_num_layers": LAYER + 1, "lora_targets": LORA_TARGETS},
               open(f"{dst}/nla_config.json", "w"), indent=1, ensure_ascii=False)
+    # the Hub counts downloads via requests for a root config.json
+    shutil.copy(f"{dst}/nla_config.json", f"{dst}/config.json")
     shutil.copy("/root/nla_qwen38.py", f"{dst}/nla_qwen38.py")
     if os.path.exists("/root/pub/README_HF.md"):
         shutil.copy("/root/pub/README_HF.md", f"{dst}/README.md")
