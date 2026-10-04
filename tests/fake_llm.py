@@ -3,6 +3,8 @@
 
 Logs each call (role, tools flag, cwd, files in cwd) to $FAKE_LLM_LOG as JSON lines.
 $FAKE_LLM_REFUTE=H1 makes revise refute that hypothesis when the tree is not empty.
+$FAKE_COMMITTEE: committee members forecast wide ranges (default), "far" ranges no result can hit,
+or "harm": ranges entirely worse than the tip.
 """
 import json
 import os
@@ -15,9 +17,28 @@ tools = argv[argv.index("--tools") + 1]
 role = re.search(r"^ROLE: ([\w-]+)", prompt, re.MULTILINE).group(1)
 with open(os.environ["FAKE_LLM_LOG"], "a") as f:
     f.write(json.dumps({"role": role, "tools": tools, "cwd_files": os.listdir("."),
-                        "model": argv[argv.index("--model") + 1], "has_results": "=== RESULTS" in prompt, "prompt_bytes": len(prompt.encode()), "has_literature": "=== LITERATURE" in prompt}) + "\n")
+                        "model": argv[argv.index("--model") + 1], "has_results": "=== RESULTS" in prompt, "prompt_bytes": len(prompt.encode()), "has_literature": "=== LITERATURE" in prompt,
+                        "has_committee": "=== UNCERTAINTY COMMITTEE" in prompt}) + "\n")
 tree = re.findall(r"^(H[\d.]+)\t\d\t[^\t]*\topen\t", prompt, re.MULTILINE)
-if role == "lit-plan":
+if role == "committee-member":
+    mode = os.environ.get("FAKE_COMMITTEE", "wide")
+    metrics = re.search(r"^The forecast metrics: (.*?)\. ", prompt, re.MULTILINE).group(1).split(", ")
+    tip = json.loads(re.search(r"The current best \(the branch tip\): (\{.*?\})", prompt).group(1) or "{}")
+    ideas = re.findall(r"^(I\d+)\tH", prompt, re.MULTILINE)
+
+    def rng(m):
+        if mode == "far":
+            return 1e6, 1e6 + 1, 1e6 + 2
+        if mode == "harm":  # worse than the tip on every forecast metric (all minimized in the toy task)
+            b = float(tip.get(m, 1.0))
+            return 5 * b + 10, 6 * b + 11, 7 * b + 12
+        return -1e9, 0.0, 1e9
+
+    out = {"world_model": "world model of " + re.search(r"You are member (W\d+)", prompt).group(1),
+           "forecasts": [{"idea": i, "metrics": [dict(zip(("metric", "lo", "point", "hi"), (m, *rng(m)))) for m in metrics],
+                          "verdict": "supports", "reason": "r"} for i in ideas],
+           "hypotheses": [{"id": h, "outcome": "unknown"} for h in tree], "cruxes": ["is the step size the bottleneck?"]}
+elif role == "lit-plan":
     out = {"question": "Does a lower learning rate help short schedules?", "queries": ["learning rate short schedule"],
            "rubric": ["reports learning rate ablations"], "exclude": ["pretrained"]}
 elif role == "lit-triage":

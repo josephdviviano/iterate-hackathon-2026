@@ -176,7 +176,8 @@ class TestTaskSpecs(unittest.TestCase):
         words = ["cifar", "accuracy", "val_bpb", "nanochat", "torch", "gpu", "epoch", "75%", "0.753", "seeds"]
         for rel in ["framework/core/ar.py", "framework/baseline/program.md", "framework/hypothesis/program.md",
                     "framework/hypothesis/research.py", "framework/hypothesis/lit.py",
-                    "framework/hypothesis-lit/program.md", "framework/hypothesis-dr/program.md"]:  # fmt: skip
+                    "framework/hypothesis-lit/program.md", "framework/hypothesis-dr/program.md",
+                    "framework/hypothesis/committee.py", "framework/hypothesis-unc/program.md"]:  # fmt: skip
             text = open(os.path.join(ROOT, rel)).read().lower()
             hits = [w for w in words if w in text]
             self.assertEqual(hits, [], f"{rel} mentions {hits}")
@@ -365,7 +366,92 @@ class TestLiteratureForced(HypothesisBase):
         kinds = [m["kind"] for m in self.results_of("meta.tsv")]
         self.assertEqual(kinds[-2:], ["deepresearch", "ideate"])
         self.assertTrue(self.calls()[-1]["has_literature"])
-        self.assertIn("requests are automatic", self.fails("research.py", "lit", "ask", "--question", "x"))
+        self.assertIn("made automatically", self.fails("research.py", "lit", "ask", "--question", "x"))
+
+
+class TestCommittee(HypothesisBase):
+    framework = "hypothesis-unc"
+
+    def setUp(self):
+        super().setUp()
+        os.environ.pop("FAKE_COMMITTEE", None)
+
+    def run_idea(self, k, status="discard"):
+        self.ok("research.py", "snapshot")
+        iid = self.ok("research.py", "idea", "next").split()[0]
+        self.edit(width=20 + k)
+        out = self.ok("research.py", "launch", "--idea", iid, "--prereg", self.prereg_draft(iid, 0.0, 9.0))
+        self.ok("ar.py", "wait")
+        log = self.ok("research.py", "log", "--status", status, "--verdict", "inconclusive")
+        if status != "keep":
+            self.git("reset", "-q", "--hard", "HEAD~1")
+        self.ok("research.py", "meta", "wait", "--max", "120")
+        return iid, out, log
+
+    def test_members_forecast_every_idea_independently(self):
+        self.start()
+        members = json.load(open(os.path.join(self.ws, "committee", "members.json")))
+        self.assertEqual([m["lens"] for m in members], ["mechanism", "empirical", "cost", "skeptic"])
+        calls = [c for c in self.calls() if c["role"] == "committee-member"]
+        self.assertEqual(sorted({c["model"] for c in calls}), ["claude-opus-5-5", "claude-sonnet-5-5"])
+        self.assertTrue(all(c["cwd_files"] == [] and c["tools"] == "" for c in calls))
+        fc = [json.loads(line) for line in open(os.path.join(self.ws, "committee", "forecasts.jsonl"))]
+        queued = {i["id"] for i in self.results_of("ideas.tsv") if i["status"] == "queued"}
+        self.assertEqual({f["idea"] for f in fc}, queued)
+        self.assertEqual(sorted(fc[0]["metrics"]), ["loss", "time"])
+        iid, launched, _ = self.run_idea(1)
+        self.assertIn(f"committee forecast for {iid}", launched)  # shown only once the prediction is sealed
+        led = [json.loads(line) for line in open(os.path.join(self.ws, "committee", "ledger.jsonl"))]
+        self.assertEqual((led[0]["exp"], led[0]["counterexample"], led[0]["consensus_hit"]), ("E001", [], True))
+        self.assertTrue(os.path.exists(os.path.join(self.ws, "committee", "W1.md")))
+        self.assertIn("Calibration: 1 results scored", self.ok("research.py", "unc"))
+        self.assertIn("committee (4 members)", self.ok("research.py", "status"))
+
+    def test_counterexamples_trigger_literature_and_revise(self):
+        self.start()
+        os.environ["FAKE_COMMITTEE"] = "far"
+        self.ok("research.py", "meta", "wait", "--max", "120")
+        research = load_research(self.ws)
+        import importlib  # re-forecast the queue under the new fake
+        sys.path.insert(0, self.ws)
+        committee = importlib.import_module("committee")
+        importlib.reload(committee)
+        committee.run_round("forecast")
+        self.run_idea(1)
+        led = [json.loads(line) for line in open(os.path.join(self.ws, "committee", "ledger.jsonl"))]
+        self.assertEqual(sorted(led[-1]["counterexample"]), ["loss", "time"])
+        req = json.load(open(os.path.join(self.ws, "lit", "requests", "R001.json")))
+        self.assertEqual((req["from"], req["status"]), ("committee", "done"))
+        self.assertIn("none of our forecasters predicted", req["question"])
+        self.run_idea(2)
+        kinds = [m["kind"] for m in self.results_of("meta.tsv")]
+        self.assertIn("literature", kinds)
+        self.assertEqual(kinds[-4:], ["committee", "revise", "ideate", "committee"])
+        revise = [c for c in self.calls() if c["role"] == "revise"][-1]
+        self.assertTrue(revise["has_committee"] and revise["has_literature"])
+        self.assertIn("veto inactive", self.ok("research.py", "unc"))  # the ranges keep missing
+        self.assertTrue([c for c in self.calls() if c["role"] == "ideate"][-1]["has_committee"])
+        sys.path.remove(self.ws)
+        del research
+
+    def test_veto_with_audits(self):
+        self.start()
+        os.environ["FAKE_COMMITTEE"] = "harm"
+        self.run_idea(1, status="keep")
+        self.assertEqual([i for i in self.results_of("ideas.tsv") if "veto" in i["note"]], [])  # no track record yet
+        os.environ["FAKE_COMMITTEE"] = "wide"
+        for k in range(5):
+            self.run_idea(2 + k)
+        self.assertIn("veto active", self.ok("research.py", "unc"))
+        os.environ["FAKE_COMMITTEE"] = "harm"
+        self.run_idea(8)
+        ideas = self.results_of("ideas.tsv")
+        vetoed = [i for i in ideas if i["note"].startswith("committee veto:")]
+        audits = [i for i in ideas if "veto AUDIT" in i["note"]]
+        self.assertGreaterEqual(len(vetoed), 3)
+        self.assertEqual(len(audits), (len(vetoed) + len(audits)) // 4)  # every 4th veto is audited
+        self.assertTrue(all(i["status"] == "dropped" for i in vetoed))
+        self.assertTrue(all(i["status"] == "queued" for i in audits))
 
 
 def load_research(ws):

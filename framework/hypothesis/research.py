@@ -69,7 +69,7 @@ NOTEBOOK_DIR = os.path.join(ROOT, "notebook")
 HISTORY_DIR = os.path.join(ROOT, "history")
 DRAFTS_DIR = os.path.join(ROOT, "drafts")
 STATE = ["hypothesis.tsv", "ideas.tsv", "predictions.tsv", "meta.tsv", "world_model.md",
-         "notebook/", "history/", "drafts/", "lit/"]  # fmt: skip
+         "notebook/", "history/", "drafts/", "lit/", "committee/"]  # fmt: skip
 
 HYPO_COLS = ["id", "level", "parent", "status", "confidence", "evidence", "source", "statement"]
 IDEA_COLS = ["id", "hypothesis", "priority", "status", "expected", "description", "note"]
@@ -86,7 +86,8 @@ LLM_CMD = os.environ.get("RESEARCH_LLM_CMD", "claude")
 META_MODEL = os.environ.get("RESEARCH_META_MODEL", "claude-opus-5-5")
 META_EFFORT = os.environ.get("RESEARCH_META_EFFORT", "high")
 META_TIMEOUT = int(os.environ.get("RESEARCH_META_TIMEOUT", "2400"))
-# literature extension (framework.json: {"lit": "off" | "async" | "forced"}), see lit.py
+# literature extension (framework.json: {"lit": "off" | "async" | "forced" | "triggered"}), see lit.py
+# uncertainty committee (framework.json: {"committee": {"k": 4}}), see committee.py
 FRAMEWORK_FILE = os.path.join(ROOT, "framework.json")
 LIT_DIR = os.path.join(ROOT, "lit")
 LIT_READ_FILE = os.path.join(LIT_DIR, "read.json")
@@ -466,6 +467,31 @@ def inputs_literature(n=3):
     return f"=== LITERATURE (newest digests from the literature pipeline) ===\n{body or '(none yet)'}\n"
 
 
+def committee_on():
+    return bool((read_json(FRAMEWORK_FILE, {}) or {}).get("committee"))
+
+
+def inputs_committee(role):
+    if not committee_on():
+        return ""
+    import committee
+
+    return committee.inputs_for(role)
+
+
+COMMITTEE_IDEATE = """
+The uncertainty committee forecast the queued ideas. Use it: an idea the members disagree on is
+worth running only if its outcome decides between their views; sharpen it into the cleanest test
+of that disagreement (rewrite it as a new idea and drop the old one), or drop it. Drop ideas that
+most members forecast as clear harm unless you have a reason they are wrong. Design new ideas
+that test the members' cruxes and the counterexamples."""
+COMMITTEE_REVISE = """
+4. The uncertainty committee's counterexamples are results no world model predicted: explain each
+   with a mechanism (a new or reworded hypothesis), or lower the confidence of the hypotheses
+   they contradict. A hypothesis the members are split on needs a decisive test; one they all
+   expect to be refuted should be questioned."""
+
+
 def llm(role, prompt, schema, tools="", model=None, effort=None, budget=None):
     """One separate, stateless LLM call with structured output. Returns (dict, cost)."""
     os.makedirs(META_DIR, exist_ok=True)
@@ -502,11 +528,11 @@ def journal(kind, cost, summary):
 def run_ideate():
     prompt = f"""ROLE: ideate. You generate experiment ideas for an autonomous research loop.
 You get exactly these inputs: the task, the hypothesis tree, the results so far, the current idea
-queue{', and the newest literature digests' if lit_mode() != 'off' else ''}. Nothing else is available to you; do not use tools.
+queue{', and the newest literature digests' if lit_mode() != 'off' else ''}{", and the uncertainty committee's forecasts" if committee_on() else ''}. Nothing else is available to you; do not use tools.
 
 {TREE_RULES}
 
-{inputs_task()}{inputs_hypotheses()}{inputs_results()}{inputs_literature()}=== CURRENT QUEUE (ideas.tsv) ===
+{inputs_task()}{inputs_hypotheses()}{inputs_results()}{inputs_literature()}{inputs_committee("ideate")}=== CURRENT QUEUE (ideas.tsv) ===
 {read_text(IDEAS_FILE)}
 Write ideas for the open hypotheses (prefer Lvl3 hypotheses without a decisive test yet). Each idea
 is ONE concrete change to the files the task lets the experimenter edit, cleanly testing one
@@ -514,7 +540,7 @@ hypothesis (give its id). State an expected outcome on the task's metrics, with 
 rough size. Priority 1-5 (higher runs first) by expected information x expected improvement;
 keep roughly 2/3 exploit, 1/3 explore; combine near-misses. Do not repeat ideas that were already
 tried or are queued. Drop queued ideas whose hypothesis is settled. Bring the queue to
-{IDEATE_REFILL}-8 queued ideas."""
+{IDEATE_REFILL}-8 queued ideas.{COMMITTEE_IDEATE if committee_on() else ''}"""
     out, cost = llm("ideate", prompt, IDEATE_SCHEMA)
     added, dropped, skipped = [], [], []
     with locked():
@@ -566,7 +592,7 @@ skeptical review. Nothing else is available to you; do not use tools.
 
 {TREE_RULES}
 
-{task}{tree}{res}{inputs_literature()}=== SEARCH ===
+{task}{tree}{res}{inputs_literature()}{inputs_committee("revise")}=== SEARCH ===
 {json.dumps(search, indent=1)}
 === REVIEW ===
 {json.dumps(review, indent=1)}
@@ -578,7 +604,7 @@ Revise the tree:
 2. Add new hypotheses where the results, search or review point to mechanisms the tree lacks.
    New items get a "key"; "parent" is an existing id, the key of another new item, or "" for Lvl1.
 3. Keep at least 2 Lvl1 hypotheses open. Give every new hypothesis a source
-   (results | review | search:<reference>).
+   (results | review | search:<reference>).{COMMITTEE_REVISE if committee_on() else ''}
 If the tree is empty, seed it: 2-4 Lvl1 hypotheses on genuinely different directions, each with
 Lvl2 mechanisms and Lvl3 predictions."""
     out, c3 = llm("revise", revise_prompt, REVISE_SCHEMA)
@@ -656,7 +682,7 @@ def cmd_lit(args):
 
     if args.action == "ask":
         if lit_mode() != "async":
-            die("requests are automatic in this workspace (a deep-research step runs after every experiment)")
+            die("literature requests are made automatically in this workspace")
         open_reqs = [r for r in lit.requests() if r["status"] in ("open", "running")]
         if len(open_reqs) >= MAX_OPEN_REQUESTS:
             die(f"{len(open_reqs)} requests are already open ({', '.join(r['id'] for r in open_reqs)}); wait for a digest")
@@ -713,6 +739,10 @@ def meta_due(hypos, ideas, metas):
         streak += 1
     if streak >= PLATEAU:
         reasons.append(f"{streak} experiments without an improvement")
+    if committee_on():
+        import committee
+
+        reasons += committee.revise_reasons(last)
     if reasons:
         return "revise", "; ".join(reasons)
     queued = [i for i in ideas if i["status"] == "queued"]
@@ -723,6 +753,14 @@ def meta_due(hypos, ideas, metas):
 
 def auto_meta(after_log=False):
     hypos, ideas, metas = read_tsv(HYPO_FILE, HYPO_COLS), read_tsv(IDEAS_FILE, IDEA_COLS), read_tsv(META_FILE, META_COLS)
+    if after_log and committee_on() and results():
+        if start_meta("committee", f"score {last_exp()} and re-forecast the queue"):
+            print(f"uncertainty committee started in the background for {last_exp()} (then any due meta-step)")
+        else:
+            with open(os.path.join(STATE_DIR, "committee_pending"), "w") as f:
+                f.write(last_exp())
+            print("committee round queued: it starts when the running meta-step finishes")
+        return
     if after_log and lit_mode() == "forced" and results():
         if start_meta("deepresearch", f"forced literature step after {last_exp()}"):
             print(f"deep research started in the background for {last_exp()} (then ideate)")
@@ -810,6 +848,11 @@ def cmd_status(args):
         reqs = lit.requests()
         print(f"literature ({lit_mode()}): {len(reqs)} requests "
               f"({sum(r['status'] in ('open', 'running') for r in reqs)} open), unread digests: {', '.join(unread) or 'none'}")  # fmt: skip
+    if committee_on():
+        import committee
+
+        for line in committee.status_lines():
+            print(line)
     fl = read_json(INFLIGHT_FILE)
     pm = missing_postmortems(preds)
     if fl:
@@ -943,6 +986,7 @@ def cmd_launch(args):
     if draft:
         seal(page, fl["exp"], at_launch=True)
         print("pre-registration sealed at launch")
+        show_committee_forecast(fl)
     else:
         print(f"now, before looking at its output: fill the pre-registration in notebook/{fl['exp']}.md, then `prereg`")
 
@@ -959,6 +1003,15 @@ def cmd_prereg(args):
     seal(text, fl["exp"])
     late = read_json(SEAL_FILE)["late"]
     print(f"sealed {fl['exp']}" + (" (late: results were already in the log)" if late else " (blind)"))
+    show_committee_forecast(fl)
+
+
+def show_committee_forecast(fl):
+    if committee_on() and fl.get("tag") not in (None, "", "-"):
+        import committee
+
+        for line in committee.after_seal(fl["tag"], fl["started"]):
+            print(line)
 
 
 def cmd_log(args):
@@ -1013,11 +1066,58 @@ def cmd_log(args):
     auto_meta(after_log=True)
 
 
+def forecast_unforecast():
+    import committee
+
+    have = set(committee.current_forecasts())
+    new = [i["id"] for i in read_tsv(IDEAS_FILE, IDEA_COLS) if i["status"] == "queued" and i["id"] not in have]
+    return committee.run_round("forecast", set(new)) if new else "committee: every queued idea is forecast"
+
+
+def run_committee_chain():
+    """After an experiment: score it and re-forecast (committee), then a literature request on a
+    counterexample, then any due revise/ideate (ideate is followed by forecasts of the new ideas)."""
+    import committee
+
+    try:
+        print(committee.run_round("update"), flush=True)
+    except Exception as exc:  # a failed round must not block the due meta-steps
+        journal("committee-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
+    kind, why = meta_due(read_tsv(HYPO_FILE, HYPO_COLS), read_tsv(IDEAS_FILE, IDEA_COLS), read_tsv(META_FILE, META_COLS))
+    q = committee.lit_question() if lit_mode() == "triggered" else None
+    if q:
+        import lit
+
+        req = lit.new_request(q, [], [], [], "committee", last_exp())
+        try:
+            did = lit.run_request(req)
+            cost = (read_json(os.path.join(lit.REQ_DIR, f"{req['id']}.json")) or {}).get("cost", 0.0)
+            journal("literature", float(cost), f"{req['id']} -> {did}: counterexample {last_exp()}")
+        except Exception as exc:
+            journal("literature-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
+    if kind == "revise":
+        print(run_revise(), flush=True)
+    if kind:
+        print(run_ideate(), flush=True)
+        print(forecast_unforecast(), flush=True)
+
+
+def cmd_unc(args):
+    if not committee_on():
+        die("the uncertainty committee is not enabled in this workspace")
+    import committee
+
+    committee.write_report()
+    print(read_text(committee.REPORT_FILE))
+
+
 def cmd_meta(args):
     if args.action == "_run":  # the background process
         kind = args.kind
         try:
-            if kind == "deepresearch":  # forced literature step after an experiment, then fresh ideas
+            if kind == "committee":
+                run_committee_chain()
+            elif kind == "deepresearch":  # forced literature step after an experiment, then fresh ideas
                 print(run_deepresearch(), flush=True)
                 hypos, ideas, metas = read_tsv(HYPO_FILE, HYPO_COLS), read_tsv(IDEAS_FILE, IDEA_COLS), read_tsv(META_FILE, META_COLS)
                 if meta_due(hypos, ideas, metas)[0] == "revise":
@@ -1030,6 +1130,9 @@ def cmd_meta(args):
                 if kind == "revise":
                     kind = "ideate"
                     print(run_ideate(), flush=True)
+            if committee_on() and kind == "ideate":
+                kind = "committee"
+                print(forecast_unforecast(), flush=True)
         except Exception as exc:  # recorded, so `status` shows it; the next log retries
             journal(f"{kind}-failed", 0.0, f"{type(exc).__name__}: {exc}"[:400])
             raise
@@ -1039,6 +1142,10 @@ def cmd_meta(args):
             if os.path.exists(pending):  # an experiment was logged while this ran: research it now
                 os.remove(pending)
                 start_meta("deepresearch", "experiment logged during the previous meta-step")
+            pending = os.path.join(STATE_DIR, "committee_pending")
+            if os.path.exists(pending) and not jobs():
+                os.remove(pending)
+                start_meta("committee", "experiment logged during the previous meta-step")
         return
     if args.action == "wait":
         if not jobs():
@@ -1098,10 +1205,12 @@ def build_parser():
     s.set_defaults(fn=cmd_log)
     s = sub.add_parser("meta")
     s.add_argument("action", choices=["wait", "_run"])
-    s.add_argument("kind", nargs="?", choices=["ideate", "revise", "deepresearch"])
+    s.add_argument("kind", nargs="?", choices=["ideate", "revise", "deepresearch", "committee"])
     s.add_argument("--max", type=float, default=540)
     s.set_defaults(fn=cmd_meta)
     sub.add_parser("snapshot").set_defaults(fn=cmd_snapshot)
+    if committee_on():
+        sub.add_parser("unc", help="the uncertainty committee's report").set_defaults(fn=cmd_unc)
     if lit_mode() != "off":
         s = sub.add_parser("lit", help="the literature extension")
         s.add_argument("action", choices=["ask", "inbox", "read"])
