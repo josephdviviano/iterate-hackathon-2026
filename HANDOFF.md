@@ -19,14 +19,14 @@ dies, `committee.recover` collects its Devin sessions. What is done and left:
   75 moves, AUROC 0.92, first all-wrong move 63 (one HUD cell); ka59 0.973;
   sk48 0.627 with every error unanimous (shared blind spot).
 - DONE, not yet written up (R36): the counterexample rounds in frame_out.
-  Held-out rows are the ones no arm trained on. m0r0 L3 (11 rows): round 1
-  0.273, round 2 with the mechanism counterexample 0.909 (8 of 8, one
-  behaviour), passive control with the same 33 rows and no counterexample
-  1.000 (8 of 8). ka59 L2 (42 rows): round 1 0.833, round 2 0.857, best
-  member 0.881, no passive arm run. sk48 L2 (43 rows): round 1 0.558,
-  round 2 0.977 (6 of 8 landed, 0.93 to 0.977). Reading so far: the lift
-  comes from the probed data; the mechanism text did not add to it on
-  m0r0 and may have narrowed the committee to one behaviour.
+  Held-out rows are the ones no arm trained on; round 1 is the frame_out
+  committee on those rows (pass `--source-condition committee_opine_devin`
+  to the report, or round 1 is the object-contract committee). m0r0 L3 (11
+  rows): round 1 0.636, mechanism round 0.909 (8 of 8, one behaviour),
+  passive 1.000 (7 of 8). ka59 L2 (42 rows): round 1 0.952, mechanism
+  round 0.857, a loss; no passive arm. sk48 L2 (42 rows): round 1 0.833,
+  mechanism 0.976 (7 of 8), object diff 0.929, passive 1.000. Written up
+  as R36.
   `uv run python -m committee.cegis GAME --level L --train-frac 0.4 --report
   --conditions cegis_opine_devin,cegisobj_opine_devin --passive-condition
   passive_opine_devin` prints each table.

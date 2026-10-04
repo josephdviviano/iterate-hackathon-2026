@@ -2964,12 +2964,12 @@ held-out rows taken in time order with no counterexample
 
 | Level (held out) | Probes until no member survives | Arm | Admitted | Vote | Members (mean, best) | AUROC | Unanimous n (error) | Split n (error) | Behaviours |
 |---|---|---|---|---|---|---|---|---|---|
-| m0r0 L3 (11) | 33: step 117 first, then 85 to 116 in order | round 1 | 8 | 0.273 | 0.216, 0.273 | 0.52 | 5 (0.80) | 6 (0.67) | 4 |
+| m0r0 L3 (11) | 33: step 117 first, then 85 to 116 in order | round 1 | 8 | 0.636 | 0.568, 0.636 | 0.41 | 4 (0.50) | 7 (0.29) | 4 |
 | | | mechanism | 8 of 8 | 0.909 | 0.909, 0.909 | 0.50 | 11 (0.09) | 0 | 1 |
 | | | passive, 33 rows | 7 of 8 | 1.000 | 1.000, 1.000 | none | 11 (0.00) | 0 | 1 |
-| ka59 L2 (42) | 2: steps 79, 101 | round 1 | 7 | 0.833 | 0.769, 0.857 | 0.64 | 32 (0.13) | 10 (0.30) | 6 |
+| ka59 L2 (42) | 2: steps 79, 101 | round 1 | 8 | 0.952 | 0.917, 0.952 | 0.66 | 35 (0.03) | 7 (0.14) | 4 |
 | | | mechanism | 8 of 8 | 0.857 | 0.857, 0.881 | 0.66 | 39 (0.10) | 3 (0.67) | 4 |
-| sk48 L2 (42) | 25: step 118 first, then 63 to 87 in order | round 1 | 8 | 0.571 | 0.625, 0.952 | 0.84 | 18 (0.00) | 24 (0.75) | 6 |
+| sk48 L2 (42) | 25: step 118 first, then 63 to 87 in order | round 1 | 8 | 0.833 | 0.744, 0.833 | 0.29 | 27 (0.26) | 15 (0.00) | 3 |
 | | | mechanism | 7 of 8 | 0.976 | 0.963, 0.976 | 0.48 | 40 (0.03) | 2 (0.00) | 2 |
 | | | object diff | 8 of 8 | 0.929 | 0.952, 0.976 | 0.83 | 40 (0.03) | 2 (1.00) | 2 |
 | | | passive, 25 rows | 8 of 8 | 1.000 | 0.964, 1.000 | none | 39 (0.00) | 3 (0.00) | 2 |
@@ -2983,10 +2983,13 @@ Live round, ar25 L3, local engine, explorer policy, 75 moves, seed 0:
 
 Reading:
 
-1. Question 4 (does resynthesis after the probes help): yes on every
-   level with errors. m0r0 0.27 to 0.91, ka59 0.83 to 0.86, sk48 0.57 to
-   0.98 on the rows no arm saw, and the live committee goes from 0.84 to
-   1.00 over 75 fresh moves with no refutation. The sk48 case is the one
+1. Question 4 (does resynthesis after the probes help): yes on two of
+   the three levels, and live. m0r0 0.64 to 0.91 and sk48 0.83 to 0.98 on
+   the rows no arm saw, and the live committee goes from 0.84 to 1.00 over
+   75 fresh moves with no refutation. ka59 loses, 0.95 to 0.86: round 1
+   was already right on 40 of the 42 remaining rows, and the eight new
+   programs, each seeded with a repair for the row at step 101, converge
+   on four behaviours that are wrong on six. The sk48 case is the one
    the loop is for: nine shared errors from a mechanic that first appears
    at step 87 (blocks carried by the arm); disagreement was silent on it
    (R34), the explorer reached it by the time-order fallback at the 25th
@@ -3000,7 +3003,7 @@ Reading:
    text, not the probe policy: the lift comes from the observations the
    loop collected, and the text adds nothing to it here. ka59 is the one
    level where the probes (steps 79 and 101) differ from time order, and
-   its lift is one row; no passive arm ran there.
+   its round loses; no passive arm ran there.
 3. Question 5 (does naming the mechanism help more): no. Mechanism 0.976
    against object diff 0.929 on sk48 is within one admitted member, and
    both sit under the passive 1.000. The counterexample text narrows the
@@ -3013,8 +3016,11 @@ Reading:
    need it.
 4. The numbers are small: 11 held-out rows on m0r0, 42 on ka59 and sk48,
    one live trajectory. The direction is consistent across them and with
-   R24 to R31 in the objects contract: refutation plus resynthesis lifts;
-   the wording of the counterexample is not the active ingredient.
+   R24 to R31 in the objects contract: refutation plus resynthesis lifts
+   where the committee was wrong on many of the remaining rows and loses
+   where it was nearly right; the wording of the counterexample is not the
+   active ingredient. The round-1 rows were first reported from the
+   object-contract committee (commit 6577b9a) and corrected here.
 
 | Item | Value |
 |---|---|
