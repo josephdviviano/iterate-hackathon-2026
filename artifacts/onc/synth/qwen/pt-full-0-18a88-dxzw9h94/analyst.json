@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-dxzw9h94",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Remove near-duplicates (correlation >= 0.6)\n    keep = []\n    used = set()\n    for i, fid in enumerate(ids):\n        if fid in used:\n            continue\n        keep.append(i)\n        # Find correlated features to mark as used\n        for j in range(i+1, len(ids)):\n            if ids[j] in used:\n                continue\n            corr = np.corrcoef(x[:,i], x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                used.add(ids[j])\n    \n    ids = [ids[i] for i in keep]\n    x = x[:, keep]\n    \n    # Compute t-statistics for all features\n    tstats = []\n    for i in range(len(ids)):\n        group0 = x[y==0, i]\n        group1 = x[y==1, i]\n        tstat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        tstats.append(abs(tstat))\n    \n    # Select top features by t-statistic\n    sorted_indices = np.argsort(tstats)[::-1][:MAX_DRIVERS]\n    drivers = tuple([ids[i] for i in sorted_indices if tstats[i] > 1.0])\n    \n    # If no strong drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For logistic regression, use all features with significant t-stats\n    columns = tuple(ids)\n    \n    # Check for interactions among top features\n    products = []\n    top_indices = sorted_indices[:min(3, len(sorted_indices))]\n    for i in range(len(top_indices)):\n        for j in range(i+1, len(top_indices)):\n            a, b = ids[top_indices[i]], ids[top_indices[j]]\n            products.append((a, b))\n    \n    # Weighted score using top features\n    loadings = {}\n    for i, idx in enumerate(top_indices):\n        loadings[ids[idx]] = tstats[idx] / max(tstats)\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7939,
+  "completion_tokens": 1583,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2090
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1981
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1981
+   }
+  ],
+  "wall_s": 18.4
+ }
+}

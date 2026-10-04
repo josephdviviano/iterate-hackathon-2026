@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ige7hf7v",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = {\n        ('IDM6', 'QWK15B'), ('EEN15', 'YWC15'), ('EEN15', 'TJO6'), \n        ('EEN15', 'JNYL10P'), ('PLL7', 'NCB6'), ('VHX1A', 'NMJD8'),\n        ('TJO6', 'JNYL10P'), ('TJO6', 'NMJD8'), ('TJO6', 'YWC15'),\n        ('EEN15', 'GDM6'), ('YWC15', 'JNYL10P'), ('KIE15', 'CDD15'),\n        ('EEN15', 'MXC13'), ('JNYL10P', 'GDM6'), ('JSTE5', 'YSO11'),\n        ('TJO6', 'GDM6'), ('PLL7', 'MXC13'), ('NMJD8', 'JNYL10P'),\n        ('NMJD8', 'VDO6'), ('JSTE5', 'SAHW1')\n    }\n    \n    # Build set of features to consider\n    feature_ids = list(feats.ids)\n    feature_set = set(feature_ids)\n    \n    # Remove one feature from each highly correlated pair\n    to_remove = set()\n    for a, b in correlated_pairs:\n        if a in feature_set and b in feature_set:\n            to_remove.add(b)  # Remove second feature in pair\n    \n    remaining_features = [fid for fid in feature_ids if fid not in to_remove]\n    \n    # Compute pairwise correlations among remaining features\n    X = feats.x[:, [feats.column(fid) for fid in remaining_features]]\n    corr_matrix = np.corrcoef(X.T)\n    \n    # Identify clusters of highly correlated features\n    cluster_map = {}\n    visited = set()\n    \n    for i, fid in enumerate(remaining_features):\n        if fid in visited:\n            continue\n        cluster = set([fid])\n        visited.add(fid)\n        \n        for j, other_fid in enumerate(remaining_features):\n            if i != j and other_fid not in visited:\n                if abs(corr_matrix[i, j]) >= 0.6:\n                    cluster.add(other_fid)\n                    visited.add(other_fid)\n        \n        for f in cluster:\n            cluster_map[f] = tuple(sorted(cluster))\n    \n    # Group features by their clusters\n    clusters = defaultdict(list)\n    for f, c in cluster_map.items():\n        clusters[c].append(f)\n    \n    # Select one representative from each cluster (highest mean_y1-mean_y0)\n    representatives = []\n    for cluster in clusters.values():\n        # Find feature with highest effect size\n        best_fid = max(cluster, key=lambda fid: abs(feats.y[feats.column(fid)]))\n        representatives.append(best_fid)\n    \n    # Sort by effect size (descending)\n    representatives.sort(key=lambda fid: abs(feats.y[feats.column(fid)]), reverse=True)\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = tuple(representatives[:MAX_DRIVERS])\n    \n    # If no strong drivers found, return empty design\n    if len(drivers) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select all features with high correlation to drivers\n    selected_columns = set()\n    for driver in drivers:\n        col_idx = feats.column(driver)\n        selected_columns.add(driver)\n        \n        # Add features highly correlated with this driver\n        for i, fid in enumerate(remaining_features):\n            if i != col_idx:\n                corr_val = corr_matrix[col_idx, i]\n                if abs(corr_val) >= 0.4:\n                    selected_columns.add(fid)\n    \n    # Create products between drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for j, d2 in enumerate(drivers):\n            if i < j:\n                products.append((d1, d2))\n    \n    # Return design\n    return Design(\n        drivers=drivers,\n        columns=tuple(selected_columns),\n        products=tuple(products),\n        loadings={fid: 1.0 for fid in selected_columns}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9300,
+  "completion_tokens": 2865,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3706
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3728
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3618
+   }
+  ],
+  "wall_s": 32.2
+ }
+}

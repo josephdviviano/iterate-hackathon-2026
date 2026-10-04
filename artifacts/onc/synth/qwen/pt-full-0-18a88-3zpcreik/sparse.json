@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3zpcreik",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Identify near-duplicates (correlation >= 0.6)\n    keep_ids = []\n    used = set()\n    for i, id1 in enumerate(ids):\n        if id1 in used:\n            continue\n        keep_ids.append(id1)\n        used.add(id1)\n        # Check correlations with subsequent features\n        for j in range(i+1, len(ids)):\n            id2 = ids[j]\n            if id2 in used:\n                continue\n            corr = np.corrcoef(x[:,i], x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                used.add(id2)\n    \n    # Filter to keep only non-duplicates\n    keep_idx = [feats.column(fid) for fid in keep_ids]\n    x_filtered = x[:, keep_idx]\n    ids_filtered = tuple(keep_ids)\n    \n    # Compute t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(ids_filtered):\n        group0 = x_filtered[y==0, i]\n        group1 = x_filtered[y==1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Select top features by t-statistic, capped at MAX_DRIVERS\n    num_drivers = min(MAX_DRIVERS, len(ids_filtered))\n    if num_drivers == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n        \n    sorted_indices = np.argsort(t_stats)[::-1][:num_drivers]\n    drivers = tuple([ids_filtered[i] for i in sorted_indices])\n    \n    # Build regression features\n    columns = drivers\n    products = []\n    loadings = {}\n    \n    # Add interaction terms between top drivers\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            products.append((drivers[i], drivers[j]))\n    \n    # Weighted score: sum of top drivers with weights\n    for i, fid in enumerate(drivers):\n        loadings[fid] = t_stats[sorted_indices[i]]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Identify near-duplicates (correlation >= 0.6)\n    keep_ids = []\n    used = set()\n    for i, id1 in enumerate(ids):\n        if id1 in used:\n            continue\n        keep_ids.append(id1)\n        used.add(id1)\n        # Check correlations with subsequent features\n        for j in range(i+1, len(ids)):\n            id2 = ids[j]\n            if id2 in used:\n                continue\n            corr = np.corrcoef(x[:,i], x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                used.add(id2)\n    \n    # Filter to keep only non-duplicates\n    keep_idx = [feats.column(fid) for fid in keep_ids]\n    x_filtered = x[:, keep_idx]\n    ids_filtered = tuple(keep_ids)\n    \n    # Compute t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(ids_filtered):\n        group0 = x_filtered[y==0, i]\n        group1 = x_filtered[y==1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Select top features by t-statistic, capped at MAX_DRIVERS\n    num_drivers = min(MAX_DRIVERS, len(ids_filtered))\n    if num_drivers == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n        \n    sorted_indices = np.argsort(t_stats)[::-1][:num_drivers]\n    drivers = tuple([ids_filtered[i] for i in sorted_indices])\n    \n    # Build regression features\n    columns = drivers\n    products = []\n    loadings = {}\n    \n    # Add interaction terms between top drivers\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            products.append((drivers[i], drivers[j]))\n    \n    # Weighted score: sum of top drivers with weights\n    for i, fid in enumerate(drivers):\n        loadings[fid] = t_stats[sorted_indices[i]]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8129,
+  "completion_tokens": 1663,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2200
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2268
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2057
+   }
+  ],
+  "wall_s": 19.1
+ }
+}

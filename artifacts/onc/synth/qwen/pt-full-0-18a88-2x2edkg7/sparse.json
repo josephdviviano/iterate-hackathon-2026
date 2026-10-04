@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2x2edkg7",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    corr_pairs = [('HDP13','ZBF19'), ('LYQW13P','UST14'), ('QHQD9','HDP13'), ('HDP13','MDS3'),\n                  ('HDP13','OACZ11L'), ('HDP13','RFN11'), ('NMM13','HDP13'), ('OACZ11L','ZBF19'),\n                  ('QHQD9','ZBF19'), ('NMM13','ZBF19'), ('RFN11','ZBF19'), ('QHQD9','MDS3'),\n                  ('LLYF16','HDP13'), ('OACZ11L','RFN11'), ('UST14','HDP13'), ('RFN11','MRS10P'),\n                  ('JXO18','HDP13'), ('QHQD9','OACZ11L'), ('NMM13','OACZ11L'), ('NMM13','RFN11')]\n    \n    keep_ids = set(ids)\n    for a, b in corr_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Keep the one with higher absolute t-statistic\n            idx_a = ids.index(a)\n            idx_b = ids.index(b)\n            t_a = abs(stats.ttest_ind(feats.x[:,idx_a][feats.y==1], feats.x[:,idx_a][feats.y==0]).statistic)\n            t_b = abs(stats.ttest_ind(feats.x[:,idx_b][feats.y==1], feats.x[:,idx_b][feats.y==0]).statistic)\n            if t_a >= t_b:\n                keep_ids.remove(b)\n            else:\n                keep_ids.remove(a)\n    \n    keep_ids = list(keep_ids)\n    \n    # Compute effect sizes and select drivers\n    drivers = []\n    for i, fid in enumerate(keep_ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for driver selection\n        y1 = feats.x[feats.y==1, i]\n        y0 = feats.x[feats.y==0, i]\n        effect_size = np.mean(y1) - np.mean(y0)\n        if abs(effect_size) > 0.15:\n            drivers.append((fid, effect_size))\n    \n    # Sort by absolute effect size\n    drivers.sort(key=lambda x: abs(x[1]), reverse=True)\n    drivers = [fid for fid, _ in drivers[:MAX_DRIVERS]]\n    \n    # Ensure we don't exceed 4 drivers\n    if len(drivers) > 4:\n        drivers = drivers[:4]\n    \n    # Build regression features - keep model simple\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Add main effects (limit to 8 total features)\n    candidate_features = [fid for fid in keep_ids if fid not in drivers][:8-len(drivers)]\n    columns = drivers + candidate_features\n    \n    # Add limited interaction terms\n    if len(drivers) >= 2:\n        # Only add interactions between top 2 drivers\n        products = [(drivers[0], drivers[1])] if len(drivers) >= 2 else []\n    \n    # Add loading for top driver\n    if drivers:\n        loadings[drivers[0]] = 1.0\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    corr_pairs = [('HDP13','ZBF19'), ('LYQW13P','UST14'), ('QHQD9','HDP13'), ('HDP13','MDS3'),\n                  ('HDP13','OACZ11L'), ('HDP13','RFN11'), ('NMM13','HDP13'), ('OACZ11L','ZBF19'),\n                  ('QHQD9','ZBF19'), ('NMM13','ZBF19'), ('RFN11','ZBF19'), ('QHQD9','MDS3'),\n                  ('LLYF16','HDP13'), ('OACZ11L','RFN11'), ('UST14','HDP13'), ('RFN11','MRS10P'),\n                  ('JXO18','HDP13'), ('QHQD9','OACZ11L'), ('NMM13','OACZ11L'), ('NMM13','RFN11')]\n    \n    keep_ids = set(ids)\n    for a, b in corr_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Keep the one with higher absolute t-statistic\n            idx_a = ids.index(a)\n            idx_b = ids.index(b)\n            t_a = abs(stats.ttest_ind(feats.x[:,idx_a][feats.y==1], feats.x[:,idx_a][feats.y==0]).statistic)\n            t_b = abs(stats.ttest_ind(feats.x[:,idx_b][feats.y==1], feats.x[:,idx_b][feats.y==0]).statistic)\n            if t_a >= t_b:\n                keep_ids.remove(b)\n            else:\n                keep_ids.remove(a)\n    \n    keep_ids = list(keep_ids)\n    \n    # Compute effect sizes and select drivers\n    drivers = []\n    for i, fid in enumerate(keep_ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for driver selection\n        y1 = feats.x[feats.y==1, i]\n        y0 = feats.x[feats.y==0, i]\n        effect_size = np.mean(y1) - np.mean(y0)\n        if abs(effect_size) > 0.15:\n            drivers.append((fid, effect_size))\n    \n    # Sort by absolute effect size\n    drivers.sort(key=lambda x: abs(x[1]), reverse=True)\n    drivers = [fid for fid, _ in drivers[:MAX_DRIVERS]]\n    \n    # Ensure we don't exceed 4 drivers\n    if len(drivers) > 4:\n        drivers = drivers[:4]\n    \n    # Build regression features - keep model simple\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Add main effects (limit to 8 total features)\n    candidate_features = [fid for fid in keep_ids if fid not in drivers][:8-len(drivers)]\n    columns = drivers + candidate_features\n    \n    # Add limited interaction terms\n    if len(drivers) >= 2:\n        # Only add interactions between top 2 drivers\n        products = [(drivers[0], drivers[1])] if len(drivers) >= 2 else []\n    \n    # Add loading for top driver\n    if drivers:\n        loadings[drivers[0]] = 1.0\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8970,
+  "completion_tokens": 2520,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2778
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2877
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2641
+   }
+  ],
+  "wall_s": 28.7
+ }
+}

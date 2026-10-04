@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9wafkfdk",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on t-test statistics\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'derived', 'copy_number'):\n            t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)\n            candidates.append((fid, abs(t_stat)))\n    \n    # Sort by strength\n    candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated features)\n    kept = set()\n    for fid, _ in candidates:\n        is_dup = False\n        for kept_fid in kept:\n            col_a = feats.column(kept_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) > 0.6:\n                is_dup = True\n                break\n        if not is_dup:\n            kept.add(fid)\n    \n    # Select top features for modeling\n    top_features = list(kept)[:10]\n    \n    # Check for interactions among top features\n    products = []\n    for i, f1 in enumerate(top_features):\n        for f2 in top_features[i+1:]:\n            col1 = feats.column(f1)\n            col2 = feats.column(f2)\n            # Add interaction term if correlation is moderate\n            corr = abs(np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1])\n            if corr < 0.5:  # Avoid highly correlated pairs\n                products.append((f1, f2))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for fid in top_features[:5]:  # Top 5 features\n        col = feats.column(fid)\n        # Weight by effect size (t-statistic)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col], feats.x[feats.y==0, col], equal_var=False)\n        loadings[fid] = abs(t_stat)\n    \n    # Determine drivers based on strongest effect sizes\n    drivers = []\n    for fid, _ in candidates:\n        if len(drivers) >= MAX_DRIVERS:\n            break\n        if fid in kept and fid in loadings:\n            drivers.append(fid)\n    \n    # Ensure we don't exceed MAX_DRIVERS\n    drivers = drivers[:4]  # Fix: limit to 4 drivers max\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(top_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8472,
+  "completion_tokens": 1867,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2479
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2561
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2315
+   }
+  ],
+  "wall_s": 21.2
+ }
+}

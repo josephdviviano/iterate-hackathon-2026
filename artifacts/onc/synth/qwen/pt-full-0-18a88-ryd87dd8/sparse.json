@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ryd87dd8",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out derived features as they're less likely to be direct causes\n    non_derived_mask = [t != 'derived' for t in feats.types]\n    ids = [fid for fid, mask in zip(feats.ids, non_derived_mask) if mask]\n    types = [t for t, mask in zip(feats.types, non_derived_mask) if mask]\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(ids):\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        effect_sizes.append(abs(y1_mean - y0_mean))\n    \n    # Sort by effect size (descending)\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_ids = [ids[i] for i in sorted_indices[:20]]  # Top 20 features\n    \n    # Remove near-duplicates based on correlation\n    selected_ids = []\n    if len(top_ids) > 0:\n        correlations = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_ids]].T)\n        \n        for i, fid in enumerate(top_ids):\n            is_duplicate = False\n            for selected_fid in selected_ids:\n                j = top_ids.index(selected_fid)\n                if abs(correlations[i, j]) >= 0.6:\n                    is_duplicate = True\n                    break\n            if not is_duplicate:\n                selected_ids.append(fid)\n    \n    # Select best drivers based on effect size, but cap at MAX_DRIVERS\n    drivers = tuple(selected_ids[:MAX_DRIVERS])\n    \n    # For columns, use all selected features\n    columns = tuple(selected_ids)\n    \n    # For products, consider pairwise interactions between top features\n    products = []\n    if len(selected_ids) >= 2:\n        # Simple approach: add interaction terms for first few features\n        for i in range(min(3, len(selected_ids))):\n            for j in range(i+1, min(4, len(selected_ids))):\n                products.append((selected_ids[i], selected_ids[j]))\n    \n    # Create loadings using mutual information to weight features\n    loadings = {}\n    if len(selected_ids) > 0:\n        # Use mutual information to weight features\n        X = feats.x[:, [feats.column(fid) for fid in selected_ids]]\n        mi_scores = mutual_info_classif(X, feats.y)\n        for i, fid in enumerate(selected_ids):\n            loadings[fid] = mi_scores[i]\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8275,
+  "completion_tokens": 1847,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2563
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2547
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2547
+   }
+  ],
+  "wall_s": 27.5
+ }
+}

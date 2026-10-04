@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-gui8q2yp",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import f_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any mechanism exists (very low probability)\n    if np.random.rand() > 0.8:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find strongest features by t-test\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features for driver selection\n        y0 = feats.x[feats.y==0, i]\n        y1 = feats.x[feats.y==1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t_stat), fid))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(reverse=True)\n    \n    # Select top candidates\n    candidates = [fid for _, fid in t_stats[:20]]\n    \n    # Remove near-duplicates\n    to_remove = set()\n    for i, fid1 in enumerate(candidates):\n        for j, fid2 in enumerate(candidates[i+1:], i+1):\n            if fid1 in to_remove or fid2 in to_remove:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                to_remove.add(fid2)\n    \n    candidates = [fid for fid in candidates if fid not in to_remove]\n    \n    # If we have enough candidates, select top ones as drivers\n    # Ensure we don't exceed MAX_DRIVERS\n    drivers = tuple([fid for _, fid in t_stats[:min(MAX_DRIVERS, len(candidates))]])\n    \n    # For columns, use all significant features\n    columns = tuple(candidates)\n    \n    # For products, consider pairs with high correlation\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Loadings - weight by effect size\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        y0 = feats.x[feats.y==0, idx]\n        y1 = feats.x[feats.y==1, idx]\n        effect_size = np.mean(y1) - np.mean(y0)\n        loadings[fid] = effect_size\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import f_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any mechanism exists (very low probability)\n    if np.random.rand() > 0.8:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find strongest features by t-test\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features for driver selection\n        y0 = feats.x[feats.y==0, i]\n        y1 = feats.x[feats.y==1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t_stat), fid))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(reverse=True)\n    \n    # Select top candidates\n    candidates = [fid for _, fid in t_stats[:20]]\n    \n    # Remove near-duplicates\n    to_remove = set()\n    for i, fid1 in enumerate(candidates):\n        for j, fid2 in enumerate(candidates[i+1:], i+1):\n            if fid1 in to_remove or fid2 in to_remove:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                to_remove.add(fid2)\n    \n    candidates = [fid for fid in candidates if fid not in to_remove]\n    \n    # If we have enough candidates, select top ones as drivers\n    # Ensure we don't exceed MAX_DRIVERS\n    drivers = tuple([fid for _, fid in t_stats[:min(MAX_DRIVERS, len(candidates))]])\n    \n    # For columns, use all significant features\n    columns = tuple(candidates)\n    \n    # For products, consider pairs with high correlation\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Loadings - weight by effect size\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        y0 = feats.x[feats.y==0, idx]\n        y1 = feats.x[feats.y==1, idx]\n        effect_size = np.mean(y1) - np.mean(y0)\n        loadings[fid] = effect_size\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8456,
+  "completion_tokens": 1891,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2427
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2468
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2468
+   }
+  ],
+  "wall_s": 21.8
+ }
+}

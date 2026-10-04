@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-fuu6ovez",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers based on mean_y1-mean_y0 effect sizes\n    effect_sizes = [(feats.ids[i], feats.types[i], \n                     np.mean(feats.y * feats.x[:, i]) - np.mean((1-feats.y) * feats.x[:, i]))\n                    for i in range(len(feats.ids))]\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: abs(x[2]), reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = []\n    for fid, ftype, eff in effect_sizes:\n        if len(drivers) >= MAX_DRIVERS:\n            break\n        drivers.append(fid)\n    \n    # Select columns for logistic regression (top 5 features with highest t-scores)\n    t_scores = []\n    for i, fid in enumerate(feats.ids):\n        t_score = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        t_scores.append((fid, t_score))\n    \n    t_scores.sort(key=lambda x: x[1], reverse=True)\n    columns = [fid for fid, _ in t_scores[:5]]\n    \n    # No interactions for simplicity\n    products = ()\n    \n    # Simple weighting scheme\n    loadings = {fid: 1.0 for fid in columns[:3]}  # Top 3 features\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers based on mean_y1-mean_y0 effect sizes\n    effect_sizes = [(feats.ids[i], feats.types[i], \n                     np.mean(feats.y * feats.x[:, i]) - np.mean((1-feats.y) * feats.x[:, i]))\n                    for i in range(len(feats.ids))]\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: abs(x[2]), reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = []\n    for fid, ftype, eff in effect_sizes:\n        if len(drivers) >= MAX_DRIVERS:\n            break\n        drivers.append(fid)\n    \n    # Select columns for logistic regression (top 5 features with highest t-scores)\n    t_scores = []\n    for i, fid in enumerate(feats.ids):\n        t_score = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        t_scores.append((fid, t_score))\n    \n    t_scores.sort(key=lambda x: x[1], reverse=True)\n    columns = [fid for fid, _ in t_scores[:5]]\n    \n    # No interactions for simplicity\n    products = ()\n    \n    # Simple weighting scheme\n    loadings = {fid: 1.0 for fid in columns[:3]}  # Top 3 features\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9769,
+  "completion_tokens": 2524,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4012
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 4012
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1343
+   }
+  ],
+  "wall_s": 28.6
+ }
+}

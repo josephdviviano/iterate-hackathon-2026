@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-g73nces5",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers among clinical features\n    clinical_ids = [fid for fid, t in zip(feats.ids, feats.types) if t == 'clinical']\n    \n    # Check if any clinical feature shows strong association with outcome\n    best_clinical = None\n    best_p = 1.0\n    \n    for fid in clinical_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        # Use Welch's t-test for clinical features\n        y0 = x[feats.y == 0]\n        y1 = x[feats.y == 1]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            if p_val < best_p:\n                best_p = p_val\n                best_clinical = fid\n    \n    # If we found a strong clinical driver, use it to adjust other features\n    if best_clinical and best_p < 0.05:\n        driver_id = best_clinical\n        # Compute correlations between features and outcome after adjusting for driver\n        correlations = []\n        col_idx = feats.column(driver_id)\n        X_driver = feats.x[:, col_idx]\n        \n        # For each non-driver feature, compute correlation with outcome\n        for i, fid in enumerate(feats.ids):\n            if fid == driver_id:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.y.astype(float))[0, 1]\n            correlations.append((fid, abs(corr)))\n        \n        # Sort by absolute correlation\n        correlations.sort(key=lambda x: x[1], reverse=True)\n        \n        # Select top features\n        selected_features = [fid for fid, _ in correlations[:MAX_DRIVERS]]\n        \n        # Return design with driver and selected features\n        return Design(\n            drivers=(driver_id,),\n            columns=tuple(selected_features),\n            products=(),\n            loadings={}\n        )\n    \n    # No strong clinical driver found, look for direct associations\n    # Compute correlations between features and outcome\n    correlations = []\n    for i, fid in enumerate(feats.ids):\n        corr = np.corrcoef(feats.x[:, i], feats.y.astype(float))[0, 1]\n        correlations.append((fid, abs(corr)))\n    \n    # Sort by absolute correlation\n    correlations.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features\n    selected_features = [fid for fid, _ in correlations[:MAX_DRIVERS]]\n    \n    # Return empty design if no mechanism found\n    if not selected_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return design with top features\n    return Design(\n        drivers=(),\n        columns=tuple(selected_features),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers among clinical features\n    clinical_ids = [fid for fid, t in zip(feats.ids, feats.types) if t == 'clinical']\n    \n    # Check if any clinical feature shows strong association with outcome\n    best_clinical = None\n    best_p = 1.0\n    \n    for fid in clinical_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        # Use Welch's t-test for clinical features\n        y0 = x[feats.y == 0]\n        y1 = x[feats.y == 1]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            if p_val < best_p:\n                best_p = p_val\n                best_clinical = fid\n    \n    # If we found a strong clinical driver, use it to adjust other features\n    if best_clinical and best_p < 0.05:\n        driver_id = best_clinical\n        # Compute correlations between features and outcome after adjusting for driver\n        correlations = []\n        col_idx = feats.column(driver_id)\n        X_driver = feats.x[:, col_idx]\n        \n        # For each non-driver feature, compute correlation with outcome\n        for i, fid in enumerate(feats.ids):\n            if fid == driver_id:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.y.astype(float))[0, 1]\n            correlations.append((fid, abs(corr)))\n        \n        # Sort by absolute correlation\n        correlations.sort(key=lambda x: x[1], reverse=True)\n        \n        # Select top features\n        selected_features = [fid for fid, _ in correlations[:MAX_DRIVERS]]\n        \n        # Return design with driver and selected features\n        return Design(\n            drivers=(driver_id,),\n            columns=tuple(selected_features),\n            products=(),\n            loadings={}\n        )\n    \n    # No strong clinical driver found, look for direct associations\n    # Compute correlations between features and outcome\n    correlations = []\n    for i, fid in enumerate(feats.ids):\n        corr = np.corrcoef(feats.x[:, i], feats.y.astype(float))[0, 1]\n        correlations.append((fid, abs(corr)))\n    \n    # Sort by absolute correlation\n    correlations.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features\n    selected_features = [fid for fid, _ in correlations[:MAX_DRIVERS]]\n    \n    # Return empty design if no mechanism found\n    if not selected_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return design with top features\n    return Design(\n        drivers=(),\n        columns=tuple(selected_features),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8860,
+  "completion_tokens": 2106,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Unknown label type: continuous. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.",
+    "bytes": 3213
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Unknown label type: continuous. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.",
+    "bytes": 3241
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2702
+   }
+  ],
+  "wall_s": 23.8
+ }
+}

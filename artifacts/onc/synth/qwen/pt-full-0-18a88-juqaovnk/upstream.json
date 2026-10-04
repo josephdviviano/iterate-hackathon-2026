@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-juqaovnk",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out derived features\n    non_derived_mask = [t != 'derived' for t in feats.types]\n    ids = [i for i, mask in zip(feats.ids, non_derived_mask) if mask]\n    types = [t for t, mask in zip(feats.types, non_derived_mask) if mask]\n    x = feats.x[:, [feats.column(fid) for fid in ids]]\n    \n    # Calculate effect sizes and p-values\n    effects = []\n    for i, fid in enumerate(ids):\n        y1 = x[feats.y == 1, i].mean()\n        y0 = x[feats.y == 0, i].mean()\n        diff = y1 - y0\n        t_stat, p_val = stats.ttest_ind(x[feats.y == 1, i], x[feats.y == 0, i])\n        effects.append((fid, diff, abs(t_stat), p_val))\n    \n    # Sort by effect size and p-value\n    effects.sort(key=lambda x: (-abs(x[1]), x[3]))\n    \n    # Identify correlated pairs\n    corr_pairs = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            r, _ = stats.pearsonr(x[:, i], x[:, j])\n            if abs(r) >= 0.6:\n                corr_pairs.add((ids[i], ids[j]) if ids[i] < ids[j] else (ids[j], ids[i]))\n    \n    # Build clusters of correlated features\n    clusters = []\n    used = set()\n    for i in range(len(ids)):\n        if ids[i] in used:\n            continue\n        cluster = {ids[i]}\n        used.add(ids[i])\n        for j in range(len(ids)):\n            if ids[j] in used:\n                continue\n            if (ids[i], ids[j]) in corr_pairs or (ids[j], ids[i]) in corr_pairs:\n                cluster.add(ids[j])\n                used.add(ids[j])\n        clusters.append(list(cluster))\n    \n    # For each cluster, select the feature with highest effect size\n    selected_features = set()\n    for cluster in clusters:\n        if len(cluster) > 1:\n            # Select feature with strongest effect size in cluster\n            best_fid = max(cluster, key=lambda fid: abs([e for e in effects if e[0] == fid][0][1]))\n            selected_features.add(best_fid)\n        else:\n            selected_features.add(cluster[0])\n    \n    # Select top features based on effect size\n    top_features = [fid for fid, _, _, _ in effects[:20]]  # Top 20 features\n    \n    # Remove duplicates and near-duplicates\n    final_features = []\n    seen = set()\n    for fid in top_features:\n        if fid in selected_features or len(final_features) < MAX_DRIVERS:\n            # Check if this feature is too similar to already selected ones\n            is_similar = False\n            for selected_fid in final_features:\n                if (selected_fid, fid) in corr_pairs or (fid, selected_fid) in corr_pairs:\n                    is_similar = True\n                    break\n            if not is_similar and fid not in seen:\n                final_features.append(fid)\n                seen.add(fid)\n                if len(final_features) >= MAX_DRIVERS:\n                    break\n    \n    # Use all features with strong effects as predictors\n    columns = [fid for fid in ids if abs([e for e in effects if e[0] == fid][0][1]) > 0.15]\n    \n    # Create products for top correlated pairs\n    products = []\n    for a, b in corr_pairs:\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    # Weighted score: sum of top features with effect sizes as weights\n    loadings = {}\n    for fid, effect_size, _, _ in effects:\n        if fid in columns:\n            loadings[fid] = effect_size\n    \n    # Return the design\n    return Design(\n        drivers=tuple(final_features[:MAX_DRIVERS]),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9228,
+  "completion_tokens": 2788,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3747
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3747
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3745
+   }
+  ],
+  "wall_s": 31.8
+ }
+}

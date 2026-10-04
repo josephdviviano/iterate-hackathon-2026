@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3lxmb4qi",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for each feature\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group1 = x[y == 1]\n        group0 = x[y == 0]\n        if len(group1) > 1 and len(group0) > 1:\n            t_stat, p_val = stats.ttest_ind(group1, group0, equal_var=False)\n        else:\n            p_val = 1.0\n            \n        effects.append((fid, effect_size, p_val))\n    \n    # Sort by absolute effect size\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top candidates\n    candidates = [fid for fid, _, _ in effects[:10]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    cor_thresh = 0.6\n    for fid in candidates:\n        x = feats.x[:, feats.column(fid)]\n        is_unique = True\n        for kept_fid in keep:\n            y = feats.x[:, feats.column(kept_fid)]\n            try:\n                corr = np.corrcoef(x, y)[0, 1]\n                if abs(corr) >= cor_thresh:\n                    is_unique = False\n                    break\n            except:\n                continue\n        if is_unique:\n            keep.append(fid)\n    \n    # Check for interactions among top features\n    products = []\n    for i, fid1 in enumerate(keep):\n        for fid2 in keep[i+1:]:\n            # Check if interaction term would be useful\n            x1 = feats.x[:, feats.column(fid1)]\n            x2 = feats.x[:, feats.column(fid2)]\n            # Simple check: if both have strong effects, consider interaction\n            try:\n                effect1 = next(e for f, e, _ in effects if f == fid1)\n                effect2 = next(e for f, e, _ in effects if f == fid2)\n                if abs(effect1) > 0.2 and abs(effect2) > 0.2:\n                    products.append((fid1, fid2))\n            except:\n                continue\n    \n    # Use all features with strong effects\n    columns = [fid for fid, _, p_val in effects if p_val < 0.05]\n    \n    # If no significant features, return empty design\n    if not columns:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select drivers based on effect size\n    drivers = [fid for fid, _, _ in effects if abs(_[1]) > 0.3][:MAX_DRIVERS]\n    \n    # Create weighted score from top features\n    loadings = {}\n    for fid in columns[:5]:  # Top 5 features\n        try:\n            effect = next(e for f, e, _ in effects if f == fid)\n            loadings[fid] = effect\n        except:\n            continue\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8817,
+  "completion_tokens": 2166,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: invalid index to scalar variable.",
+    "bytes": 2784
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: invalid index to scalar variable.",
+    "bytes": 2784
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: invalid index to scalar variable.",
+    "bytes": 2875
+   }
+  ],
+  "wall_s": 24.8
+ }
+}

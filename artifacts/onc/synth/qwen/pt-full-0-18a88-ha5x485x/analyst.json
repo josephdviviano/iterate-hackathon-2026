@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ha5x485x",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter features by statistical significance (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'expression':\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)[0]\n            if abs(t_stat) > 2.0:  # Welch's t-test threshold\n                sig_features.append((fid, i))\n    \n    # Remove near-duplicates based on correlation\n    keep_features = set()\n    corr_pairs = [(a,b) for a,b in [('FNHR8P','VON11'), ('FNHR8P','OLPS12A'), ('IEUT17','FNHR8P'), \n                                   ('NLAY7','FNHR8P'), ('FNHR8P','CLL3'), ('IEUT17','ZEQ13'),\n                                   ('LBB3P','IJJ13'), ('FNHR8P','ZEQ13'), ('NLAY7','VON11'),\n                                   ('VON11','OLPS12A'), ('TUZ3','FNHR8P'), ('HHQH19B','QYGL4'),\n                                   ('AWL12','ZEQ13'), ('IEUT17','VON11'), ('FNHR8P','TOV11'),\n                                   ('NUO7','CSUE1A'), ('VON11','QHA3'), ('NLAY7','OLPS12A'),\n                                   ('TUZ3','VON11'), ('VON11','ZEQ13')] if a in feats.ids and b in feats.ids]\n    \n    for fid, idx in sig_features:\n        # Check if this feature is correlated with any already selected feature\n        is_correlated = False\n        for kept_fid in keep_features:\n            if (fid, kept_fid) in corr_pairs or (kept_fid, fid) in corr_pairs:\n                is_correlated = True\n                break\n        if not is_correlated:\n            keep_features.add(fid)\n    \n    # Limit to MAX_DRIVERS\n    if len(keep_features) > MAX_DRIVERS:\n        # Select by effect size\n        effect_sizes = []\n        for fid in keep_features:\n            col_idx = feats.column(fid)\n            effect_size = abs(np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx]))\n            effect_sizes.append((fid, effect_size))\n        effect_sizes.sort(key=lambda x: x[1], reverse=True)\n        keep_features = set([fid for fid, _ in effect_sizes[:MAX_DRIVERS]])\n    \n    # Use only top features for logistic regression\n    top_features = list(keep_features)\n    \n    # Compute pairwise interactions among top features\n    products = []\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            products.append((a, b))\n    \n    # Create weighted score from top features\n    loadings = {}\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        effect_size = np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx])\n        loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(top_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter features by statistical significance (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'expression':\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)[0]\n            if abs(t_stat) > 2.0:  # Welch's t-test threshold\n                sig_features.append((fid, i))\n    \n    # Remove near-duplicates based on correlation\n    keep_features = set()\n    corr_pairs = [(a,b) for a,b in [('FNHR8P','VON11'), ('FNHR8P','OLPS12A'), ('IEUT17','FNHR8P'), \n                                   ('NLAY7','FNHR8P'), ('FNHR8P','CLL3'), ('IEUT17','ZEQ13'),\n                                   ('LBB3P','IJJ13'), ('FNHR8P','ZEQ13'), ('NLAY7','VON11'),\n                                   ('VON11','OLPS12A'), ('TUZ3','FNHR8P'), ('HHQH19B','QYGL4'),\n                                   ('AWL12','ZEQ13'), ('IEUT17','VON11'), ('FNHR8P','TOV11'),\n                                   ('NUO7','CSUE1A'), ('VON11','QHA3'), ('NLAY7','OLPS12A'),\n                                   ('TUZ3','VON11'), ('VON11','ZEQ13')] if a in feats.ids and b in feats.ids]\n    \n    for fid, idx in sig_features:\n        # Check if this feature is correlated with any already selected feature\n        is_correlated = False\n        for kept_fid in keep_features:\n            if (fid, kept_fid) in corr_pairs or (kept_fid, fid) in corr_pairs:\n                is_correlated = True\n                break\n        if not is_correlated:\n            keep_features.add(fid)\n    \n    # Limit to MAX_DRIVERS\n    if len(keep_features) > MAX_DRIVERS:\n        # Select by effect size\n        effect_sizes = []\n        for fid in keep_features:\n            col_idx = feats.column(fid)\n            effect_size = abs(np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx]))\n            effect_sizes.append((fid, effect_size))\n        effect_sizes.sort(key=lambda x: x[1], reverse=True)\n        keep_features = set([fid for fid, _ in effect_sizes[:MAX_DRIVERS]])\n    \n    # Use only top features for logistic regression\n    top_features = list(keep_features)\n    \n    # Compute pairwise interactions among top features\n    products = []\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            products.append((a, b))\n    \n    # Create weighted score from top features\n    loadings = {}\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        effect_size = np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx])\n        loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(top_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8928,
+  "completion_tokens": 2308,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2593
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3013
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2867
+   }
+  ],
+  "wall_s": 26.2
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5cd48epi",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import StratifiedKFold\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    significant_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(np.corrcoef(feats.x[:, i], feats.y)[0, 1]) > 0.05:\n            significant_features.append(fid)\n    \n    # If no significant features, return empty design\n    if not significant_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for correlation among features to avoid near-duplicates\n    corr_matrix = np.corrcoef(feats.x.T)\n    correlated_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                fid_i, fid_j = feats.ids[i], feats.ids[j]\n                correlated_pairs.add((min(fid_i, fid_j), max(fid_i, fid_j)))\n    \n    # Remove near-duplicates\n    unique_features = []\n    for fid in significant_features:\n        is_duplicate = False\n        for existing_fid in unique_features:\n            if (min(fid, existing_fid), max(fid, existing_fid)) in correlated_pairs:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            unique_features.append(fid)\n    \n    # If no unique features remain, return empty design\n    if not unique_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Fit logistic regression with all unique features\n    X = feats.x[:, [feats.column(fid) for fid in unique_features]]\n    model = LogisticRegression(fit_intercept=True, max_iter=1000)\n    \n    # Cross-validate to get stable coefficients\n    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\n    coefs = []\n    for train_idx, _ in skf.split(X, feats.y):\n        X_train = X[train_idx]\n        y_train = feats.y[train_idx]\n        model.fit(X_train, y_train)\n        coefs.append(model.coef_[0])\n    \n    # Average coefficients\n    avg_coefs = np.mean(coefs, axis=0)\n    \n    # Sort by absolute coefficient value to identify potential drivers\n    sorted_indices = np.argsort(np.abs(avg_coefs))[::-1]\n    \n    # Select top features as drivers (at most MAX_DRIVERS)\n    drivers = tuple([unique_features[i] for i in sorted_indices[:MAX_DRIVERS]])\n    \n    # For columns, use all features that were used in fitting\n    columns = tuple(unique_features)\n    \n    # No products needed\n    products = ()\n    \n    # Loadings based on standardized coefficients\n    loadings = dict(zip(unique_features, avg_coefs))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8485,
+  "completion_tokens": 1967,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: 'set' object is not subscriptable",
+    "bytes": 2782
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2782
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2768
+   }
+  ],
+  "wall_s": 23.1
+ }
+}

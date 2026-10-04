@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-nejna827",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if we have enough patients and features\n    if feats.n < 10 or len(feats.ids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute t-scores for all features\n    t_scores = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            t_scores.append((abs(t_stat), fid))\n    \n    # Sort by absolute t-score descending\n    t_scores.sort(reverse=True)\n    \n    # Select top features (limit to MAX_DRIVERS)\n    selected_features = [fid for _, fid in t_scores[:MAX_DRIVERS]]\n    \n    # Build correlation pairs (only between selected features)\n    corr_pairs = set()\n    indices = [feats.column(fid) for fid in selected_features]\n    if len(indices) > 1:\n        corr_matrix = np.corrcoef(feats.x[:, indices].T)\n        for i in range(len(selected_features)):\n            for j in range(i+1, len(selected_features)):\n                if abs(corr_matrix[i, j]) >= 0.6:\n                    fid_i, fid_j = selected_features[i], selected_features[j]\n                    corr_pairs.add((min(fid_i, fid_j), max(fid_i, fid_j)))\n    \n    # Return design with selected features\n    return Design(\n        drivers=(),\n        columns=tuple(selected_features),\n        products=tuple(corr_pairs),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if we have enough patients and features\n    if feats.n < 10 or len(feats.ids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute t-scores for all features\n    t_scores = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            t_scores.append((abs(t_stat), fid))\n    \n    # Sort by absolute t-score descending\n    t_scores.sort(reverse=True)\n    \n    # Select top features (limit to MAX_DRIVERS)\n    selected_features = [fid for _, fid in t_scores[:MAX_DRIVERS]]\n    \n    # Build correlation pairs (only between selected features)\n    corr_pairs = set()\n    indices = [feats.column(fid) for fid in selected_features]\n    if len(indices) > 1:\n        corr_matrix = np.corrcoef(feats.x[:, indices].T)\n        for i in range(len(selected_features)):\n            for j in range(i+1, len(selected_features)):\n                if abs(corr_matrix[i, j]) >= 0.6:\n                    fid_i, fid_j = selected_features[i], selected_features[j]\n                    corr_pairs.add((min(fid_i, fid_j), max(fid_i, fid_j)))\n    \n    # Return design with selected features\n    return Design(\n        drivers=(),\n        columns=tuple(selected_features),\n        products=tuple(corr_pairs),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5265,
+  "completion_tokens": 1380,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 4010
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1514
+   }
+  ],
+  "wall_s": 15.9
+ }
+}

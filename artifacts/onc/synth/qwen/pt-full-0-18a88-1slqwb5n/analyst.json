@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1slqwb5n",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    seen = set()\n    keep_ids = []\n    for i, fid in enumerate(feats.ids):\n        if fid in seen:\n            continue\n        keep_ids.append(fid)\n        # Check correlations with already-kept features\n        for j, other_fid in enumerate(keep_ids[:-1]):\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(other_fid)])[0,1]) >= 0.6:\n                seen.add(fid)\n                break\n    \n    # Compute effect sizes and p-values for kept features\n    effects = []\n    for i, fid in enumerate(keep_ids):\n        x_col = feats.x[:, feats.column(fid)]\n        y = feats.y\n        mean_diff = np.mean(x_col[y==1]) - np.mean(x_col[y==0])\n        t_stat, p_val = stats.ttest_ind(x_col[y==1], x_col[y==0], equal_var=False)\n        effects.append((fid, abs(mean_diff), p_val))\n    \n    # Sort by effect size and p-value\n    effects.sort(key=lambda x: (-x[1], x[2]))\n    \n    # Select top candidates\n    candidates = [e[0] for e in effects[:5]]\n    \n    # Build logistic regression model with candidates\n    X = feats.x[:, [feats.column(fid) for fid in candidates]]\n    model = LogisticRegression(penalty='l1', solver='liblinear', C=0.1)\n    model.fit(X, feats.y)\n    \n    # Get coefficients\n    coefs = model.coef_[0]\n    \n    # Select features with significant coefficients\n    significant = [(candidates[i], abs(coefs[i])) for i in range(len(candidates)) if abs(coefs[i]) > 0.1]\n    significant.sort(key=lambda x: -x[1])\n    \n    # Select drivers (top 3 with highest absolute coefficients)\n    drivers = [fid for fid, _ in significant[:3]]\n    \n    # Product features: check for interaction terms between top features\n    products = []\n    for i, fid1 in enumerate(drivers):\n        for j, fid2 in enumerate(drivers[i+1:], i+1):\n            products.append((fid1, fid2))\n    \n    # Create loadings dictionary\n    loadings = dict(zip(candidates, coefs))\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(keep_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8416,
+  "completion_tokens": 1884,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2782
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2384
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2224
+   }
+  ],
+  "wall_s": 21.8
+ }
+}

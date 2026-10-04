@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ivvk3d35",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_mask = [t != 'derived' for t in feats.types]\n    non_derived_ids = [fid for i, fid in enumerate(feats.ids) if non_derived_mask[i]]\n    \n    # Compute correlations between all pairs of non-derived features\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in non_derived_ids]].T)\n    \n    # Identify near-duplicates (correlation >= 0.6)\n    near_duplicates = set()\n    for i in range(len(non_derived_ids)):\n        for j in range(i+1, len(non_derived_ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                near_duplicates.add((non_derived_ids[i], non_derived_ids[j]))\n    \n    # Select top features by t-statistic (excluding near-duplicates)\n    drivers = []\n    used_ids = set()\n    \n    # Sort features by absolute t-statistic\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        col_idx = feats.column(fid)\n        y0 = feats.x[feats.y==0, col_idx]\n        y1 = feats.x[feats.y==1, col_idx]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y1, y0)\n            t_stats.append((abs(t_stat), fid))\n    \n    t_stats.sort(reverse=True)\n    \n    # Add features to drivers, avoiding near-duplicates\n    for _, fid in t_stats:\n        if fid in used_ids:\n            continue\n        # Check if any near-duplicate is already selected\n        skip = False\n        for dup1, dup2 in near_duplicates:\n            if (fid == dup1 and dup2 in used_ids) or (fid == dup2 and dup1 in used_ids):\n                skip = True\n                break\n        if not skip:\n            drivers.append(fid)\n            used_ids.add(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # Build columns list (include all non-derived features that aren't near-duplicates)\n    columns = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        col_idx = feats.column(fid)\n        # Check if this feature or its duplicates are already in drivers\n        skip = False\n        for dup1, dup2 in near_duplicates:\n            if (fid == dup1 and dup2 in drivers) or (fid == dup2 and dup1 in drivers):\n                skip = True\n                break\n        if not skip:\n            columns.append(fid)\n    \n    # Create products from driver pairs (avoiding near-duplicates)\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            # Check if they are near-duplicates\n            is_dup = any((d1 == a and d2 == b) or (d1 == b and d2 == a) \n                        for a, b in near_duplicates)\n            if not is_dup:\n                products.append((d1, d2))\n    \n    # Create loadings for weighted score\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        # Use standardized coefficient from simple linear regression with outcome\n        x = feats.x[:, col_idx]\n        y = feats.y.astype(float)\n        if np.std(x) > 0:\n            # Simple linear regression coefficient (scaled by std dev)\n            loading = np.corrcoef(x, y)[0,1] * np.std(x) / np.std(y)\n            loadings[fid] = loading\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9035,
+  "completion_tokens": 2640,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3578
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3678
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3471
+   }
+  ],
+  "wall_s": 29.7
+ }
+}

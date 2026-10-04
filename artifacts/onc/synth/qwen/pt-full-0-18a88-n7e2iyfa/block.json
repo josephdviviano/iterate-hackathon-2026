@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-n7e2iyfa",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Use Welch t-test statistic to rank features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        # Estimate using correlation with outcome\n        corr = np.corrcoef(feats.x[:,i], feats.y)[0,1]\n        t_stat = corr * np.sqrt((len(feats.y) - 2) / (1 - corr**2))\n        t_stats.append(t_stat)\n    \n    # Select top features by absolute t-statistic\n    top_indices = np.argsort(np.abs(t_stats))[::-1][:20]\n    top_features = [feats.ids[i] for i in top_indices]\n    \n    # Check for correlated pairs and remove near-duplicates\n    correlated_pairs = set()\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            fid1, fid2 = top_features[i], top_features[j]\n            corr_val = np.corrcoef(feats.x[:,feats.column(fid1)], \n                                 feats.x[:,feats.column(fid2)])[0,1]\n            if abs(corr_val) >= 0.6:\n                correlated_pairs.add((fid1, fid2))\n    \n    # Remove one feature from each pair\n    selected_features = set()\n    for fid1, fid2 in correlated_pairs:\n        # Prefer the one with higher t-stat\n        idx1, idx2 = feats.column(fid1), feats.column(fid2)\n        if abs(t_stats[idx1]) > abs(t_stats[idx2]):\n            selected_features.add(fid1)\n        else:\n            selected_features.add(fid2)\n    \n    # Add remaining features not involved in correlations\n    for fid in top_features:\n        if fid not in selected_features:\n            selected_features.add(fid)\n    \n    # Cluster features based on similarity to find modules\n    if len(selected_features) > 1:\n        selected_ids = list(selected_features)\n        X_selected = feats.x[:, [feats.column(fid) for fid in selected_ids]]\n        \n        # Try clustering with different numbers of clusters\n        best_score = -np.inf\n        best_clusters = None\n        \n        for n_clusters in range(2, min(6, len(selected_ids))):\n            try:\n                clusterer = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')\n                labels = clusterer.fit_predict(X_selected)\n                \n                # Score based on within-cluster similarity\n                score = 0\n                for c in range(n_clusters):\n                    mask = labels == c\n                    if np.sum(mask) > 1:\n                        cluster_data = X_selected[mask]\n                        avg_sim = np.mean(cosine_similarity(cluster_data))\n                        score += avg_sim * np.sum(mask)\n                \n                if score > best_score:\n                    best_score = score\n                    best_clusters = labels\n            except:\n                continue\n        \n        if best_clusters is not None:\n            # Form module from best cluster\n            module_members = []\n            for i, label in enumerate(best_clusters):\n                if label == np.argmax(np.bincount(best_clusters)):  # Most common cluster\n                    module_members.append(selected_ids[i])\n            \n            # Compute weighted score from module members\n            loadings = {}\n            weights = np.abs([t_stats[feats.column(fid)] for fid in module_members])\n            weights = weights / np.sum(weights)  # Normalized weights\n            \n            for i, fid in enumerate(module_members):\n                loadings[fid] = weights[i]\n            \n            return Design(\n                drivers=tuple(module_members[:MAX_DRIVERS]),\n                columns=tuple(module_members),\n                products=(),\n                loadings=loadings\n            )\n    \n    # If no clear module found, use top features\n    top_drivers = [feats.ids[i] for i in np.argsort(np.abs(t_stats))[::-1][:MAX_DRIVERS]]\n    \n    return Design(\n        drivers=tuple(top_drivers),\n        columns=tuple(top_drivers),\n        products=(),\n        loadings={fid: 1.0/len(top_drivers) for fid in top_drivers}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9681,
+  "completion_tokens": 2840,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'hasattr' is not defined",
+    "bytes": 4450
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'hasattr' is not defined",
+    "bytes": 4450
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: list index out of range",
+    "bytes": 4096
+   }
+  ],
+  "wall_s": 32.3
+ }
+}

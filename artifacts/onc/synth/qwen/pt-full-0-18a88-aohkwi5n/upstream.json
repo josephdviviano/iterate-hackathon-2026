@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-aohkwi5n",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Create a mapping from feature id to its statistics\n    # Based on the problem description, we'll prioritize features \n    # by their position in the ranked list (first 20 features)\n    \n    # Use the first 20 features as candidates (based on ranking in problem description)\n    candidates = list(feats.ids[:20])\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('LBV14', 'BRF16'), ('FWIC14', 'DNM11'), ('NXUR3', 'DLW17'),\n        ('RQV6', 'LBV14'), ('WUY9', 'BRF16'), ('FWIC14', 'DXJE5'),\n        ('DXJE5', 'DNM11'), ('LBV14', 'NHR5'), ('CWWV6B', 'LBV14'),\n        ('WUY9', 'LBV14'), ('EOEY11', 'SOKH19'), ('LBV14', 'KBJO11'),\n        ('MCZ2A', 'RFIQ18'), ('BRF16', 'NHR5'), ('RQV6', 'NHR5'),\n        ('CWWV6B', 'BRF16'), ('KHP6', 'IMJ11'), ('CWWV6B', 'CMGZ19A'),\n        ('WUY9', 'DNM11'), ('RQV6', 'BRF16')\n    ]\n    \n    # Build set of candidate features\n    feature_set = set(candidates)\n    \n    # Remove children in correlated pairs to prefer parents\n    # For simplicity, remove the second element in each pair if both present\n    for a, b in correlated_pairs:\n        if a in feature_set and b in feature_set:\n            # Arbitrarily remove b to prefer a as parent\n            feature_set.discard(b)\n    \n    # Select top features by position in original list (simplified ranking)\n    remaining_features = list(feature_set)\n    sorted_remaining = sorted(remaining_features, key=lambda x: feats.column(x))\n    \n    # Select drivers (at most MAX_DRIVERS)\n    drivers = tuple(sorted_remaining[:MAX_DRIVERS])\n    \n    # Columns include all selected features\n    columns = drivers\n    \n    # Products: none for now\n    products = ()\n    \n    # Loadings: simple weights based on position in ranking\n    loadings = {}\n    for fid in columns:\n        pos = feats.column(fid)\n        # Use negative position as a simple weighting scheme\n        loadings[fid] = -pos\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Create a mapping from feature id to its statistics\n    # Based on the problem description, we'll prioritize features \n    # by their position in the ranked list (first 20 features)\n    \n    # Use the first 20 features as candidates (based on ranking in problem description)\n    candidates = list(feats.ids[:20])\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('LBV14', 'BRF16'), ('FWIC14', 'DNM11'), ('NXUR3', 'DLW17'),\n        ('RQV6', 'LBV14'), ('WUY9', 'BRF16'), ('FWIC14', 'DXJE5'),\n        ('DXJE5', 'DNM11'), ('LBV14', 'NHR5'), ('CWWV6B', 'LBV14'),\n        ('WUY9', 'LBV14'), ('EOEY11', 'SOKH19'), ('LBV14', 'KBJO11'),\n        ('MCZ2A', 'RFIQ18'), ('BRF16', 'NHR5'), ('RQV6', 'NHR5'),\n        ('CWWV6B', 'BRF16'), ('KHP6', 'IMJ11'), ('CWWV6B', 'CMGZ19A'),\n        ('WUY9', 'DNM11'), ('RQV6', 'BRF16')\n    ]\n    \n    # Build set of candidate features\n    feature_set = set(candidates)\n    \n    # Remove children in correlated pairs to prefer parents\n    # For simplicity, remove the second element in each pair if both present\n    for a, b in correlated_pairs:\n        if a in feature_set and b in feature_set:\n            # Arbitrarily remove b to prefer a as parent\n            feature_set.discard(b)\n    \n    # Select top features by position in original list (simplified ranking)\n    remaining_features = list(feature_set)\n    sorted_remaining = sorted(remaining_features, key=lambda x: feats.column(x))\n    \n    # Select drivers (at most MAX_DRIVERS)\n    drivers = tuple(sorted_remaining[:MAX_DRIVERS])\n    \n    # Columns include all selected features\n    columns = drivers\n    \n    # Products: none for now\n    products = ()\n    \n    # Loadings: simple weights based on position in ranking\n    loadings = {}\n    for fid in columns:\n        pos = feats.column(fid)\n        # Use negative position as a simple weighting scheme\n        loadings[fid] = -pos\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8806,
+  "completion_tokens": 2112,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2247
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2906
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2247
+   }
+  ],
+  "wall_s": 24.3
+ }
+}

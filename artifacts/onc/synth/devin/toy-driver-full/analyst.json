@@ -1,0 +1,26 @@
+{
+ "world_id": "toy-driver-full",
+ "seed": "analyst",
+ "ok": true,
+ "source": "def design(feats) -> Design:\n    x, y = np.asarray(feats.x), np.asarray(feats.y)\n    empty = Design(drivers=(), columns=(), products=(), loadings={})\n    if x.shape[1] == 0 or min(np.sum(y == 0), np.sum(y == 1)) < 3:\n        return empty\n    p = stats.ttest_ind(x[y == 1], x[y == 0], axis=0, equal_var=False).pvalue\n    p = np.where(np.isfinite(p), p, 1.0)\n    j = int(np.argmin(p))\n    if p[j] >= 0.01 / x.shape[1] or MAX_DRIVERS < 1:\n        return empty\n    fid = feats.ids[j]\n    return Design(drivers=(fid,), columns=(fid,), products=(), loadings={})\n",
+ "last_source": "def design(feats) -> Design:\n    x, y = np.asarray(feats.x), np.asarray(feats.y)\n    empty = Design(drivers=(), columns=(), products=(), loadings={})\n    if x.shape[1] == 0 or min(np.sum(y == 0), np.sum(y == 1)) < 3:\n        return empty\n    p = stats.ttest_ind(x[y == 1], x[y == 0], axis=0, equal_var=False).pvalue\n    p = np.where(np.isfinite(p), p, 1.0)\n    j = int(np.argmin(p))\n    if p[j] >= 0.01 / x.shape[1] or MAX_DRIVERS < 1:\n        return empty\n    fid = feats.ids[j]\n    return Design(drivers=(fid,), columns=(fid,), products=(), loadings={})\n",
+ "meta": {
+  "backend": "devin",
+  "rounds": 1,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 556
+   }
+  ],
+  "attachment": true,
+  "session_id": "devin-24ab46e01f8e4e169eb769b2b5ee091f",
+  "session_url": "https://app.devin.ai/sessions/24ab46e01f8e4e169eb769b2b5ee091f",
+  "status": "working",
+  "wall_s": 42.4
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-dxzw9h94",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    x = feats.x\n    y = feats.y\n    \n    # Identify near-duplicates (correlation >= 0.6)\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Filter out near-duplicates\n    keep_mask = [i for i in range(len(ids)) if ids[i] not in to_remove]\n    keep_ids = [ids[i] for i in keep_mask]\n    keep_x = x[:, keep_mask]\n    \n    # Calculate effect sizes using Welch's t-test\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        group0 = keep_x[y==0, i]\n        group1 = keep_x[y==1, i]\n        if len(group0) > 0 and len(group1) > 0:\n            t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            effect_sizes.append((abs(t_stat), fid))\n        else:\n            effect_sizes.append((0, fid))\n    \n    # Sort by effect size and take top MAX_DRIVERS\n    effect_sizes.sort(reverse=True)\n    drivers = [fid for _, fid in effect_sizes[:MAX_DRIVERS]]\n    \n    # If no strong effects, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build columns (include drivers and their correlates)\n    columns = []\n    for fid in keep_ids:\n        if fid in drivers:\n            columns.append(fid)\n        else:\n            # Include correlates of drivers (correlation >= 0.5)\n            for drv in drivers:\n                drv_idx = keep_ids.index(drv)\n                fid_idx = keep_ids.index(fid)\n                corr = abs(corr_matrix[drv_idx, fid_idx])\n                if corr >= 0.5:\n                    columns.append(fid)\n                    break\n    \n    # Remove duplicates from columns while preserving order\n    seen = set()\n    unique_columns = []\n    for fid in columns:\n        if fid not in seen:\n            seen.add(fid)\n            unique_columns.append(fid)\n    columns = unique_columns\n    \n    # Create products between drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            products.append((d1, d2))\n    \n    # Create weighted loading (simple sum of drivers)\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8084,
+  "completion_tokens": 1807,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2142
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2519
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2510
+   }
+  ],
+  "wall_s": 20.8
+ }
+}

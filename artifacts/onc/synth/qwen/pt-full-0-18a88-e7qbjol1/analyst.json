@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-e7qbjol1",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates based on t-statistics\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n            candidates.append((fid, t_stat))\n    \n    # Sort by t-statistic descending\n    candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated with |r| >= 0.6)\n    filtered_candidates = []\n    excluded = set()\n    for fid, t_stat in candidates:\n        if fid in excluded:\n            continue\n        filtered_candidates.append((fid, t_stat))\n        # Mark correlated features for exclusion\n        for other_fid, _ in candidates:\n            if other_fid == fid or other_fid in excluded:\n                continue\n            col1 = feats.column(fid)\n            col2 = feats.column(other_fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n            if abs(corr) >= 0.6:\n                excluded.add(other_fid)\n    \n    # Select top candidates for regression\n    selected_features = [fid for fid, _ in filtered_candidates[:8]]\n    \n    # Fit logistic regression to identify key drivers\n    X = feats.x[:, [feats.column(fid) for fid in selected_features]]\n    scaler = StandardScaler()\n    X_scaled = scaler.fit_transform(X)\n    \n    lr = LogisticRegression(penalty='l1', solver='liblinear', random_state=42)\n    lr.fit(X_scaled, feats.y)\n    \n    # Get coefficients and select important features\n    coefs = np.abs(lr.coef_[0])\n    feature_importance = list(zip(selected_features, coefs))\n    feature_importance.sort(key=lambda x: x[1], reverse=True)\n    \n    # Return top features as drivers, columns, and products\n    drivers = tuple(fid for fid, _ in feature_importance[:MAX_DRIVERS])\n    columns = tuple(selected_features)\n    \n    # Simple interaction terms between top features\n    products = []\n    top_fids = [fid for fid, _ in feature_importance[:3]]\n    for i, a in enumerate(top_fids):\n        for b in top_fids[i+1:]:\n            products.append((a, b))\n    \n    # Loadings based on regression weights\n    loadings = dict(zip(selected_features, lr.coef_[0]))\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates based on t-statistics\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n            candidates.append((fid, t_stat))\n    \n    # Sort by t-statistic descending\n    candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated with |r| >= 0.6)\n    filtered_candidates = []\n    excluded = set()\n    for fid, t_stat in candidates:\n        if fid in excluded:\n            continue\n        filtered_candidates.append((fid, t_stat))\n        # Mark correlated features for exclusion\n        for other_fid, _ in candidates:\n            if other_fid == fid or other_fid in excluded:\n                continue\n            col1 = feats.column(fid)\n            col2 = feats.column(other_fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n            if abs(corr) >= 0.6:\n                excluded.add(other_fid)\n    \n    # Select top candidates for regression\n    selected_features = [fid for fid, _ in filtered_candidates[:8]]\n    \n    # Fit logistic regression to identify key drivers\n    X = feats.x[:, [feats.column(fid) for fid in selected_features]]\n    scaler = StandardScaler()\n    X_scaled = scaler.fit_transform(X)\n    \n    lr = LogisticRegression(penalty='l1', solver='liblinear', random_state=42)\n    lr.fit(X_scaled, feats.y)\n    \n    # Get coefficients and select important features\n    coefs = np.abs(lr.coef_[0])\n    feature_importance = list(zip(selected_features, coefs))\n    feature_importance.sort(key=lambda x: x[1], reverse=True)\n    \n    # Return top features as drivers, columns, and products\n    drivers = tuple(fid for fid, _ in feature_importance[:MAX_DRIVERS])\n    columns = tuple(selected_features)\n    \n    # Simple interaction terms between top features\n    products = []\n    top_fids = [fid for fid, _ in feature_importance[:3]]\n    for i, a in enumerate(top_fids):\n        for b in top_fids[i+1:]:\n            products.append((a, b))\n    \n    # Loadings based on regression weights\n    loadings = dict(zip(selected_features, lr.coef_[0]))\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8674,
+  "completion_tokens": 1932,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2744
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2744
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2521
+   }
+  ],
+  "wall_s": 22.1
+ }
+}

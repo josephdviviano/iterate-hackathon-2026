@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-bkmp3s89",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using Welch's t-test\n    drivers = []\n    \n    # Check if any clinical feature shows strong association with outcome\n    clinical_features = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'clinical']\n    \n    # If we have clinical features, check if they're strongly associated with outcome\n    if clinical_features:\n        # Use Welch's t-test to identify strongest clinical associations\n        best_clinical = None\n        best_t = 0\n        \n        for fid in clinical_features:\n            col_idx = feats.column(fid)\n            y0 = feats.x[feats.y == 0, col_idx]\n            y1 = feats.x[feats.y == 1, col_idx]\n            \n            if len(y0) > 0 and len(y1) > 0:\n                t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                if abs(t_stat) > best_t:\n                    best_t = abs(t_stat)\n                    best_clinical = fid\n                    \n        if best_clinical and best_t > 5.0:\n            drivers.append(best_clinical)\n    \n    # Select top features based on effect size (mean difference)\n    selected_features = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col_idx]\n        y1 = feats.x[feats.y == 1, col_idx]\n        \n        if len(y0) > 0 and len(y1) > 0:\n            mean_diff = np.mean(y1) - np.mean(y0)\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            selected_features.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by t-statistic and take top features\n    selected_features.sort(key=lambda x: x[2], reverse=True)\n    \n    # Limit to reasonable number of features\n    columns = [f[0] for f in selected_features[:5]]\n    \n    # No product terms for simplicity\n    products = []\n    \n    # Weighted score: use top features with weights based on effect sizes\n    loadings = {}\n    for i, (fid, _, _) in enumerate(selected_features[:5]):\n        loadings[fid] = 1.0 / (i + 1)  # Inverse rank weighting\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using Welch's t-test\n    drivers = []\n    \n    # Check if any clinical feature shows strong association with outcome\n    clinical_features = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'clinical']\n    \n    # If we have clinical features, check if they're strongly associated with outcome\n    if clinical_features:\n        # Use Welch's t-test to identify strongest clinical associations\n        best_clinical = None\n        best_t = 0\n        \n        for fid in clinical_features:\n            col_idx = feats.column(fid)\n            y0 = feats.x[feats.y == 0, col_idx]\n            y1 = feats.x[feats.y == 1, col_idx]\n            \n            if len(y0) > 0 and len(y1) > 0:\n                t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                if abs(t_stat) > best_t:\n                    best_t = abs(t_stat)\n                    best_clinical = fid\n                    \n        if best_clinical and best_t > 5.0:\n            drivers.append(best_clinical)\n    \n    # Select top features based on effect size (mean difference)\n    selected_features = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col_idx]\n        y1 = feats.x[feats.y == 1, col_idx]\n        \n        if len(y0) > 0 and len(y1) > 0:\n            mean_diff = np.mean(y1) - np.mean(y0)\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            selected_features.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by t-statistic and take top features\n    selected_features.sort(key=lambda x: x[2], reverse=True)\n    \n    # Limit to reasonable number of features\n    columns = [f[0] for f in selected_features[:5]]\n    \n    # No product terms for simplicity\n    products = []\n    \n    # Weighted score: use top features with weights based on effect sizes\n    loadings = {}\n    for i, (fid, _, _) in enumerate(selected_features[:5]):\n        loadings[fid] = 1.0 / (i + 1)  # Inverse rank weighting\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5259,
+  "completion_tokens": 1456,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3784
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2236
+   }
+  ],
+  "wall_s": 16.6
+ }
+}

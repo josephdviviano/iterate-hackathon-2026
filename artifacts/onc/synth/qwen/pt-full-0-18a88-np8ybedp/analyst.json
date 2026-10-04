@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-np8ybedp",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set(feats.ids)\n    correlated_pairs = [\n        ('FYAQ3', 'DCIN5'), ('ORAP13', 'FYAQ3'), ('ORAP13', 'DCIN5'),\n        ('YJE17', 'GTV18'), ('DTBE12', 'CEB3'), ('FRX3A', 'GTV18'),\n        ('JUS17', 'GTV18'), ('YJE17', 'FRX3A'), ('JUS17', 'AJU8B'),\n        ('KDA13', 'GTV18'), ('YJE17', 'JUS17'), ('GTV18', 'CEB3'),\n        ('FRX3A', 'JUS17'), ('YJE17', 'GNK13'), ('DTBE12', 'ORAP13'),\n        ('VFEW6', 'GTV18'), ('KDA13', 'YJE17'), ('YJE17', 'VFEW6'),\n        ('YJE17', 'CEB3'), ('DZOJ3', 'JUS17')\n    ]\n    \n    for a, b in correlated_pairs:\n        if a in keep and b in keep:\n            keep.remove(b)\n    \n    # Filter to keep features\n    keep_ids = tuple(id for id in feats.ids if id in keep)\n    \n    # Calculate effect sizes and p-values\n    effects = []\n    for fid in keep_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Mean difference\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        \n        effects.append((fid, effect, abs(t_stat), p_val))\n    \n    # Sort by effect size and significance\n    effects.sort(key=lambda x: (-abs(x[1]), x[3]))\n    \n    # Select top candidates for drivers\n    drivers = tuple(fid for fid, _, _, _ in effects[:MAX_DRIVERS] if abs(_[1]) > 0.1)\n    \n    # Build regression features\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Start with top drivers\n    for fid in drivers:\n        columns.append(fid)\n        loadings[fid] = 1.0\n    \n    # Add significant individual features\n    for fid, effect, t_stat, p_val in effects:\n        if fid not in drivers and p_val < 0.05:\n            columns.append(fid)\n            loadings[fid] = 1.0\n    \n    # Add interaction terms between top features\n    top_features = list(drivers) + [fid for fid, _, _, _ in effects[:10] if fid not in drivers]\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            if a != b:\n                products.append((a, b))\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8811,
+  "completion_tokens": 2381,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: invalid index to scalar variable.",
+    "bytes": 2683
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: invalid index to scalar variable.",
+    "bytes": 2683
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: invalid index to scalar variable.",
+    "bytes": 2467
+   }
+  ],
+  "wall_s": 27.8
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-snv4vgde",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for each feature\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        mean_diff = np.mean(x[y==1]) - np.mean(x[y==0])\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        effects.append((fid, abs(mean_diff), abs(t_stat), p_val))\n    \n    # Sort by effect size (mean difference)\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates, removing near-duplicates\n    selected = []\n    seen = set()\n    for fid, _, _, _ in effects:\n        if fid in seen:\n            continue\n        # Check correlation with already selected features\n        is_duplicate = False\n        for sel_fid in selected:\n            col_a = feats.column(sel_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected.append(fid)\n            seen.add(fid)\n            if len(selected) >= MAX_DRIVERS:\n                break\n    \n    # If no strong signals, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For the mechanism, use the strongest feature(s) \n    drivers = tuple(selected[:MAX_DRIVERS])\n    \n    # Include only the selected features for modeling to keep it small\n    columns = tuple(selected)\n    \n    # No interactions to keep model small\n    products = ()\n    \n    # Simple weighted score based on effect sizes\n    loadings = {}\n    for fid in selected:\n        effect = next((e[2] for e in effects if e[0] == fid), 0)\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8235,
+  "completion_tokens": 1668,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 2423
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2536
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 1917
+   }
+  ],
+  "wall_s": 20.8
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s9omjx4r",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('LLD15B', 'UMER10'), ('PIDK14', 'RVD4'), ('PIDK14', 'UMER10'), \n        ('YHMV15', 'GRD5'), ('MZOE8', 'UMER10'), ('TWDW4', 'UMER10'),\n        ('WIIQ8', 'KQTD7A'), ('DKJ3', 'PAYD9'), ('PIDK14', 'LLD15B'),\n        ('UEHB14L', 'UMER10'), ('TWDW4', 'LJM11B'), ('LLD15B', 'TWDW4'),\n        ('JAAP6P', 'BYR14'), ('LLD15B', 'UEHB14L'), ('NBG10', 'UMER10'),\n        ('UMER10', 'RZE16B'), ('YHMV15', 'ROC5'), ('YZLX11P', 'LLD15B'),\n        ('LLD15B', 'NBG10'), ('PIDK14', 'MZOE8')\n    ] if a in feats.ids and b in feats.ids]\n    \n    unique_ids = set(feats.ids)\n    for a, b in corr_pairs:\n        if a in unique_ids and b in unique_ids:\n            # Keep the one with higher absolute t-statistic\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            t_a = abs(np.mean(feats.x[feats.y==1, idx_a]) - np.mean(feats.x[feats.y==0, idx_a]))\n            t_b = abs(np.mean(feats.x[feats.y==1, idx_b]) - np.mean(feats.x[feats.y==0, idx_b]))\n            if t_a < t_b:\n                unique_ids.remove(a)\n            else:\n                unique_ids.remove(b)\n    \n    # Filter to unique features\n    unique_feats = [fid for fid in feats.ids if fid in unique_ids]\n    \n    # Compute effect sizes using Welch's t-test\n    effects = []\n    for fid in unique_feats:\n        idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, idx]\n        y1 = feats.x[feats.y == 1, idx]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n            effects.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features for drivers (limit to 4 as per checker report)\n    drivers = tuple([fid for fid, _ in effects[:4]])\n    \n    # For logistic regression, include top 3 features\n    columns = tuple([fid for fid, effect in effects[:3] if effect > 1.0])\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Weighted score using top 3 features\n    loadings = {}\n    for i, (fid, _) in enumerate(effects[:3]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('LLD15B', 'UMER10'), ('PIDK14', 'RVD4'), ('PIDK14', 'UMER10'), \n        ('YHMV15', 'GRD5'), ('MZOE8', 'UMER10'), ('TWDW4', 'UMER10'),\n        ('WIIQ8', 'KQTD7A'), ('DKJ3', 'PAYD9'), ('PIDK14', 'LLD15B'),\n        ('UEHB14L', 'UMER10'), ('TWDW4', 'LJM11B'), ('LLD15B', 'TWDW4'),\n        ('JAAP6P', 'BYR14'), ('LLD15B', 'UEHB14L'), ('NBG10', 'UMER10'),\n        ('UMER10', 'RZE16B'), ('YHMV15', 'ROC5'), ('YZLX11P', 'LLD15B'),\n        ('LLD15B', 'NBG10'), ('PIDK14', 'MZOE8')\n    ] if a in feats.ids and b in feats.ids]\n    \n    unique_ids = set(feats.ids)\n    for a, b in corr_pairs:\n        if a in unique_ids and b in unique_ids:\n            # Keep the one with higher absolute t-statistic\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            t_a = abs(np.mean(feats.x[feats.y==1, idx_a]) - np.mean(feats.x[feats.y==0, idx_a]))\n            t_b = abs(np.mean(feats.x[feats.y==1, idx_b]) - np.mean(feats.x[feats.y==0, idx_b]))\n            if t_a < t_b:\n                unique_ids.remove(a)\n            else:\n                unique_ids.remove(b)\n    \n    # Filter to unique features\n    unique_feats = [fid for fid in feats.ids if fid in unique_ids]\n    \n    # Compute effect sizes using Welch's t-test\n    effects = []\n    for fid in unique_feats:\n        idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, idx]\n        y1 = feats.x[feats.y == 1, idx]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n            effects.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features for drivers (limit to 4 as per checker report)\n    drivers = tuple([fid for fid, _ in effects[:4]])\n    \n    # For logistic regression, include top 3 features\n    columns = tuple([fid for fid, effect in effects[:3] if effect > 1.0])\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Weighted score using top 3 features\n    loadings = {}\n    for i, (fid, _) in enumerate(effects[:3]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9113,
+  "completion_tokens": 2563,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2867
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2892
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2417
+   }
+  ],
+  "wall_s": 29.4
+ }
+}

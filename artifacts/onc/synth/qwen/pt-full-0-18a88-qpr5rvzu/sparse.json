@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qpr5rvzu",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_threshold = 0.6\n    corr_matrix = np.corrcoef(feats.x.T)\n    to_remove = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= corr_threshold:\n                to_remove.add(feats.ids[j])\n    \n    usable_ids = [fid for fid in feats.ids if fid not in to_remove]\n    \n    # Handle case where no features remain after duplicate removal\n    if not usable_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Get indices for usable features\n    usable_indices = [feats.column(fid) for fid in usable_ids]\n    \n    # Calculate effect sizes and select top candidates\n    x_subset = feats.x[:, usable_indices]\n    effect_sizes = []\n    for i, fid in enumerate(usable_ids):\n        group_means = [np.mean(x_subset[feats.y==c, i]) for c in [0,1]]\n        effect_size = group_means[1] - group_means[0]\n        effect_sizes.append((fid, abs(effect_size)))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features as potential drivers\n    candidate_drivers = [fid for fid, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # Check for strong correlations among top features\n    if len(candidate_drivers) > 1:\n        # Get indices for candidate drivers\n        driver_indices = [feats.column(fid) for fid in candidate_drivers if fid in feats.ids]\n        if len(driver_indices) > 1:\n            selected_corr = np.corrcoef(x_subset[:, driver_indices].T)\n            # Remove correlated features\n            to_remove_drivers = set()\n            for i in range(len(candidate_drivers)):\n                for j in range(i+1, len(candidate_drivers)):\n                    if j < len(selected_corr) and i < len(selected_corr):\n                        if abs(selected_corr[i,j]) >= 0.6:\n                            to_remove_drivers.add(candidate_drivers[j])\n            \n            candidate_drivers = [fid for fid in candidate_drivers if fid not in to_remove_drivers]\n    \n    # If no strong effect, return empty design\n    if len(candidate_drivers) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    drivers = tuple(candidate_drivers)\n    columns = tuple(usable_ids)\n    \n    # Add interaction terms between top drivers\n    products = []\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            products.append((drivers[i], drivers[j]))\n    \n    # Weighted score using effect sizes\n    loadings = {}\n    for i, fid in enumerate(usable_ids):\n        if fid in candidate_drivers:\n            group_means = [np.mean(x_subset[feats.y==c, i]) for c in [0,1]]\n            loadings[fid] = group_means[1] - group_means[0]\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8775,
+  "completion_tokens": 2001,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 32 is out of bounds for axis 1 with size 22",
+    "bytes": 2578
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 32 is out of bounds for axis 1 with size 22",
+    "bytes": 2633
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 32 is out of bounds for axis 1 with size 22",
+    "bytes": 3115
+   }
+  ],
+  "wall_s": 22.6
+ }
+}

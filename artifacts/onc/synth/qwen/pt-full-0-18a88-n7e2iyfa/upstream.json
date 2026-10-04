@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-n7e2iyfa",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import f_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features by mean difference and t-test\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            if abs(mean_diff) > 0.5 and abs(t_stat) > 10:\n                strong_features.append((fid, mean_diff, t_stat, p_val))\n    \n    # Sort by effect size\n    strong_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Remove near-duplicates (correlated with |r| >= 0.6)\n    to_remove = set()\n    corr_pairs = [\n        ('RAV7P', 'VXX13A'), ('IZR10', 'RTD16'), ('IZR10', 'BJZZ7'), ('KJJ16', 'WFC3'),\n        ('IZR10', 'SXGM9L'), ('KJJ16', 'LVPE1B'), ('LVPE1B', 'WFC3'), ('IZR10', 'PFL10'),\n        ('IZR10', 'HWXE18'), ('IZR10', 'XRU7'), ('RTD16', 'SXGM9L'), ('RFK10', 'SXGM9L'),\n        ('RTD16', 'BJZZ7'), ('RFK10', 'IZR10'), ('SXGM9L', 'BJZZ7'), ('IZR10', 'IVS8A'),\n        ('IZR10', 'WFC3'), ('RTD16', 'PFL10'), ('ROR17', 'IVS8A'), ('HWXE18', 'IVS8A')\n    ]\n    \n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            if abs(np.corrcoef(feats.x[:, idx_a], feats.x[:, idx_b])[0, 1]) >= 0.6:\n                # Prefer stronger feature\n                a_idx = None\n                b_idx = None\n                for j, (fid, _, _, _) in enumerate(strong_features):\n                    if fid == a:\n                        a_idx = j\n                    elif fid == b:\n                        b_idx = j\n                if a_idx is not None and b_idx is not None:\n                    if strong_features[a_idx][1] > strong_features[b_idx][1]:\n                        to_remove.add(b)\n                    else:\n                        to_remove.add(a)\n    \n    # Select drivers (top 5 non-correlated features)\n    drivers = []\n    for fid, _, _, _ in strong_features:\n        if fid not in to_remove:\n            drivers.append(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # Build columns, products, and loadings\n    columns = [fid for fid in feats.ids if fid not in to_remove]\n    products = []\n    loadings = {}\n    \n    # Simple weighted sum approach\n    for i, fid in enumerate(columns):\n        if feats.types[i] != 'derived':\n            # Weight by effect size\n            t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            loadings[fid] = abs(t_stat)\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9254,
+  "completion_tokens": 2544,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 2682
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2924
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2924
+   }
+  ],
+  "wall_s": 29.1
+ }
+}

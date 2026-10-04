@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-glxhyp1f",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on t-statistics and AUC\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            # Compute t-statistic manually\n            x_col = feats.x[:, feats.column(fid)]\n            mean_y1 = np.mean(x_col[feats.y == 1])\n            mean_y0 = np.mean(x_col[feats.y == 0])\n            t_stat = (mean_y1 - mean_y0) / (np.std(x_col) + 1e-8)\n            auc = roc_auc_score(feats.y, x_col)\n            strong_candidates.append((fid, abs(t_stat), auc))\n    \n    # Sort by t-statistic\n    strong_candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    if len(feats.ids) > 1:\n        corr_matrix = np.corrcoef(feats.x.T)\n        for i in range(len(feats.ids)):\n            for j in range(i+1, len(feats.ids)):\n                if abs(corr_matrix[i,j]) >= 0.6:\n                    # Keep the one with higher absolute t-statistic\n                    if i < len(strong_candidates) and j < len(strong_candidates):\n                        fid_i, t_i, _ = strong_candidates[i]\n                        fid_j, t_j, _ = strong_candidates[j]\n                        if t_i < t_j:\n                            to_remove.add(fid_i)\n                        else:\n                            to_remove.add(fid_j)\n    \n    # Filter out near-duplicates\n    filtered_candidates = [c for c in strong_candidates if c[0] not in to_remove]\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = tuple(c[0] for c in filtered_candidates[:MAX_DRIVERS])\n    \n    # Build columns list - include all non-derived features\n    columns = tuple(fid for fid in feats.ids if feats.types[feats.column(fid)] != 'derived')\n    \n    # Build products - consider pairs with high correlation\n    products = []\n    if len(feats.ids) > 1:\n        corr_matrix = np.corrcoef(feats.x.T)\n        for i in range(len(feats.ids)):\n            for j in range(i+1, len(feats.ids)):\n                if abs(corr_matrix[i,j]) >= 0.6:\n                    fid_i, fid_j = feats.ids[i], feats.ids[j]\n                    if (fid_i, fid_j) not in products and (fid_j, fid_i) not in products:\n                        products.append((fid_i, fid_j))\n    \n    # Build loadings - use weighted sum of top features\n    loadings = {}\n    for i, (fid, _, _) in enumerate(filtered_candidates[:5]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8316,
+  "completion_tokens": 1953,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: list index out of range",
+    "bytes": 2331
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2739
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2755
+   }
+  ],
+  "wall_s": 22.3
+ }
+}

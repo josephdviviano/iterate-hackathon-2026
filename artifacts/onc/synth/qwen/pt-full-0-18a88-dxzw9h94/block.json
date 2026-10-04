@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-dxzw9h94",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression features only\n    expr_ids = [fid for fid, t in zip(feats.ids, feats.types) if t == 'expression']\n    expr_cols = [feats.column(fid) for fid in expr_ids]\n    \n    # Compute correlation matrix\n    X = feats.x[:, expr_cols]\n    corr_matrix = np.corrcoef(X.T)\n    \n    # Find highly correlated pairs (|r| >= 0.6)\n    high_corr_pairs = []\n    for i in range(len(expr_ids)):\n        for j in range(i+1, len(expr_ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((expr_ids[i], expr_ids[j]))\n    \n    # Cluster correlated features using hierarchical clustering\n    if len(high_corr_pairs) > 0:\n        # Build adjacency matrix\n        n_features = len(expr_ids)\n        adj = np.zeros((n_features, n_features))\n        for a, b in high_corr_pairs:\n            i, j = expr_ids.index(a), expr_ids.index(b)\n            adj[i,j] = adj[j,i] = 1\n        \n        # Cluster\n        clustering = AgglomerativeClustering(n_clusters=None, \n                                           distance_threshold=0.5,\n                                           linkage='average')\n        clusters = clustering.fit_predict(1-adj)\n        \n        # Find largest cluster\n        unique_clusters, counts = np.unique(clusters, return_counts=True)\n        largest_cluster = unique_clusters[np.argmax(counts)]\n        module_features = [expr_ids[i] for i in range(n_features) if clusters[i] == largest_cluster]\n    else:\n        # No strong correlations; pick top features by effect size\n        means_y1 = np.mean(feats.x[feats.y==1, expr_cols], axis=0)\n        means_y0 = np.mean(feats.x[feats.y==0, expr_cols], axis=0)\n        effect_sizes = np.abs(means_y1 - means_y0)\n        module_features = [expr_ids[i] for i in np.argsort(effect_sizes)[::-1][:5]]\n    \n    # Remove near-duplicates (correlated with r > 0.9)\n    to_remove = set()\n    for i in range(len(module_features)):\n        for j in range(i+1, len(module_features)):\n            if module_features[i] in to_remove or module_features[j] in to_remove:\n                continue\n            col_i = feats.column(module_features[i])\n            col_j = feats.column(module_features[j])\n            corr = np.corrcoef(feats.x[:, col_i], feats.x[:, col_j])[0,1]\n            if abs(corr) > 0.9:\n                to_remove.add(module_features[j])\n    \n    final_features = [f for f in module_features if f not in to_remove]\n    \n    # Create loadings dictionary\n    loadings = {}\n    if len(final_features) > 0:\n        # Weighted score based on effect sizes\n        cols = [feats.column(f) for f in final_features]\n        means_y1 = np.mean(feats.x[feats.y==1, cols], axis=0)\n        means_y0 = np.mean(feats.x[feats.y==0, cols], axis=0)\n        weights = means_y1 - means_y0\n        for i, fid in enumerate(final_features):\n            loadings[fid] = weights[i]\n    \n    # Drivers are the top features by effect size\n    drivers = tuple([fid for fid in final_features[:MAX_DRIVERS]])\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(final_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8874,
+  "completion_tokens": 2449,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 3389
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: shape mismatch: indexing arrays could not be broadcast together with shapes (127,) (10,)",
+    "bytes": 3322
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: shape mismatch: indexing arrays could not be broadcast together with shapes (127,) (10,)",
+    "bytes": 3250
+   }
+  ],
+  "wall_s": 27.7
+ }
+}

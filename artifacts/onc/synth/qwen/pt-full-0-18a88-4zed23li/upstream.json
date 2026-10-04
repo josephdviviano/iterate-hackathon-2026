@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-4zed23li",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on t-statistics and effect sizes\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'copy_number'):\n            t_stat = feats.x[:, i].T @ feats.y / np.sqrt(np.var(feats.x[:, i]) * np.mean(feats.y) * (1 - np.mean(feats.y)))\n            effect_size = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            candidates.append((abs(t_stat), abs(effect_size), fid))\n    \n    candidates.sort(reverse=True)\n    \n    # Remove near-duplicates (correlated features with |r| >= 0.6)\n    correlated_pairs = set()\n    for i in range(len(candidates)):\n        for j in range(i+1, len(candidates)):\n            fid1, fid2 = candidates[i][2], candidates[j][2]\n            if np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1] >= 0.6:\n                correlated_pairs.add((fid1, fid2))\n    \n    # Keep only one feature from each correlated pair (prefer higher t-statistic)\n    selected = set()\n    for _, _, fid in candidates:\n        # Check if this feature is part of a correlated pair\n        is_correlated = False\n        for pair in correlated_pairs:\n            if fid in pair:\n                is_correlated = True\n                break\n        \n        if not is_correlated or fid not in selected:\n            selected.add(fid)\n    \n    # If no mechanism found, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by t-statistic, but respect the constraint of at most 4 drivers\n    top_features = [fid for _, _, fid in candidates[:4]]  # Limit to 4 drivers\n    \n    # Simple approach: select top features directly\n    drivers = tuple(top_features)\n    columns = tuple(top_features)\n    \n    # No interaction terms in this simple version\n    products = ()\n    \n    # Simple weighted score: sum of top features\n    loadings = {}\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        loadings[fid] = np.abs(np.corrcoef(feats.x[:, col_idx], feats.y)[0,1])\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on t-statistics and effect sizes\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'copy_number'):\n            t_stat = feats.x[:, i].T @ feats.y / np.sqrt(np.var(feats.x[:, i]) * np.mean(feats.y) * (1 - np.mean(feats.y)))\n            effect_size = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            candidates.append((abs(t_stat), abs(effect_size), fid))\n    \n    candidates.sort(reverse=True)\n    \n    # Remove near-duplicates (correlated features with |r| >= 0.6)\n    correlated_pairs = set()\n    for i in range(len(candidates)):\n        for j in range(i+1, len(candidates)):\n            fid1, fid2 = candidates[i][2], candidates[j][2]\n            if np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1] >= 0.6:\n                correlated_pairs.add((fid1, fid2))\n    \n    # Keep only one feature from each correlated pair (prefer higher t-statistic)\n    selected = set()\n    for _, _, fid in candidates:\n        # Check if this feature is part of a correlated pair\n        is_correlated = False\n        for pair in correlated_pairs:\n            if fid in pair:\n                is_correlated = True\n                break\n        \n        if not is_correlated or fid not in selected:\n            selected.add(fid)\n    \n    # If no mechanism found, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by t-statistic, but respect the constraint of at most 4 drivers\n    top_features = [fid for _, _, fid in candidates[:4]]  # Limit to 4 drivers\n    \n    # Simple approach: select top features directly\n    drivers = tuple(top_features)\n    columns = tuple(top_features)\n    \n    # No interaction terms in this simple version\n    products = ()\n    \n    # Simple weighted score: sum of top features\n    loadings = {}\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        loadings[fid] = np.abs(np.corrcoef(feats.x[:, col_idx], feats.y)[0,1])\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4901,
+  "completion_tokens": 1168,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2369
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2419
+   }
+  ],
+  "wall_s": 13.4
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1mxfyit4",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Since we don't have direct access to statistical measures,\n    # we'll use a heuristic approach based on the available information\n    \n    # Use all features as candidates since we can't access p-values or t-stats\n    # Look for strong correlations among features\n    n_features = len(feats.ids)\n    \n    # Calculate correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find highly correlated pairs (|r| >= 0.6)\n    high_corr_pairs = []\n    for i in range(n_features):\n        for j in range(i+1, n_features):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Group correlated features into modules\n    if not high_corr_pairs:\n        # No strong correlations found, try to find any meaningful patterns\n        # Use the top features by absolute mean difference in outcome groups\n        effect_sizes = [abs(feats.mean_y1_mean_y0[feats.column(fid)]) for fid in feats.ids]\n        top_indices = np.argsort(effect_sizes)[::-1][:min(10, len(feats.ids))]\n        top_features = [feats.ids[i] for i in top_indices if effect_sizes[i] > 0.05]\n        \n        if len(top_features) < 2:\n            return Design(drivers=(), columns=(), products=(), loadings={})\n        \n        # Use top features as module\n        module_features = top_features[:min(5, len(top_features))]\n    else:\n        # Build connected components from correlation graph\n        feature_to_idx = {fid: i for i, fid in enumerate(feats.ids)}\n        adj_matrix = np.zeros((n_features, n_features), dtype=int)\n        \n        for f1, f2 in high_corr_pairs:\n            i1, i2 = feature_to_idx[f1], feature_to_idx[f2]\n            adj_matrix[i1, i2] = 1\n            adj_matrix[i2, i1] = 1\n        \n        # Simple clustering: find largest connected component\n        visited = np.zeros(n_features, dtype=bool)\n        largest_component = []\n        \n        for i in range(n_features):\n            if not visited[i]:\n                # BFS to find connected component\n                component = []\n                queue = [i]\n                visited[i] = True\n                \n                while queue:\n                    current = queue.pop(0)\n                    component.append(current)\n                    \n                    for neighbor in range(n_features):\n                        if adj_matrix[current, neighbor] and not visited[neighbor]:\n                            visited[neighbor] = True\n                            queue.append(neighbor)\n                \n                if len(component) > len(largest_component):\n                    largest_component = component\n        \n        if len(largest_component) < 2:\n            # Fall back to top features\n            effect_sizes = [abs(feats.mean_y1_mean_y0[feats.column(fid)]) for fid in feats.ids]\n            top_indices = np.argsort(effect_sizes)[::-1][:min(5, len(feats.ids))]\n            module_features = [feats.ids[i] for i in top_indices if effect_sizes[i] > 0.05]\n        else:\n            module_features = [feats.ids[i] for i in largest_component]\n    \n    # If we have a valid module\n    if len(module_features) >= 2:\n        # Compute weighted score using first principal component\n        module_indices = [feats.column(fid) for fid in module_features]\n        module_data = feats.x[:, module_indices]\n        \n        # Center the data\n        module_centered = module_data - np.mean(module_data, axis=0)\n        \n        # Compute covariance matrix and first PC\n        cov_matrix = np.cov(module_centered.T)\n        eigenvals, eigenvecs = np.linalg.eigh(cov_matrix)\n        \n        # Use first PC as loading weights\n        loadings = dict(zip(module_features, eigenvecs[:, -1]))\n        \n        # Select top features for drivers based on effect size\n        effect_sizes = [abs(feats.mean_y1_mean_y0[feats.column(fid)]) for fid in module_features]\n        sorted_indices = np.argsort(effect_sizes)[::-1][:min(MAX_DRIVERS, len(module_features))]\n        drivers = tuple([module_features[i] for i in sorted_indices])\n        \n        # Include all module features in columns\n        columns = tuple(module_features)\n        \n        # No products needed for this simple model\n        products = ()\n        \n        return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n    else:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8192,
+  "completion_tokens": 2194,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nAttributeError: 'Features' object has no attribute 'p'",
+    "bytes": 2382
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nAttributeError: 'Features' object has no attribute 'welch_t'",
+    "bytes": 2506
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nAttributeError: 'Features' object has no attribute 'mean_y1_mean_y0'",
+    "bytes": 4569
+   }
+  ],
+  "wall_s": 25.1
+ }
+}

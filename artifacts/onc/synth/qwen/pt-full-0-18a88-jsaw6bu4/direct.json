@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-jsaw6bu4",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        effect_size = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect_size))\n    \n    # Rank features by effect size\n    ranked_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top candidates avoiding near-duplicates\n    drivers = []\n    used_ids = set()\n    \n    # Build correlation matrix to identify near-duplicates\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for idx in ranked_indices:\n        fid = feats.ids[idx]\n        if fid in used_ids:\n            continue\n            \n        # Check if this feature is correlated with any already selected driver\n        is_duplicate = False\n        for d_fid in drivers:\n            d_idx = feats.column(d_fid)\n            if abs(corr_matrix[idx, d_idx]) >= 0.6:\n                is_duplicate = True\n                break\n                \n        if not is_duplicate:\n            drivers.append(fid)\n            used_ids.add(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # For products, look for simple interactions between top drivers\n    products = []\n    if len(drivers) >= 2:\n        # Only include interaction if both drivers have strong effects\n        if abs(np.mean(feats.x[feats.y == 1, feats.column(drivers[0])]) - \n               np.mean(feats.x[feats.y == 0, feats.column(drivers[0])])) > 0.2:\n            products = [(drivers[0], drivers[1])]\n    \n    # For loadings, use top features with high effect sizes\n    loadings = {}\n    # Only include drivers in loadings\n    for i, fid in enumerate(feats.ids):\n        if fid in drivers:\n            effect_size = np.mean(feats.x[feats.y == 1, i]) - np.mean(feats.x[feats.y == 0, i])\n            loadings[fid] = effect_size\n    \n    # Columns = all features that might contribute to model but keep it small\n    columns = list(drivers)  # Only include drivers to keep model small\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        effect_size = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect_size))\n    \n    # Rank features by effect size\n    ranked_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top candidates avoiding near-duplicates\n    drivers = []\n    used_ids = set()\n    \n    # Build correlation matrix to identify near-duplicates\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for idx in ranked_indices:\n        fid = feats.ids[idx]\n        if fid in used_ids:\n            continue\n            \n        # Check if this feature is correlated with any already selected driver\n        is_duplicate = False\n        for d_fid in drivers:\n            d_idx = feats.column(d_fid)\n            if abs(corr_matrix[idx, d_idx]) >= 0.6:\n                is_duplicate = True\n                break\n                \n        if not is_duplicate:\n            drivers.append(fid)\n            used_ids.add(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # For products, look for simple interactions between top drivers\n    products = []\n    if len(drivers) >= 2:\n        # Only include interaction if both drivers have strong effects\n        if abs(np.mean(feats.x[feats.y == 1, feats.column(drivers[0])]) - \n               np.mean(feats.x[feats.y == 0, feats.column(drivers[0])])) > 0.2:\n            products = [(drivers[0], drivers[1])]\n    \n    # For loadings, use top features with high effect sizes\n    loadings = {}\n    # Only include drivers in loadings\n    for i, fid in enumerate(feats.ids):\n        if fid in drivers:\n            effect_size = np.mean(feats.x[feats.y == 1, i]) - np.mean(feats.x[feats.y == 0, i])\n            loadings[fid] = effect_size\n    \n    # Columns = all features that might contribute to model but keep it small\n    columns = list(drivers)  # Only include drivers to keep model small\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4827,
+  "completion_tokens": 1046,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2138
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2303
+   }
+  ],
+  "wall_s": 11.9
+ }
+}

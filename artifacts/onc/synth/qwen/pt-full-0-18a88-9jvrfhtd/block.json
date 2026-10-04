@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9jvrfhtd",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to only include features with significant effect sizes\n    effect_sizes = np.abs([feats.x[:, feats.column(fid)] @ (feats.y - feats.y.mean()) \n                          for fid in feats.ids])\n    sig_features = [fid for i, fid in enumerate(feats.ids) if abs(effect_sizes[i]) > 0.1]\n    \n    if not sig_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build correlation matrix for significant features\n    X_sig = feats.x[:, [feats.column(fid) for fid in sig_features]]\n    \n    # Identify clusters using hierarchical clustering\n    clustering = AgglomerativeClustering(n_clusters=2, linkage='ward').fit(X_sig)\n    cluster_labels = clustering.labels_\n    \n    # Find dominant cluster\n    if np.sum(cluster_labels == 0) > np.sum(cluster_labels == 1):\n        module_features = [sig_features[i] for i in range(len(sig_features)) if cluster_labels[i] == 0]\n    else:\n        module_features = [sig_features[i] for i in range(len(sig_features)) if cluster_labels[i] == 1]\n    \n    if len(module_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted loading based on effect sizes\n    loadings = {}\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        loading = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n        loadings[fid] = loading\n    \n    # Return design with module features as drivers and loadings\n    return Design(\n        drivers=tuple(module_features[:min(MAX_DRIVERS, len(module_features))]),\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7760,
+  "completion_tokens": 1312,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 1900
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1837
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1770
+   }
+  ],
+  "wall_s": 15.3
+ }
+}

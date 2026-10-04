@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-br8uyky5",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('XEBG2', 'OSRE16'), ('XEBG2', 'UMVK18'), ('XEBG2', 'SOSL18'),\n        ('SOSL18', 'OSRE16'), ('OSRE16', 'JYF2'), ('XEBG2', 'UJD9'),\n        ('UMVK18', 'OSRE16'), ('SOSL18', 'JYF2'), ('UJD9', 'UMVK18'),\n        ('SOSL18', 'UMVK18'), ('XEBG2', 'JYF2'), ('XEBG2', 'KJHT17'),\n        ('XVG16', 'TLC18'), ('NUU12', 'XEBG2'), ('OSRE16', 'KJHT17'),\n        ('CODF14L', 'STBQ17'), ('XEBG2', 'CODF14L'), ('UMVK18', 'JYF2'),\n        ('UJD9', 'OSRE16'), ('SOSL18', 'UJD9')\n    ]\n    \n    # Keep only one feature from each highly correlated pair\n    to_remove = set()\n    for a, b in correlated_pairs:\n        if a in feats.ids and b in feats.ids:\n            # Prefer the one with higher mean_y1-mean_y0 (stronger effect)\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            mean_a = np.mean(feats.x[feats.y == 1, idx_a]) - np.mean(feats.x[feats.y == 0, idx_a])\n            mean_b = np.mean(feats.x[feats.y == 1, idx_b]) - np.mean(feats.x[feats.y == 0, idx_b])\n            if abs(mean_a) >= abs(mean_b):\n                to_remove.add(b)\n            else:\n                to_remove.add(a)\n    \n    # Select remaining features\n    selected_ids = [fid for fid in feats.ids if fid not in to_remove]\n    \n    # Compute effect sizes (mean difference) for all selected features\n    effects = []\n    for fid in selected_ids:\n        idx = feats.column(fid)\n        mean_1 = np.mean(feats.x[feats.y == 1, idx])\n        mean_0 = np.mean(feats.x[feats.y == 0, idx])\n        effect = abs(mean_1 - mean_0)\n        effects.append((effect, fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    \n    # Take top 2 as potential drivers\n    drivers = tuple([fid for _, fid in effects[:MAX_DRIVERS]])\n    \n    # For logistic regression, use all features except near-duplicates\n    columns = selected_ids\n    \n    # No interaction terms\n    products = ()\n    \n    # Weighted score: simple sum of selected features\n    loadings = {fid: 1.0 for fid in selected_ids}\n    \n    # Limit total terms to avoid overfitting\n    if len(loadings) > 12:\n        # Keep only top 12 features by effect size\n        top_features = effects[:12]\n        top_feature_ids = [fid for _, fid in top_features]\n        loadings = {fid: 1.0 for fid in top_feature_ids}\n        columns = top_feature_ids\n        drivers = tuple([fid for _, fid in top_features[:MAX_DRIVERS]])\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8958,
+  "completion_tokens": 2402,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2347
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2681
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2639
+   }
+  ],
+  "wall_s": 27.3
+ }
+}

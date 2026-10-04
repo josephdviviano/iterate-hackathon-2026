@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2atgunrd",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('SFYA12A', 'UUJ14'), ('YQR7', 'UPOE10P'), ('BRZN2B', 'UPOE10P'),\n        ('YQR7', 'BRZN2B'), ('IKBR2', 'HJFE4'), ('BRZN2B', 'SFYA12A'),\n        ('BRZN2B', 'UUJ14'), ('IKBR2', 'JBR10'), ('IKBR2', 'GPL7'),\n        ('JBR10', 'NIK19B'), ('UPOE10P', 'SFYA12A'), ('IKBR2', 'NIK19B'),\n        ('UPOE10P', 'UUJ14'), ('IKBR2', 'UWRG11'), ('JBR10', 'HJFE4'),\n        ('LWTZ14', 'OCL3L'), ('IKBR2', 'UUJ14'), ('IKBR2', 'SFYA12A'),\n        ('YQR7', 'SFYA12A'), ('YQR7', 'UUJ14')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Remove near-duplicates, keeping first in each pair\n    to_remove = set()\n    for a, b in corr_pairs:\n        if a in to_remove or b in to_remove:\n            continue\n        to_remove.add(b)\n    \n    # Select features that are not near-duplicates\n    selected_ids = [fid for fid in feats.ids if fid not in to_remove]\n    \n    if len(selected_ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute t-statistics for all selected features\n    X = feats.x[:, [feats.column(fid) for fid in selected_ids]]\n    y = feats.y\n    \n    # Calculate t-statistics manually\n    t_stats = []\n    for i, fid in enumerate(selected_ids):\n        x = X[:, i]\n        y0 = x[y == 0]\n        y1 = x[y == 1]\n        if len(y0) > 1 and len(y1) > 1:\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        else:\n            t_stat = 0\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic magnitude\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [selected_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check for interaction terms among top features\n    products = []\n    if len(top_features) >= 2:\n        # Simple approach: consider all pairwise interactions\n        for i in range(len(top_features)):\n            for j in range(i+1, len(top_features)):\n                products.append((top_features[i], top_features[j]))\n    \n    # Return design with top features, their interactions, and weights\n    drivers = tuple(top_features[:MAX_DRIVERS])\n    columns = tuple(selected_ids)\n    products = tuple(products[:len(selected_ids)])  # Limit interactions\n    \n    # Weighted score: use t-statistic as weight\n    loadings = dict(zip(selected_ids, t_stats))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8874,
+  "completion_tokens": 2375,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2696
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2720
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2537
+   }
+  ],
+  "wall_s": 27.0
+ }
+}

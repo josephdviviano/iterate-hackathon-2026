@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-j0cixqs0",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_threshold = 0.6\n    n_features = len(feats.ids)\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find pairs with high correlation\n    high_corr_pairs = []\n    for i in range(n_features):\n        for j in range(i+1, n_features):\n            if abs(corr_matrix[i,j]) >= corr_threshold:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Cluster features based on correlation\n    if len(high_corr_pairs) > 0:\n        # Create adjacency matrix\n        adj = np.zeros((n_features, n_features))\n        for a, b in high_corr_pairs:\n            i, j = feats.column(a), feats.column(b)\n            adj[i,j] = adj[j,i] = 1\n        \n        # Hierarchical clustering\n        clustering = AgglomerativeClustering(\n            n_clusters=None, \n            distance_threshold=0.5,\n            linkage='average'\n        )\n        clusters = clustering.fit_predict(1 - adj)\n        \n        # Find largest cluster\n        unique_clusters, counts = np.unique(clusters, return_counts=True)\n        main_cluster = unique_clusters[np.argmax(counts)]\n        module_features = [feats.ids[i] for i in range(n_features) if clusters[i] == main_cluster]\n        \n        # Calculate weighted score using first principal component\n        module_data = feats.x[:, [feats.column(fid) for fid in module_features]]\n        if module_data.shape[1] > 1:\n            # Use SVD to get first component\n            _, _, vh = np.linalg.svd(module_data, full_matrices=False)\n            weights = vh[0] / np.linalg.norm(vh[0])\n            loadings = dict(zip(module_features, weights))\n            \n            # Select top features by absolute loading (max 4 to respect MAX_DRIVERS)\n            sorted_features = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)\n            drivers = [fid for fid, _ in sorted_features[:min(MAX_DRIVERS-1, len(sorted_features))]]\n            \n            return Design(\n                drivers=tuple(drivers),\n                columns=tuple(module_features),\n                products=(),\n                loadings=loadings\n            )\n    \n    # If no strong module found, look for individual strong features\n    # Sort features by t-statistic magnitude\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        group0 = feats.x[feats.y==0, i]\n        group1 = feats.x[feats.y==1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Select top features\n    top_indices = np.argsort(t_stats)[::-1][:MAX_DRIVERS-1]  # Leave space for one driver\n    drivers = tuple([feats.ids[i] for i in top_indices])\n    \n    # Return empty design if no mechanism\n    if len(drivers) == 0 or all(t < 2.0 for t in t_stats):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Otherwise return single driver with its own score\n    return Design(\n        drivers=drivers,\n        columns=drivers,\n        products=(),\n        loadings={fid: 1.0 for fid in drivers}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8667,
+  "completion_tokens": 2283,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 3236
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3200
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3237
+   }
+  ],
+  "wall_s": 25.8
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-mwdftq3v",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set(feats.ids)\n    corr_pairs = [(a, b) for a, b in [\n        (\"TPMH13\", \"EPWQ12B\"), (\"SCL4\", \"EPWQ12B\"), (\"BHKP6\", \"VWC7B\"),\n        (\"SWH9\", \"JXR1P\"), (\"EPWQ12B\", \"JTJT5B\"), (\"YZN7L\", \"EPWQ12B\"),\n        (\"JXR1P\", \"EPWQ12B\"), (\"SCL4\", \"TPMH13\"), (\"CMUA7\", \"EPWQ12B\"),\n        (\"EPWQ12B\", \"CBZ3\"), (\"TPMH13\", \"TCN17\"), (\"ITJ18\", \"GRPJ12\"),\n        (\"TPMH13\", \"LRW7\"), (\"JUM9B\", \"EPWQ12B\"), (\"TPMH13\", \"JTJT5B\"),\n        (\"CMUA7\", \"TPMH13\"), (\"JXR1P\", \"TPMH13\"), (\"JUM9B\", \"LRW7\"),\n        (\"VWC7B\", \"SGR15P\"), (\"EPWQ12B\", \"LRW7\")\n    ] if a in feats.ids and b in feats.ids]\n    \n    for a, b in corr_pairs:\n        if a in keep and b in keep:\n            # Keep the one with higher t-statistic\n            ta = abs(stats.ttest_ind(feats.x[:, feats.column(a)][feats.y==1], \n                                   feats.x[:, feats.column(a)][feats.y==0]).statistic)\n            tb = abs(stats.ttest_ind(feats.x[:, feats.column(b)][feats.y==1], \n                                   feats.x[:, feats.column(b)][feats.y==0]).statistic)\n            if ta < tb:\n                keep.remove(a)\n            else:\n                keep.remove(b)\n    \n    # Filter to keep only non-duplicate features\n    keep_ids = tuple(id for id in feats.ids if id in keep)\n    \n    # Select top features by t-statistic\n    t_stats = []\n    for fid in keep_ids:\n        col = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[:, col][feats.y==1], \n                               feats.x[:, col][feats.y==0]).statistic\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic magnitude\n    sorted_indices = np.argsort(t_stats)[::-1][:MAX_DRIVERS]\n    drivers = tuple(keep_ids[i] for i in sorted_indices if i < len(keep_ids))\n    \n    # Build columns and products\n    columns = keep_ids\n    products = []\n    \n    # Add interaction terms for top drivers\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a, b))\n    \n    # Weighted score: sum of top drivers with weights from t-stats\n    loadings = {}\n    for i, fid in enumerate(drivers):\n        col = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[:, col][feats.y==1], \n                               feats.x[:, col][feats.y==0]).statistic\n        loadings[fid] = abs(t_stat)\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8823,
+  "completion_tokens": 2416,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2635
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2777
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2656
+   }
+  ],
+  "wall_s": 27.6
+ }
+}

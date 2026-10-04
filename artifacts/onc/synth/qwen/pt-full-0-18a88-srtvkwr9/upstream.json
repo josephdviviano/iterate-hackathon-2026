@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-srtvkwr9",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Quick correlation check for near-duplicates\n    corr_matrix = np.corrcoef(feats.x.T)\n    correlated_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                correlated_pairs.add((feats.ids[i], feats.ids[j]))\n    \n    # Group correlated features\n    groups = []\n    used = set()\n    for fid1, fid2 in correlated_pairs:\n        if fid1 not in used and fid2 not in used:\n            group = {fid1, fid2}\n            used.update(group)\n            # Simple extension - just take direct correlations\n            for fid1_, fid2_ in correlated_pairs:\n                if fid1_ in group or fid2_ in group:\n                    group.add(fid1_)\n                    group.add(fid2_)\n            groups.append(group)\n    \n    # Keep representative from each group (highest effect size)\n    representative_features = set()\n    for group in groups:\n        best_fid = max(group, key=lambda fid: abs(np.mean(feats.x[feats.y==1, feats.column(fid)]) - \n                                                  np.mean(feats.x[feats.y==0, feats.column(fid)])))\n        representative_features.add(best_fid)\n    \n    # Non-correlated features\n    non_correlated = set(feats.ids) - representative_features\n    \n    # Select drivers by t-statistic\n    drivers = []\n    t_stats = []\n    for fid in feats.ids:\n        if fid in representative_features:\n            continue\n        y0 = feats.x[feats.y==0, feats.column(fid)]\n        y1 = feats.x[feats.y==1, feats.column(fid)]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((fid, abs(t_stat)))\n    \n    # Sort and select top drivers\n    sorted_features = sorted(t_stats, key=lambda x: x[1], reverse=True)\n    for fid, _ in sorted_features[:MAX_DRIVERS]:\n        if fid in non_correlated:\n            drivers.append(fid)\n    \n    # All features except representatives for regression\n    columns = [fid for fid in feats.ids if fid not in representative_features]\n    \n    # Products for correlated pairs\n    products = []\n    for fid1, fid2 in correlated_pairs:\n        if fid1 in columns and fid2 in columns:\n            products.append((fid1, fid2))\n    \n    # Weighted score using mean differences\n    loadings = {}\n    for fid in columns:\n        diff = np.mean(feats.x[feats.y==1, feats.column(fid)]) - np.mean(feats.x[feats.y==0, feats.column(fid)])\n        loadings[fid] = diff\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8799,
+  "completion_tokens": 2064,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 22s on all patients; it must run in under 10s",
+    "bytes": 3395
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2678
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2642
+   }
+  ],
+  "wall_s": 57.2
+ }
+}

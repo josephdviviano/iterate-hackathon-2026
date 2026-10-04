@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-cecb2x89",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        col_idx = feats.column(fid)\n        y = feats.y\n        x = feats.x[:, col_idx]\n        \n        # Split by outcome\n        x0 = x[y == 0]\n        x1 = x[y == 1]\n        \n        # Effect size (mean difference)\n        effect = np.mean(x1) - np.mean(x0)\n        \n        # Welch's t-test\n        if len(x0) > 1 and len(x1) > 1:\n            t_stat, p_val = stats.ttest_ind(x0, x1, equal_var=False)\n        else:\n            t_stat = 0\n            p_val = 1\n        \n        # AUC approximation\n        try:\n            auc = roc_auc_score(y, x)\n        except:\n            auc = 0.5\n            \n        effect_sizes.append((fid, abs(effect), abs(t_stat), p_val, auc))\n    \n    # Sort by effect size (descending)\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features\n    selected_features = [fid for fid, _, _, _, _ in effect_sizes[:5]]\n    \n    # Check for interactions using correlation matrix\n    products = []\n    if len(selected_features) >= 2:\n        # Only check correlations between selected features\n        selected_indices = [feats.column(fid) for fid in selected_features]\n        selected_data = feats.x[:, selected_indices]\n        \n        # Check pairwise correlations\n        for i in range(len(selected_features)):\n            for j in range(i+1, len(selected_features)):\n                corr = np.corrcoef(selected_data[:, i], selected_data[:, j])[0, 1]\n                if abs(corr) >= 0.6:\n                    products.append((selected_features[i], selected_features[j]))\n    \n    # If we have strong effects, use them as drivers\n    drivers = []\n    if len(effect_sizes) > 0:\n        # Take top 2 features with highest effect sizes\n        drivers = [fid for fid, _, _, _, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # Use all selected features for regression\n    columns = selected_features\n    \n    # Return design\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        col_idx = feats.column(fid)\n        y = feats.y\n        x = feats.x[:, col_idx]\n        \n        # Split by outcome\n        x0 = x[y == 0]\n        x1 = x[y == 1]\n        \n        # Effect size (mean difference)\n        effect = np.mean(x1) - np.mean(x0)\n        \n        # Welch's t-test\n        if len(x0) > 1 and len(x1) > 1:\n            t_stat, p_val = stats.ttest_ind(x0, x1, equal_var=False)\n        else:\n            t_stat = 0\n            p_val = 1\n        \n        # AUC approximation\n        try:\n            auc = roc_auc_score(y, x)\n        except:\n            auc = 0.5\n            \n        effect_sizes.append((fid, abs(effect), abs(t_stat), p_val, auc))\n    \n    # Sort by effect size (descending)\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features\n    selected_features = [fid for fid, _, _, _, _ in effect_sizes[:5]]\n    \n    # Check for interactions using correlation matrix\n    products = []\n    if len(selected_features) >= 2:\n        # Only check correlations between selected features\n        selected_indices = [feats.column(fid) for fid in selected_features]\n        selected_data = feats.x[:, selected_indices]\n        \n        # Check pairwise correlations\n        for i in range(len(selected_features)):\n            for j in range(i+1, len(selected_features)):\n                corr = np.corrcoef(selected_data[:, i], selected_data[:, j])[0, 1]\n                if abs(corr) >= 0.6:\n                    products.append((selected_features[i], selected_features[j]))\n    \n    # If we have strong effects, use them as drivers\n    drivers = []\n    if len(effect_sizes) > 0:\n        # Take top 2 features with highest effect sizes\n        drivers = [fid for fid, _, _, _, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # Use all selected features for regression\n    columns = selected_features\n    \n    # Return design\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5195,
+  "completion_tokens": 1493,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 3424
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2269
+   }
+  ],
+  "wall_s": 17.3
+ }
+}

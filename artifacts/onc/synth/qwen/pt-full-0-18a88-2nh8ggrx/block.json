@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2nh8ggrx",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly significant features \n    # Since we don't know the exact attributes, we'll use a reasonable heuristic\n    try:\n        # Try to use t_stats if available\n        sig_mask = np.abs(feats.t_stats) > 2.5\n    except:\n        try:\n            # Try mean_y1_mean_y0 if available\n            sig_mask = np.abs(feats.mean_y1_mean_y0) > 0.3\n        except:\n            # Fallback: use all features\n            sig_mask = np.ones(len(feats.ids), dtype=bool)\n    \n    sig_ids = feats.ids[sig_mask]\n    \n    # If no significant features, return empty design\n    if len(sig_ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build correlation matrix for significant features\n    sig_cols = [feats.column(fid) for fid in sig_ids]\n    X_sig = feats.x[:, sig_cols]\n    \n    # Compute pairwise correlations\n    try:\n        corr_matrix = np.corrcoef(X_sig.T)\n    except:\n        # If correlation computation fails, use a simpler approach\n        return Design(\n            drivers=tuple(sig_ids[:MAX_DRIVERS]),\n            columns=tuple(sig_ids[:MAX_DRIVERS]),\n            products=(),\n            loadings={fid: 1.0 for fid in sig_ids[:MAX_DRIVERS]}\n        )\n    \n    # Cluster features with high correlation (|r| > 0.6)\n    threshold = 0.6\n    high_corr_pairs = []\n    for i in range(len(sig_ids)):\n        for j in range(i+1, len(sig_ids)):\n            if abs(corr_matrix[i,j]) > threshold:\n                high_corr_pairs.append((sig_ids[i], sig_ids[j]))\n    \n    # Group correlated features into modules\n    if not high_corr_pairs:\n        # No strong correlations; use top features by effect size\n        try:\n            top_features = sorted(zip(sig_ids, feats.t_stats[sig_mask]), \n                                  key=lambda x: abs(x[1]), reverse=True)\n        except:\n            try:\n                top_features = sorted(zip(sig_ids, feats.mean_y1_mean_y0[sig_mask]), \n                                      key=lambda x: abs(x[1]), reverse=True)\n            except:\n                # Fallback to just ordering by ID\n                top_features = [(fid, 0) for fid in sig_ids]\n        \n        module_features = [fid for fid, _ in top_features[:MAX_DRIVERS]]\n        if not module_features:\n            return Design(drivers=(), columns=(), products=(), loadings={})\n        \n        # Create a simple weighted sum score\n        try:\n            weights = {fid: abs(tstat) for fid, tstat in top_features[:len(module_features)]}\n        except:\n            weights = {fid: 1.0 for fid in module_features}\n            \n        return Design(\n            drivers=tuple(module_features),\n            columns=tuple(module_features),\n            products=(),\n            loadings=weights\n        )\n    \n    # Use clustering to group correlated features\n    feature_list = list(sig_ids)\n    n_features = len(feature_list)\n    \n    # Create adjacency matrix from correlations\n    adj = np.zeros((n_features, n_features))\n    for i in range(n_features):\n        for j in range(i+1, n_features):\n            if abs(corr_matrix[i,j]) > threshold:\n                adj[i,j] = adj[j,i] = 1\n    \n    # Simple connected components approach\n    visited = [False] * n_features\n    components = []\n    \n    for i in range(n_features):\n        if not visited[i]:\n            component = []\n            stack = [i]\n            while stack:\n                node = stack.pop()\n                if not visited[node]:\n                    visited[node] = True\n                    component.append(node)\n                    for j in range(n_features):\n                        if adj[node, j] and not visited[j]:\n                            stack.append(j)\n            if component:\n                components.append(component)\n    \n    # Select largest component as our module\n    if not components:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_component = max(components, key=len)\n    module_features = [feature_list[i] for i in largest_component]\n    \n    # Compute loadings as absolute effect sizes\n    try:\n        weights = {}\n        for fid in module_features:\n            idx = feats.column(fid)\n            weights[fid] = abs(feats.t_stats[idx])\n    except:\n        try:\n            weights = {}\n            for fid in module_features:\n                idx = feats.column(fid)\n                weights[fid] = abs(feats.mean_y1_mean_y0[idx])\n        except:\n            weights = {fid: 1.0 for fid in module_features}\n    \n    return Design(\n        drivers=tuple(module_features),\n        columns=tuple(module_features),\n        products=(),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8945,
+  "completion_tokens": 2792,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nAttributeError: 'Features' object has no attribute 'p'",
+    "bytes": 3382
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'AttributeError' is not defined",
+    "bytes": 4323
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: only integer scalar arrays can be converted to a scalar index",
+    "bytes": 4790
+   }
+  ],
+  "wall_s": 31.4
+ }
+}

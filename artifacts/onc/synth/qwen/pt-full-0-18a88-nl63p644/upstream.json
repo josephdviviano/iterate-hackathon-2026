@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-nl63p644",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic\n            effect_sizes.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by t-statistic descending\n    effect_sizes.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select top features avoiding near-duplicates\n    selected = []\n    excluded = set()\n    \n    # Use first 3 features as candidates\n    candidates = effect_sizes[:3]\n    \n    for fid, _, _ in candidates:\n        if fid in excluded:\n            continue\n        selected.append(fid)\n        \n        # Exclude correlated features (r >= 0.6)\n        for other_fid in feats.ids:\n            if other_fid == fid or other_fid in excluded:\n                continue\n            col1 = feats.column(fid)\n            col2 = feats.column(other_fid)\n            corr = abs(np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1])\n            if corr >= 0.6:\n                excluded.add(other_fid)\n        \n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # If no clear mechanism, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For small model, use just top 2 features\n    columns = tuple(selected[:2])\n    \n    # Simple interaction: only one product term\n    products = ()\n    if len(columns) >= 2:\n        products = ((columns[0], columns[1]),)\n    \n    # Create weighted score from selected features\n    loadings = {}\n    for i, fid in enumerate(columns):\n        loadings[fid] = 1.0 / (i + 1)  # inverse ranking weights\n    \n    # Return the design\n    return Design(\n        drivers=columns[:1],  # Most promising feature as driver\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic\n            effect_sizes.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by t-statistic descending\n    effect_sizes.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select top features avoiding near-duplicates\n    selected = []\n    excluded = set()\n    \n    # Use first 3 features as candidates\n    candidates = effect_sizes[:3]\n    \n    for fid, _, _ in candidates:\n        if fid in excluded:\n            continue\n        selected.append(fid)\n        \n        # Exclude correlated features (r >= 0.6)\n        for other_fid in feats.ids:\n            if other_fid == fid or other_fid in excluded:\n                continue\n            col1 = feats.column(fid)\n            col2 = feats.column(other_fid)\n            corr = abs(np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1])\n            if corr >= 0.6:\n                excluded.add(other_fid)\n        \n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # If no clear mechanism, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For small model, use just top 2 features\n    columns = tuple(selected[:2])\n    \n    # Simple interaction: only one product term\n    products = ()\n    if len(columns) >= 2:\n        products = ((columns[0], columns[1]),)\n    \n    # Create weighted score from selected features\n    loadings = {}\n    for i, fid in enumerate(columns):\n        loadings[fid] = 1.0 / (i + 1)  # inverse ranking weights\n    \n    # Return the design\n    return Design(\n        drivers=columns[:1],  # Most promising feature as driver\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4931,
+  "completion_tokens": 1050,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2205
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2091
+   }
+  ],
+  "wall_s": 14.0
+ }
+}

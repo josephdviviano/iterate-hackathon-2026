@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-mg16m2tg",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to copy_number and expression features\n    feature_mask = [t in ('copy_number', 'expression') for t in feats.types]\n    feature_ids = [fid for fid, mask in zip(feats.ids, feature_mask) if mask]\n    \n    # If no features match, return empty design\n    if not feature_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute correlation matrix\n    X = feats.x[:, [feats.column(fid) for fid in feature_ids]]\n    \n    # Handle case where we have too few features\n    if X.shape[1] < 2:\n        # Just use the single feature\n        drivers = (feature_ids[0],)\n        columns = (feature_ids[0],)\n        products = ()\n        loadings = {feature_ids[0]: 1.0}\n        return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n    \n    corr_matrix = np.corrcoef(X.T)\n    \n    # Cluster highly correlated features\n    clustering = AgglomerativeClustering(\n        n_clusters=None,\n        distance_threshold=0.6,\n        linkage='average'\n    )\n    clusters = clustering.fit(1 - np.abs(corr_matrix))\n    \n    # Select one representative from each cluster\n    selected_features = []\n    for i in range(clusters.n_clusters_):\n        cluster_indices = np.where(clusters.labels_ == i)[0]\n        # Choose feature with highest absolute t-statistic\n        t_stats = np.array([abs(stats.ttest_ind(\n            X[:, j][feats.y == 1],\n            X[:, j][feats.y == 0]\n        ).statistic) for j in cluster_indices])\n        best_idx = cluster_indices[np.argmax(t_stats)]\n        selected_features.append(feature_ids[best_idx])\n    \n    # Sort by effect size\n    effect_sizes = []\n    for fid in selected_features:\n        col = feats.column(fid)\n        y1_mean = np.mean(X[feats.y == 1, col])\n        y0_mean = np.mean(X[feats.y == 0, col])\n        effect_sizes.append(abs(y1_mean - y0_mean))\n    \n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    selected_features = [selected_features[i] for i in sorted_indices]\n    \n    # Select top features as drivers\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    \n    # For columns, use all selected features\n    columns = tuple(selected_features)\n    \n    # Identify product terms between strongly correlated pairs\n    products = []\n    for i, fid1 in enumerate(selected_features):\n        for j, fid2 in enumerate(selected_features[i+1:], i+1):\n            idx1, idx2 = feats.column(fid1), feats.column(fid2)\n            corr = np.corrcoef(X[:, idx1], X[:, idx2])[0, 1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Create loadings dictionary\n    loadings = {fid: 1.0 for fid in selected_features}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8426,
+  "completion_tokens": 1928,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2485
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 46 is out of bounds for axis 1 with size 40",
+    "bytes": 2453
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 46 is out of bounds for axis 1 with size 40",
+    "bytes": 2896
+   }
+  ],
+  "wall_s": 22.1
+ }
+}

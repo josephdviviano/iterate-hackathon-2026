@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-f6o34012",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates based on effect size and significance\n    effects = [(fid, abs(feats.y[feats.x[:, feats.column(fid)] > 0].mean() - \n                         feats.y[feats.x[:, feats.column(fid)] <= 0].mean()))\n               for fid in feats.ids]\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features with significant effect sizes\n    candidates = [fid for fid, _ in effects[:20]]\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    for i, fid1 in enumerate(candidates):\n        if fid1 in to_remove:\n            continue\n        for j, fid2 in enumerate(candidates[i+1:], i+1):\n            if fid2 in to_remove:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                to_remove.add(fid2)\n    \n    # Final feature set excluding near-duplicates\n    selected = [fid for fid in candidates if fid not in to_remove]\n    \n    # If no strong features, return empty design\n    if len(selected) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features using spectral clustering\n    X = feats.x[:, [feats.column(fid) for fid in selected]]\n    similarity = cosine_similarity(X)\n    clustering = SpectralClustering(n_clusters=min(3, len(selected)), \n                                   affinity='precomputed', random_state=0)\n    clusters = clustering.fit_predict(1 - abs(similarity))\n    \n    # Find best cluster by effect size\n    best_cluster = max(range(len(set(clusters))), \n                       key=lambda c: sum(effects[selected.index(fid)][1] \n                                       for fid, cl in zip(selected, clusters) if cl == c))\n    \n    # Select features in best cluster\n    cluster_features = [fid for fid, cl in zip(selected, clusters) if cl == best_cluster]\n    \n    # Compute weighted score using mean-centered features\n    scores = {}\n    for fid in cluster_features:\n        col_idx = feats.column(fid)\n        scores[fid] = np.mean(feats.x[:, col_idx])\n    \n    # Return design with cluster features and their loadings\n    return Design(\n        drivers=tuple(cluster_features[:MAX_DRIVERS]),\n        columns=tuple(cluster_features),\n        products=(),\n        loadings=scores\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates based on effect size and significance\n    effects = [(fid, abs(feats.y[feats.x[:, feats.column(fid)] > 0].mean() - \n                         feats.y[feats.x[:, feats.column(fid)] <= 0].mean()))\n               for fid in feats.ids]\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features with significant effect sizes\n    candidates = [fid for fid, _ in effects[:20]]\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    for i, fid1 in enumerate(candidates):\n        if fid1 in to_remove:\n            continue\n        for j, fid2 in enumerate(candidates[i+1:], i+1):\n            if fid2 in to_remove:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                to_remove.add(fid2)\n    \n    # Final feature set excluding near-duplicates\n    selected = [fid for fid in candidates if fid not in to_remove]\n    \n    # If no strong features, return empty design\n    if len(selected) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features using spectral clustering\n    X = feats.x[:, [feats.column(fid) for fid in selected]]\n    similarity = cosine_similarity(X)\n    clustering = SpectralClustering(n_clusters=min(3, len(selected)), \n                                   affinity='precomputed', random_state=0)\n    clusters = clustering.fit_predict(1 - abs(similarity))\n    \n    # Find best cluster by effect size\n    best_cluster = max(range(len(set(clusters))), \n                       key=lambda c: sum(effects[selected.index(fid)][1] \n                                       for fid, cl in zip(selected, clusters) if cl == c))\n    \n    # Select features in best cluster\n    cluster_features = [fid for fid, cl in zip(selected, clusters) if cl == best_cluster]\n    \n    # Compute weighted score using mean-centered features\n    scores = {}\n    for fid in cluster_features:\n        col_idx = feats.column(fid)\n        scores[fid] = np.mean(feats.x[:, col_idx])\n    \n    # Return design with cluster features and their loadings\n    return Design(\n        drivers=tuple(cluster_features[:MAX_DRIVERS]),\n        columns=tuple(cluster_features),\n        products=(),\n        loadings=scores\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8364,
+  "completion_tokens": 1746,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2549
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2549
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2549
+   }
+  ],
+  "wall_s": 20.6
+ }
+}

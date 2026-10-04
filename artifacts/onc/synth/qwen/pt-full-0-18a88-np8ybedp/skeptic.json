@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-np8ybedp",
+ "seed": "skeptic",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    p_values = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        else:\n            # For other features, compute correlation with outcome\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            p_val = 2 * (1 - stats.norm.cdf(abs(corr) * np.sqrt(len(feats.y) - 2) / np.sqrt(1 - corr**2)))\n        p_values.append(p_val)\n    \n    # If no feature is significantly associated, return empty design\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find top features by significance\n    sorted_indices = np.argsort(p_values)\n    top_features = [feats.ids[i] for i in sorted_indices[:10]]\n    \n    # Remove near-duplicates based on correlation matrix\n    to_remove = set()\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]])\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                to_remove.add(top_features[j])\n    \n    selected_features = [fid for fid in top_features if fid not in to_remove]\n    \n    # Fit logistic regression with all selected features\n    X = feats.x[:, [feats.column(fid) for fid in selected_features]]\n    model = LogisticRegression(fit_intercept=True, penalty=None)\n    model.fit(X, feats.y)\n    \n    # Get coefficients and select top ones\n    coefs = np.abs(model.coef_[0])\n    top_coef_indices = np.argsort(coefs)[-MAX_DRIVERS:][::-1]\n    drivers = tuple([selected_features[i] for i in top_coef_indices])\n    \n    # Return design with all selected features\n    return Design(\n        drivers=drivers,\n        columns=tuple(selected_features),\n        products=(),\n        loadings={fid: float(model.coef_[0][i]) \n                 for i, fid in enumerate(selected_features)}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    p_values = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        else:\n            # For other features, compute correlation with outcome\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            p_val = 2 * (1 - stats.norm.cdf(abs(corr) * np.sqrt(len(feats.y) - 2) / np.sqrt(1 - corr**2)))\n        p_values.append(p_val)\n    \n    # If no feature is significantly associated, return empty design\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find top features by significance\n    sorted_indices = np.argsort(p_values)\n    top_features = [feats.ids[i] for i in sorted_indices[:10]]\n    \n    # Remove near-duplicates based on correlation matrix\n    to_remove = set()\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]])\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                to_remove.add(top_features[j])\n    \n    selected_features = [fid for fid in top_features if fid not in to_remove]\n    \n    # Fit logistic regression with all selected features\n    X = feats.x[:, [feats.column(fid) for fid in selected_features]]\n    model = LogisticRegression(fit_intercept=True, penalty=None)\n    model.fit(X, feats.y)\n    \n    # Get coefficients and select top ones\n    coefs = np.abs(model.coef_[0])\n    top_coef_indices = np.argsort(coefs)[-MAX_DRIVERS:][::-1]\n    drivers = tuple([selected_features[i] for i in top_coef_indices])\n    \n    # Return design with all selected features\n    return Design(\n        drivers=drivers,\n        columns=tuple(selected_features),\n        products=(),\n        loadings={fid: float(model.coef_[0][i]) \n                 for i, fid in enumerate(selected_features)}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4863,
+  "completion_tokens": 1163,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nsklearn.utils._param_validation.InvalidParameterError: The 'penalty' parameter of LogisticRegression must be a str among {'l1', 'l2', 'elasticnet'} or None. Got 'none' instead.",
+    "bytes": 2331
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2329
+   }
+  ],
+  "wall_s": 14.4
+ }
+}

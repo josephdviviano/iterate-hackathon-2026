@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nrlvd3gu",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strongly associated features (p < 0.001)\n    p_values = [0.0] * len(feats.ids)\n    for i, fid in enumerate(feats.ids):\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        tstat, p = stats.ttest_ind(y0, y1, equal_var=False)\n        p_values[i] = p\n    \n    # Select features with strong association (p < 0.001)\n    strong_features = [fid for fid, p in zip(feats.ids, p_values) if p < 0.001]\n    \n    # If fewer than 2 strong features, return empty design\n    if len(strong_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build correlation matrix for strong features\n    strong_cols = [feats.column(fid) for fid in strong_features]\n    X_strong = feats.x[:, strong_cols]\n    \n    # Compute pairwise correlations\n    corr_matrix = np.corrcoef(X_strong.T)\n    \n    # Find highly correlated pairs (|r| >= 0.6)\n    high_corr_pairs = []\n    for i in range(len(strong_features)):\n        for j in range(i+1, len(strong_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((strong_features[i], strong_features[j]))\n    \n    # Cluster features based on correlation\n    if len(high_corr_pairs) > 0:\n        # Use clustering to find modules\n        n_features = len(strong_features)\n        linkage_matrix = np.ones((n_features, n_features))\n        np.fill_diagonal(linkage_matrix, 0)\n        for i in range(n_features):\n            for j in range(n_features):\n                if i == j:\n                    linkage_matrix[i,j] = 0\n                elif (strong_features[i], strong_features[j]) in high_corr_pairs or \\\n                     (strong_features[j], strong_features[i]) in high_corr_pairs:\n                    linkage_matrix[i,j] = 1 - abs(corr_matrix[i,j])\n                else:\n                    linkage_matrix[i,j] = 1\n        \n        # Perform hierarchical clustering\n        clustering = AgglomerativeClustering(\n            n_clusters=1, \n            metric='precomputed', \n            linkage='average'\n        )\n        cluster_labels = clustering.fit_predict(linkage_matrix)\n        \n        # Get the largest cluster\n        unique_labels, counts = np.unique(cluster_labels, return_counts=True)\n        main_cluster = unique_labels[np.argmax(counts)]\n        module_features = [strong_features[i] for i in range(len(strong_features)) \n                          if cluster_labels[i] == main_cluster]\n    else:\n        # No strong correlations, just use top features\n        module_features = strong_features[:min(5, len(strong_features))]\n    \n    # Remove near-duplicates (keep one representative from each group)\n    representatives = []\n    used = set()\n    for i, fid1 in enumerate(module_features):\n        if i in used:\n            continue\n        representatives.append(fid1)\n        used.add(i)\n        for j, fid2 in enumerate(module_features[i+1:], i+1):\n            if j in used:\n                continue\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n            if abs(corr) >= 0.95:\n                used.add(j)\n    \n    # Create weighted score from module features\n    weights = {}\n    if len(representatives) > 0:\n        # Simple sum of standardized features\n        total_weight = 0\n        for fid in representatives:\n            col = feats.column(fid)\n            weights[fid] = np.std(feats.x[:, col])  # Weight by variance\n            total_weight += weights[fid]\n        if total_weight > 0:\n            for fid in weights:\n                weights[fid] /= total_weight\n        else:\n            weights = {fid: 1.0/len(representatives) for fid in representatives}\n    \n    # Return design\n    return Design(\n        drivers=tuple(representatives[:MAX_DRIVERS]),\n        columns=tuple(representatives),\n        products=(),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9566,
+  "completion_tokens": 2941,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 4148
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Exactly one of n_clusters and distance_threshold has to be set, and the other needs to be None.",
+    "bytes": 4134
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4098
+   }
+  ],
+  "wall_s": 35.9
+ }
+}

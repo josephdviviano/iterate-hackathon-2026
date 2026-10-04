@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qkmfxgu4",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features based on t-statistics\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        # The feats.types contains the t-statistics for each feature\n        t_stat = feats.types[i]  \n        if abs(t_stat) > 2.0:\n            strong_features.append((fid, t_stat))\n    \n    # Sort by absolute t-statistic descending\n    strong_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Remove near-duplicates (correlated features)\n    correlated_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                # Prefer the one with higher absolute t-statistic\n                f1_t = next((x[1] for x in strong_features if x[0] == fid1), 0)\n                f2_t = next((x[1] for x in strong_features if x[0] == fid2), 0)\n                if abs(f1_t) >= abs(f2_t):\n                    correlated_pairs.add(fid2)\n                else:\n                    correlated_pairs.add(fid1)\n    \n    # Filter out correlated features\n    unique_features = [f for f in strong_features if f[0] not in correlated_pairs]\n    \n    # If no strong features, return empty design\n    if not unique_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features for drivers\n    drivers = tuple(f[0] for f in unique_features[:MAX_DRIVERS])\n    \n    # All features used for regression (including correlated ones that aren't drivers)\n    columns = tuple(f[0] for f in unique_features)\n    \n    # Check for interaction terms (product features)\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            # Check if correlation is high enough to suggest interaction\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Create loadings (weighted sum of features)\n    loadings = {}\n    for fid in columns:\n        t_stat = next((x[1] for x in strong_features if x[0] == fid), 0)\n        loadings[fid] = t_stat\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8357,
+  "completion_tokens": 1931,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2573
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2561
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2541
+   }
+  ],
+  "wall_s": 21.6
+ }
+}

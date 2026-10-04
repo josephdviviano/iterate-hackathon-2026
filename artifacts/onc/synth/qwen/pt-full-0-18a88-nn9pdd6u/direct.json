@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nn9pdd6u",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Simple approach: just use the top features by effect size\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [\n        ('WCO9', 'CZFZ17'), ('DYTL8', 'PHS10P'), ('WCO9', 'VCV17P'),\n        ('DYTL8', 'JHGL5'), ('PHS10P', 'JHGL5'), ('WCO9', 'UKR3'),\n        ('LTV10', 'WCO9'), ('DYTL8', 'JUW16'), ('UKR3', 'CZFZ17'),\n        ('ART15L', 'WCO9'), ('VCV17P', 'CZFZ17'), ('LTV10', 'CZFZ17'),\n        ('PHS10P', 'JUW16'), ('LTV10', 'VCV17P'), ('VCV17P', 'UKR3'),\n        ('WCO9', 'RKE15'), ('LFO4', 'LQES8'), ('ART15L', 'VCV17P'),\n        ('LTV10', 'RKE15'), ('ART15L', 'CZFZ17')\n    ]\n    \n    # Remove near-duplicates\n    to_remove = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            to_remove.add(b)\n    \n    # Select features that aren't near-duplicates\n    selected_ids = [fid for fid in feats.ids if fid not in to_remove]\n    \n    # Compute effect sizes for selected features\n    effect_sizes = []\n    for fid in selected_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        effect_sizes.append((fid, abs(effect_size)))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Take top features (max 2)\n    top_features = [fid for fid, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # If no strong effects, return empty design\n    if len(top_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create loadings for weighted score using effect sizes\n    loadings = {}\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        loadings[fid] = mean_y1 - mean_y0\n    \n    # For simplicity, avoid products to keep model small\n    products = []\n    \n    # Return design with minimal terms\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(selected_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8816,
+  "completion_tokens": 2300,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2594
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2718
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2282
+   }
+  ],
+  "wall_s": 27.4
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-n7e2iyfa",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        effect = np.mean(y1) - np.mean(y0)\n        effects.append((effect, fid))\n    \n    # Sort by absolute effect size\n    effects.sort(key=lambda x: abs(x[0]), reverse=True)\n    \n    # Select top features, removing near-duplicates\n    selected = []\n    excluded = set()\n    for effect, fid in effects:\n        if fid in excluded:\n            continue\n        selected.append((effect, fid))\n        # Remove correlated features (|r| >= 0.6)\n        for other_fid in feats.ids:\n            if other_fid == fid or other_fid in excluded:\n                continue\n            idx1 = feats.column(fid)\n            idx2 = feats.column(other_fid)\n            corr = np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0, 1]\n            if abs(corr) >= 0.6:\n                excluded.add(other_fid)\n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # Separate positive and negative effects\n    positive_effects = [f for e, f in selected if e > 0]\n    negative_effects = [f for e, f in selected if e < 0]\n    \n    # Choose best drivers (positive effects first)\n    drivers = positive_effects[:MAX_DRIVERS] if positive_effects else ()\n    \n    # For columns, use all selected features\n    columns = tuple(f for _, f in selected)\n    \n    # No products needed for this case\n    products = ()\n    \n    # Create loadings dictionary\n    loadings = {}\n    for effect, fid in selected:\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        effect = np.mean(y1) - np.mean(y0)\n        effects.append((effect, fid))\n    \n    # Sort by absolute effect size\n    effects.sort(key=lambda x: abs(x[0]), reverse=True)\n    \n    # Select top features, removing near-duplicates\n    selected = []\n    excluded = set()\n    for effect, fid in effects:\n        if fid in excluded:\n            continue\n        selected.append((effect, fid))\n        # Remove correlated features (|r| >= 0.6)\n        for other_fid in feats.ids:\n            if other_fid == fid or other_fid in excluded:\n                continue\n            idx1 = feats.column(fid)\n            idx2 = feats.column(other_fid)\n            corr = np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0, 1]\n            if abs(corr) >= 0.6:\n                excluded.add(other_fid)\n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # Separate positive and negative effects\n    positive_effects = [f for e, f in selected if e > 0]\n    negative_effects = [f for e, f in selected if e < 0]\n    \n    # Choose best drivers (positive effects first)\n    drivers = positive_effects[:MAX_DRIVERS] if positive_effects else ()\n    \n    # For columns, use all selected features\n    columns = tuple(f for _, f in selected)\n    \n    # No products needed for this case\n    products = ()\n    \n    # Create loadings dictionary\n    loadings = {}\n    for effect, fid in selected:\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2208,
+  "completion_tokens": 462,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1883
+   }
+  ],
+  "wall_s": 5.4
+ }
+}

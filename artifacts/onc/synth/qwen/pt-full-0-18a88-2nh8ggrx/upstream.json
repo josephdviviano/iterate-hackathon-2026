@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2nh8ggrx",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates by t-statistic\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            # Calculate t-statistic properly\n            group0 = feats.x[feats.y == 0, feats.column(fid)]\n            group1 = feats.x[feats.y == 1, feats.column(fid)]\n            mean_diff = np.mean(group1) - np.mean(group0)\n            pooled_std = np.sqrt(((len(group0)-1)*np.var(group0) + (len(group1)-1)*np.var(group1)) / \n                               (len(group0) + len(group1) - 2))\n            if pooled_std > 0:\n                t_stat = mean_diff / (pooled_std * np.sqrt(1/len(group0) + 1/len(group1)))\n            else:\n                t_stat = 0\n            strong_candidates.append((fid, abs(t_stat)))\n    \n    # Sort by absolute t-statistic\n    strong_candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated features)\n    keep = set()\n    correlated_pairs = set()\n    \n    # Find correlated pairs\n    for i in range(len(strong_candidates)):\n        for j in range(i+1, len(strong_candidates)):\n            fid1, fid2 = strong_candidates[i][0], strong_candidates[j][0]\n            if feats.column(fid1) < len(feats.x[0]) and feats.column(fid2) < len(feats.x[0]):\n                corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                                  feats.x[:, feats.column(fid2)])[0, 1]\n                if abs(corr) >= 0.6:\n                    correlated_pairs.add((fid1, fid2))\n    \n    # Prefer earlier features in sorted list to avoid duplicates\n    for fid, _ in strong_candidates:\n        is_duplicate = False\n        for pair in list(correlated_pairs):\n            if fid in pair:\n                other_fid = pair[0] if pair[0] != fid else pair[1]\n                if other_fid in keep:\n                    is_duplicate = True\n                    break\n        if not is_duplicate:\n            keep.add(fid)\n    \n    # Build final set of drivers (up to MAX_DRIVERS)\n    drivers = [fid for fid, _ in strong_candidates if fid in keep][:MAX_DRIVERS]\n    \n    # For products, consider top correlations\n    products = []\n    for fid1, fid2 in correlated_pairs:\n        if fid1 in keep and fid2 in keep:\n            products.append((fid1, fid2))\n    \n    # For loadings, use top features\n    loadings = {}\n    for fid, _ in strong_candidates[:len(keep)]:\n        if fid in keep:\n            loadings[fid] = 1.0\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(keep),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8090,
+  "completion_tokens": 1777,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2351
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2311
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2761
+   }
+  ],
+  "wall_s": 20.2
+ }
+}

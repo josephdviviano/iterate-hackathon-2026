@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s6qho8vn",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features by mean difference and t-statistic\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] > 0.8:  # Clinical or high effect size\n            strong_features.append(fid)\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Keep only one feature from each correlated pair\n    for (f1, f2), corr in correlations.items():\n        if f1 in to_remove or f2 in to_remove:\n            continue\n        # Prefer the feature with higher mean difference\n        idx1 = feats.column(f1)\n        idx2 = feats.column(f2)\n        diff1 = abs(np.mean(feats.x[feats.y==1, idx1]) - np.mean(feats.x[feats.y==0, idx1]))\n        diff2 = abs(np.mean(feats.x[feats.y==1, idx2]) - np.mean(feats.x[feats.y==0, idx2]))\n        if diff1 < diff2:\n            to_remove.add(f1)\n        else:\n            to_remove.add(f2)\n    \n    # Filter features\n    filtered_features = [f for f in strong_features if f not in to_remove]\n    \n    # If no mechanism, return empty design\n    if len(filtered_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by effect size\n    selected_features = []\n    for fid in filtered_features:\n        idx = feats.column(fid)\n        diff = abs(np.mean(feats.x[feats.y==1, idx]) - np.mean(feats.x[feats.y==0, idx]))\n        selected_features.append((fid, diff))\n    \n    selected_features.sort(key=lambda x: x[1], reverse=True)\n    drivers = tuple(f[0] for f in selected_features[:MAX_DRIVERS])\n    \n    # Build regression features (all selected except drivers for products)\n    columns = tuple(f[0] for f in selected_features)\n    \n    # Look for interaction terms between top features\n    products = []\n    for i, f1 in enumerate(drivers):\n        for j, f2 in enumerate(drivers):\n            if i < j:\n                products.append((f1, f2))\n    \n    # Simple weighted score using top feature\n    loadings = {drivers[0]: 1.0} if drivers else {}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8711,
+  "completion_tokens": 2015,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2645
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: '>' not supported between instances of 'str' and 'float'",
+    "bytes": 2640
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: '>' not supported between instances of 'str' and 'float'",
+    "bytes": 2640
+   }
+  ],
+  "wall_s": 19.3
+ }
+}

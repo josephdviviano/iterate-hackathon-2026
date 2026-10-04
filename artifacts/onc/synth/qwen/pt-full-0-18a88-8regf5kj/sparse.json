@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-8regf5kj",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter to expression and clinical features\n    expr_clin_ids = [fid for fid, typ in zip(feats.ids, feats.types) \n                     if typ in ('expression', 'clinical')]\n    \n    # Remove near-duplicates based on correlations\n    keep_ids = set(expr_clin_ids)\n    correlated_pairs = [(a,b,r) for a,b,r in [\n        ('UKIG4','RHH16',0.96), ('UKIG4','MBPM16L',0.94), ('UKIG4','GDVD19',-0.94),\n        ('EHJ3','UKIG4',0.92), ('KXS1P','CON18P',0.92), ('UKIG4','XRD6',-0.90),\n        ('UKIG4','HPUN5',-0.90), ('RHH16','GDVD19',-0.89), ('XRD6','DZYB2',0.89),\n        ('MBPM16L','RHH16',0.89), ('MBPM16L','GDVD19',-0.88), ('RHH16','HPUN5',-0.88),\n        ('EHJ3','RHH16',0.88), ('UKIG4','SFOM7L',-0.88), ('KZZ10','GDVD19',0.87),\n        ('XRD6','RHH16',-0.86), ('UKIG4','KXS1P',0.86), ('EHJ3','MBPM16L',0.86),\n        ('EHJ3','GDVD19',-0.86), ('SFOM7L','RHH16',-0.85)\n    ] if a in keep_ids and b in keep_ids]\n    \n    # Remove one from each correlated pair (keep first)\n    for a, b, _ in correlated_pairs:\n        if b in keep_ids:\n            keep_ids.remove(b)\n    \n    expr_clin_ids = list(keep_ids)\n    \n    if not expr_clin_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute t-statistics for each feature\n    t_stats = []\n    for fid in expr_clin_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        x1 = x[y == 1]\n        x0 = x[y == 0]\n        t, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        t_stats.append(abs(t))\n    \n    # Select top features by t-statistic\n    sorted_indices = np.argsort(t_stats)[::-1][:MAX_DRIVERS]\n    selected_ids = [expr_clin_ids[i] for i in sorted_indices]\n    \n    # Check if any features are significant\n    if not selected_ids or max(t_stats) < 1.5:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build design\n    drivers = tuple(selected_ids[:len(selected_ids)])\n    \n    # For logistic regression, use all features\n    columns = tuple(expr_clin_ids)\n    \n    # Add interaction terms for top features\n    products = []\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            products.append((drivers[i], drivers[j]))\n    \n    # Weighted score: sum of top features weighted by t-stat\n    loadings = {}\n    for i, fid in enumerate(selected_ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        x1 = x[y == 1]\n        x0 = x[y == 0]\n        t, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        loadings[fid] = abs(t)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9162,
+  "completion_tokens": 2801,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2956
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2980
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2758
+   }
+  ],
+  "wall_s": 31.3
+ }
+}

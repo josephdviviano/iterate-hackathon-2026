@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-4zed23li",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes using t-test for non-derived features\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    \n    # Calculate effect sizes (mean difference)\n    effect_sizes = []\n    for fid in non_derived_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean1 = np.mean(x[y == 1])\n        mean0 = np.mean(x[y == 0])\n        effect_size = abs(mean1 - mean0)\n        effect_sizes.append((fid, effect_size))\n    \n    # Sort by effect size and take top 2\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    candidates = [fid for fid, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on provided correlations\n    filtered_candidates = []\n    correlated_pairs = {\n        ('AQMR8P', 'DRRJ7'), ('AQMR8P', 'BGJH12'), ('WSI6', 'AWA10'),\n        ('NXNV17', 'CIU5'), ('BGJH12', 'YAZ9'), ('BGJH12', 'DRRJ7'),\n        ('FRUH11', 'WSI6'), ('AQMR8P', 'AWA10'), ('YXDQ19', 'TZT3'),\n        ('AQMR8P', 'WSI6'), ('BGJH12', 'WSI6'), ('FRUH11', 'TZT3'),\n        ('DRRJ7', 'AWA10'), ('EWTV9', 'BGJH12'), ('BGJH12', 'XRS6P'),\n        ('BGJH12', 'AWA10'), ('BAC7', 'WSI6'), ('FRUH11', 'AWA10'),\n        ('FRUH11', 'YXDQ19'), ('WSI6', 'DRRJ7')\n    }\n    \n    for candidate in candidates:\n        is_duplicate = any(\n            (candidate, other) in correlated_pairs or \n            (other, candidate) in correlated_pairs\n            for other in filtered_candidates\n        )\n        if not is_duplicate:\n            filtered_candidates.append(candidate)\n    \n    drivers = tuple(filtered_candidates)\n    \n    # All non-derived features for regression (keep it small)\n    columns = tuple(non_derived_ids)\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Loadings based on effect sizes\n    loadings = {}\n    for fid in drivers:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean1 = np.mean(x[y == 1])\n        mean0 = np.mean(x[y == 0])\n        loadings[fid] = mean1 - mean0\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9021,
+  "completion_tokens": 2251,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3253
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2183
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2246
+   }
+  ],
+  "wall_s": 25.6
+ }
+}

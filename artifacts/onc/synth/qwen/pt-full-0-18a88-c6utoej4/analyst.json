@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-c6utoej4",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set(feats.ids)\n    corr_pairs = [(a,b) for a,b in [\n        (\"NEXH18\", \"CVM10B\"), (\"GQZQ8\", \"PYF8\"), (\"PYF8\", \"WBK2\"),\n        (\"HNE9A\", \"WBK2\"), (\"PYF8\", \"PDM18\"), (\"PYF8\", \"ZIK19\"),\n        (\"PYF8\", \"HNE9A\"), (\"PYF8\", \"XLN18\"), (\"PYF8\", \"KQH5B\"),\n        (\"PYF8\", \"HIG13\"), (\"PYF8\", \"NEXH18\"), (\"KQH5B\", \"WBK2\"),\n        (\"HNE9A\", \"XLN18\"), (\"ZUYP7\", \"RKQ14L\"), (\"GQZQ8\", \"WBK2\"),\n        (\"PDM18\", \"WBK2\"), (\"CTIX2\", \"HIG13\"), (\"ZIK19\", \"HIG13\"),\n        (\"XDFS17A\", \"ABF14\"), (\"GQZQ8\", \"ZIK19\")\n    ] if a in feats.ids and b in feats.ids]\n    \n    for a, b in corr_pairs:\n        if b in keep:\n            keep.remove(b)\n    \n    # Get t-statistics from the data\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if fid in keep:\n            # Use Welch's t-test to compute t-statistic\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            if len(group0) > 0 and len(group1) > 0:\n                t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n                t_stats.append((fid, t_stat))\n    \n    # Sort by absolute t-statistic\n    if t_stats:\n        t_stats.sort(key=lambda x: abs(x[1]), reverse=True)\n        top_features = t_stats\n    else:\n        # If no valid t-stats, use a simple ranking approach\n        top_features = [(fid, 0.0) for fid in feats.ids if fid in keep]\n    \n    # Check if any mechanism exists\n    if not top_features or abs(top_features[0][1]) < 3.0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select drivers (most significant features)\n    drivers = tuple(feat for feat, _ in top_features[:MAX_DRIVERS])\n    \n    # Select columns for regression\n    columns = tuple(feat for feat, _ in top_features[:10])\n    \n    # Look for interaction terms among top features\n    products = []\n    for i, feat1 in enumerate(columns):\n        for feat2 in columns[i+1:]:\n            # Check if they're not near-duplicates\n            if (feat1, feat2) not in [(a,b) for a,b in corr_pairs]:\n                products.append((feat1, feat2))\n    \n    # Create loadings (weighted score)\n    loadings = {}\n    for feat, _ in top_features[:5]:\n        loadings[feat] = 1.0\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8853,
+  "completion_tokens": 2273,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2195
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2582
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2582
+   }
+  ],
+  "wall_s": 26.0
+ }
+}

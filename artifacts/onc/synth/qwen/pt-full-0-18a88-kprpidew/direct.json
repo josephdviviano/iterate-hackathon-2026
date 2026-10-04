@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-kprpidew",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('EML6B', 'TGAY15'), ('TLS3', 'BEYD13'), ('EML6B', 'BEYD13'), ('BEYD13', 'EME7'),\n        ('ZWZ17P', 'BEYD13'), ('NRQ2', 'WVO13P'), ('EML6B', 'TLS3'), ('BEYD13', 'UFY17'),\n        ('QTQ11', 'BEYD13'), ('BEYD13', 'TGAY15'), ('TLS3', 'ZWZ17P'), ('EML6B', 'EME7'),\n        ('TLS3', 'EME7'), ('PICS11A', 'PTO11'), ('ZWZ17P', 'EME7'), ('EML6B', 'ZWZ17P'),\n        ('TLS3', 'TGAY15'), ('QTQ11', 'TLS3'), ('EML6B', 'UFY17'), ('EME7', 'UFY17')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Keep one feature from each highly correlated pair\n    to_remove = set()\n    for a, b in corr_pairs:\n        if a in to_remove or b in to_remove:\n            continue\n        # Prefer the one with higher t-statistic\n        idx_a = feats.column(a)\n        idx_b = feats.column(b)\n        t_a = abs(stats.ttest_ind(feats.x[feats.y==1, idx_a], feats.x[feats.y==0, idx_a]).statistic)\n        t_b = abs(stats.ttest_ind(feats.x[feats.y==1, idx_b], feats.x[feats.y==0, idx_b]).statistic)\n        if t_a > t_b:\n            to_remove.add(b)\n        else:\n            to_remove.add(a)\n    \n    # Filter features\n    selected_ids = [fid for fid in feats.ids if fid not in to_remove]\n    selected_indices = [feats.column(fid) for fid in selected_ids]\n    \n    # Compute t-statistics for all selected features\n    t_stats = []\n    for i, fid in enumerate(selected_ids):\n        idx = selected_indices[i]\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, idx], feats.x[feats.y==0, idx]).statistic)\n        t_stats.append((t_stat, fid))\n    \n    # Sort by t-statistic descending\n    t_stats.sort(reverse=True)\n    \n    # Select top features for regression (keep it small)\n    columns = [fid for _, fid in t_stats[:3]]  # Top 3 features\n    \n    # No interaction terms to keep model small\n    products = []\n    \n    # Select drivers based on highest t-statistics\n    drivers = [fid for _, fid in t_stats[:MAX_DRIVERS]]\n    \n    # For weighted score, use the strongest single feature\n    loadings = {}\n    if t_stats:\n        strongest_fid = t_stats[0][1]\n        loadings[strongest_fid] = 1.0\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('EML6B', 'TGAY15'), ('TLS3', 'BEYD13'), ('EML6B', 'BEYD13'), ('BEYD13', 'EME7'),\n        ('ZWZ17P', 'BEYD13'), ('NRQ2', 'WVO13P'), ('EML6B', 'TLS3'), ('BEYD13', 'UFY17'),\n        ('QTQ11', 'BEYD13'), ('BEYD13', 'TGAY15'), ('TLS3', 'ZWZ17P'), ('EML6B', 'EME7'),\n        ('TLS3', 'EME7'), ('PICS11A', 'PTO11'), ('ZWZ17P', 'EME7'), ('EML6B', 'ZWZ17P'),\n        ('TLS3', 'TGAY15'), ('QTQ11', 'TLS3'), ('EML6B', 'UFY17'), ('EME7', 'UFY17')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Keep one feature from each highly correlated pair\n    to_remove = set()\n    for a, b in corr_pairs:\n        if a in to_remove or b in to_remove:\n            continue\n        # Prefer the one with higher t-statistic\n        idx_a = feats.column(a)\n        idx_b = feats.column(b)\n        t_a = abs(stats.ttest_ind(feats.x[feats.y==1, idx_a], feats.x[feats.y==0, idx_a]).statistic)\n        t_b = abs(stats.ttest_ind(feats.x[feats.y==1, idx_b], feats.x[feats.y==0, idx_b]).statistic)\n        if t_a > t_b:\n            to_remove.add(b)\n        else:\n            to_remove.add(a)\n    \n    # Filter features\n    selected_ids = [fid for fid in feats.ids if fid not in to_remove]\n    selected_indices = [feats.column(fid) for fid in selected_ids]\n    \n    # Compute t-statistics for all selected features\n    t_stats = []\n    for i, fid in enumerate(selected_ids):\n        idx = selected_indices[i]\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, idx], feats.x[feats.y==0, idx]).statistic)\n        t_stats.append((t_stat, fid))\n    \n    # Sort by t-statistic descending\n    t_stats.sort(reverse=True)\n    \n    # Select top features for regression (keep it small)\n    columns = [fid for _, fid in t_stats[:3]]  # Top 3 features\n    \n    # No interaction terms to keep model small\n    products = []\n    \n    # Select drivers based on highest t-statistics\n    drivers = [fid for _, fid in t_stats[:MAX_DRIVERS]]\n    \n    # For weighted score, use the strongest single feature\n    loadings = {}\n    if t_stats:\n        strongest_fid = t_stats[0][1]\n        loadings[strongest_fid] = 1.0\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8935,
+  "completion_tokens": 2396,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2738
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2593
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2368
+   }
+  ],
+  "wall_s": 27.3
+ }
+}

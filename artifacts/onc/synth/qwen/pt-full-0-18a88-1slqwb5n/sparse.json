@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1slqwb5n",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates\n    keep = set()\n    seen = set()\n    for fid in feats.ids:\n        if fid in seen:\n            continue\n        keep.add(fid)\n        seen.add(fid)\n    \n    # Build correlation matrix for near-duplicates\n    corr_matrix = np.corrcoef(feats.x.T)\n    for i, fid1 in enumerate(feats.ids):\n        if fid1 not in keep:\n            continue\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j or fid2 not in keep:\n                continue\n            if abs(corr_matrix[i,j]) >= 0.6:\n                # Keep the one with higher mean_y1-mean_y0\n                idx1 = feats.column(fid1)\n                idx2 = feats.column(fid2)\n                if abs(np.mean(feats.x[feats.y==1, idx1]) - np.mean(feats.x[feats.y==0, idx1])) < \\\n                   abs(np.mean(feats.x[feats.y==1, idx2]) - np.mean(feats.x[feats.y==0, idx2])):\n                    keep.remove(fid1)\n                else:\n                    keep.remove(fid2)\n    \n    # Select top features by t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if fid not in keep:\n            continue\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        t_stats.append((abs(t_stat), fid))\n    \n    t_stats.sort(reverse=True)\n    selected_ids = [fid for _, fid in t_stats[:10]]\n    \n    # Ensure all selected IDs exist in feats.ids\n    valid_selected = [fid for fid in selected_ids if fid in feats.ids]\n    \n    # Fit logistic regression with L1 penalty to get sparse solution\n    if len(valid_selected) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n        \n    X = feats.x[:, [feats.column(fid) for fid in valid_selected]]\n    clf = LogisticRegression(penalty='l1', solver='liblinear', random_state=0)\n    clf.fit(X, feats.y)\n    \n    # Get coefficients\n    coefs = clf.coef_[0]\n    \n    # Select significant features (non-zero coefficients)\n    significant = []\n    for i, coef in enumerate(coefs):\n        if abs(coef) > 1e-5:\n            significant.append(valid_selected[i])\n    \n    # If no significant features, return empty design\n    if not significant:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for interactions among significant features\n    products = []\n    for i, fid1 in enumerate(significant):\n        for j, fid2 in enumerate(significant[i+1:], i+1):\n            # Add interaction term if both features are present\n            products.append((fid1, fid2))\n    \n    # Weighted score based on coefficient magnitudes\n    loadings = {}\n    for i, fid in enumerate(significant):\n        loadings[fid] = abs(coefs[i])\n    \n    # Drivers are the most significant features by absolute coefficient value\n    drivers = tuple(sorted(significant, key=lambda f: -loadings[f]))\n    \n    # Columns include all selected features\n    columns = tuple(valid_selected)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8633,
+  "completion_tokens": 2299,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nKeyError: 'LEG5P'",
+    "bytes": 3035
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nKeyError: 'LEG5P'",
+    "bytes": 2977
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nKeyError: 'LEG5P'",
+    "bytes": 3222
+   }
+  ],
+  "wall_s": 26.1
+ }
+}

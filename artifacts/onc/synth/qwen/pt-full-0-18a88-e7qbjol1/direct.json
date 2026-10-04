@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-e7qbjol1",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set()\n    seen = set()\n    corr_pairs = [(a,b) for a,b in [\n        ('AAGM15B','POCJ18P'), ('AAGM15B','WQV2A'), ('AAGM15B','TXFL4'), \n        ('AAGM15B','GHCS11A'), ('MDGH10L','AAGM15B'), ('TXFL4','XCX7'),\n        ('AAGM15B','XCX7'), ('TXFL4','POCJ18P'), ('POCJ18P','GHCS11A'),\n        ('IPKF17','AAGM15B'), ('WQV2A','TXFL4'), ('WQV2A','MDGH10L'),\n        ('WQV2A','POCJ18P'), ('ZEGH17','AAGM15B'), ('AAGM15B','NSU10'),\n        ('KEWI1','NXWT2A'), ('KEWI1','IHM8'), ('VTO17','NSU10')\n    ] if a in feats.ids and b in feats.ids]\n    \n    for a,b in corr_pairs:\n        if a not in seen and b not in seen:\n            keep.add(a)\n            seen.add(a)\n            seen.add(b)\n    \n    # Add remaining features\n    remaining = [fid for fid in feats.ids if fid not in seen]\n    keep.update(remaining[:10])  # Keep top 10 non-correlated\n    \n    # Filter to valid features\n    valid_ids = tuple(fid for fid in feats.ids if fid in keep)\n    \n    # Compute effect sizes using t-test\n    effect_sizes = []\n    for fid in valid_ids:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effect_sizes.append((abs(t_stat), fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(reverse=True)\n    drivers = tuple(fid for _, fid in effect_sizes[:MAX_DRIVERS])\n    \n    # For products, look at top features\n    columns = valid_ids[:8]  # Limit to 8 features for regression\n    \n    # Look for strong interaction terms\n    products = []\n    # Only add interactions between top drivers\n    for i, a in enumerate(columns):\n        for b in columns[i+1:]:\n            if a in drivers and b in drivers:\n                products.append((a, b))\n    \n    # Simple weighted score: use top features with weights from effect sizes\n    loadings = {}\n    for i, (effect_size, fid) in enumerate(effect_sizes[:3]):  # Top 3 only\n        loadings[fid] = effect_size / effect_sizes[0][0] if effect_sizes[0][0] != 0 else 0\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set()\n    seen = set()\n    corr_pairs = [(a,b) for a,b in [\n        ('AAGM15B','POCJ18P'), ('AAGM15B','WQV2A'), ('AAGM15B','TXFL4'), \n        ('AAGM15B','GHCS11A'), ('MDGH10L','AAGM15B'), ('TXFL4','XCX7'),\n        ('AAGM15B','XCX7'), ('TXFL4','POCJ18P'), ('POCJ18P','GHCS11A'),\n        ('IPKF17','AAGM15B'), ('WQV2A','TXFL4'), ('WQV2A','MDGH10L'),\n        ('WQV2A','POCJ18P'), ('ZEGH17','AAGM15B'), ('AAGM15B','NSU10'),\n        ('KEWI1','NXWT2A'), ('KEWI1','IHM8'), ('VTO17','NSU10')\n    ] if a in feats.ids and b in feats.ids]\n    \n    for a,b in corr_pairs:\n        if a not in seen and b not in seen:\n            keep.add(a)\n            seen.add(a)\n            seen.add(b)\n    \n    # Add remaining features\n    remaining = [fid for fid in feats.ids if fid not in seen]\n    keep.update(remaining[:10])  # Keep top 10 non-correlated\n    \n    # Filter to valid features\n    valid_ids = tuple(fid for fid in feats.ids if fid in keep)\n    \n    # Compute effect sizes using t-test\n    effect_sizes = []\n    for fid in valid_ids:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effect_sizes.append((abs(t_stat), fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(reverse=True)\n    drivers = tuple(fid for _, fid in effect_sizes[:MAX_DRIVERS])\n    \n    # For products, look at top features\n    columns = valid_ids[:8]  # Limit to 8 features for regression\n    \n    # Look for strong interaction terms\n    products = []\n    # Only add interactions between top drivers\n    for i, a in enumerate(columns):\n        for b in columns[i+1:]:\n            if a in drivers and b in drivers:\n                products.append((a, b))\n    \n    # Simple weighted score: use top features with weights from effect sizes\n    loadings = {}\n    for i, (effect_size, fid) in enumerate(effect_sizes[:3]):  # Top 3 only\n        loadings[fid] = effect_size / effect_sizes[0][0] if effect_sizes[0][0] != 0 else 0\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5176,
+  "completion_tokens": 1475,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2445
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2393
+   }
+  ],
+  "wall_s": 16.7
+ }
+}

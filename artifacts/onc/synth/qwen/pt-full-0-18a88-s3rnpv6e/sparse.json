@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s3rnpv6e",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics and correlation filtering\n    drivers = []\n    \n    # Sort features by t-statistic magnitude (absolute value)\n    t_stats = [abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                   feats.x[feats.y==0, feats.column(fid)])[0]) \n               for fid in feats.ids]\n    \n    sorted_indices = np.argsort(t_stats)[::-1]\n    \n    # Select top features, avoiding near-duplicates\n    for i in sorted_indices:\n        fid = feats.ids[i]\n        if len(drivers) >= MAX_DRIVERS:\n            break\n            \n        # Check if this feature is correlated with any already selected driver\n        is_correlated = False\n        for d in drivers:\n            if abs(np.corrcoef(feats.x[:, feats.column(d)], \n                               feats.x[:, feats.column(fid)])[0,1]) > 0.6:\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            drivers.append(fid)\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build columns list with just the drivers\n    columns = list(drivers)\n    \n    # Create interaction terms between top drivers (limit to 3 pairs max)\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            if len(products) < 3:  # Limit interactions\n                products.append((d1, d2))\n    \n    # Create weighted score from top features\n    loadings = {}\n    for fid in drivers:\n        # Use t-statistic as loading weight\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                feats.x[feats.y==0, feats.column(fid)])[0]\n        loadings[fid] = float(t_stat)\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                  products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics and correlation filtering\n    drivers = []\n    \n    # Sort features by t-statistic magnitude (absolute value)\n    t_stats = [abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                   feats.x[feats.y==0, feats.column(fid)])[0]) \n               for fid in feats.ids]\n    \n    sorted_indices = np.argsort(t_stats)[::-1]\n    \n    # Select top features, avoiding near-duplicates\n    for i in sorted_indices:\n        fid = feats.ids[i]\n        if len(drivers) >= MAX_DRIVERS:\n            break\n            \n        # Check if this feature is correlated with any already selected driver\n        is_correlated = False\n        for d in drivers:\n            if abs(np.corrcoef(feats.x[:, feats.column(d)], \n                               feats.x[:, feats.column(fid)])[0,1]) > 0.6:\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            drivers.append(fid)\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build columns list with just the drivers\n    columns = list(drivers)\n    \n    # Create interaction terms between top drivers (limit to 3 pairs max)\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            if len(products) < 3:  # Limit interactions\n                products.append((d1, d2))\n    \n    # Create weighted score from top features\n    loadings = {}\n    for fid in drivers:\n        # Use t-statistic as loading weight\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                feats.x[feats.y==0, feats.column(fid)])[0]\n        loadings[fid] = float(t_stat)\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                  products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7972,
+  "completion_tokens": 1457,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2152
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2152
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2027
+   }
+  ],
+  "wall_s": 21.3
+ }
+}

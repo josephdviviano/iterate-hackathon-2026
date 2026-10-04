@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-h9h3wos4",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out derived features as they're often not suitable for causal inference\n    non_derived_ids = [fid for fid, t in zip(feats.ids, feats.types) if t != 'derived']\n    non_derived_indices = [feats.column(fid) for fid in non_derived_ids]\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    y = feats.y\n    x = feats.x[:, non_derived_indices]\n    \n    # Compute mean differences for each feature\n    means_1 = np.mean(x[y == 1], axis=0)\n    means_0 = np.mean(x[y == 0], axis=0)\n    effect_sizes = means_1 - means_0\n    \n    # Rank by absolute effect size\n    ranked_indices = np.argsort(np.abs(effect_sizes))[::-1]\n    top_features = [non_derived_ids[i] for i in ranked_indices[:MAX_DRIVERS]]\n    \n    # Check for near-duplicates (correlation > 0.6) and remove them\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(non_derived_ids)):\n        for j in range(i+1, len(non_derived_ids)):\n            if abs(corr_matrix[i, j]) > 0.6:\n                to_remove.add(non_derived_ids[j])\n    \n    # Remove near-duplicates\n    final_drivers = [fid for fid in top_features if fid not in to_remove][:MAX_DRIVERS]\n    \n    # Build columns list with only top features\n    columns = tuple(final_drivers)\n    \n    # Build products list with highly correlated pairs among top features (limit to 3 pairs max)\n    products = []\n    top_indices = [non_derived_ids.index(fid) for fid in final_drivers if fid in non_derived_ids]\n    for i in range(len(top_indices)):\n        for j in range(i+1, len(top_indices)):\n            if abs(corr_matrix[top_indices[i], top_indices[j]]) > 0.6 and len(products) < 3:\n                fid_i = non_derived_ids[top_indices[i]]\n                fid_j = non_derived_ids[top_indices[j]]\n                products.append((fid_i, fid_j))\n    \n    # Build loadings dictionary using effect sizes as weights for top features only\n    loadings = dict(zip(final_drivers, effect_sizes[[non_derived_ids.index(fid) for fid in final_drivers]]))\n    \n    return Design(\n        drivers=tuple(final_drivers),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out derived features as they're often not suitable for causal inference\n    non_derived_ids = [fid for fid, t in zip(feats.ids, feats.types) if t != 'derived']\n    non_derived_indices = [feats.column(fid) for fid in non_derived_ids]\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    y = feats.y\n    x = feats.x[:, non_derived_indices]\n    \n    # Compute mean differences for each feature\n    means_1 = np.mean(x[y == 1], axis=0)\n    means_0 = np.mean(x[y == 0], axis=0)\n    effect_sizes = means_1 - means_0\n    \n    # Rank by absolute effect size\n    ranked_indices = np.argsort(np.abs(effect_sizes))[::-1]\n    top_features = [non_derived_ids[i] for i in ranked_indices[:MAX_DRIVERS]]\n    \n    # Check for near-duplicates (correlation > 0.6) and remove them\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(non_derived_ids)):\n        for j in range(i+1, len(non_derived_ids)):\n            if abs(corr_matrix[i, j]) > 0.6:\n                to_remove.add(non_derived_ids[j])\n    \n    # Remove near-duplicates\n    final_drivers = [fid for fid in top_features if fid not in to_remove][:MAX_DRIVERS]\n    \n    # Build columns list with only top features\n    columns = tuple(final_drivers)\n    \n    # Build products list with highly correlated pairs among top features (limit to 3 pairs max)\n    products = []\n    top_indices = [non_derived_ids.index(fid) for fid in final_drivers if fid in non_derived_ids]\n    for i in range(len(top_indices)):\n        for j in range(i+1, len(top_indices)):\n            if abs(corr_matrix[top_indices[i], top_indices[j]]) > 0.6 and len(products) < 3:\n                fid_i = non_derived_ids[top_indices[i]]\n                fid_j = non_derived_ids[top_indices[j]]\n                products.append((fid_i, fid_j))\n    \n    # Build loadings dictionary using effect sizes as weights for top features only\n    loadings = dict(zip(final_drivers, effect_sizes[[non_derived_ids.index(fid) for fid in final_drivers]]))\n    \n    return Design(\n        drivers=tuple(final_drivers),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8101,
+  "completion_tokens": 1614,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2056
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2010
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2237
+   }
+  ],
+  "wall_s": 18.6
+ }
+}

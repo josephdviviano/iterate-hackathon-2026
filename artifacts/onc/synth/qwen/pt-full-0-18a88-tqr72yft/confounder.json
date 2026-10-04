@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-tqr72yft",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if we have a mechanism\n    if np.random.rand() > 0.2:  # 80% chance of having a mechanism\n        # Find features with largest effect sizes\n        effects = []\n        for i, fid in enumerate(feats.ids):\n            if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n                # For clinical/cohort variables, check correlation with outcome\n                corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n                effects.append((abs(corr), fid, i))\n        \n        # Sort by effect size\n        effects.sort(reverse=True)\n        \n        # If we found a strong clinical variable, use it as driver\n        if effects and abs(effects[0][0]) > 0.1:\n            driver_fid = effects[0][1]\n            # Find correlated features to include\n            drivers = [driver_fid]\n            columns = [driver_fid]\n            \n            # Add other correlated features (avoid near-duplicates)\n            used_fids = set([driver_fid])\n            for i, fid in enumerate(feats.ids):\n                if fid in used_fids:\n                    continue\n                    \n                # Check correlation with driver\n                corr = np.corrcoef(feats.x[:, effects[0][2]], feats.x[:, i])[0, 1]\n                if abs(corr) > 0.6:\n                    columns.append(fid)\n                    used_fids.add(fid)\n                    \n            return Design(\n                drivers=tuple(drivers),\n                columns=tuple(columns),\n                products=(),\n                loadings={driver_fid: 1.0}\n            )\n    \n    # No mechanism case\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if we have a mechanism\n    if np.random.rand() > 0.2:  # 80% chance of having a mechanism\n        # Find features with largest effect sizes\n        effects = []\n        for i, fid in enumerate(feats.ids):\n            if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n                # For clinical/cohort variables, check correlation with outcome\n                corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n                effects.append((abs(corr), fid, i))\n        \n        # Sort by effect size\n        effects.sort(reverse=True)\n        \n        # If we found a strong clinical variable, use it as driver\n        if effects and abs(effects[0][0]) > 0.1:\n            driver_fid = effects[0][1]\n            # Find correlated features to include\n            drivers = [driver_fid]\n            columns = [driver_fid]\n            \n            # Add other correlated features (avoid near-duplicates)\n            used_fids = set([driver_fid])\n            for i, fid in enumerate(feats.ids):\n                if fid in used_fids:\n                    continue\n                    \n                # Check correlation with driver\n                corr = np.corrcoef(feats.x[:, effects[0][2]], feats.x[:, i])[0, 1]\n                if abs(corr) > 0.6:\n                    columns.append(fid)\n                    used_fids.add(fid)\n                    \n            return Design(\n                drivers=tuple(drivers),\n                columns=tuple(columns),\n                products=(),\n                loadings={driver_fid: 1.0}\n            )\n    \n    # No mechanism case\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2105,
+  "completion_tokens": 423,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1939
+   }
+  ],
+  "wall_s": 4.8
+ }
+}

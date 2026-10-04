@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-god9cd09",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        effect = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect))\n    \n    # Rank features by effect size\n    ranked_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top candidates\n    candidates = [feats.ids[i] for i in ranked_indices[:10]]\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in candidates]]).round(2)\n    for i in range(len(candidates)):\n        for j in range(i+1, len(candidates)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(candidates[j])\n    \n    drivers = [fid for fid in candidates if fid not in to_remove][:MAX_DRIVERS]\n    \n    # Build regression components\n    columns = list(set(candidates) - to_remove)\n    \n    # Add interaction terms for strong correlations\n    products = []\n    for i in range(len(columns)):\n        for j in range(i+1, len(columns)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                products.append((columns[i], columns[j]))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(columns):\n        idx = feats.column(fid)\n        loadings[fid] = effect_sizes[idx]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        effect = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect))\n    \n    # Rank features by effect size\n    ranked_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top candidates\n    candidates = [feats.ids[i] for i in ranked_indices[:10]]\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in candidates]]).round(2)\n    for i in range(len(candidates)):\n        for j in range(i+1, len(candidates)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(candidates[j])\n    \n    drivers = [fid for fid in candidates if fid not in to_remove][:MAX_DRIVERS]\n    \n    # Build regression components\n    columns = list(set(candidates) - to_remove)\n    \n    # Add interaction terms for strong correlations\n    products = []\n    for i in range(len(columns)):\n        for j in range(i+1, len(columns)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                products.append((columns[i], columns[j]))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(columns):\n        idx = feats.column(fid)\n        loadings[fid] = effect_sizes[idx]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2115,
+  "completion_tokens": 433,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1770
+   }
+  ],
+  "wall_s": 5.0
+ }
+}

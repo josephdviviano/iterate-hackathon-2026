@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-o97uravy",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    keep_ids = [fid for fid in ids if fid not in to_remove]\n    keep_indices = [feats.column(fid) for fid in keep_ids]\n    x_filtered = x[:, keep_indices]\n    \n    # Calculate effect sizes (mean difference by outcome)\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        mean_y1 = np.mean(x_filtered[y==1, i])\n        mean_y0 = np.mean(x_filtered[y==0, i])\n        effect_sizes.append(abs(mean_y1 - mean_y0))\n    \n    # Select top features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1][:MAX_DRIVERS]\n    drivers = [keep_ids[i] for i in sorted_indices]\n    \n    # Check if any driver has strong correlation with others\n    selected_corr = []\n    for i, d1 in enumerate(drivers):\n        for j, d2 in enumerate(drivers[i+1:], i+1):\n            idx1 = feats.column(d1)\n            idx2 = feats.column(d2)\n            corr = np.corrcoef(x[:, idx1], x[:, idx2])[0,1]\n            if abs(corr) >= 0.6:\n                selected_corr.append((d1, d2))\n    \n    # Build columns and products\n    columns = drivers[:]\n    products = []\n    for d1, d2 in selected_corr:\n        if d1 in columns and d2 in columns:\n            products.append((d1, d2))\n    \n    # Build loadings for weighted score\n    loadings = {}\n    for i, fid in enumerate(keep_ids):\n        if fid in drivers:\n            loadings[fid] = effect_sizes[i]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    keep_ids = [fid for fid in ids if fid not in to_remove]\n    keep_indices = [feats.column(fid) for fid in keep_ids]\n    x_filtered = x[:, keep_indices]\n    \n    # Calculate effect sizes (mean difference by outcome)\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        mean_y1 = np.mean(x_filtered[y==1, i])\n        mean_y0 = np.mean(x_filtered[y==0, i])\n        effect_sizes.append(abs(mean_y1 - mean_y0))\n    \n    # Select top features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1][:MAX_DRIVERS]\n    drivers = [keep_ids[i] for i in sorted_indices]\n    \n    # Check if any driver has strong correlation with others\n    selected_corr = []\n    for i, d1 in enumerate(drivers):\n        for j, d2 in enumerate(drivers[i+1:], i+1):\n            idx1 = feats.column(d1)\n            idx2 = feats.column(d2)\n            corr = np.corrcoef(x[:, idx1], x[:, idx2])[0,1]\n            if abs(corr) >= 0.6:\n                selected_corr.append((d1, d2))\n    \n    # Build columns and products\n    columns = drivers[:]\n    products = []\n    for d1, d2 in selected_corr:\n        if d1 in columns and d2 in columns:\n            products.append((d1, d2))\n    \n    # Build loadings for weighted score\n    loadings = {}\n    for i, fid in enumerate(keep_ids):\n        if fid in drivers:\n            loadings[fid] = effect_sizes[i]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8048,
+  "completion_tokens": 1673,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2129
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2290
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2129
+   }
+  ],
+  "wall_s": 21.1
+ }
+}

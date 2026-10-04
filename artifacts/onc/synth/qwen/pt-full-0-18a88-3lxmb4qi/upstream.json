@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3lxmb4qi",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features by mean difference and t-test\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(feats.x[:, i].mean() * 2 - 1) > 0.1:  # significant change in mean\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if abs(t_stat) > 4 and p_val < 0.001:\n                strong_features.append((fid, abs(t_stat)))\n    \n    # Sort by t-statistic magnitude\n    strong_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates for drivers (limit to 4 to keep model small)\n    drivers = [fid for fid, _ in strong_features[:4]]\n    \n    # Use only top 3 drivers as columns to keep it small\n    columns = drivers[:3] if drivers else []\n    \n    # No product terms to keep model small\n    products = ()\n    \n    # Create simple loadings (correlation with outcome)\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        loadings[fid] = np.abs(np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1])\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features by mean difference and t-test\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(feats.x[:, i].mean() * 2 - 1) > 0.1:  # significant change in mean\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if abs(t_stat) > 4 and p_val < 0.001:\n                strong_features.append((fid, abs(t_stat)))\n    \n    # Sort by t-statistic magnitude\n    strong_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates for drivers (limit to 4 to keep model small)\n    drivers = [fid for fid, _ in strong_features[:4]]\n    \n    # Use only top 3 drivers as columns to keep it small\n    columns = drivers[:3] if drivers else []\n    \n    # No product terms to keep model small\n    products = ()\n    \n    # Create simple loadings (correlation with outcome)\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        loadings[fid] = np.abs(np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1])\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8842,
+  "completion_tokens": 1799,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2359
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2382
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1260
+   }
+  ],
+  "wall_s": 20.8
+ }
+}

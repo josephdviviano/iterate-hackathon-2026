@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ky2zmcld",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression and copy number features\n    expr_ids = [fid for fid, t in zip(feats.ids, feats.types) if t in ('expression', 'copy_number')]\n    \n    # Compute pairwise correlations\n    expr_cols = [feats.column(fid) for fid in expr_ids]\n    expr_data = feats.x[:, expr_cols]\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(expr_data.T)\n    \n    # Find highly correlated pairs (|r| >= 0.6)\n    high_corr_pairs = []\n    for i in range(len(expr_ids)):\n        for j in range(i+1, len(expr_ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((expr_ids[i], expr_ids[j]))\n    \n    if not high_corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features based on correlation\n    clustering = AgglomerativeClustering(n_clusters=1, linkage='average')\n    # Use distance matrix instead of affinity parameter\n    dist_matrix = 1 - np.abs(corr_matrix)\n    clustering.fit(dist_matrix)\n    \n    # Get cluster members\n    cluster_labels = clustering.labels_\n    module_features = [expr_ids[i] for i in range(len(expr_ids)) if cluster_labels[i] == 0]\n    \n    # Remove near-duplicates\n    unique_features = []\n    seen = set()\n    for fid in module_features:\n        if fid not in seen:\n            unique_features.append(fid)\n            seen.add(fid)\n    \n    # Calculate weighted score using first principal component\n    if len(unique_features) > 1:\n        col_indices = [feats.column(fid) for fid in unique_features]\n        data_subset = feats.x[:, col_indices]\n        # Center data\n        centered = data_subset - np.mean(data_subset, axis=0)\n        # SVD to get first PC\n        _, _, Vt = np.linalg.svd(centered, full_matrices=False)\n        pc1 = Vt[0]\n        loadings = dict(zip(unique_features, pc1 / np.linalg.norm(pc1)))\n    else:\n        loadings = {unique_features[0]: 1.0}\n    \n    # Select top features by effect size\n    effects = [(fid, np.abs(np.mean(feats.x[feats.y==1, feats.column(fid)]) - \n                           np.mean(feats.x[feats.y==0, feats.column(fid)]))) \n               for fid in unique_features]\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Return design with module features and their loadings\n    return Design(\n        drivers=tuple([fid for fid, _ in effects[:min(MAX_DRIVERS, len(effects))]]),\n        columns=tuple(unique_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8401,
+  "completion_tokens": 1916,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2610
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2630
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2594
+   }
+  ],
+  "wall_s": 21.9
+ }
+}

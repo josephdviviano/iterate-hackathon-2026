@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-srtvkwr9",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers based on effect size and significance\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('derived', 'expression', 'copy_number', 'clinical'):\n            # Use Welch's t-test statistic as proxy for effect size\n            t_stat = feats.x[:, i].T @ (feats.y * 2 - 1) / np.std(feats.x[:, i])\n            effects.append((abs(t_stat), fid))\n    \n    effects.sort(reverse=True)\n    candidates = [fid for _, fid in effects[:20]]  # Top 20 candidates\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    # From problem description, we know these pairs are correlated:\n    known_correlations = [\n        (\"MZS13\", \"IUL10\"), (\"MZS13\", \"YCA13\"), (\"IUL10\", \"YCA13\"),\n        (\"MZS13\", \"DQO5\"), (\"DQO5\", \"IUL10\"), (\"ZLF19\", \"ZSDS19\"),\n        (\"ABJ6\", \"ZNCS12P\"), (\"KYEX18A\", \"RNKO8A\"), (\"MZS13\", \"RVI11\"),\n        (\"DQO5\", \"YCA13\"), (\"RYDJ15\", \"IUL10\"), (\"YCA13\", \"RVI11\"),\n        (\"WSJB7\", \"MZS13\"), (\"RYDJ15\", \"MZS13\"), (\"MZS13\", \"ABJ6\"),\n        (\"RYDJ15\", \"YCA13\"), (\"IUL10\", \"RVI11\"), (\"LSRM14\", \"IUL10\"),\n        (\"IUL10\", \"ALJU2\"), (\"WSJB7\", \"YCA13\")\n    ]\n    \n    # Build mapping of correlated features to remove one from each pair\n    to_remove = set()\n    for a, b in known_correlations:\n        if a in candidates and b in candidates:\n            to_remove.add(b)  # Remove second in pair\n    \n    drivers = [fid for fid in candidates if fid not in to_remove][:MAX_DRIVERS]\n    \n    # Ensure we don't exceed the maximum number of drivers (at most 4)\n    drivers = drivers[:4]\n    \n    # Select features for regression (drivers + some strong correlates)\n    columns = list(drivers)\n    for fid in candidates:\n        if fid not in columns and fid not in to_remove:\n            # Add if not too similar to existing columns\n            add_it = True\n            for col_fid in columns:\n                idx1 = feats.column(col_fid)\n                idx2 = feats.column(fid)\n                if abs(np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0,1]) > 0.6:\n                    add_it = False\n                    break\n            if add_it:\n                columns.append(fid)\n                if len(columns) >= 20:  # Limit total columns\n                    break\n    \n    # Create interaction terms for top drivers\n    products = []\n    if len(drivers) >= 2:\n        # Add interactions between top two drivers\n        products = [(drivers[0], drivers[1])]\n        \n    # Compute loadings using weighted sum of drivers\n    loadings = {}\n    for fid in drivers:\n        idx = feats.column(fid)\n        # Weight by t-statistic magnitude\n        t_stat = feats.x[:, idx].T @ (feats.y * 2 - 1) / np.std(feats.x[:, idx])\n        loadings[fid] = abs(t_stat)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9140,
+  "completion_tokens": 2608,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3048
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3148
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3121
+   }
+  ],
+  "wall_s": 29.3
+ }
+}

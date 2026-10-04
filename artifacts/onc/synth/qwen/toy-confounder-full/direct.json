@@ -1,0 +1,27 @@
+{
+ "world_id": "toy-confounder-full",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out near-duplicates\n    keep = []\n    seen = set()\n    for i, fid in enumerate(feats.ids):\n        if fid in seen:\n            continue\n        keep.append(i)\n        seen.add(fid)\n    \n    # Compute effect sizes using Welch's t-test\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if i not in keep:\n            continue\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        if len(group0) > 0 and len(group1) > 0:\n            tstat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            effect_sizes.append((abs(tstat), i, fid))\n        else:\n            effect_sizes.append((0, i, fid))\n    \n    # Sort by effect size and select top features\n    effect_sizes.sort(reverse=True)\n    top_features = [fid for _, _, fid in effect_sizes[:10]]\n    \n    # Try to find a mechanism with one or two drivers\n    best_drivers = ()\n    best_score = -np.inf\n    \n    # Check all combinations of 1 or 2 drivers\n    for n_drivers in [1, 2]:\n        for i in range(len(top_features)):\n            if n_drivers == 1:\n                drivers = (top_features[i],)\n            else:\n                drivers = (top_features[i], top_features[(i+1) % len(top_features)])\n            \n            # Build model with these drivers\n            cols = [feats.column(fid) for fid in drivers]\n            X = feats.x[:, cols]\n            model = LogisticRegression(penalty=None, max_iter=1000)\n            model.fit(X, feats.y)\n            score = model.score(X, feats.y)\n            \n            if score > best_score:\n                best_score = score\n                best_drivers = drivers\n    \n    # If no strong mechanism found, return empty\n    if best_score < 0.6:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build final design\n    columns = tuple(best_drivers)\n    products = ()\n    loadings = {fid: 1.0 for fid in best_drivers}\n    \n    return Design(drivers=best_drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out near-duplicates\n    keep = []\n    seen = set()\n    for i, fid in enumerate(feats.ids):\n        if fid in seen:\n            continue\n        keep.append(i)\n        seen.add(fid)\n    \n    # Compute effect sizes using Welch's t-test\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if i not in keep:\n            continue\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        if len(group0) > 0 and len(group1) > 0:\n            tstat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            effect_sizes.append((abs(tstat), i, fid))\n        else:\n            effect_sizes.append((0, i, fid))\n    \n    # Sort by effect size and select top features\n    effect_sizes.sort(reverse=True)\n    top_features = [fid for _, _, fid in effect_sizes[:10]]\n    \n    # Try to find a mechanism with one or two drivers\n    best_drivers = ()\n    best_score = -np.inf\n    \n    # Check all combinations of 1 or 2 drivers\n    for n_drivers in [1, 2]:\n        for i in range(len(top_features)):\n            if n_drivers == 1:\n                drivers = (top_features[i],)\n            else:\n                drivers = (top_features[i], top_features[(i+1) % len(top_features)])\n            \n            # Build model with these drivers\n            cols = [feats.column(fid) for fid in drivers]\n            X = feats.x[:, cols]\n            model = LogisticRegression(penalty=None, max_iter=1000)\n            model.fit(X, feats.y)\n            score = model.score(X, feats.y)\n            \n            if score > best_score:\n                best_score = score\n                best_drivers = drivers\n    \n    # If no strong mechanism found, return empty\n    if best_score < 0.6:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build final design\n    columns = tuple(best_drivers)\n    products = ()\n    loadings = {fid: 1.0 for fid in best_drivers}\n    \n    return Design(drivers=best_drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 2937,
+  "completion_tokens": 1123,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nsklearn.utils._param_validation.InvalidParameterError: The 'penalty' parameter of LogisticRegression must be a str among {'elasticnet', 'l1', 'l2'} or None. Got 'none' instead.",
+    "bytes": 2274
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2272
+   }
+  ],
+  "wall_s": 8.9
+ }
+}

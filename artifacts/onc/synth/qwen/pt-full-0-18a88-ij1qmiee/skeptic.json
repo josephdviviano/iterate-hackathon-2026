@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ij1qmiee",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check for correlation with outcome using Welch's t-test\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        if len(group0) > 0 and len(group1) > 0:\n            t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n            mean_diff = np.mean(group1) - np.mean(group0)\n            effects.append((fid, abs(mean_diff), abs(t_stat), p_val))\n    \n    # Sort by effect size and p-value\n    effects.sort(key=lambda x: (-x[1], x[3]))\n    \n    # Check for stratified consistency\n    strata_consistent = []\n    strata_effects = {}\n    \n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        strata_effects[fid] = []\n        for stratum in set(feats.stratum):\n            mask = [s == stratum for s in feats.stratum]\n            y_stratum = feats.y[mask]\n            x_stratum = feats.x[mask, i]\n            if len(y_stratum) > 1 and len(np.unique(y_stratum)) == 2:\n                group0 = x_stratum[y_stratum == 0]\n                group1 = x_stratum[y_stratum == 1]\n                if len(group0) > 0 and len(group1) > 0:\n                    t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n                    strata_effects[fid].append(abs(t_stat))\n    \n    # Filter features consistent across strata\n    for fid, _, _, p_val in effects:\n        if len(strata_effects[fid]) > 0:\n            avg_effect = np.mean(strata_effects[fid])\n            if avg_effect > 1.0 and p_val < 0.1:\n                strata_consistent.append(fid)\n    \n    # Select top drivers based on effect size and consistency\n    drivers = strata_consistent[:MAX_DRIVERS]\n    \n    # For products, look for correlated pairs with |r| >= 0.6\n    products = []\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n                if abs(corr) >= 0.7:\n                    products.append((fid1, fid2))\n    \n    # Build columns list (all features with strong effects)\n    columns = [f for f in feats.ids if f in strata_consistent or f in [p[0] for p in products] or f in [p[1] for p in products]]\n    \n    # Limit total features to prevent overfitting\n    if len(columns) > 12:\n        # Take only top 12 features by effect size\n        effect_dict = dict([(fid, effect_size) for fid, effect_size, _, _ in effects])\n        columns.sort(key=lambda f: effect_dict.get(f, 0), reverse=True)\n        columns = columns[:12]\n    \n    # Loadings: weight by effect strength\n    loadings = {}\n    for fid, effect_size, _, _ in effects:\n        if fid in columns:\n            loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8765,
+  "completion_tokens": 2433,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3008
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3037
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3208
+   }
+  ],
+  "wall_s": 27.7
+ }
+}

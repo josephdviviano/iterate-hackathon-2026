@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-h9h3wos4",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to significant features (p < 0.05) and remove near-duplicates\n    sig_ids = [fid for i, fid in enumerate(feats.ids) \n               if feats.types[i] != 'derived' and feats.x[:, feats.column(fid)].std() > 1e-6]\n    \n    # Remove near-duplicates based on correlation\n    keep_ids = []\n    excluded = set()\n    for fid in sig_ids:\n        if fid in excluded:\n            continue\n        keep_ids.append(fid)\n        # Find correlated features to exclude\n        for fid2 in sig_ids:\n            if fid2 == fid or fid2 in excluded:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                excluded.add(fid2)\n    \n    # Select top features by t-statistic\n    top_features = []\n    for fid in keep_ids:\n        col_idx = feats.column(fid)\n        y0_mean = feats.x[feats.y==0, col_idx].mean()\n        y1_mean = feats.x[feats.y==1, col_idx].mean()\n        t_stat = (y1_mean - y0_mean) / (feats.x[:, col_idx].std() + 1e-8)\n        top_features.append((fid, abs(t_stat)))\n    \n    top_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select drivers (top 3 features with highest t-stats)\n    drivers = tuple(fid for fid, _ in top_features[:3])\n    \n    # Select all features for regression (excluding derived types)\n    columns = tuple(fid for fid in keep_ids if feats.types[feats.ids.index(fid)] != 'derived')\n    \n    # Only include interaction terms between drivers\n    products = []\n    for i, fid1 in enumerate(drivers):\n        for fid2 in drivers[i+1:]:\n            products.append((fid1, fid2))\n    \n    # Simple weighted score using drivers\n    loadings = dict(zip(drivers, [1.0]*len(drivers)))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8190,
+  "completion_tokens": 1633,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2141
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2240
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2004
+   }
+  ],
+  "wall_s": 18.8
+ }
+}

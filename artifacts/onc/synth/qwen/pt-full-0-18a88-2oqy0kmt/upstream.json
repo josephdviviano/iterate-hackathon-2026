@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2oqy0kmt",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression/copy_number features (exclude clinical/derived)\n    expr_ids = [fid for fid, t in zip(feats.ids, feats.types) if t in ('expression', 'copy_number')]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    corr_mat = np.corrcoef(feats.x[:, [feats.column(fid) for fid in expr_ids]].T)\n    np.fill_diagonal(corr_mat, 0)\n    \n    # Find correlated pairs\n    high_corr_pairs = []\n    for i in range(len(expr_ids)):\n        for j in range(i+1, len(expr_ids)):\n            if abs(corr_mat[i,j]) >= 0.6:\n                high_corr_pairs.append((expr_ids[i], expr_ids[j]))\n    \n    # Cluster correlated features together\n    if high_corr_pairs:\n        all_corr_features = set()\n        for a,b in high_corr_pairs:\n            all_corr_features.add(a)\n            all_corr_features.add(b)\n        \n        # Use hierarchical clustering to group correlated features\n        if len(all_corr_features) > 1:\n            corr_features = list(all_corr_features)\n            corr_indices = [feats.column(fid) for fid in corr_features]\n            x_subset = feats.x[:, corr_indices]\n            \n            # Cluster based on correlation matrix\n            clustering = AgglomerativeClustering(\n                n_clusters=len(corr_features),\n                linkage='average'\n            )\n            dist_mat = 1 - np.abs(corr_mat[\n                [feats.column(fid) for fid in corr_features],\n                :][:, [feats.column(fid) for fid in corr_features]]\n            )\n            clusters = clustering.fit_predict(dist_mat)\n            \n            # Select representative from each cluster (highest effect size)\n            cluster_representatives = {}\n            for fid, cluster in zip(corr_features, clusters):\n                if cluster not in cluster_representatives:\n                    cluster_representatives[cluster] = fid\n                else:\n                    # Compare effect sizes (mean_y1-mean_y0)\n                    current_fid = cluster_representatives[cluster]\n                    idx_current = feats.column(current_fid)\n                    idx_new = feats.column(fid)\n                    effect_current = np.mean(feats.y * feats.x[:, idx_current])\n                    effect_new = np.mean(feats.y * feats.x[:, idx_new])\n                    if abs(effect_new) > abs(effect_current):\n                        cluster_representatives[cluster] = fid\n            \n            # Replace correlated features with their representatives\n            expr_ids = [fid for fid in expr_ids if fid not in all_corr_features or fid in cluster_representatives.values()]\n    \n    # Calculate effect sizes (mean_y1-mean_y0) for remaining features\n    effect_sizes = []\n    for fid in expr_ids:\n        col_idx = feats.column(fid)\n        mean_y1 = np.mean(feats.x[feats.y == 1, col_idx])\n        mean_y0 = np.mean(feats.x[feats.y == 0, col_idx])\n        effect_size = mean_y1 - mean_y0\n        effect_sizes.append((fid, effect_size))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top drivers (up to MAX_DRIVERS)\n    drivers = tuple(fid for fid, _ in effect_sizes[:MAX_DRIVERS])\n    \n    # For columns, use all expression/copy_number features\n    columns = tuple(expr_ids)\n    \n    # No products needed for this simple approach\n    products = ()\n    \n    # Loadings: use effect sizes as weights for a weighted score\n    loadings = {fid: effect_size for fid, effect_size in effect_sizes}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9098,
+  "completion_tokens": 2508,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 3823
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 3767
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 49 is out of bounds for axis 0 with size 40",
+    "bytes": 3727
+   }
+  ],
+  "wall_s": 28.3
+ }
+}

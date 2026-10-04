@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-dxzw9h94",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Identify strong candidates using t-test and correlation\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        t_stat = feats.x[:, i].mean() * np.sqrt(len(feats.x))\n        p_val = 2 * (1 - stats.norm.cdf(abs(t_stat)))\n        if p_val < 0.05:\n            candidates.append((fid, abs(t_stat)))\n    \n    # Sort by strength\n    candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates, avoiding near-duplicates\n    selected = []\n    excluded = set()\n    for fid, _ in candidates[:10]:  # Limit to top 10\n        if fid in excluded:\n            continue\n        selected.append(fid)\n        # Mark correlated features as excluded\n        for other_fid, corr in [(f, np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(f)])[0,1]) \n                               for f in feats.ids if f != fid and abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(f)])[0,1]) >= 0.6]:\n            if abs(corr) >= 0.6:\n                excluded.add(other_fid)\n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # If no strong candidates found, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    columns = tuple(selected)\n    loadings = {fid: 1.0 for fid in selected}\n    \n    # Check for interactions between top features\n    products = []\n    if len(selected) >= 2:\n        # Add interaction terms for top two features\n        products = [(selected[0], selected[1])]\n    \n    return Design(drivers=tuple(selected), columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Identify strong candidates using t-test and correlation\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        t_stat = feats.x[:, i].mean() * np.sqrt(len(feats.x))\n        p_val = 2 * (1 - stats.norm.cdf(abs(t_stat)))\n        if p_val < 0.05:\n            candidates.append((fid, abs(t_stat)))\n    \n    # Sort by strength\n    candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates, avoiding near-duplicates\n    selected = []\n    excluded = set()\n    for fid, _ in candidates[:10]:  # Limit to top 10\n        if fid in excluded:\n            continue\n        selected.append(fid)\n        # Mark correlated features as excluded\n        for other_fid, corr in [(f, np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(f)])[0,1]) \n                               for f in feats.ids if f != fid and abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(f)])[0,1]) >= 0.6]:\n            if abs(corr) >= 0.6:\n                excluded.add(other_fid)\n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # If no strong candidates found, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    columns = tuple(selected)\n    loadings = {fid: 1.0 for fid in selected}\n    \n    # Check for interactions between top features\n    products = []\n    if len(selected) >= 2:\n        # Add interaction terms for top two features\n        products = [(selected[0], selected[1])]\n    \n    return Design(drivers=tuple(selected), columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2085,
+  "completion_tokens": 470,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1923
+   }
+  ],
+  "wall_s": 5.5
+ }
+}

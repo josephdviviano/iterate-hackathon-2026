@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qkmfxgu4",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = {\n        ('COG2A', 'DLU13'), ('SRFQ16', 'DLU13'), ('DLU13', 'JGE8'),\n        ('NFAM8', 'DLU13'), ('PUI17P', 'DLU13'), ('SRFQ16', 'JGE8'),\n        ('COG2A', 'JGE8'), ('LGZ7', 'JGE8'), ('XLCJ18P', 'SRFQ16'),\n        ('XLCJ18P', 'DLU13'), ('LGZ7', 'DLU13'), ('FVR14', 'YYNY2'),\n        ('PUI17P', 'NFAM8'), ('SRFQ16', 'NFAM8'), ('COG2A', 'NFAM8'),\n        ('PUI17P', 'JGE8'), ('PUI17P', 'SRFQ16'), ('LGZ7', 'COG2A'),\n        ('OPQC2', 'JGE8'), ('PUI17P', 'COG2A')\n    }\n    \n    # Build set of unique features to keep\n    keep_features = set(feats.ids)\n    for a, b in correlated_pairs:\n        if a in keep_features and b in keep_features:\n            # Remove one of each pair (prefer higher mean_y1-mean_y0)\n            if abs(feats.y.mean() - feats.x[:, feats.column(a)].mean()) > \\\n               abs(feats.y.mean() - feats.x[:, feats.column(b)].mean()):\n                keep_features.remove(b)\n            else:\n                keep_features.remove(a)\n    \n    # Filter features\n    filtered_ids = tuple(f for f in feats.ids if f in keep_features)\n    \n    # Select drivers based on t-statistics and correlation with outcome\n    drivers = []\n    for i, fid in enumerate(filtered_ids):\n        if feats.types[i] == 'expression':\n            # Calculate t-statistic-like measure\n            group1 = feats.x[feats.y == 1, feats.column(fid)]\n            group0 = feats.x[feats.y == 0, feats.column(fid)]\n            if len(group1) > 0 and len(group0) > 0:\n                t_stat = (group1.mean() - group0.mean()) / (\n                    np.sqrt(np.var(group1)/len(group1) + np.var(group0)/len(group0))\n                )\n                if abs(t_stat) > 2.0:\n                    drivers.append(fid)\n    \n    # Sort by effect size (mean_y1-mean_y0) \n    drivers.sort(key=lambda x: abs(feats.x[:, feats.column(x)].mean() * (feats.y.mean() - (1-feats.y.mean()))), reverse=True)\n    drivers = drivers[:min(MAX_DRIVERS, len(drivers))]\n    \n    # If no clear drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build columns and products\n    columns = list(filtered_ids)\n    products = []\n    \n    # Add interaction terms between top drivers (limit to 3 interactions max)\n    count = 0\n    for i, d1 in enumerate(drivers):\n        for j, d2 in enumerate(drivers[i+1:], i+1):\n            if (d1, d2) not in correlated_pairs and (d2, d1) not in correlated_pairs:\n                products.append((d1, d2))\n                count += 1\n                if count >= 3:\n                    break\n        if count >= 3:\n            break\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for fid in drivers:\n        col_idx = feats.column(fid)\n        # Weight by effect size (t-statistic)\n        group1 = feats.x[feats.y == 1, col_idx]\n        group0 = feats.x[feats.y == 0, col_idx]\n        if len(group1) > 0 and len(group0) > 0:\n            effect = abs(group1.mean() - group0.mean())\n        else:\n            effect = 0\n        loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9053,
+  "completion_tokens": 2805,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2916
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3398
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3367
+   }
+  ],
+  "wall_s": 31.1
+ }
+}

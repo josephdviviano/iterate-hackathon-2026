@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-o97uravy",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            continue\n        x1 = feats.x[feats.y == 1, i]\n        x0 = feats.x[feats.y == 0, i]\n        if len(x1) > 0 and len(x0) > 0:\n            t_stat, p_val = stats.ttest_ind(x1, x0, equal_var=False)\n            p_values.append((p_val, fid))\n    \n    p_values.sort()\n    \n    # If no significant features found, return empty design\n    if not p_values or p_values[0][0] > 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by significance\n    top_features = [fid for _, fid in p_values[:5]]\n    \n    # Remove near-duplicates based on correlation matrix\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]])\n    to_remove = set()\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(top_features[j])\n    \n    selected_features = [fid for fid in top_features if fid not in to_remove]\n    \n    # If we have no features left, return empty design\n    if not selected_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select best features using mutual information\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in selected_features]], feats.y)\n    sorted_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    drivers = tuple(selected_features[i] for i in sorted_indices if mi_scores[i] > 0)\n    \n    # Build columns and products from top features\n    columns = tuple(selected_features[:3])  # Limit to 3 features\n    products = tuple([(a,b) for i, a in enumerate(columns) for b in columns[i+1:] if a != b])\n    \n    # Simple weighted score based on standardized values\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            continue\n        x1 = feats.x[feats.y == 1, i]\n        x0 = feats.x[feats.y == 0, i]\n        if len(x1) > 0 and len(x0) > 0:\n            t_stat, p_val = stats.ttest_ind(x1, x0, equal_var=False)\n            p_values.append((p_val, fid))\n    \n    p_values.sort()\n    \n    # If no significant features found, return empty design\n    if not p_values or p_values[0][0] > 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by significance\n    top_features = [fid for _, fid in p_values[:5]]\n    \n    # Remove near-duplicates based on correlation matrix\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]])\n    to_remove = set()\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(top_features[j])\n    \n    selected_features = [fid for fid in top_features if fid not in to_remove]\n    \n    # If we have no features left, return empty design\n    if not selected_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select best features using mutual information\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in selected_features]], feats.y)\n    sorted_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    drivers = tuple(selected_features[i] for i in sorted_indices if mi_scores[i] > 0)\n    \n    # Build columns and products from top features\n    columns = tuple(selected_features[:3])  # Limit to 3 features\n    products = tuple([(a,b) for i, a in enumerate(columns) for b in columns[i+1:] if a != b])\n    \n    # Simple weighted score based on standardized values\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8252,
+  "completion_tokens": 1800,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2430
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2335
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2213
+   }
+  ],
+  "wall_s": 26.7
+ }
+}

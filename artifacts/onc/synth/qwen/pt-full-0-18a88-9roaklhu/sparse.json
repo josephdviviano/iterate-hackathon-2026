@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9roaklhu",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    \n    # Identify near-duplicates (|r| >= 0.6)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Filter out near-duplicates\n    filtered_ids = [id for id in ids if id not in to_remove]\n    filtered_indices = [i for i, id in enumerate(ids) if id not in to_remove]\n    if len(filtered_indices) == 0:\n        return Design(\n            drivers=(),\n            columns=(),\n            products=(),\n            loadings={}\n        )\n    filtered_x = x[:, filtered_indices]\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(filtered_ids):\n        idx = feats.column(fid)\n        group0 = x[y==0, idx]\n        group1 = x[y==1, idx]\n        effect = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect))\n    \n    # Sort by effect size\n    sorted_idx = np.argsort(effect_sizes)[::-1]\n    top_ids = [filtered_ids[i] for i in sorted_idx[:MAX_DRIVERS]]\n    \n    # Select top features for regression\n    columns = tuple(top_ids)\n    \n    # Check for interactions among top features\n    products = []\n    if len(columns) >= 2:\n        # Simple approach: look for strong correlations among top features\n        top_indices = [feats.column(fid) for fid in columns]\n        if len(top_indices) >= 2:\n            top_corr = np.corrcoef(x[:, top_indices].T)\n            \n            # Add interaction terms between highly correlated top features\n            for i in range(len(columns)):\n                for j in range(i+1, len(columns)):\n                    if abs(top_corr[i,j]) > 0.5:  # moderate correlation\n                        products.append((columns[i], columns[j]))\n    \n    # Create loadings dictionary for weighted score\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        # Use standardized coefficients from univariate associations\n        group0 = x[y==0, idx]\n        group1 = x[y==1, idx]\n        effect = np.mean(group1) - np.mean(group0)\n        loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(top_ids),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    \n    # Identify near-duplicates (|r| >= 0.6)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Filter out near-duplicates\n    filtered_ids = [id for id in ids if id not in to_remove]\n    filtered_indices = [i for i, id in enumerate(ids) if id not in to_remove]\n    if len(filtered_indices) == 0:\n        return Design(\n            drivers=(),\n            columns=(),\n            products=(),\n            loadings={}\n        )\n    filtered_x = x[:, filtered_indices]\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(filtered_ids):\n        idx = feats.column(fid)\n        group0 = x[y==0, idx]\n        group1 = x[y==1, idx]\n        effect = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect))\n    \n    # Sort by effect size\n    sorted_idx = np.argsort(effect_sizes)[::-1]\n    top_ids = [filtered_ids[i] for i in sorted_idx[:MAX_DRIVERS]]\n    \n    # Select top features for regression\n    columns = tuple(top_ids)\n    \n    # Check for interactions among top features\n    products = []\n    if len(columns) >= 2:\n        # Simple approach: look for strong correlations among top features\n        top_indices = [feats.column(fid) for fid in columns]\n        if len(top_indices) >= 2:\n            top_corr = np.corrcoef(x[:, top_indices].T)\n            \n            # Add interaction terms between highly correlated top features\n            for i in range(len(columns)):\n                for j in range(i+1, len(columns)):\n                    if abs(top_corr[i,j]) > 0.5:  # moderate correlation\n                        products.append((columns[i], columns[j]))\n    \n    # Create loadings dictionary for weighted score\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        # Use standardized coefficients from univariate associations\n        group0 = x[y==0, idx]\n        group1 = x[y==1, idx]\n        effect = np.mean(group1) - np.mean(group0)\n        loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(top_ids),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8257,
+  "completion_tokens": 1836,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: list index out of range",
+    "bytes": 2465
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2565
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2565
+   }
+  ],
+  "wall_s": 20.8
+ }
+}

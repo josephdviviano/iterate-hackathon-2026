@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tznf9695",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Compute Welch's t-test p-values and effect sizes for all features\n    feature_stats = []\n    for i, fid in enumerate(feats.ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        effect_size = np.mean(x[y==1]) - np.mean(x[y==0])\n        feature_stats.append((abs(effect_size), p_val, fid))\n    \n    # Sort by effect size (largest first)\n    feature_stats.sort(reverse=True)\n    \n    # Take top features, but cap at MAX_DRIVERS\n    top_features = [fid for _, _, fid in feature_stats[:MAX_DRIVERS]]\n    \n    # If no features show strong association, return empty design\n    if not top_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    columns = top_features.copy()\n    \n    # Add interaction terms for top features (at most 4 interactions)\n    products = []\n    for i in range(min(2, len(top_features))):\n        for j in range(i+1, min(3, len(top_features))):\n            products.append((top_features[i], top_features[j]))\n    \n    # Compute weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(top_features):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        # Use effect size as loading weight\n        effect_size = np.mean(x[y==1]) - np.mean(x[y==0])\n        loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Compute Welch's t-test p-values and effect sizes for all features\n    feature_stats = []\n    for i, fid in enumerate(feats.ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        effect_size = np.mean(x[y==1]) - np.mean(x[y==0])\n        feature_stats.append((abs(effect_size), p_val, fid))\n    \n    # Sort by effect size (largest first)\n    feature_stats.sort(reverse=True)\n    \n    # Take top features, but cap at MAX_DRIVERS\n    top_features = [fid for _, _, fid in feature_stats[:MAX_DRIVERS]]\n    \n    # If no features show strong association, return empty design\n    if not top_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    columns = top_features.copy()\n    \n    # Add interaction terms for top features (at most 4 interactions)\n    products = []\n    for i in range(min(2, len(top_features))):\n        for j in range(i+1, min(3, len(top_features))):\n            products.append((top_features[i], top_features[j]))\n    \n    # Compute weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(top_features):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        # Use effect size as loading weight\n        effect_size = np.mean(x[y==1]) - np.mean(x[y==0])\n        loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8607,
+  "completion_tokens": 1770,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3632
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1779
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1779
+   }
+  ],
+  "wall_s": 17.9
+ }
+}

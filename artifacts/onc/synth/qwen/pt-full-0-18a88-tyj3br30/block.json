@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tyj3br30",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strongly associated features\n    t_scores = [abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                   feats.x[feats.y==0, feats.column(fid)])[0]) \n                for fid in feats.ids]\n    \n    # Select top features by t-score\n    top_indices = np.argsort(t_scores)[::-1][:20]\n    top_ids = [feats.ids[i] for i in top_indices]\n    \n    # Find correlated pairs with |r| >= 0.6\n    corr_pairs = []\n    for i in range(len(top_ids)):\n        for j in range(i+1, len(top_ids)):\n            fid1, fid2 = top_ids[i], top_ids[j]\n            if abs(np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # If we have correlated pairs, cluster them into modules\n    if corr_pairs:\n        all_features = set()\n        for a, b in corr_pairs:\n            all_features.add(a)\n            all_features.add(b)\n        \n        # Use clustering to identify modules\n        feature_list = list(all_features)\n        n_features = len(feature_list)\n        \n        if n_features > 1:\n            # Build correlation matrix\n            corr_matrix = np.zeros((n_features, n_features))\n            for i in range(n_features):\n                for j in range(i+1, n_features):\n                    r = np.corrcoef(feats.x[:, feats.column(feature_list[i])], \n                                  feats.x[:, feats.column(feature_list[j])])[0,1]\n                    corr_matrix[i,j] = corr_matrix[j,i] = r\n            \n            # Cluster based on correlation\n            clustering = AgglomerativeClustering(\n                n_clusters=min(3, n_features), \n                linkage='average'\n            ).fit(1 - np.abs(corr_matrix))  # Convert to distance\n            \n            # Get largest cluster\n            labels, counts = np.unique(clustering.labels_, return_counts=True)\n            if len(counts) > 0:\n                main_cluster = labels[np.argmax(counts)]\n                module_features = [feature_list[i] for i in range(n_features) \n                                 if clustering.labels_[i] == main_cluster]\n                \n                # Calculate weighted score using mean differences\n                weights = {}\n                for fid in module_features:\n                    diff = np.mean(feats.x[feats.y==1, feats.column(fid)]) - \\\n                           np.mean(feats.x[feats.y==0, feats.column(fid)])\n                    weights[fid] = diff\n                \n                # Normalize weights\n                w_sum = sum(abs(w) for w in weights.values())\n                if w_sum > 0:\n                    for fid in weights:\n                        weights[fid] /= w_sum\n                \n                # Return design with module features\n                return Design(\n                    drivers=tuple(module_features[:MAX_DRIVERS]),\n                    columns=tuple(module_features),\n                    products=(),\n                    loadings=weights\n                )\n    \n    # Fallback to simple approach\n    if len(top_ids) > 0:\n        # Use top 3 features as drivers\n        drivers = tuple(top_ids[:MAX_DRIVERS])\n        # Use all top features for regression\n        columns = tuple(top_ids)\n        # Simple weighting by t-scores\n        weights = {}\n        for i, fid in enumerate(top_ids):\n            weights[fid] = t_scores[i]\n        \n        # Normalize\n        w_sum = sum(weights.values())\n        if w_sum > 0:\n            for fid in weights:\n                weights[fid] /= w_sum\n        \n        return Design(\n            drivers=drivers,\n            columns=columns,\n            products=(),\n            loadings=weights\n        )\n    \n    # No mechanism found\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9068,
+  "completion_tokens": 2602,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 4114
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4073
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4018
+   }
+  ],
+  "wall_s": 39.9
+ }
+}

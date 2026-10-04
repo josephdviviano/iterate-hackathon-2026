@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-rtx1yvih",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick correlation check for top features\n    # Use only top 20 features by t-statistic\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y==0, i]\n        y1 = feats.x[feats.y==1, i]\n        t, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    t_stats.sort(reverse=True)\n    top_features = [fid for _, fid in t_stats[:20]]\n    \n    # Check for product terms among top features\n    best_product = None\n    best_t = 0\n    \n    # Only test a subset of pairs to speed up\n    for i, fid1 in enumerate(top_features[:10]):\n        for j, fid2 in enumerate(top_features[i+1:15], i+1):\n            # Skip near-duplicates\n            if abs(np.corrcoef(feats.x[:,feats.column(fid1)], feats.x[:,feats.column(fid2)])[0,1]) >= 0.6:\n                continue\n                \n            # Create product feature\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            prod = feats.x[:,col1] * feats.x[:,col2]\n            \n            # Test association with outcome\n            t, _ = stats.ttest_ind(prod[feats.y==0], prod[feats.y==1], equal_var=False)\n            if abs(t) > best_t:\n                best_t = abs(t)\n                best_product = (fid1, fid2)\n    \n    if not best_product or best_t < 2.5:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return best product term\n    fid1, fid2 = best_product\n    return Design(\n        drivers=(fid1, fid2),\n        columns=(fid1, fid2),\n        products=((fid1, fid2),),\n        loadings={fid1: 0.5, fid2: 0.5}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick correlation check for top features\n    # Use only top 20 features by t-statistic\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y==0, i]\n        y1 = feats.x[feats.y==1, i]\n        t, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    t_stats.sort(reverse=True)\n    top_features = [fid for _, fid in t_stats[:20]]\n    \n    # Check for product terms among top features\n    best_product = None\n    best_t = 0\n    \n    # Only test a subset of pairs to speed up\n    for i, fid1 in enumerate(top_features[:10]):\n        for j, fid2 in enumerate(top_features[i+1:15], i+1):\n            # Skip near-duplicates\n            if abs(np.corrcoef(feats.x[:,feats.column(fid1)], feats.x[:,feats.column(fid2)])[0,1]) >= 0.6:\n                continue\n                \n            # Create product feature\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            prod = feats.x[:,col1] * feats.x[:,col2]\n            \n            # Test association with outcome\n            t, _ = stats.ttest_ind(prod[feats.y==0], prod[feats.y==1], equal_var=False)\n            if abs(t) > best_t:\n                best_t = abs(t)\n                best_product = (fid1, fid2)\n    \n    if not best_product or best_t < 2.5:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return best product term\n    fid1, fid2 = best_product\n    return Design(\n        drivers=(fid1, fid2),\n        columns=(fid1, fid2),\n        products=((fid1, fid2),),\n        loadings={fid1: 0.5, fid2: 0.5}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4876,
+  "completion_tokens": 989,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 12s on all patients; it must run in under 10s",
+    "bytes": 1868
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1684
+   }
+  ],
+  "wall_s": 25.6
+ }
+}

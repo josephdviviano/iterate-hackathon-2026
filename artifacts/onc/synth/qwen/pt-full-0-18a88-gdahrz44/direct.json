@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-gdahrz44",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference between outcome groups)\n    effect_sizes = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        group0 = feats.x[feats.y == 0, col_idx]\n        group1 = feats.x[feats.y == 1, col_idx]\n        effect_size = abs(np.mean(group1) - np.mean(group0))\n        effect_sizes.append(effect_size)\n    \n    # Rank features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Take top 2 features as drivers\n    drivers = tuple([feats.ids[i] for i in sorted_indices[:MAX_DRIVERS]])\n    \n    # For regression, use features with effect size > 0.3\n    columns = tuple([feats.ids[i] for i in sorted_indices if effect_sizes[i] > 0.3])\n    \n    # No products\n    products = ()\n    \n    # Loadings based on effect sizes\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if effect_sizes[i] > 0.3:\n            loadings[fid] = effect_sizes[i]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8153,
+  "completion_tokens": 1091,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 2081
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1102
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1102
+   }
+  ],
+  "wall_s": 12.8
+ }
+}

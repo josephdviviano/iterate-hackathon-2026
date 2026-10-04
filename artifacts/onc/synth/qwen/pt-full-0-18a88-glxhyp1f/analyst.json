@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-glxhyp1f",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate correlations and identify near-duplicates\n    corr_matrix = np.corrcoef(feats.x.T)\n    near_dupes = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                near_dupes.add((feats.ids[i], feats.ids[j]))\n    \n    # Filter out near-duplicates, keeping first occurrence\n    unique_ids = []\n    seen = set()\n    for fid in feats.ids:\n        if any(fid in pair for pair in near_dupes):\n            # Check if this feature's pair is already processed\n            found = False\n            for pair in near_dupes:\n                if fid in pair and pair[0] in seen or pair[1] in seen:\n                    found = True\n                    break\n            if not found:\n                unique_ids.append(fid)\n                seen.add(fid)\n        else:\n            unique_ids.append(fid)\n            seen.add(fid)\n    \n    # Calculate effect sizes using Welch's t-test\n    effect_sizes = []\n    for i, fid in enumerate(unique_ids):\n        x_col = feats.x[:, feats.column(fid)]\n        y = feats.y\n        group0 = x_col[y == 0]\n        group1 = x_col[y == 1]\n        if len(group0) > 0 and len(group1) > 0:\n            t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            effect_sizes.append((fid, abs(t_stat)))\n        else:\n            effect_sizes.append((fid, 0))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features (limit to 3 to keep model small)\n    top_features = [fid for fid, _ in effect_sizes[:3]]\n    \n    # Check for strong correlations between top features\n    selected_corr_pairs = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            fid1, fid2 = top_features[i], top_features[j]\n            if any((fid1, fid2) in pair or (fid2, fid1) in pair for pair in near_dupes):\n                selected_corr_pairs.append((fid1, fid2))\n    \n    # Build design\n    drivers = tuple(top_features)\n    columns = tuple(unique_ids)\n    products = tuple(selected_corr_pairs)\n    loadings = {fid: 1.0 for fid in unique_ids}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8296,
+  "completion_tokens": 1801,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2467
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2511
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2333
+   }
+  ],
+  "wall_s": 20.3
+ }
+}

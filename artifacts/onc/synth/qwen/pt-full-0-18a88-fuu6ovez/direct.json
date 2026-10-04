@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-fuu6ovez",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [\n        ('JEYQ18', 'KOW15'), ('KOW15', 'QCV2'), ('JEYQ18', 'QCV2'),\n        ('KOW15', 'KQPY18'), ('JEYQ18', 'KQPY18'), ('QCV2', 'KQPY18'),\n        ('XRVP10', 'DJDA15L'), ('KOW15', 'EOKC7'), ('JEYQ18', 'EOKC7'),\n        ('AZQ1L', 'QPL14'), ('XRVP10', 'AWK2P'), ('IHL4A', 'KIFN12'),\n        ('KIFN12', 'LNE7'), ('XRVP10', 'HEF5A'), ('QCV2', 'EOKC7'),\n        ('UPBM17P', 'RAD11'), ('AWK2P', 'DJDA15L'), ('EOKC7', 'KQPY18'),\n        ('JEYQ18', 'RXX13A'), ('QCV2', 'LNE7')\n    ]\n    \n    # Remove near-duplicates (keep first in pair)\n    dup_ids = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            dup_ids.add(b)\n    \n    # Get non-duplicate features\n    keep_ids = [fid for fid in feats.ids if fid not in dup_ids]\n    \n    # Calculate effect sizes for remaining features\n    effects = []\n    for fid in keep_ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effects.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers\n    drivers = tuple(fid for fid, _, _ in effects[:MAX_DRIVERS])\n    \n    # If no strong drivers, return empty design\n    if len(drivers) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For simplicity, use just the strongest driver as the weighted score\n    # and include only the strongest driver in columns\n    columns = list(drivers)\n    products = []\n    loadings = {drivers[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [\n        ('JEYQ18', 'KOW15'), ('KOW15', 'QCV2'), ('JEYQ18', 'QCV2'),\n        ('KOW15', 'KQPY18'), ('JEYQ18', 'KQPY18'), ('QCV2', 'KQPY18'),\n        ('XRVP10', 'DJDA15L'), ('KOW15', 'EOKC7'), ('JEYQ18', 'EOKC7'),\n        ('AZQ1L', 'QPL14'), ('XRVP10', 'AWK2P'), ('IHL4A', 'KIFN12'),\n        ('KIFN12', 'LNE7'), ('XRVP10', 'HEF5A'), ('QCV2', 'EOKC7'),\n        ('UPBM17P', 'RAD11'), ('AWK2P', 'DJDA15L'), ('EOKC7', 'KQPY18'),\n        ('JEYQ18', 'RXX13A'), ('QCV2', 'LNE7')\n    ]\n    \n    # Remove near-duplicates (keep first in pair)\n    dup_ids = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            dup_ids.add(b)\n    \n    # Get non-duplicate features\n    keep_ids = [fid for fid in feats.ids if fid not in dup_ids]\n    \n    # Calculate effect sizes for remaining features\n    effects = []\n    for fid in keep_ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effects.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers\n    drivers = tuple(fid for fid, _, _ in effects[:MAX_DRIVERS])\n    \n    # If no strong drivers, return empty design\n    if len(drivers) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For simplicity, use just the strongest driver as the weighted score\n    # and include only the strongest driver in columns\n    columns = list(drivers)\n    products = []\n    loadings = {drivers[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5010,
+  "completion_tokens": 1344,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2184
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1918
+   }
+  ],
+  "wall_s": 15.4
+ }
+}

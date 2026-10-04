@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-4ea11wvw",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes using mean difference\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        effect_sizes.append(abs(y1_mean - y0_mean))\n    \n    # Sort by effect size (descending)\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_features = [feats.ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation\n    filtered_features = []\n    for fid in top_features:\n        is_duplicate = False\n        for existing_fid in filtered_features:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                              feats.x[:, feats.column(existing_fid)])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            filtered_features.append(fid)\n    \n    # Select features for regression (limit to 5)\n    reg_features = filtered_features[:5]\n    \n    # Check for interactions between top features\n    products = []\n    for i, fid1 in enumerate(filtered_features):\n        for fid2 in filtered_features[i+1:]:\n            # Check if interaction term would be useful\n            corr = abs(np.corrcoef(feats.x[:, feats.column(fid1)], \n                                 feats.x[:, feats.column(fid2)])[0,1])\n            if corr > 0.5:\n                products.append((fid1, fid2))\n    \n    # Create loadings dictionary (simple equal weights)\n    loadings = {fid: 1.0 for fid in filtered_features}\n    \n    return Design(\n        drivers=tuple(filtered_features),\n        columns=tuple(reg_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes using mean difference\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        effect_sizes.append(abs(y1_mean - y0_mean))\n    \n    # Sort by effect size (descending)\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_features = [feats.ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation\n    filtered_features = []\n    for fid in top_features:\n        is_duplicate = False\n        for existing_fid in filtered_features:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                              feats.x[:, feats.column(existing_fid)])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            filtered_features.append(fid)\n    \n    # Select features for regression (limit to 5)\n    reg_features = filtered_features[:5]\n    \n    # Check for interactions between top features\n    products = []\n    for i, fid1 in enumerate(filtered_features):\n        for fid2 in filtered_features[i+1:]:\n            # Check if interaction term would be useful\n            corr = abs(np.corrcoef(feats.x[:, feats.column(fid1)], \n                                 feats.x[:, feats.column(fid2)])[0,1])\n            if corr > 0.5:\n                products.append((fid1, fid2))\n    \n    # Create loadings dictionary (simple equal weights)\n    loadings = {fid: 1.0 for fid in filtered_features}\n    \n    return Design(\n        drivers=tuple(filtered_features),\n        columns=tuple(reg_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4986,
+  "completion_tokens": 1010,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2458
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1843
+   }
+  ],
+  "wall_s": 11.6
+ }
+}

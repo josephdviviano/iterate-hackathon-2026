@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-e4u92h91",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates by mean_y1-mean_y0\n    diffs = [feats.x[:, feats.column(fid)] @ (feats.y * 2 - 1) / len(feats.y) \n             for fid in feats.ids]\n    candidates = sorted(zip(feats.ids, diffs), key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top 10 candidates\n    top_ids = [fid for fid, _ in candidates[:10]]\n    \n    # Find correlated pairs with |r| >= 0.6\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_ids]].T)\n    correlated_pairs = []\n    for i in range(len(top_ids)):\n        for j in range(i+1, len(top_ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                correlated_pairs.append((top_ids[i], top_ids[j]))\n    \n    # Cluster correlated features\n    if correlated_pairs:\n        all_features = set()\n        for a, b in correlated_pairs:\n            all_features.add(a)\n            all_features.add(b)\n        feature_list = list(all_features)\n        feature_indices = [feats.column(fid) for fid in feature_list]\n        \n        # Use hierarchical clustering to group correlated features\n        X = feats.x[:, feature_indices]\n        clustering = AgglomerativeClustering(n_clusters=len(feature_list)//2+1, \n                                           linkage='average')\n        clusters = clustering.fit_predict(X)\n        \n        # For each cluster, select the feature with highest effect size\n        cluster_features = {}\n        for i, cluster_id in enumerate(clusters):\n            if cluster_id not in cluster_features:\n                cluster_features[cluster_id] = []\n            cluster_features[cluster_id].append((feature_list[i], diffs[feats.ids.index(feature_list[i])]))\n        \n        # Select best feature from each cluster\n        selected_drivers = []\n        for cluster_id, features in cluster_features.items():\n            best_feature = max(features, key=lambda x: abs(x[1]))[0]\n            selected_drivers.append(best_feature)\n    else:\n        # No strong correlations, just use top candidates\n        selected_drivers = [fid for fid, _ in candidates[:5]]\n    \n    # Build columns and products\n    columns = selected_drivers.copy()\n    products = []\n    \n    # Add interaction terms between top features\n    for i in range(min(3, len(selected_drivers))):\n        for j in range(i+1, min(3, len(selected_drivers))):\n            products.append((selected_drivers[i], selected_drivers[j]))\n    \n    # Loadings: assign weights based on effect sizes\n    loadings = {}\n    for fid, diff in candidates[:5]:\n        loadings[fid] = diff\n    \n    return Design(\n        drivers=tuple(selected_drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8747,
+  "completion_tokens": 1979,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 2954
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2898
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: list index out of range",
+    "bytes": 2832
+   }
+  ],
+  "wall_s": 22.6
+ }
+}

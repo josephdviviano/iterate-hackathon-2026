@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9roaklhu",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter to expression and clinical features (exclude copy_number and derived)\n    expr_clin_ids = [fid for fid, typ in zip(feats.ids, feats.types) \n                     if typ in ('expression', 'clinical')]\n    \n    # Compute effect sizes and p-values for expression/clinical features\n    effect_sizes = []\n    p_values = []\n    selected_ids = []\n    \n    for fid in expr_clin_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Effect size: difference in means between groups\n        mean_1 = np.mean(x[y == 1])\n        mean_0 = np.mean(x[y == 0])\n        effect_size = mean_1 - mean_0\n        \n        # Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        \n        effect_sizes.append(effect_size)\n        p_values.append(p_val)\n        selected_ids.append(fid)\n    \n    # Rank by effect size (absolute value) and p-value\n    scores = [abs(es) * (1 - pv) for es, pv in zip(effect_sizes, p_values)]\n    ranked_indices = np.argsort(scores)[::-1]\n    \n    # Select top candidates, avoiding near-duplicates\n    drivers = []\n    seen_pairs = set()\n    \n    for idx in ranked_indices[:10]:  # Check top 10\n        fid = selected_ids[idx]\n        # Skip if this feature is part of a known correlated pair we've already considered\n        skip = False\n        for a, b in [(\"XBI15\", \"YCB3\"), (\"MHCW4\", \"WCUT6\"), (\"EECP17B\", \"HHQZ11L\"),\n                     (\"SCCA3\", \"HHQZ11L\"), (\"IGT11\", \"VNZ3B\"), (\"EECP17B\", \"SCCA3\"),\n                     (\"LMYS16L\", \"CRDU10L\"), (\"FGR16\", \"WCUT6\"), (\"SHF4\", \"YCB3\"),\n                     (\"HHQZ11L\", \"IGT11\"), (\"MHCW4\", \"HHQZ11L\"), (\"XBI15\", \"SHF4\"),\n                     (\"EECP17B\", \"IGT11\"), (\"PKD8B\", \"HHQZ11L\"), (\"IZQ3\", \"LMYS16L\"),\n                     (\"SCCA3\", \"IGT11\"), (\"SLRD9\", \"HHQZ11L\"), (\"IZQ3\", \"CRDU10L\"),\n                     (\"PZUU9\", \"HHQZ11L\"), (\"MHCW4\", \"FGR16\")]:\n            if fid in (a, b) and (a, b) in seen_pairs:\n                skip = True\n                break\n            if fid in (a, b):\n                seen_pairs.add((a, b))\n        if skip:\n            continue\n        drivers.append(fid)\n        if len(drivers) >= MAX_DRIVERS:\n            break\n    \n    # Build columns list with all expression/clinical features\n    columns = tuple(expr_clin_ids)\n    \n    # Check for strong correlations and add products where appropriate\n    products = []\n    corr_pairs = [\n        (\"XBI15\", \"YCB3\"), (\"MHCW4\", \"WCUT6\"), (\"EECP17B\", \"HHQZ11L\"),\n        (\"SCCA3\", \"HHQZ11L\"), (\"IGT11\", \"VNZ3B\"), (\"EECP17B\", \"SCCA3\"),\n        (\"LMYS16L\", \"CRDU10L\"), (\"FGR16\", \"WCUT6\"), (\"SHF4\", \"YCB3\"),\n        (\"HHQZ11L\", \"IGT11\"), (\"MHCW4\", \"HHQZ11L\"), (\"XBI15\", \"SHF4\"),\n        (\"EECP17B\", \"IGT11\"), (\"PKD8B\", \"HHQZ11L\"), (\"IZQ3\", \"LMYS16L\"),\n        (\"SCCA3\", \"IGT11\"), (\"SLRD9\", \"HHQZ11L\"), (\"IZQ3\", \"CRDU10L\"),\n        (\"PZUU9\", \"HHQZ11L\"), (\"MHCW4\", \"FGR16\")\n    ]\n    \n    # Add products for top correlated pairs\n    for a, b in corr_pairs:\n        if a in columns and b in columns:\n            products.append((a, b))\n            if len(products) >= 5:  # Limit to 5 products\n                break\n    \n    # Compute loadings using mutual information\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in columns]], feats.y)\n    loadings = dict(zip(columns, mi_scores))\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9311,
+  "completion_tokens": 3185,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2919
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3812
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3691
+   }
+  ],
+  "wall_s": 36.4
+ }
+}

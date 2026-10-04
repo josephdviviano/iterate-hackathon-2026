@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1slqwb5n",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any clinical/cohort variable shows strong association with outcome\n    clinical_effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            y1 = feats.x[feats.y == 1, i]\n            y0 = feats.x[feats.y == 0, i]\n            tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n            if abs(tstat) > 2.0:\n                clinical_effects.append((fid, abs(tstat)))\n    \n    # If we found a strong clinical/cohort variable, use it as driver\n    if clinical_effects:\n        clinical_effects.sort(key=lambda x: x[1], reverse=True)\n        drivers = [clinical_effects[0][0]]\n        # Select top features for regression, avoiding near-duplicates\n        columns = []\n        used = set()\n        for i, fid in enumerate(feats.ids):\n            if len(columns) >= 5:\n                break\n            if fid in used:\n                continue\n            # Check correlation with already selected features\n            is_correlated = False\n            for selected_fid in columns:\n                corr = np.corrcoef(feats.x[:, feats.column(fid)], \n                                  feats.x[:, feats.column(selected_fid)])[0,1]\n                if abs(corr) > 0.6:\n                    is_correlated = True\n                    break\n            if not is_correlated:\n                columns.append(fid)\n                used.add(fid)\n        return Design(\n            drivers=tuple(drivers),\n            columns=tuple(columns),\n            products=(),\n            loadings={}\n        )\n    \n    # No strong clinical driver found; look for direct associations\n    # Compute effect sizes using Welch's t-test\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        y1 = feats.x[feats.y == 1, i]\n        y0 = feats.x[feats.y == 0, i]\n        tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effect_sizes.append((fid, abs(tstat)))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features for logistic regression\n    columns = tuple(f[0] for f in effect_sizes[:5])\n    \n    # Use top feature as driver if we have any\n    drivers = (effect_sizes[0][0],) if effect_sizes else ()\n    \n    # Simple weighted score based on top features\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if fid in columns:\n            # Weight by effect size\n            effect = 0\n            for f, e in effect_sizes:\n                if f == fid:\n                    effect = e\n                    break\n            loadings[fid] = effect\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=(),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any clinical/cohort variable shows strong association with outcome\n    clinical_effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            y1 = feats.x[feats.y == 1, i]\n            y0 = feats.x[feats.y == 0, i]\n            tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n            if abs(tstat) > 2.0:\n                clinical_effects.append((fid, abs(tstat)))\n    \n    # If we found a strong clinical/cohort variable, use it as driver\n    if clinical_effects:\n        clinical_effects.sort(key=lambda x: x[1], reverse=True)\n        drivers = [clinical_effects[0][0]]\n        # Select top features for regression, avoiding near-duplicates\n        columns = []\n        used = set()\n        for i, fid in enumerate(feats.ids):\n            if len(columns) >= 5:\n                break\n            if fid in used:\n                continue\n            # Check correlation with already selected features\n            is_correlated = False\n            for selected_fid in columns:\n                corr = np.corrcoef(feats.x[:, feats.column(fid)], \n                                  feats.x[:, feats.column(selected_fid)])[0,1]\n                if abs(corr) > 0.6:\n                    is_correlated = True\n                    break\n            if not is_correlated:\n                columns.append(fid)\n                used.add(fid)\n        return Design(\n            drivers=tuple(drivers),\n            columns=tuple(columns),\n            products=(),\n            loadings={}\n        )\n    \n    # No strong clinical driver found; look for direct associations\n    # Compute effect sizes using Welch's t-test\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        y1 = feats.x[feats.y == 1, i]\n        y0 = feats.x[feats.y == 0, i]\n        tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effect_sizes.append((fid, abs(tstat)))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features for logistic regression\n    columns = tuple(f[0] for f in effect_sizes[:5])\n    \n    # Use top feature as driver if we have any\n    drivers = (effect_sizes[0][0],) if effect_sizes else ()\n    \n    # Simple weighted score based on top features\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if fid in columns:\n            # Weight by effect size\n            effect = 0\n            for f, e in effect_sizes:\n                if f == fid:\n                    effect = e\n                    break\n            loadings[fid] = effect\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8719,
+  "completion_tokens": 2205,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3122
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3195
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2810
+   }
+  ],
+  "wall_s": 25.1
+ }
+}

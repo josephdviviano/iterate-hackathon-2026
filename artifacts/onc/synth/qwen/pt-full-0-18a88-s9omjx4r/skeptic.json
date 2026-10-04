@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s9omjx4r",
+ "seed": "skeptic",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Quick check for significant associations\n    p_values = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        x = feats.x[:, feats.column(fid)]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        p_values.append((fid, abs(t_stat), p_val))\n    \n    # Sort by p-value\n    p_values.sort(key=lambda x: x[2])\n    \n    # If no significant associations, return empty drivers\n    if not p_values or p_values[0][2] > 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features avoiding near-duplicates\n    selected_features = []\n    used_ids = set()\n    \n    # Use first few features that aren't highly correlated\n    for fid, t_stat, p_val in p_values[:10]:  # Limit search space\n        if len(selected_features) >= MAX_DRIVERS:\n            break\n            \n        # Check correlation with existing features\n        is_correlated = False\n        for sel_fid in selected_features:\n            # Quick correlation check using available data\n            col1 = feats.column(sel_fid)\n            col2 = feats.column(fid)\n            if col1 < len(feats.x[0]) and col2 < len(feats.x[0]):\n                corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n                if abs(corr) >= 0.6:\n                    is_correlated = True\n                    break\n        \n        if not is_correlated and fid not in used_ids:\n            selected_features.append(fid)\n            used_ids.add(fid)\n    \n    # Use all selected features in regression\n    columns = tuple(selected_features)\n    \n    # Simple model with selected features\n    return Design(\n        drivers=tuple(selected_features[:MAX_DRIVERS]),\n        columns=columns,\n        products=(),\n        loadings={fid: 1.0 for fid in columns}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Quick check for significant associations\n    p_values = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        x = feats.x[:, feats.column(fid)]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        p_values.append((fid, abs(t_stat), p_val))\n    \n    # Sort by p-value\n    p_values.sort(key=lambda x: x[2])\n    \n    # If no significant associations, return empty drivers\n    if not p_values or p_values[0][2] > 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features avoiding near-duplicates\n    selected_features = []\n    used_ids = set()\n    \n    # Use first few features that aren't highly correlated\n    for fid, t_stat, p_val in p_values[:10]:  # Limit search space\n        if len(selected_features) >= MAX_DRIVERS:\n            break\n            \n        # Check correlation with existing features\n        is_correlated = False\n        for sel_fid in selected_features:\n            # Quick correlation check using available data\n            col1 = feats.column(sel_fid)\n            col2 = feats.column(fid)\n            if col1 < len(feats.x[0]) and col2 < len(feats.x[0]):\n                corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n                if abs(corr) >= 0.6:\n                    is_correlated = True\n                    break\n        \n        if not is_correlated and fid not in used_ids:\n            selected_features.append(fid)\n            used_ids.add(fid)\n    \n    # Use all selected features in regression\n    columns = tuple(selected_features)\n    \n    # Simple model with selected features\n    return Design(\n        drivers=tuple(selected_features[:MAX_DRIVERS]),\n        columns=columns,\n        products=(),\n        loadings={fid: 1.0 for fid in columns}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8270,
+  "completion_tokens": 1584,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 20s on all patients; it must run in under 10s",
+    "bytes": 2697
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1949
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1949
+   }
+  ],
+  "wall_s": 37.5
+ }
+}

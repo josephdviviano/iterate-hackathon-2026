@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-rtx1yvih",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Simple approach: use top 3 features by t-statistic\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            # Calculate t-statistic manually\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            n0, n1 = len(group0), len(group1)\n            if n0 > 0 and n1 > 0:\n                mean0, mean1 = np.mean(group0), np.mean(group1)\n                var0, var1 = np.var(group0), np.var(group1)\n                se = np.sqrt(var0/n0 + var1/n1)\n                t_stat = (mean1 - mean0) / (se + 1e-8)\n                t_stats.append((fid, abs(t_stat)))\n    \n    # Sort by t-statistic and take top 3\n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    drivers = tuple(fid for fid, _ in t_stats[:3])\n    \n    # All non-derived features for regression\n    columns = tuple(f for f in feats.ids if feats.types[feats.column(f)] != 'derived')\n    \n    # No interactions for simplicity\n    products = ()\n    \n    # Simple weighting\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8089,
+  "completion_tokens": 1350,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1931
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2037
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1243
+   }
+  ],
+  "wall_s": 21.3
+ }
+}

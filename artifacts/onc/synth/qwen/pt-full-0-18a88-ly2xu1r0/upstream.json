@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ly2xu1r0",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'clinical':\n            # Use Welch's t-test statistic as proxy for effect size\n            t_stat = feats.x[:, i].T @ (feats.y * 2 - 1) / np.sqrt(np.var(feats.x[:, i]) * len(feats.y))\n            effect_sizes.append((fid, abs(t_stat), feats.x[:, i].T @ (feats.y * 2 - 1)))\n    \n    # Sort by effect size magnitude\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Filter out near-duplicates (correlated features with |r| >= 0.6)\n    selected = []\n    for fid, _, _ in effect_sizes:\n        is_duplicate = False\n        for selected_fid in selected:\n            col_a = feats.column(selected_fid)\n            col_b = feats.column(fid)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected.append(fid)\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = tuple(selected[:MAX_DRIVERS])\n    \n    # For columns, use all features except near-duplicates\n    columns = tuple(selected)\n    \n    # For products, consider pairs of correlated features\n    products = []\n    for i, fid_a in enumerate(columns):\n        for fid_b in columns[i+1:]:\n            col_a = feats.column(fid_a)\n            col_b = feats.column(fid_b)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0, 1]\n            if abs(corr) >= 0.6:\n                products.append((fid_a, fid_b))\n    \n    # Loadings: use effect sizes as weights\n    loadings = {}\n    for fid, _, effect_size in effect_sizes:\n        if fid in columns:\n            loadings[fid] = effect_size\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8100,
+  "completion_tokens": 1554,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2113
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2135
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1974
+   }
+  ],
+  "wall_s": 17.7
+ }
+}

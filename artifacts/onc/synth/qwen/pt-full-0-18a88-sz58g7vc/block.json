@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-sz58g7vc",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter for significant features (p < 0.05)\n    sig_idx = [i for i, fid in enumerate(feats.ids) if \n               abs(stats.ttest_ind(feats.x[:, i][feats.y==0], feats.x[:, i][feats.y==1]).statistic) > 2.0]\n    \n    if not sig_idx:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute correlation matrix\n    X_sig = feats.x[:, sig_idx]\n    corr_matrix = np.corrcoef(X_sig.T)\n    \n    # Handle case where we have very few significant features\n    if corr_matrix.shape[0] < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features with high correlation\n    clustering = AgglomerativeClustering(n_clusters=min(2, corr_matrix.shape[0]), linkage='average')\n    clusters = clustering.fit_predict(1 - np.abs(corr_matrix))  # Convert to distance\n    \n    # Find the cluster with more features (likely the module)\n    cluster_sizes = np.bincount(clusters)\n    main_cluster = np.argmax(cluster_sizes)\n    \n    # Get features in the main cluster\n    module_features = [feats.ids[i] for i in sig_idx if clusters[i - sig_idx[0]] == main_cluster]\n    \n    if len(module_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create weighted score using first two features\n    w1, w2 = 0.5, 0.5\n    weights = {module_features[0]: w1, module_features[1]: w2}\n    \n    # Add interaction term\n    products = [(module_features[0], module_features[1])]\n    \n    return Design(\n        drivers=(module_features[0],),\n        columns=tuple(module_features),\n        products=tuple(products),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7722,
+  "completion_tokens": 1284,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 1627
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 10 is out of bounds for axis 0 with size 6",
+    "bytes": 1576
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 10 is out of bounds for axis 0 with size 6",
+    "bytes": 1765
+   }
+  ],
+  "wall_s": 16.8
+ }
+}

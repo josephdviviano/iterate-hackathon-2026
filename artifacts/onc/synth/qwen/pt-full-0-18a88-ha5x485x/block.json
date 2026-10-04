@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ha5x485x",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Group correlated features into modules using hierarchical clustering\n    if not corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create feature similarity matrix based on correlations\n    n_feats = len(feats.ids)\n    sim_matrix = np.eye(n_feats)\n    for fid1, fid2 in corr_pairs:\n        i, j = feats.column(fid1), feats.column(fid2)\n        sim_matrix[i,j] = sim_matrix[j,i] = abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1])\n    \n    # Cluster features using hierarchical clustering\n    clustering = AgglomerativeClustering(\n        n_clusters=2, \n        linkage='average'\n    )\n    clusters = clustering.fit_predict(1-sim_matrix)\n    \n    # Find the largest cluster\n    unique_clusters, counts = np.unique(clusters, return_counts=True)\n    main_cluster = unique_clusters[np.argmax(counts)]\n    \n    # Get features in the main cluster\n    module_features = [feats.ids[i] for i in range(n_feats) if clusters[i] == main_cluster]\n    \n    # Compute weighted score using mean-centered features\n    scores = np.zeros(feats.n)\n    loadings = {}\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        centered = feats.x[:,col_idx] - np.mean(feats.x[:,col_idx])\n        scores += centered\n        loadings[fid] = 1.0\n    \n    # Normalize scores\n    scores /= np.std(scores)\n    \n    # Select top features by t-test significance\n    best_features = []\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        y0 = feats.x[feats.y==0, col_idx]\n        y1 = feats.x[feats.y==1, col_idx]\n        t_stat, _ = stats.ttest_ind(y0, y1)\n        best_features.append((fid, abs(t_stat)))\n    \n    best_features.sort(key=lambda x: x[1], reverse=True)\n    selected_features = [f[0] for f in best_features[:MAX_DRIVERS]]\n    \n    # Return design with module features and their loadings\n    return Design(\n        drivers=tuple(selected_features),\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8698,
+  "completion_tokens": 1904,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2564
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Exactly one of n_clusters and distance_threshold has to be set, and the other needs to be None.",
+    "bytes": 2531
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2444
+   }
+  ],
+  "wall_s": 21.7
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9zwytf3z",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    \n    # Identify near-duplicates (|r| >= 0.6)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Filter out near-duplicates\n    keep_idx = [i for i in range(len(ids)) if ids[i] not in to_remove]\n    keep_ids = [ids[i] for i in keep_idx]\n    keep_x = x[:, keep_idx]\n    \n    # Compute effect sizes (mean difference)\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        idx1 = y == 1\n        idx0 = y == 0\n        mean_diff = np.mean(keep_x[idx1, i]) - np.mean(keep_x[idx0, i])\n        effect_sizes.append(abs(mean_diff))\n    \n    # Select top features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1][:min(MAX_DRIVERS, len(keep_ids))]\n    selected_ids = [keep_ids[i] for i in sorted_indices]\n    \n    # Check if any features have strong effect\n    if max(effect_sizes) < 0.1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features for regression\n    columns = tuple(selected_ids)\n    \n    # Compute mutual information to guide product terms\n    mi_scores = mutual_info_classif(keep_x[:, sorted_indices], y)\n    \n    # Add interaction terms for top features\n    products = []\n    for i in range(len(sorted_indices)):\n        for j in range(i+1, len(sorted_indices)):\n            if mi_scores[i] > 0.05 and mi_scores[j] > 0.05:\n                products.append((selected_ids[i], selected_ids[j]))\n    \n    # Weighted score using top features\n    loadings = dict(zip(selected_ids, [1.0]*len(selected_ids)))\n    \n    # Drivers are the most effective features\n    drivers = tuple(selected_ids)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    \n    # Identify near-duplicates (|r| >= 0.6)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Filter out near-duplicates\n    keep_idx = [i for i in range(len(ids)) if ids[i] not in to_remove]\n    keep_ids = [ids[i] for i in keep_idx]\n    keep_x = x[:, keep_idx]\n    \n    # Compute effect sizes (mean difference)\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        idx1 = y == 1\n        idx0 = y == 0\n        mean_diff = np.mean(keep_x[idx1, i]) - np.mean(keep_x[idx0, i])\n        effect_sizes.append(abs(mean_diff))\n    \n    # Select top features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1][:min(MAX_DRIVERS, len(keep_ids))]\n    selected_ids = [keep_ids[i] for i in sorted_indices]\n    \n    # Check if any features have strong effect\n    if max(effect_sizes) < 0.1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features for regression\n    columns = tuple(selected_ids)\n    \n    # Compute mutual information to guide product terms\n    mi_scores = mutual_info_classif(keep_x[:, sorted_indices], y)\n    \n    # Add interaction terms for top features\n    products = []\n    for i in range(len(sorted_indices)):\n        for j in range(i+1, len(sorted_indices)):\n            if mi_scores[i] > 0.05 and mi_scores[j] > 0.05:\n                products.append((selected_ids[i], selected_ids[j]))\n    \n    # Weighted score using top features\n    loadings = dict(zip(selected_ids, [1.0]*len(selected_ids)))\n    \n    # Drivers are the most effective features\n    drivers = tuple(selected_ids)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8249,
+  "completion_tokens": 1678,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2180
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2151
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2151
+   }
+  ],
+  "wall_s": 19.5
+ }
+}

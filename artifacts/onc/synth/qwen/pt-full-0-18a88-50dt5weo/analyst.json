@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-50dt5weo",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_threshold = 0.6\n    ids = list(feats.ids)\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= corr_threshold:\n                to_remove.add(j)\n    \n    # Filter features\n    filtered_ids = [ids[i] for i in range(len(ids)) if i not in to_remove]\n    \n    # Calculate effect sizes and p-values\n    effects = []\n    for i, fid in enumerate(filtered_ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Effect size (mean difference)\n        mean_y1 = np.mean(x[y==1])\n        mean_y0 = np.mean(x[y==0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group1 = x[y==1]\n        group0 = x[y==0]\n        if len(group1) > 1 and len(group0) > 1:\n            t_stat, p_val = stats.ttest_ind(group1, group0, equal_var=False)\n        else:\n            t_stat, p_val = 0, 1.0\n            \n        effects.append((fid, effect_size, abs(t_stat), p_val))\n    \n    # Sort by effect size and significance\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select drivers (features with strong effect and low p-value)\n    drivers = []\n    for fid, effect, tstat, pval in effects:\n        if len(drivers) >= MAX_DRIVERS:\n            break\n        if abs(effect) > 0.1 and pval < 0.05:\n            drivers.append(fid)\n    \n    # Select columns for regression (limit to 8 features max)\n    columns = []\n    seen = set()\n    for fid, effect, tstat, pval in effects[:8]:  # Top 8 features\n        if fid not in seen:\n            columns.append(fid)\n            seen.add(fid)\n    \n    # Add drivers to columns if not present\n    for d in drivers:\n        if d not in columns:\n            columns.append(d)\n    \n    # Check for product terms between correlated features\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            if abs(np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]) > 0.6:\n                products.append((fid1, fid2))\n    \n    # Weighted score: use top 4 features with highest effect sizes\n    loadings = {}\n    for fid, effect, tstat, pval in effects[:4]:\n        if abs(effect) > 0.1:\n            loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_threshold = 0.6\n    ids = list(feats.ids)\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= corr_threshold:\n                to_remove.add(j)\n    \n    # Filter features\n    filtered_ids = [ids[i] for i in range(len(ids)) if i not in to_remove]\n    \n    # Calculate effect sizes and p-values\n    effects = []\n    for i, fid in enumerate(filtered_ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Effect size (mean difference)\n        mean_y1 = np.mean(x[y==1])\n        mean_y0 = np.mean(x[y==0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group1 = x[y==1]\n        group0 = x[y==0]\n        if len(group1) > 1 and len(group0) > 1:\n            t_stat, p_val = stats.ttest_ind(group1, group0, equal_var=False)\n        else:\n            t_stat, p_val = 0, 1.0\n            \n        effects.append((fid, effect_size, abs(t_stat), p_val))\n    \n    # Sort by effect size and significance\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select drivers (features with strong effect and low p-value)\n    drivers = []\n    for fid, effect, tstat, pval in effects:\n        if len(drivers) >= MAX_DRIVERS:\n            break\n        if abs(effect) > 0.1 and pval < 0.05:\n            drivers.append(fid)\n    \n    # Select columns for regression (limit to 8 features max)\n    columns = []\n    seen = set()\n    for fid, effect, tstat, pval in effects[:8]:  # Top 8 features\n        if fid not in seen:\n            columns.append(fid)\n            seen.add(fid)\n    \n    # Add drivers to columns if not present\n    for d in drivers:\n        if d not in columns:\n            columns.append(d)\n    \n    # Check for product terms between correlated features\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            if abs(np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]) > 0.6:\n                products.append((fid1, fid2))\n    \n    # Weighted score: use top 4 features with highest effect sizes\n    loadings = {}\n    for fid, effect, tstat, pval in effects[:4]:\n        if abs(effect) > 0.1:\n            loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9082,
+  "completion_tokens": 2270,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3004
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3004
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2720
+   }
+  ],
+  "wall_s": 26.5
+ }
+}

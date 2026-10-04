@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-78lrbixb",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_threshold = 0.6\n    correlated_pairs = set()\n    \n    # Build correlation matrix\n    X = feats.x\n    n_features = X.shape[1]\n    \n    # Calculate correlations\n    corr_matrix = np.corrcoef(X.T)\n    \n    # Identify near-duplicates\n    for i in range(n_features):\n        for j in range(i+1, n_features):\n            if abs(corr_matrix[i,j]) >= corr_threshold:\n                correlated_pairs.add((feats.ids[i], feats.ids[j]))\n    \n    # Select features to consider (remove one from each near-duplicate pair)\n    selected_ids = []\n    used_ids = set()\n    \n    for i, fid in enumerate(feats.ids):\n        if fid in used_ids:\n            continue\n            \n        # Check if this feature is part of any correlated pair\n        is_correlated = False\n        for pair in correlated_pairs:\n            if fid in pair:\n                other_fid = pair[0] if pair[0] != fid else pair[1]\n                # Keep the one with higher t-statistic\n                used_ids.add(other_fid)\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            selected_ids.append(fid)\n    \n    # Calculate t-statistics for all selected features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if fid in selected_ids:\n            x1 = X[feats.y == 1, i]\n            x0 = X[feats.y == 0, i]\n            if len(x1) > 0 and len(x0) > 0:\n                t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n                t_stats.append((abs(t_stat), fid))\n            else:\n                t_stats.append((0, fid))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(reverse=True)\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = [fid for _, fid in t_stats[:MAX_DRIVERS]]\n    \n    # For columns, include all selected features\n    columns = tuple(selected_ids)\n    \n    # For products, look for strong pairwise interactions among top features\n    products = []\n    top_fids = [fid for _, fid in t_stats[:min(10, len(t_stats))]]\n    \n    # Simple approach: add products of top features if they're not too correlated\n    for i, a in enumerate(top_fids):\n        for b in top_fids[i+1:]:\n            # Check if already in correlation matrix with high correlation\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            if idx_a < X.shape[1] and idx_b < X.shape[1]:\n                corr = abs(np.corrcoef(X[:, idx_a], X[:, idx_b])[0,1])\n                if corr < 0.7:  # Avoid adding highly correlated products\n                    products.append((a, b))\n    \n    # Loadings: assign weights based on t-statistic magnitude\n    loadings = {}\n    for abs_t, fid in t_stats:\n        if abs_t > 0:\n            loadings[fid] = abs_t\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8968,
+  "completion_tokens": 2263,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3348
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2990
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2976
+   }
+  ],
+  "wall_s": 25.9
+ }
+}

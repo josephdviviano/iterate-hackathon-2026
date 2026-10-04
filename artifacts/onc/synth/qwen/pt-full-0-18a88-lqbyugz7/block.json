@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-lqbyugz7",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Cluster correlated features\n    if not corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build adjacency matrix\n    n_feats = len(feats.ids)\n    adj = np.zeros((n_feats, n_feats))\n    for a, b in corr_pairs:\n        ia, ib = feats.column(a), feats.column(b)\n        adj[ia, ib] = adj[ib, ia] = 1\n    \n    # Find connected components\n    clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=0.5, \n                                         linkage='complete')\n    clusters = clustering.fit_predict(1 - adj)\n    \n    # Select largest cluster as module\n    unique_clusters, counts = np.unique(clusters, return_counts=True)\n    largest_cluster = unique_clusters[np.argmax(counts)]\n    module_ids = [feats.ids[i] for i in range(n_feats) if clusters[i] == largest_cluster]\n    \n    if len(module_ids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score using first principal component\n    module_data = feats.x[:, [feats.column(fid) for fid in module_ids]]\n    _, _, vt = np.linalg.svd(module_data, full_matrices=False)\n    weights = vt[0] / np.linalg.norm(vt[0])\n    \n    loadings = dict(zip(module_ids, weights))\n    \n    # Drivers are top features by effect size\n    effects = []\n    for fid in module_ids:\n        col = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y==1, col])\n        y0_mean = np.mean(feats.x[feats.y==0, col])\n        effects.append((fid, abs(y1_mean - y0_mean)))\n    \n    drivers = tuple(sorted(effects, key=lambda x: x[1], reverse=True))[:MAX_DRIVERS]\n    drivers = tuple(d[0] for d in drivers)\n    \n    # Use all module features in regression\n    columns = tuple(module_ids)\n    products = ()\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8218,
+  "completion_tokens": 1778,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2342
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2318
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2263
+   }
+  ],
+  "wall_s": 20.3
+ }
+}

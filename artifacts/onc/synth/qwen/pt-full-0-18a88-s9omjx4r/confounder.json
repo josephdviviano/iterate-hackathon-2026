@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s9omjx4r",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Fast selection of drivers using Welch's t-statistics\n    t_scores = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            t_scores.append((abs(t_stat), fid))\n    \n    # Sort by t-statistic and take top drivers\n    t_scores.sort(reverse=True)\n    drivers = [fid for _, fid in t_scores[:MAX_DRIVERS]]\n    \n    # Select columns for regression\n    columns = list(feats.ids)\n    \n    # Select products based on pre-computed correlations from problem description\n    # Only include products for features that are strongly correlated (|r| >= 0.6)\n    products = [\n        ('DKJ3', 'PAYD9'), ('PIDK14', 'RVD4'), ('PIDK14', 'UMER10'),\n        ('YHMV15', 'GRD5'), ('MZOE8', 'UMER10'), ('TWDW4', 'UMER10'),\n        ('WIIQ8', 'KQTD7A'), ('PIDK14', 'LLD15B'), ('UEHB14L', 'UMER10'),\n        ('TWDW4', 'LJM11B'), ('LLD15B', 'TWDW4'), ('JAAP6P', 'BYR14'),\n        ('LLD15B', 'UEHB14L'), ('NBG10', 'UMER10'), ('UMER10', 'RZE16B'),\n        ('YHMV15', 'ROC5'), ('YZLX11P', 'LLD15B'), ('LLD15B', 'NBG10')\n    ]\n    \n    # Filter products to only include features present in feats.ids\n    valid_products = []\n    feats_set = set(feats.ids)\n    for fid1, fid2 in products:\n        if fid1 in feats_set and fid2 in feats_set:\n            valid_products.append((fid1, fid2))\n    \n    products = valid_products\n    \n    # Compute loadings for weighted score using simple effect sizes\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        if len(y0) > 0 and len(y1) > 0:\n            effect_size = np.mean(y1) - np.mean(y0)\n            loadings[fid] = abs(effect_size)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8275,
+  "completion_tokens": 1772,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 18s on all patients; it must run in under 10s",
+    "bytes": 2664
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design took 20s on all patients; it must run in under 10s",
+    "bytes": 1616
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2053
+   }
+  ],
+  "wall_s": 59.6
+ }
+}

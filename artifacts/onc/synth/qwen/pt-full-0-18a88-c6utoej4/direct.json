@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-c6utoej4",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_threshold = 0.6\n    keep = []\n    used = set()\n    \n    # Get correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for i, fid in enumerate(feats.ids):\n        if fid in used:\n            continue\n            \n        # Find correlated features\n        correlated = [j for j in range(len(feats.ids)) \n                     if abs(corr_matrix[i,j]) >= corr_threshold and j != i]\n        \n        # Keep the one with highest effect size\n        if correlated:\n            # Check which has stronger effect (mean_y1 - mean_y0)\n            effects = [abs(np.mean(feats.y[feats.x[:,j] > 0]) - np.mean(feats.y[feats.x[:,j] <= 0])) \n                      for j in correlated]\n            best_corr = correlated[np.argmax(effects)]\n            if best_corr < i:  # Only consider earlier indices to avoid duplicates\n                continue\n                \n        keep.append(i)\n        used.add(fid)\n        \n        # Mark correlated features as used\n        for j in correlated:\n            used.add(feats.ids[j])\n    \n    # Select top features by t-statistic\n    selected_indices = sorted(keep, key=lambda i: abs(stats.ttest_ind(feats.x[feats.y==1,i], \n                                                                   feats.x[feats.y==0,i])[0]), \n                            reverse=True)[:MAX_DRIVERS]\n    \n    # Get driver features\n    drivers = tuple(feats.ids[i] for i in selected_indices)\n    \n    # For columns, include only the drivers (keep model small)\n    columns = drivers\n    \n    # For products, include interactions between drivers\n    products = []\n    for i in range(len(selected_indices)):\n        for j in range(i+1, len(selected_indices)):\n            products.append((feats.ids[selected_indices[i]], feats.ids[selected_indices[j]]))\n    \n    # Loadings - simple weights based on t-statistics\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if i in selected_indices:\n            t_stat = stats.ttest_ind(feats.x[feats.y==1,i], feats.x[feats.y==0,i])[0]\n            loadings[fid] = abs(t_stat)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_threshold = 0.6\n    keep = []\n    used = set()\n    \n    # Get correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for i, fid in enumerate(feats.ids):\n        if fid in used:\n            continue\n            \n        # Find correlated features\n        correlated = [j for j in range(len(feats.ids)) \n                     if abs(corr_matrix[i,j]) >= corr_threshold and j != i]\n        \n        # Keep the one with highest effect size\n        if correlated:\n            # Check which has stronger effect (mean_y1 - mean_y0)\n            effects = [abs(np.mean(feats.y[feats.x[:,j] > 0]) - np.mean(feats.y[feats.x[:,j] <= 0])) \n                      for j in correlated]\n            best_corr = correlated[np.argmax(effects)]\n            if best_corr < i:  # Only consider earlier indices to avoid duplicates\n                continue\n                \n        keep.append(i)\n        used.add(fid)\n        \n        # Mark correlated features as used\n        for j in correlated:\n            used.add(feats.ids[j])\n    \n    # Select top features by t-statistic\n    selected_indices = sorted(keep, key=lambda i: abs(stats.ttest_ind(feats.x[feats.y==1,i], \n                                                                   feats.x[feats.y==0,i])[0]), \n                            reverse=True)[:MAX_DRIVERS]\n    \n    # Get driver features\n    drivers = tuple(feats.ids[i] for i in selected_indices)\n    \n    # For columns, include only the drivers (keep model small)\n    columns = drivers\n    \n    # For products, include interactions between drivers\n    products = []\n    for i in range(len(selected_indices)):\n        for j in range(i+1, len(selected_indices)):\n            products.append((feats.ids[selected_indices[i]], feats.ids[selected_indices[j]]))\n    \n    # Loadings - simple weights based on t-statistics\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if i in selected_indices:\n            t_stat = stats.ttest_ind(feats.x[feats.y==1,i], feats.x[feats.y==0,i])[0]\n            loadings[fid] = abs(t_stat)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5041,
+  "completion_tokens": 1132,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2548
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2284
+   }
+  ],
+  "wall_s": 13.1
+ }
+}

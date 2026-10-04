@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9jvrfhtd",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Select top features based on t-statistic\n    selected_features = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        t_stat = abs(feats.x[:, col_idx].T @ (feats.y * 2 - 1) / (np.std(feats.x[:, col_idx]) * len(feats.y)**0.5))\n        if t_stat > 1.5:\n            selected_features.append(fid)\n    \n    # Sort by effect size (t-statistic)\n    def get_t_stat(fid):\n        col_idx = feats.column(fid)\n        return abs(feats.x[:, col_idx].T @ (feats.y * 2 - 1) / (np.std(feats.x[:, col_idx]) * len(feats.y)**0.5))\n    \n    selected_features.sort(key=get_t_stat, reverse=True)\n    \n    # Take top candidates, limited to MAX_DRIVERS\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    \n    # For logistic regression, include all selected features\n    columns = tuple(selected_features)\n    \n    # Product terms: pair top features\n    products = []\n    for i in range(min(3, len(selected_features))):\n        for j in range(i+1, min(3, len(selected_features))):\n            products.append((selected_features[i], selected_features[j]))\n    \n    # Weighted score: use top feature's standardized value\n    loadings = {fid: 1.0 for fid in selected_features[:1]}\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7928,
+  "completion_tokens": 1383,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2072
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2105
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 1404
+   }
+  ],
+  "wall_s": 16.1
+ }
+}

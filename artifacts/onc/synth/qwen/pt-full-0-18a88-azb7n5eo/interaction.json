@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-azb7n5eo",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong univariate predictors\n    strong_uni = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if abs(t_stat) > 10 and p_val < 1e-10:\n                strong_uni.append((fid, abs(t_stat)))\n    \n    # Sort by strength\n    strong_uni.sort(key=lambda x: x[1], reverse=True)\n    \n    # Check for product terms among top features\n    top_features = [fid for fid, _ in strong_uni[:10]]\n    \n    # Find correlated pairs with |r| >= 0.6\n    correlations = {}\n    for i, fid1 in enumerate(top_features):\n        for j, fid2 in enumerate(top_features[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Look for strongest product term\n    best_product = None\n    best_t = 0\n    \n    for (f1, f2), corr in correlations.items():\n        col1 = feats.column(f1)\n        col2 = feats.column(f2)\n        product = feats.x[:, col1] * feats.x[:, col2]\n        \n        # Test significance of product term\n        t_stat, p_val = stats.ttest_ind(product[feats.y==1], product[feats.y==0])\n        if abs(t_stat) > best_t and p_val < 1e-5:\n            best_t = abs(t_stat)\n            best_product = (f1, f2)\n    \n    if best_product:\n        return Design(\n            drivers=(best_product[0], best_product[1]),\n            columns=(best_product[0], best_product[1]),\n            products=(best_product,),\n            loadings={}\n        )\n    \n    # No strong product term found, return strongest single features\n    if strong_uni:\n        drivers = tuple([fid for fid, _ in strong_uni[:MAX_DRIVERS]])\n        return Design(\n            drivers=drivers,\n            columns=drivers,\n            products=(),\n            loadings={}\n        )\n    \n    # No mechanism\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong univariate predictors\n    strong_uni = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if abs(t_stat) > 10 and p_val < 1e-10:\n                strong_uni.append((fid, abs(t_stat)))\n    \n    # Sort by strength\n    strong_uni.sort(key=lambda x: x[1], reverse=True)\n    \n    # Check for product terms among top features\n    top_features = [fid for fid, _ in strong_uni[:10]]\n    \n    # Find correlated pairs with |r| >= 0.6\n    correlations = {}\n    for i, fid1 in enumerate(top_features):\n        for j, fid2 in enumerate(top_features[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Look for strongest product term\n    best_product = None\n    best_t = 0\n    \n    for (f1, f2), corr in correlations.items():\n        col1 = feats.column(f1)\n        col2 = feats.column(f2)\n        product = feats.x[:, col1] * feats.x[:, col2]\n        \n        # Test significance of product term\n        t_stat, p_val = stats.ttest_ind(product[feats.y==1], product[feats.y==0])\n        if abs(t_stat) > best_t and p_val < 1e-5:\n            best_t = abs(t_stat)\n            best_product = (f1, f2)\n    \n    if best_product:\n        return Design(\n            drivers=(best_product[0], best_product[1]),\n            columns=(best_product[0], best_product[1]),\n            products=(best_product,),\n            loadings={}\n        )\n    \n    # No strong product term found, return strongest single features\n    if strong_uni:\n        drivers = tuple([fid for fid, _ in strong_uni[:MAX_DRIVERS]])\n        return Design(\n            drivers=drivers,\n            columns=drivers,\n            products=(),\n            loadings={}\n        )\n    \n    # No mechanism\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5063,
+  "completion_tokens": 1188,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2285
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2285
+   }
+  ],
+  "wall_s": 13.5
+ }
+}

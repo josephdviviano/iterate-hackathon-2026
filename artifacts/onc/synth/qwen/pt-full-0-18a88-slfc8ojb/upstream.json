@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-slfc8ojb",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features based on effect sizes\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        # Check if this is a numerical feature type\n        try:\n            effect_size = feats.types[i]\n            if isinstance(effect_size, (int, float)) and abs(effect_size) > 0.5:\n                strong_features.append((fid, effect_size))\n        except:\n            # Skip non-numerical types\n            continue\n    \n    # Sort by absolute effect size\n    strong_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Group correlated features\n    correlated_groups = []\n    used = set()\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find clusters of highly correlated features\n    for i, fid1 in enumerate(feats.ids):\n        if fid1 in used:\n            continue\n        group = [fid1]\n        used.add(fid1)\n        \n        for j, fid2 in enumerate(feats.ids):\n            if i != j and fid2 not in used and abs(corr_matrix[i,j]) >= 0.6:\n                group.append(fid2)\n                used.add(fid2)\n                \n        if len(group) > 1:\n            correlated_groups.append(group)\n    \n    # For each group, select the strongest feature\n    selected_features = []\n    for group in correlated_groups:\n        # Select feature with highest absolute effect size\n        best_fid = max(group, key=lambda fid: abs(feats.types[feats.column(fid)]))\n        selected_features.append(best_fid)\n    \n    # Add uncorrelated strong features\n    for fid, effect_size in strong_features:\n        if fid not in selected_features:\n            selected_features.append(fid)\n    \n    # Select top 5 features for drivers\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    \n    # Select all features for logistic regression\n    columns = tuple(selected_features)\n    \n    # Create interaction terms for strongly correlated pairs\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns):\n            if i < j:\n                try:\n                    corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]\n                    if abs(corr) >= 0.6:\n                        products.append((fid1, fid2))\n                except:\n                    continue\n    \n    # Calculate loadings using mutual information\n    loadings = {}\n    for fid in columns:\n        try:\n            mi = mutual_info_classif(\n                feats.x[:, feats.column(fid)].reshape(-1, 1), \n                feats.y\n            )[0]\n            loadings[fid] = mi\n        except:\n            # If mutual info fails, use effect size as loading\n            loadings[fid] = abs(feats.types[feats.column(fid)])\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8429,
+  "completion_tokens": 1972,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2829
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2843
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 3012
+   }
+  ],
+  "wall_s": 18.4
+ }
+}

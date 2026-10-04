@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-e4u92h91",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check for strong associations with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        corr = np.corrcoef(x, y)[0, 1]\n        if abs(corr) > 0.1:  # Threshold for inclusion\n            effects.append((fid, abs(corr)))\n    \n    # Sort by correlation strength\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates based on correlation\n    selected = []\n    excluded = set()\n    for fid, _ in effects:\n        if fid in excluded:\n            continue\n        selected.append(fid)\n        # Find correlated features to exclude\n        for other_fid in feats.ids:\n            if other_fid != fid and other_fid not in excluded:\n                idx1 = feats.column(fid)\n                idx2 = feats.column(other_fid)\n                r = np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0, 1]\n                if abs(r) >= 0.6:\n                    excluded.add(other_fid)\n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # Check if any mechanism exists using stratified analysis\n    drivers = ()\n    if len(selected) > 0:\n        # Test whether the top features show consistent effect across strata\n        strata = list(set(feats.stratum))\n        if len(strata) > 1:\n            # For each stratum, check if feature shows effect\n            consistent = True\n            for s in strata:\n                mask = [i for i in range(len(feats.stratum)) if feats.stratum[i] == s]\n                if len(mask) < 2:\n                    continue\n                x_s = feats.x[mask, :]\n                y_s = feats.y[mask]\n                # Simple t-test for each feature\n                for fid in selected[:MAX_DRIVERS]:\n                    idx = feats.column(fid)\n                    x_feat = x_s[:, idx]\n                    y_0 = x_feat[y_s == 0]\n                    y_1 = x_feat[y_s == 1]\n                    if len(y_0) > 0 and len(y_1) > 0:\n                        t_stat, p_val = stats.ttest_ind(y_0, y_1)\n                        if p_val > 0.05:  # Not significant\n                            consistent = False\n                            break\n                if not consistent:\n                    break\n            \n            if consistent:\n                drivers = tuple(selected[:MAX_DRIVERS])\n            else:\n                # No consistent effect across strata\n                drivers = ()\n        else:\n            # No stratification, just use top features\n            drivers = tuple(selected[:MAX_DRIVERS])\n    \n    # Return design with all features in regression\n    return Design(\n        drivers=drivers,\n        columns=feats.ids,\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8709,
+  "completion_tokens": 1985,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3026
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3026
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2793
+   }
+  ],
+  "wall_s": 22.5
+ }
+}

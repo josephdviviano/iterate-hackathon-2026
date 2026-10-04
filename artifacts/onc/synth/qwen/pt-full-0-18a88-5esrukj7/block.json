@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5esrukj7",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Select top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:10]\n    top_features = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    if len(top_features) > 1:\n        corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n        for i in range(len(top_features)):\n            for j in range(i+1, len(top_features)):\n                if abs(corr_matrix[i,j]) > 0.6:\n                    to_remove.add(top_features[j])\n    \n    filtered_features = [fid for fid in top_features if fid not in to_remove]\n    \n    # Limit to MAX_DRIVERS\n    if len(filtered_features) > MAX_DRIVERS:\n        # Use the top features based on t-statistic\n        t_scores = []\n        for fid in filtered_features:\n            i = feats.column(fid)\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n            t_scores.append(abs(t_stat))\n        top_driver_indices = np.argsort(t_scores)[::-1][:MAX_DRIVERS]\n        filtered_features = [filtered_features[i] for i in top_driver_indices]\n    \n    # Create weighted score from module features\n    weights = np.ones(len(filtered_features))\n    if len(filtered_features) > 0:\n        # Simple approach: use simple averaging\n        weights = np.ones(len(filtered_features))\n    \n    # Build design\n    drivers = tuple(filtered_features)\n    columns = tuple(filtered_features)\n    products = ()\n    loadings = dict(zip(filtered_features, weights))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Select top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:10]\n    top_features = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    if len(top_features) > 1:\n        corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n        for i in range(len(top_features)):\n            for j in range(i+1, len(top_features)):\n                if abs(corr_matrix[i,j]) > 0.6:\n                    to_remove.add(top_features[j])\n    \n    filtered_features = [fid for fid in top_features if fid not in to_remove]\n    \n    # Limit to MAX_DRIVERS\n    if len(filtered_features) > MAX_DRIVERS:\n        # Use the top features based on t-statistic\n        t_scores = []\n        for fid in filtered_features:\n            i = feats.column(fid)\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n            t_scores.append(abs(t_stat))\n        top_driver_indices = np.argsort(t_scores)[::-1][:MAX_DRIVERS]\n        filtered_features = [filtered_features[i] for i in top_driver_indices]\n    \n    # Create weighted score from module features\n    weights = np.ones(len(filtered_features))\n    if len(filtered_features) > 0:\n        # Simple approach: use simple averaging\n        weights = np.ones(len(filtered_features))\n    \n    # Build design\n    drivers = tuple(filtered_features)\n    columns = tuple(filtered_features)\n    products = ()\n    loadings = dict(zip(filtered_features, weights))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8095,
+  "completion_tokens": 1668,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2324
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2372
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2140
+   }
+  ],
+  "wall_s": 19.2
+ }
+}

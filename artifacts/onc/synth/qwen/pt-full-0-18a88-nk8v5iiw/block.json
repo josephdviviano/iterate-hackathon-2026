@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-nk8v5iiw",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Get features with strong effect sizes (top 10 by absolute difference in means)\n    effect_sizes = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        mean_y0 = np.mean(feats.x[feats.y==0, col_idx])\n        mean_y1 = np.mean(feats.x[feats.y==1, col_idx])\n        effect_sizes.append(abs(mean_y1 - mean_y0))\n    \n    # Select top 5 features by effect size\n    top_indices = np.argsort(effect_sizes)[::-1][:5]\n    selected_features = [feats.ids[i] for i in top_indices]\n    \n    # Check for correlation between top features\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in selected_features]].T)\n    \n    # If any highly correlated pairs exist, select only one from each pair\n    to_remove = set()\n    for i in range(len(selected_features)):\n        for j in range(i+1, len(selected_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                # Remove the one with lower t-statistic\n                fid1, fid2 = selected_features[i], selected_features[j]\n                t1 = stats.ttest_ind(feats.x[feats.y==1, feats.column(fid1)], \n                                    feats.x[feats.y==0, feats.column(fid1)])[0]\n                t2 = stats.ttest_ind(feats.x[feats.y==1, feats.column(fid2)], \n                                    feats.x[feats.y==0, feats.column(fid2)])[0]\n                if abs(t1) < abs(t2):\n                    to_remove.add(fid1)\n                else:\n                    to_remove.add(fid2)\n    \n    # Final selected features\n    final_features = [fid for fid in selected_features if fid not in to_remove]\n    \n    # Weighted score based on t-statistics\n    loadings = {}\n    for fid in final_features:\n        col_idx = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, col_idx], \n                                feats.x[feats.y==0, col_idx])[0]\n        loadings[fid] = float(t_stat)\n    \n    return Design(\n        drivers=(),\n        columns=final_features,\n        products=(),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Get features with strong effect sizes (top 10 by absolute difference in means)\n    effect_sizes = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        mean_y0 = np.mean(feats.x[feats.y==0, col_idx])\n        mean_y1 = np.mean(feats.x[feats.y==1, col_idx])\n        effect_sizes.append(abs(mean_y1 - mean_y0))\n    \n    # Select top 5 features by effect size\n    top_indices = np.argsort(effect_sizes)[::-1][:5]\n    selected_features = [feats.ids[i] for i in top_indices]\n    \n    # Check for correlation between top features\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in selected_features]].T)\n    \n    # If any highly correlated pairs exist, select only one from each pair\n    to_remove = set()\n    for i in range(len(selected_features)):\n        for j in range(i+1, len(selected_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                # Remove the one with lower t-statistic\n                fid1, fid2 = selected_features[i], selected_features[j]\n                t1 = stats.ttest_ind(feats.x[feats.y==1, feats.column(fid1)], \n                                    feats.x[feats.y==0, feats.column(fid1)])[0]\n                t2 = stats.ttest_ind(feats.x[feats.y==1, feats.column(fid2)], \n                                    feats.x[feats.y==0, feats.column(fid2)])[0]\n                if abs(t1) < abs(t2):\n                    to_remove.add(fid1)\n                else:\n                    to_remove.add(fid2)\n    \n    # Final selected features\n    final_features = [fid for fid in selected_features if fid not in to_remove]\n    \n    # Weighted score based on t-statistics\n    loadings = {}\n    for fid in final_features:\n        col_idx = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, col_idx], \n                                feats.x[feats.y==0, col_idx])[0]\n        loadings[fid] = float(t_stat)\n    \n    return Design(\n        drivers=(),\n        columns=final_features,\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5249,
+  "completion_tokens": 1282,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3070
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2096
+   }
+  ],
+  "wall_s": 17.3
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-sz58g7vc",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick heuristic approach to meet time constraint and model size\n    # Use top features based on t-statistics\n    t_stats = []\n    for i in range(len(feats.ids)):\n        try:\n            t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n            t_stats.append(t_stat)\n        except:\n            t_stats.append(0)\n    \n    # Get indices of top features\n    top_indices = np.argsort(t_stats)[::-1][:MAX_DRIVERS]\n    \n    # Remove near-duplicates based on correlation\n    selected_ids = []\n    for i in top_indices:\n        fid = feats.ids[i]\n        # Check if this feature is too similar to already selected ones\n        is_duplicate = False\n        for kept_fid in selected_ids:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(kept_fid)])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected_ids.append(fid)\n        if len(selected_ids) >= MAX_DRIVERS:\n            break\n    \n    # Create design\n    drivers = tuple(selected_ids)\n    \n    # Use all original features as columns\n    columns = tuple(feats.ids)\n    \n    # No products\n    products = ()\n    \n    # Simple loadings based on t-statistics\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        loadings[fid] = t_stats[i]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7777,
+  "completion_tokens": 1328,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 27s on all patients; it must run in under 10s",
+    "bytes": 1601
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2282
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1522
+   }
+  ],
+  "wall_s": 47.3
+ }
+}

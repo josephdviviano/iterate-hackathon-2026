@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-j0cixqs0",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong features based on t-statistics\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)\n        if abs(t_stat) > 2.0:\n            strong_features.append(fid)\n    \n    # Remove near-duplicates (correlated features)\n    correlated_pairs = {\n        ('NCPD5', 'KEUN8'), ('NCPD5', 'MQQH19'), ('NCPD5', 'RFBN19'),\n        ('CLTC3', 'NCPD5'), ('NCPD5', 'TMA3'), ('MQQH19', 'KEUN8'),\n        ('NCPD5', 'YFD4'), ('FLL12', 'BTBM1'), ('NCPD5', 'CEID9L'),\n        ('RFBN19', 'UGL17P'), ('KEUN8', 'TMA3'), ('RFBN19', 'FLL12'),\n        ('CLTC3', 'YFD4'), ('CLTC3', 'RFBN19'), ('RFBN19', 'KEUN8'),\n        ('CEID9L', 'MQQH19'), ('MQQH19', 'TMA3'), ('RRCT7P', 'CEID9L'),\n        ('CLTC3', 'MQQH19'), ('RFBN19', 'MQQH19')\n    }\n    \n    # Build clusters of correlated features\n    clusters = []\n    used = set()\n    for a, b in correlated_pairs:\n        if a in used or b in used:\n            continue\n        cluster = {a, b}\n        used.add(a)\n        used.add(b)\n        clusters.append(cluster)\n    \n    # Select representative from each cluster (prefer stronger features)\n    representative_features = []\n    for cluster in clusters:\n        cluster_features = [f for f in cluster if f in strong_features]\n        if cluster_features:\n            representative_features.append(cluster_features[0])\n        else:\n            representative_features.append(list(cluster)[0])\n    \n    # Add remaining strong features not in clusters\n    remaining_features = [f for f in strong_features if f not in used]\n    all_representatives = representative_features + remaining_features\n    \n    # Rank by effect size (t-statistic)\n    effect_sizes = []\n    for fid in all_representatives:\n        col_idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx], equal_var=False)\n        effect_sizes.append((fid, abs(t_stat)))\n    \n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    drivers = tuple([fid for fid, _ in effect_sizes[:MAX_DRIVERS]])\n    \n    # For columns, use all selected features\n    columns = tuple(all_representatives)\n    \n    # No products needed for this case\n    products = ()\n    \n    # Simple weighted score: use standardized values directly\n    loadings = {fid: 1.0 for fid in all_representatives}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong features based on t-statistics\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)\n        if abs(t_stat) > 2.0:\n            strong_features.append(fid)\n    \n    # Remove near-duplicates (correlated features)\n    correlated_pairs = {\n        ('NCPD5', 'KEUN8'), ('NCPD5', 'MQQH19'), ('NCPD5', 'RFBN19'),\n        ('CLTC3', 'NCPD5'), ('NCPD5', 'TMA3'), ('MQQH19', 'KEUN8'),\n        ('NCPD5', 'YFD4'), ('FLL12', 'BTBM1'), ('NCPD5', 'CEID9L'),\n        ('RFBN19', 'UGL17P'), ('KEUN8', 'TMA3'), ('RFBN19', 'FLL12'),\n        ('CLTC3', 'YFD4'), ('CLTC3', 'RFBN19'), ('RFBN19', 'KEUN8'),\n        ('CEID9L', 'MQQH19'), ('MQQH19', 'TMA3'), ('RRCT7P', 'CEID9L'),\n        ('CLTC3', 'MQQH19'), ('RFBN19', 'MQQH19')\n    }\n    \n    # Build clusters of correlated features\n    clusters = []\n    used = set()\n    for a, b in correlated_pairs:\n        if a in used or b in used:\n            continue\n        cluster = {a, b}\n        used.add(a)\n        used.add(b)\n        clusters.append(cluster)\n    \n    # Select representative from each cluster (prefer stronger features)\n    representative_features = []\n    for cluster in clusters:\n        cluster_features = [f for f in cluster if f in strong_features]\n        if cluster_features:\n            representative_features.append(cluster_features[0])\n        else:\n            representative_features.append(list(cluster)[0])\n    \n    # Add remaining strong features not in clusters\n    remaining_features = [f for f in strong_features if f not in used]\n    all_representatives = representative_features + remaining_features\n    \n    # Rank by effect size (t-statistic)\n    effect_sizes = []\n    for fid in all_representatives:\n        col_idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx], equal_var=False)\n        effect_sizes.append((fid, abs(t_stat)))\n    \n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    drivers = tuple([fid for fid, _ in effect_sizes[:MAX_DRIVERS]])\n    \n    # For columns, use all selected features\n    columns = tuple(all_representatives)\n    \n    # No products needed for this case\n    products = ()\n    \n    # Simple weighted score: use standardized values directly\n    loadings = {fid: 1.0 for fid in all_representatives}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9075,
+  "completion_tokens": 2546,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2850
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2874
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2575
+   }
+  ],
+  "wall_s": 28.7
+ }
+}

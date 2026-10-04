@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-tyj3br30",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        t_stat, p_val = stats.ttest_ind(x[y == 1], x[y == 0], equal_var=False)\n        effects.append((fid, effect_size, abs(t_stat), p_val))\n    \n    # Sort by effect size (absolute value) and p-value\n    effects.sort(key=lambda x: (-abs(x[1]), x[3]))\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    correlations = {}\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for i, (fid1, _, _, _) in enumerate(effects):\n        is_duplicate = False\n        for j, fid2 in enumerate(keep):\n            if abs(corr_matrix[i, feats.column(fid2)]) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep.append(fid1)\n            if len(keep) >= MAX_DRIVERS:\n                break\n    \n    # Select top drivers\n    drivers = tuple(keep[:MAX_DRIVERS])\n    \n    # Use all features with significant associations\n    columns = tuple([fid for fid, _, _, p in effects if p < 0.05])\n    \n    # Check for interaction terms between top features\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            if abs(corr_matrix[feats.column(fid1), feats.column(fid2)]) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Weighted score using top features\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        t_stat, p_val = stats.ttest_ind(x[y == 1], x[y == 0], equal_var=False)\n        effects.append((fid, effect_size, abs(t_stat), p_val))\n    \n    # Sort by effect size (absolute value) and p-value\n    effects.sort(key=lambda x: (-abs(x[1]), x[3]))\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    correlations = {}\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for i, (fid1, _, _, _) in enumerate(effects):\n        is_duplicate = False\n        for j, fid2 in enumerate(keep):\n            if abs(corr_matrix[i, feats.column(fid2)]) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep.append(fid1)\n            if len(keep) >= MAX_DRIVERS:\n                break\n    \n    # Select top drivers\n    drivers = tuple(keep[:MAX_DRIVERS])\n    \n    # Use all features with significant associations\n    columns = tuple([fid for fid, _, _, p in effects if p < 0.05])\n    \n    # Check for interaction terms between top features\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            if abs(corr_matrix[feats.column(fid1), feats.column(fid2)]) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Weighted score using top features\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2106,
+  "completion_tokens": 501,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1935
+   }
+  ],
+  "wall_s": 8.7
+ }
+}

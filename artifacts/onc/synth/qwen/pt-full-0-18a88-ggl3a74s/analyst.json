@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ggl3a74s",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Select features based on effect size\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        # Compute mean difference by outcome\n        y0_mean = np.mean(feats.x[feats.y == 0, i])\n        y1_mean = np.mean(feats.x[feats.y == 1, i])\n        effect_size = abs(y1_mean - y0_mean)\n        effect_sizes.append((effect_size, fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(reverse=True)\n    \n    # Select top features for drivers (limit to 4 as per checker)\n    drivers = [fid for _, fid in effect_sizes[:4]]\n    \n    # Select features for logistic regression (columns) - limit to 8\n    columns = [fid for _, fid in effect_sizes[:8]]\n    \n    # Check for interactions between top features\n    products = []\n    top_features = [fid for _, fid in effect_sizes[:4]]\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            if a != b:\n                products.append((a, b))\n    \n    # Weighted score using top features\n    loadings = {}\n    for i, (effect_size, fid) in enumerate(effect_sizes[:4]):\n        loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8383,
+  "completion_tokens": 1527,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2246
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2691
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1326
+   }
+  ],
+  "wall_s": 17.3
+ }
+}

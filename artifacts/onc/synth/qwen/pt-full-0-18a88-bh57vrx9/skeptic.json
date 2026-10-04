@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-bh57vrx9",
+ "seed": "skeptic",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check for correlation-based near-duplicates\n    def get_correlated_pairs(threshold=0.6):\n        corr_matrix = np.corrcoef(feats.x.T)\n        pairs = []\n        for i in range(len(feats.ids)):\n            for j in range(i+1, len(feats.ids)):\n                if abs(corr_matrix[i,j]) >= threshold:\n                    pairs.append((feats.ids[i], feats.ids[j]))\n        return pairs\n    \n    # Remove near-duplicates (keep first in pair)\n    correlated_pairs = get_correlated_pairs()\n    to_remove = set()\n    for a, b in correlated_pairs:\n        to_remove.add(b)\n    \n    usable_ids = [fid for fid in feats.ids if fid not in to_remove]\n    usable_indices = [feats.column(fid) for fid in usable_ids]\n    \n    if not usable_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    x_subset = feats.x[:, usable_indices]\n    \n    # Use simple t-test on entire dataset\n    effects = []\n    for i, fid in enumerate(usable_ids):\n        x_vals = x_subset[:, i]\n        y0 = x_vals[feats.y == 0]\n        y1 = x_vals[feats.y == 1]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y0, y1)\n            effects.append((fid, abs(t_stat)))\n    \n    effects.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in effects[:MAX_DRIVERS]]\n    \n    # If no strong signals, return empty design\n    if not top_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build logistic regression features\n    columns = tuple(top_features)\n    loadings = dict(zip(columns, np.ones(len(columns))))\n    \n    # Check for interaction terms\n    products = []\n    # Simple approach: add interactions between top features\n    for i in range(min(3, len(top_features))):\n        for j in range(i+1, min(3, len(top_features))):\n            products.append((top_features[i], top_features[j]))\n    \n    return Design(drivers=tuple(top_features), \n                  columns=columns, \n                  products=tuple(products), \n                  loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check for correlation-based near-duplicates\n    def get_correlated_pairs(threshold=0.6):\n        corr_matrix = np.corrcoef(feats.x.T)\n        pairs = []\n        for i in range(len(feats.ids)):\n            for j in range(i+1, len(feats.ids)):\n                if abs(corr_matrix[i,j]) >= threshold:\n                    pairs.append((feats.ids[i], feats.ids[j]))\n        return pairs\n    \n    # Remove near-duplicates (keep first in pair)\n    correlated_pairs = get_correlated_pairs()\n    to_remove = set()\n    for a, b in correlated_pairs:\n        to_remove.add(b)\n    \n    usable_ids = [fid for fid in feats.ids if fid not in to_remove]\n    usable_indices = [feats.column(fid) for fid in usable_ids]\n    \n    if not usable_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    x_subset = feats.x[:, usable_indices]\n    \n    # Use simple t-test on entire dataset\n    effects = []\n    for i, fid in enumerate(usable_ids):\n        x_vals = x_subset[:, i]\n        y0 = x_vals[feats.y == 0]\n        y1 = x_vals[feats.y == 1]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y0, y1)\n            effects.append((fid, abs(t_stat)))\n    \n    effects.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in effects[:MAX_DRIVERS]]\n    \n    # If no strong signals, return empty design\n    if not top_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build logistic regression features\n    columns = tuple(top_features)\n    loadings = dict(zip(columns, np.ones(len(columns))))\n    \n    # Check for interaction terms\n    products = []\n    # Simple approach: add interactions between top features\n    for i in range(min(3, len(top_features))):\n        for j in range(i+1, min(3, len(top_features))):\n            products.append((top_features[i], top_features[j]))\n    \n    return Design(drivers=tuple(top_features), \n                  columns=columns, \n                  products=tuple(products), \n                  loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9085,
+  "completion_tokens": 2270,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3560
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3640
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2132
+   }
+  ],
+  "wall_s": 25.8
+ }
+}

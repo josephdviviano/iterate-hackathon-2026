@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-ne7dhd2w",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Simple approach: rank by effect size and select top features\n    effects = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        if col_idx < feats.x.shape[1]:\n            x_col = feats.x[:, col_idx]\n            effect = abs(np.mean(x_col[feats.y==1]) - np.mean(x_col[feats.y==0]))\n            effects.append((effect, fid))\n    \n    effects.sort(reverse=True)\n    top_features = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # Select features for regression (limit to 10 to avoid overfitting)\n    columns = tuple(top_features[:10])\n    \n    # Build loadings based on correlation with outcome\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        x_col = feats.x[:, col_idx]\n        corr = np.corrcoef(x_col, feats.y)[0,1]\n        loadings[fid] = abs(corr)\n    \n    # Add interaction terms for highly correlated pairs (limit to 5 pairs)\n    products = []\n    corr_pairs = [(a,b) for a,b,r in [\n        (\"NXAE17\",\"NQBG5P\",0.99), (\"DOYC16A\",\"SPFJ2\",0.94), (\"GSH1A\",\"XXRC2\",-0.91),\n        (\"XXRC2\",\"SPFJ2\",-0.90), (\"DKEL4\",\"BRD18A\",0.89), (\"LPND9\",\"CPB2P\",0.88),\n        (\"GSH1A\",\"TPC8\",-0.87), (\"WHS4\",\"XXRC2\",0.86), (\"WHS4\",\"SPFJ2\",-0.85),\n        (\"GSH1A\",\"WNE14\",0.85), (\"WNE14\",\"XXRC2\",-0.85), (\"XXRC2\",\"TPC8\",0.83),\n        (\"XXRC2\",\"AEG14\",0.83), (\"DFG19\",\"TPC8\",0.82), (\"WNE14\",\"TPC8\",-0.82),\n        (\"GSH1A\",\"DFG19\",-0.82), (\"XXRC2\",\"DFG19\",0.82), (\"WHS4\",\"FHS12L\",0.81),\n        (\"WHS4\",\"GTPI9\",0.81), (\"WHS4\",\"DOYC16A\",-0.81)\n    ] if a in feats.ids and b in feats.ids and abs(r) >= 0.6]\n    \n    for a, b in corr_pairs[:5]:  # Limit to 5 interaction terms\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    return Design(\n        drivers=(),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Simple approach: rank by effect size and select top features\n    effects = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        if col_idx < feats.x.shape[1]:\n            x_col = feats.x[:, col_idx]\n            effect = abs(np.mean(x_col[feats.y==1]) - np.mean(x_col[feats.y==0]))\n            effects.append((effect, fid))\n    \n    effects.sort(reverse=True)\n    top_features = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # Select features for regression (limit to 10 to avoid overfitting)\n    columns = tuple(top_features[:10])\n    \n    # Build loadings based on correlation with outcome\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        x_col = feats.x[:, col_idx]\n        corr = np.corrcoef(x_col, feats.y)[0,1]\n        loadings[fid] = abs(corr)\n    \n    # Add interaction terms for highly correlated pairs (limit to 5 pairs)\n    products = []\n    corr_pairs = [(a,b) for a,b,r in [\n        (\"NXAE17\",\"NQBG5P\",0.99), (\"DOYC16A\",\"SPFJ2\",0.94), (\"GSH1A\",\"XXRC2\",-0.91),\n        (\"XXRC2\",\"SPFJ2\",-0.90), (\"DKEL4\",\"BRD18A\",0.89), (\"LPND9\",\"CPB2P\",0.88),\n        (\"GSH1A\",\"TPC8\",-0.87), (\"WHS4\",\"XXRC2\",0.86), (\"WHS4\",\"SPFJ2\",-0.85),\n        (\"GSH1A\",\"WNE14\",0.85), (\"WNE14\",\"XXRC2\",-0.85), (\"XXRC2\",\"TPC8\",0.83),\n        (\"XXRC2\",\"AEG14\",0.83), (\"DFG19\",\"TPC8\",0.82), (\"WNE14\",\"TPC8\",-0.82),\n        (\"GSH1A\",\"DFG19\",-0.82), (\"XXRC2\",\"DFG19\",0.82), (\"WHS4\",\"FHS12L\",0.81),\n        (\"WHS4\",\"GTPI9\",0.81), (\"WHS4\",\"DOYC16A\",-0.81)\n    ] if a in feats.ids and b in feats.ids and abs(r) >= 0.6]\n    \n    for a, b in corr_pairs[:5]:  # Limit to 5 interaction terms\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    return Design(\n        drivers=(),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5557,
+  "completion_tokens": 2055,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 4188
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2009
+   }
+  ],
+  "wall_s": 23.4
+ }
+}

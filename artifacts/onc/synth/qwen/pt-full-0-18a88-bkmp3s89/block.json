@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-bkmp3s89",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.decomposition import PCA\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression features\n    expr_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'expression']\n    expr_cols = [feats.column(fid) for fid in expr_ids]\n    \n    # Check if any expression features exist\n    if not expr_cols:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Get expression data\n    X_expr = feats.x[:, expr_cols]\n    \n    # Standardize\n    scaler = StandardScaler()\n    X_scaled = scaler.fit_transform(X_expr)\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(X_scaled.T)\n    \n    # Find highly correlated pairs (|r| >= 0.6)\n    high_corr_pairs = []\n    for i in range(len(expr_ids)):\n        for j in range(i+1, len(expr_ids)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                high_corr_pairs.append((expr_ids[i], expr_ids[j]))\n    \n    # If we have correlated pairs, look for modules using PCA\n    if high_corr_pairs:\n        # Use PCA to find principal components\n        pca = PCA(n_components=min(3, len(expr_ids)))\n        pc_scores = pca.fit_transform(X_scaled)\n        \n        # Look for dominant PC that explains significant variance\n        explained_variance_ratio = pca.explained_variance_ratio_\n        \n        # Select top PC with > 10% variance explained\n        if len(explained_variance_ratio) > 0 and explained_variance_ratio[0] > 0.1:\n            # Get loadings for first component\n            loadings = dict(zip(expr_ids, pca.components_[0]))\n            \n            # Sort by absolute loading values to get most important features\n            sorted_features = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)\n            \n            # Select top features (up to MAX_DRIVERS-1 since we might need one for driver)\n            selected_features = [fid for fid, _ in sorted_features[:MAX_DRIVERS-1]]\n            \n            # Also include the feature with highest absolute loading as driver\n            driver_feature = sorted_features[0][0]\n            \n            # Ensure driver is not already in selected features\n            if driver_feature not in selected_features:\n                selected_features = [driver_feature] + selected_features\n                \n            # Take at most MAX_DRIVERS\n            drivers = tuple(selected_features[:MAX_DRIVERS])\n            \n            # Return design with all expression features as columns, \n            # and the weighted score from PCA\n            return Design(\n                drivers=drivers,\n                columns=tuple(expr_ids),\n                products=(),\n                loadings=loadings\n            )\n    \n    # If no strong correlations, use simple t-test approach\n    t_stats = []\n    for i, fid in enumerate(expr_ids):\n        group0 = X_scaled[feats.y == 0, i]\n        group1 = X_scaled[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append((abs(t_stat), fid))\n    \n    # Sort by t-statistic and select top features\n    t_stats.sort(reverse=True)\n    top_features = [fid for _, fid in t_stats[:MAX_DRIVERS]]\n    \n    # Return design with top features as drivers and columns\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(expr_ids),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8751,
+  "completion_tokens": 2227,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2946
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3454
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3454
+   }
+  ],
+  "wall_s": 25.3
+ }
+}

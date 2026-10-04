@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-kcwiscf6",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out correlated features (keep only one from each pair)\n    correlated_pairs = {\n        ('YRLC18', 'AJBV4'), ('YRLC18', 'KAN11'), ('VEI12', 'YRLC18'),\n        ('XPII7', 'YRLC18'), ('YRLC18', 'JYY12'), ('XPII7', 'VEI12'),\n        ('BII15', 'AJBV4'), ('XPII7', 'FCY5'), ('VEI12', 'GNA18L'),\n        ('KAN11', 'AJBV4'), ('JYY12', 'AJBV4'), ('JWZ8', 'AJBV4'),\n        ('GNA18L', 'YRLC18'), ('KAT15A', 'XPII7'), ('GNA18L', 'KAN11'),\n        ('VEI12', 'KAN11'), ('KAT15A', 'FCY5'), ('YRLC18', 'BII15'),\n        ('JWZ8', 'YRLC18'), ('VEI12', 'AJBV4')\n    }\n    \n    # Build set of features to exclude due to correlation\n    exclude = set()\n    for a, b in correlated_pairs:\n        if a in feats.ids and b in feats.ids:\n            # Keep the one with higher t-statistic\n            ia, ib = feats.column(a), feats.column(b)\n            ta, tb = abs(stats.ttest_ind(feats.x[:,ia][feats.y==1], feats.x[:,ia][feats.y==0]).statistic), \\\n                     abs(stats.ttest_ind(feats.x[:,ib][feats.y==1], feats.x[:,ib][feats.y==0]).statistic)\n            exclude.add(b if ta > tb else a)\n    \n    # Select features for analysis\n    keep = [fid for fid in feats.ids if fid not in exclude]\n    \n    # Calculate effect sizes (t-stats) for selected features\n    effects = []\n    for fid in keep:\n        col = feats.column(fid)\n        tstat = stats.ttest_ind(feats.x[:,col][feats.y==1], feats.x[:,col][feats.y==0]).statistic\n        effects.append((abs(tstat), fid))\n    \n    # Sort by effect size and select top features\n    effects.sort(reverse=True)\n    drivers = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # For logistic regression, include only top 3 features\n    columns = [fid for _, fid in effects[:3]]\n    \n    # No interaction terms for simplicity\n    products = ()\n    \n    # Simple weighted score using top features\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out correlated features (keep only one from each pair)\n    correlated_pairs = {\n        ('YRLC18', 'AJBV4'), ('YRLC18', 'KAN11'), ('VEI12', 'YRLC18'),\n        ('XPII7', 'YRLC18'), ('YRLC18', 'JYY12'), ('XPII7', 'VEI12'),\n        ('BII15', 'AJBV4'), ('XPII7', 'FCY5'), ('VEI12', 'GNA18L'),\n        ('KAN11', 'AJBV4'), ('JYY12', 'AJBV4'), ('JWZ8', 'AJBV4'),\n        ('GNA18L', 'YRLC18'), ('KAT15A', 'XPII7'), ('GNA18L', 'KAN11'),\n        ('VEI12', 'KAN11'), ('KAT15A', 'FCY5'), ('YRLC18', 'BII15'),\n        ('JWZ8', 'YRLC18'), ('VEI12', 'AJBV4')\n    }\n    \n    # Build set of features to exclude due to correlation\n    exclude = set()\n    for a, b in correlated_pairs:\n        if a in feats.ids and b in feats.ids:\n            # Keep the one with higher t-statistic\n            ia, ib = feats.column(a), feats.column(b)\n            ta, tb = abs(stats.ttest_ind(feats.x[:,ia][feats.y==1], feats.x[:,ia][feats.y==0]).statistic), \\\n                     abs(stats.ttest_ind(feats.x[:,ib][feats.y==1], feats.x[:,ib][feats.y==0]).statistic)\n            exclude.add(b if ta > tb else a)\n    \n    # Select features for analysis\n    keep = [fid for fid in feats.ids if fid not in exclude]\n    \n    # Calculate effect sizes (t-stats) for selected features\n    effects = []\n    for fid in keep:\n        col = feats.column(fid)\n        tstat = stats.ttest_ind(feats.x[:,col][feats.y==1], feats.x[:,col][feats.y==0]).statistic\n        effects.append((abs(tstat), fid))\n    \n    # Sort by effect size and select top features\n    effects.sort(reverse=True)\n    drivers = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # For logistic regression, include only top 3 features\n    columns = [fid for _, fid in effects[:3]]\n    \n    # No interaction terms for simplicity\n    products = ()\n    \n    # Simple weighted score using top features\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4977,
+  "completion_tokens": 1411,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2400
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2108
+   }
+  ],
+  "wall_s": 16.2
+ }
+}

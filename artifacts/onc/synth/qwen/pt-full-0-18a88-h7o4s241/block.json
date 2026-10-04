@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-h7o4s241",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression features for clustering\n    expr_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'expression']\n    expr_cols = [feats.column(fid) for fid in expr_ids]\n    \n    # Compute correlation matrix\n    X_expr = feats.x[:, expr_cols]\n    corr_matrix = np.corrcoef(X_expr.T)\n    \n    # Identify highly correlated pairs (|r| >= 0.6)\n    high_corr_pairs = []\n    for i in range(len(expr_ids)):\n        for j in range(i+1, len(expr_ids)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                high_corr_pairs.append((expr_ids[i], expr_ids[j]))\n    \n    # Cluster highly correlated features\n    if not high_corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build similarity graph\n    n_features = len(expr_ids)\n    sim_matrix = np.zeros((n_features, n_features))\n    for i in range(n_features):\n        for j in range(n_features):\n            if i == j:\n                sim_matrix[i, j] = 1\n            elif (expr_ids[i], expr_ids[j]) in high_corr_pairs or (expr_ids[j], expr_ids[i]) in high_corr_pairs:\n                sim_matrix[i, j] = corr_matrix[i, j]\n    \n    # Use hierarchical clustering\n    clustering = AgglomerativeClustering(\n        n_clusters=2, \n        affinity='precomputed', \n        linkage='average'\n    )\n    clusters = clustering.fit_predict(1 - np.abs(sim_matrix))  # Convert similarity to distance\n    \n    # Select the larger cluster as our module\n    cluster_sizes = np.bincount(clusters)\n    main_cluster = np.argmax(cluster_sizes)\n    module_features = [expr_ids[i] for i in range(n_features) if clusters[i] == main_cluster]\n    \n    # If module too small, return empty\n    if len(module_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score using mean of module features\n    module_cols = [feats.column(fid) for fid in module_features]\n    weights = np.ones(len(module_features)) / len(module_features)\n    loadings = dict(zip(module_features, weights))\n    \n    # Return design with module features\n    return Design(\n        drivers=tuple(module_features[:MAX_DRIVERS]),\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8217,
+  "completion_tokens": 1740,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2431
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2429
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2376
+   }
+  ],
+  "wall_s": 20.0
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-gui8q2yp",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong univariate predictors (p < 0.05)\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        t_stat = stats.ttest_ind(feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0]).statistic\n        p_val = stats.ttest_ind(feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0]).pvalue\n        if p_val < 0.05:\n            strong_features.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    strong_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated with |r| > 0.6)\n    correlated_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            r = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(r) >= 0.6:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                correlated_pairs.add((min(fid1,fid2), max(fid1,fid2)))\n    \n    # Group correlated features into clusters\n    clusters = defaultdict(set)\n    for fid1, fid2 in correlated_pairs:\n        clusters[fid1].add(fid2)\n        clusters[fid2].add(fid1)\n    \n    # Select representative from each cluster\n    selected_features = set()\n    for fid, _ in strong_features:\n        if any(fid in clusters[fid2] for fid2 in selected_features):\n            continue  # Skip if already in cluster\n        selected_features.add(fid)\n        \n    # If no strong features, return empty design\n    if not selected_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top 4 features as drivers (to keep model small)\n    drivers = tuple(list(selected_features)[:4])\n    \n    # Include all selected features in the regression\n    columns = tuple(selected_features)\n    \n    # Look for product terms between top features (limit to 3 pairs max)\n    products = []\n    count = 0\n    for i, fid1 in enumerate(drivers):\n        for j, fid2 in enumerate(drivers[i+1:], i+1):\n            if count >= 3:\n                break\n            products.append((fid1, fid2))\n            count += 1\n    \n    # Weighted score: sum of top features with weights based on effect sizes\n    loadings = {}\n    for fid, _ in strong_features[:len(drivers)]:\n        # Use t-statistic as weight\n        idx = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[:,idx][feats.y==1], feats.x[:,idx][feats.y==0]).statistic\n        loadings[fid] = abs(t_stat)\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8615,
+  "completion_tokens": 2052,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2597
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2618
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2666
+   }
+  ],
+  "wall_s": 23.8
+ }
+}

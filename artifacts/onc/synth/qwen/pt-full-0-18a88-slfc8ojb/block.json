@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-slfc8ojb",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Find connected components in correlation graph\n    clustering = SpectralClustering(n_clusters=1, affinity='precomputed', \n                                   assign_labels='discretize')\n    clusters = clustering.fit_predict(high_corr_mask.astype(int))\n    \n    # Get the largest cluster\n    unique_clusters, counts = np.unique(clusters, return_counts=True)\n    main_cluster_id = unique_clusters[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) if clusters[i] == main_cluster_id]\n    \n    if len(module_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score using first principal component\n    module_data = feats.x[:, [feats.column(fid) for fid in module_features]]\n    _, _, vh = np.linalg.svd(module_data, full_matrices=False)\n    weights = vh[0] / np.linalg.norm(vh[0])\n    \n    loadings = dict(zip(module_features, weights))\n    \n    # Select top features based on t-statistics\n    t_stats = []\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y==0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y==1, col_idx])\n        t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic and limit to MAX_DRIVERS-1 (leave room for main driver)\n    sorted_indices = np.argsort(t_stats)[::-1][:min(MAX_DRIVERS-1, len(module_features))]\n    drivers = tuple([module_features[i] for i in sorted_indices])\n    \n    # Include all module features in regression\n    columns = tuple(module_features)\n    \n    # No products needed for this approach\n    products = ()\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8005,
+  "completion_tokens": 1575,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2057
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2135
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2113
+   }
+  ],
+  "wall_s": 21.9
+ }
+}

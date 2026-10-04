@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-a5rwyjzf",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, p_val = stats.ttest_ind(y1, y0, equal_var=False)\n        auc = roc_auc_score(feats.y, feats.x[:, col])\n        effects.append((fid, abs(mean_diff), abs(t_stat), p_val, auc))\n    \n    # Sort by effect size (t-statistic) and filter out weak features\n    effects.sort(key=lambda x: x[2], reverse=True)\n    strong_features = [f[0] for f in effects if f[2] > 2.0][:10]\n    \n    # Remove near-duplicates based on correlation\n    kept = set()\n    for fid in strong_features:\n        is_duplicate = False\n        for kept_fid in kept:\n            corr = np.corrcoef(feats.x[:, feats.column(fid)], \n                              feats.x[:, feats.column(kept_fid)])[0,1]\n            if abs(corr) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            kept.add(fid)\n    \n    # Select top drivers based on effect size\n    drivers = list(kept)[:MAX_DRIVERS]\n    \n    # Build columns, products, and loadings\n    columns = list(kept)\n    products = []\n    loadings = {fid: 1.0 for fid in kept}\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                 products=tuple(products), loadings=loadings)\n\ndef roc_auc_score(y_true, y_scores):\n    # Simple AUC approximation using Mann-Whitney U test\n    n1 = np.sum(y_true == 1)\n    n2 = len(y_true) - n1\n    ranks = stats.rankdata(y_scores)\n    rank_sum_1 = np.sum(ranks[y_true == 1])\n    auc = (rank_sum_1 - n1*(n1+1)/2) / (n1*n2)\n    return max(0.5, auc)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, p_val = stats.ttest_ind(y1, y0, equal_var=False)\n        auc = roc_auc_score(feats.y, feats.x[:, col])\n        effects.append((fid, abs(mean_diff), abs(t_stat), p_val, auc))\n    \n    # Sort by effect size (t-statistic) and filter out weak features\n    effects.sort(key=lambda x: x[2], reverse=True)\n    strong_features = [f[0] for f in effects if f[2] > 2.0][:10]\n    \n    # Remove near-duplicates based on correlation\n    kept = set()\n    for fid in strong_features:\n        is_duplicate = False\n        for kept_fid in kept:\n            corr = np.corrcoef(feats.x[:, feats.column(fid)], \n                              feats.x[:, feats.column(kept_fid)])[0,1]\n            if abs(corr) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            kept.add(fid)\n    \n    # Select top drivers based on effect size\n    drivers = list(kept)[:MAX_DRIVERS]\n    \n    # Build columns, products, and loadings\n    columns = list(kept)\n    products = []\n    loadings = {fid: 1.0 for fid in kept}\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                 products=tuple(products), loadings=loadings)\n\ndef roc_auc_score(y_true, y_scores):\n    # Simple AUC approximation using Mann-Whitney U test\n    n1 = np.sum(y_true == 1)\n    n2 = len(y_true) - n1\n    ranks = stats.rankdata(y_scores)\n    rank_sum_1 = np.sum(ranks[y_true == 1])\n    auc = (rank_sum_1 - n1*(n1+1)/2) / (n1*n2)\n    return max(0.5, auc)\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2219,
+  "completion_tokens": 532,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1917
+   }
+  ],
+  "wall_s": 6.4
+ }
+}

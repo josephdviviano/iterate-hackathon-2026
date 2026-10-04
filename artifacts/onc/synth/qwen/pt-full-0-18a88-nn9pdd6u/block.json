@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nn9pdd6u",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use mean difference\n            y0_mean = np.mean(feats.x[feats.y==0, i])\n            y1_mean = np.mean(feats.x[feats.y==1, i])\n            t_stats.append(abs(y1_mean - y0_mean))\n        else:\n            # For other features, use Welch's t-test\n            x0 = feats.x[feats.y==0, i]\n            x1 = feats.x[feats.y==1, i]\n            t_stat, _ = stats.ttest_ind(x0, x1, equal_var=False)\n            t_stats.append(abs(t_stat))\n    \n    # Find top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    top_fids = [feats.ids[i] for i in top_indices]\n    \n    # Cluster correlated features\n    if len(top_fids) < 2:\n        selected_fids = top_fids\n    else:\n        corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_fids]].T)\n        # Use hierarchical clustering to group highly correlated features\n        # Convert correlation to distance\n        dist_matrix = 1 - np.abs(corr_matrix)\n        clustering = AgglomerativeClustering(n_clusters=2, linkage='average')\n        cluster_labels = clustering.fit_predict(dist_matrix)\n        \n        # Select one representative from each cluster\n        selected_fids = []\n        for cluster_id in set(cluster_labels):\n            cluster_indices = np.where(cluster_labels == cluster_id)[0]\n            # Choose feature with highest t-statistic in cluster\n            cluster_t_stats = [t_stats[top_indices[i]] for i in cluster_indices]\n            best_index = cluster_indices[np.argmax(cluster_t_stats)]\n            selected_fids.append(top_fids[best_index])\n    \n    # If we have no features or only one, just use the top ones\n    if not selected_fids:\n        selected_fids = [top_fids[0]] if top_fids else []\n    \n    # Create weighted score from selected features\n    loadings = {}\n    for fid in selected_fids:\n        idx = feats.column(fid)\n        # Weight by t-statistic\n        t_stat = t_stats[idx]\n        loadings[fid] = t_stat\n    \n    # Normalize loadings\n    total_weight = sum(loadings.values())\n    if total_weight != 0:\n        for fid in loadings:\n            loadings[fid] /= total_weight\n    \n    # Return design with selected features\n    return Design(\n        drivers=tuple(selected_fids[:MAX_DRIVERS]),\n        columns=tuple(selected_fids),\n        products=(),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use mean difference\n            y0_mean = np.mean(feats.x[feats.y==0, i])\n            y1_mean = np.mean(feats.x[feats.y==1, i])\n            t_stats.append(abs(y1_mean - y0_mean))\n        else:\n            # For other features, use Welch's t-test\n            x0 = feats.x[feats.y==0, i]\n            x1 = feats.x[feats.y==1, i]\n            t_stat, _ = stats.ttest_ind(x0, x1, equal_var=False)\n            t_stats.append(abs(t_stat))\n    \n    # Find top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    top_fids = [feats.ids[i] for i in top_indices]\n    \n    # Cluster correlated features\n    if len(top_fids) < 2:\n        selected_fids = top_fids\n    else:\n        corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_fids]].T)\n        # Use hierarchical clustering to group highly correlated features\n        # Convert correlation to distance\n        dist_matrix = 1 - np.abs(corr_matrix)\n        clustering = AgglomerativeClustering(n_clusters=2, linkage='average')\n        cluster_labels = clustering.fit_predict(dist_matrix)\n        \n        # Select one representative from each cluster\n        selected_fids = []\n        for cluster_id in set(cluster_labels):\n            cluster_indices = np.where(cluster_labels == cluster_id)[0]\n            # Choose feature with highest t-statistic in cluster\n            cluster_t_stats = [t_stats[top_indices[i]] for i in cluster_indices]\n            best_index = cluster_indices[np.argmax(cluster_t_stats)]\n            selected_fids.append(top_fids[best_index])\n    \n    # If we have no features or only one, just use the top ones\n    if not selected_fids:\n        selected_fids = [top_fids[0]] if top_fids else []\n    \n    # Create weighted score from selected features\n    loadings = {}\n    for fid in selected_fids:\n        idx = feats.column(fid)\n        # Weight by t-statistic\n        t_stat = t_stats[idx]\n        loadings[fid] = t_stat\n    \n    # Normalize loadings\n    total_weight = sum(loadings.values())\n    if total_weight != 0:\n        for fid in loadings:\n            loadings[fid] /= total_weight\n    \n    # Return design with selected features\n    return Design(\n        drivers=tuple(selected_fids[:MAX_DRIVERS]),\n        columns=tuple(selected_fids),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8235,
+  "completion_tokens": 1816,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2396
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Exactly one of n_clusters and distance_threshold has to be set, and the other needs to be None.",
+    "bytes": 2429
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2632
+   }
+  ],
+  "wall_s": 22.5
+ }
+}

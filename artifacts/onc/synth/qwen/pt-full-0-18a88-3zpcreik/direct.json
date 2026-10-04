@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3zpcreik",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    candidates = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        candidates.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size and select top 5\n    candidates.sort(key=lambda x: x[2], reverse=True)\n    top_features = [fid for fid, _, _ in candidates[:5]]\n    \n    # Remove near-duplicates based on correlation\n    keep = set(top_features)\n    corr_pairs = [\n        ('FJDC1', 'YIFW13'), ('CNZK2', 'BHR10'), ('YIFW13', 'YBE10'),\n        ('JOEN12', 'YIFW13'), ('RMJB3', 'YIFW13'), ('FJDC1', 'IAX6'),\n        ('JOEN12', 'RMJB3'), ('IAX6', 'YIFW13'), ('YIFW13', 'QLP12L'),\n        ('YIFW13', 'YTMC4L'), ('JOEN12', 'SZB15L'), ('FJDC1', 'YBE10'),\n        ('FJDC1', 'YTMC4L'), ('YIFW13', 'KLAJ17'), ('FJDC1', 'KLAJ17'),\n        ('UHFH19', 'YBE10'), ('THZS1', 'YBE10'), ('FJDC1', 'RMJB3'),\n        ('YIFW13', 'SZB15L'), ('RMJB3', 'YBE10')\n    ]\n    \n    # Remove correlated features (keep first in each pair)\n    for a, b in corr_pairs:\n        if a in keep and b in keep:\n            keep.remove(b)\n    \n    # Select top drivers based on effect size\n    driver_candidates = []\n    for fid in keep:\n        for cand_fid, _, t_stat in candidates:\n            if cand_fid == fid:\n                driver_candidates.append((fid, t_stat))\n                break\n    \n    driver_candidates.sort(key=lambda x: x[1], reverse=True)\n    drivers = [fid for fid, _ in driver_candidates[:MAX_DRIVERS]]\n    \n    # Build regression features (keep all selected features)\n    columns = list(keep)\n    products = []\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    candidates = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        candidates.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size and select top 5\n    candidates.sort(key=lambda x: x[2], reverse=True)\n    top_features = [fid for fid, _, _ in candidates[:5]]\n    \n    # Remove near-duplicates based on correlation\n    keep = set(top_features)\n    corr_pairs = [\n        ('FJDC1', 'YIFW13'), ('CNZK2', 'BHR10'), ('YIFW13', 'YBE10'),\n        ('JOEN12', 'YIFW13'), ('RMJB3', 'YIFW13'), ('FJDC1', 'IAX6'),\n        ('JOEN12', 'RMJB3'), ('IAX6', 'YIFW13'), ('YIFW13', 'QLP12L'),\n        ('YIFW13', 'YTMC4L'), ('JOEN12', 'SZB15L'), ('FJDC1', 'YBE10'),\n        ('FJDC1', 'YTMC4L'), ('YIFW13', 'KLAJ17'), ('FJDC1', 'KLAJ17'),\n        ('UHFH19', 'YBE10'), ('THZS1', 'YBE10'), ('FJDC1', 'RMJB3'),\n        ('YIFW13', 'SZB15L'), ('RMJB3', 'YBE10')\n    ]\n    \n    # Remove correlated features (keep first in each pair)\n    for a, b in corr_pairs:\n        if a in keep and b in keep:\n            keep.remove(b)\n    \n    # Select top drivers based on effect size\n    driver_candidates = []\n    for fid in keep:\n        for cand_fid, _, t_stat in candidates:\n            if cand_fid == fid:\n                driver_candidates.append((fid, t_stat))\n                break\n    \n    driver_candidates.sort(key=lambda x: x[1], reverse=True)\n    drivers = [fid for fid, _ in driver_candidates[:MAX_DRIVERS]]\n    \n    # Build regression features (keep all selected features)\n    columns = list(keep)\n    products = []\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8423,
+  "completion_tokens": 1949,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2064
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 1975
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2045
+   }
+  ],
+  "wall_s": 22.3
+ }
+}

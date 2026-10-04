@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-slfc8ojb",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong univariate predictors\n    scores = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            p_val = stats.t.sf(np.abs(t_stat), len(y0) + len(y1) - 2) * 2\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n        else:\n            # For other features, use correlation with outcome\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            t_stat = corr * np.sqrt((len(feats.y) - 2) / (1 - corr**2))\n            p_val = 2 * (1 - stats.t.cdf(np.abs(t_stat), len(feats.y) - 2))\n        \n        scores.append((abs(corr), fid, p_val))\n    \n    # Sort by strength\n    scores.sort(reverse=True)\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    used = set()\n    for _, fid, _ in scores:\n        if fid in used:\n            continue\n        keep.append(fid)\n        used.add(fid)\n        # Check correlations with already selected features\n        for other_fid in keep[:-1]:\n            col_a = feats.column(other_fid)\n            col_b = feats.column(fid)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0, 1]\n            if abs(corr) >= 0.6:\n                used.add(other_fid)\n        if len(keep) >= MAX_DRIVERS:\n            break\n    \n    # Select top drivers\n    drivers = tuple(keep[:MAX_DRIVERS])\n    \n    # Build regression features\n    columns = list(feats.ids)\n    \n    # Add interaction terms for top drivers\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a, b))\n    \n    # Weighted score (simplest approach)\n    loadings = {}\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        corr_with_y = np.corrcoef(feats.x[:, idx], feats.y)[0, 1]\n        loadings[fid] = corr_with_y\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8268,
+  "completion_tokens": 1814,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'locals' is not defined",
+    "bytes": 2301
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'locals' is not defined",
+    "bytes": 2362
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2164
+   }
+  ],
+  "wall_s": 20.3
+ }
+}

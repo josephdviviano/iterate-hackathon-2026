@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-4ea11wvw",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify highly associated features using Welch's t-test\n    p_vals = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for this analysis\n        x1 = feats.x[feats.y == 1, i]\n        x0 = feats.x[feats.y == 0, i]\n        t_stat, p_val = stats.ttest_ind(x1, x0, equal_var=False)\n        p_vals.append((p_val, fid))\n    \n    # Sort by significance\n    p_vals.sort()\n    sig_features = [fid for _, fid in p_vals[:20]]  # Top 20 significant features\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    to_remove = set()\n    corr_pairs = [\n        ('CRL8', 'BHE14B'), ('SMB7', 'EWPQ3'), ('RGDN4', 'HFCM17P'),\n        ('XTB2', 'HFCM17P'), ('LLSP6', 'HFCM17P'), ('PFD13A', 'HFCM17P'),\n        ('FMJP10', 'HFCM17P'), ('LFIP19', 'HFCM17P'), ('EWK12', 'HFCM17P'),\n        ('LLSP6', 'PFD13A'), ('RGDN4', 'LLSP6'), ('EGP15A', 'HFCM17P'),\n        ('DKHF13', 'HFCM17P'), ('WZBE5', 'HFCM17P'), ('PFD13A', 'FMJP10'),\n        ('TVQI19', 'PVK1'), ('RGDN4', 'PFD13A'), ('RGDN4', 'XTB2'),\n        ('VXIN5', 'HFCM17P'), ('VXIN5', 'LLSP6')\n    ]\n    \n    for a, b in corr_pairs:\n        if a in sig_features and b in sig_features:\n            to_remove.add(b)\n    \n    # Build final feature set\n    selected_features = [f for f in sig_features if f not in to_remove]\n    \n    # Limit to MAX_DRIVERS\n    selected_features = selected_features[:MAX_DRIVERS]\n    \n    # If we have features, compute weighted score\n    if selected_features:\n        # Compute weighted score based on correlation with outcome\n        weights = {}\n        for fid in selected_features:\n            col_idx = feats.column(fid)\n            x = feats.x[:, col_idx]\n            y = feats.y.astype(float)\n            cor = np.corrcoef(x, y)[0, 1]\n            weights[fid] = cor\n        \n        return Design(\n            drivers=tuple(selected_features),\n            columns=tuple(selected_features),\n            products=(),\n            loadings=weights\n        )\n    \n    # No strong mechanism found\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify highly associated features using Welch's t-test\n    p_vals = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for this analysis\n        x1 = feats.x[feats.y == 1, i]\n        x0 = feats.x[feats.y == 0, i]\n        t_stat, p_val = stats.ttest_ind(x1, x0, equal_var=False)\n        p_vals.append((p_val, fid))\n    \n    # Sort by significance\n    p_vals.sort()\n    sig_features = [fid for _, fid in p_vals[:20]]  # Top 20 significant features\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    to_remove = set()\n    corr_pairs = [\n        ('CRL8', 'BHE14B'), ('SMB7', 'EWPQ3'), ('RGDN4', 'HFCM17P'),\n        ('XTB2', 'HFCM17P'), ('LLSP6', 'HFCM17P'), ('PFD13A', 'HFCM17P'),\n        ('FMJP10', 'HFCM17P'), ('LFIP19', 'HFCM17P'), ('EWK12', 'HFCM17P'),\n        ('LLSP6', 'PFD13A'), ('RGDN4', 'LLSP6'), ('EGP15A', 'HFCM17P'),\n        ('DKHF13', 'HFCM17P'), ('WZBE5', 'HFCM17P'), ('PFD13A', 'FMJP10'),\n        ('TVQI19', 'PVK1'), ('RGDN4', 'PFD13A'), ('RGDN4', 'XTB2'),\n        ('VXIN5', 'HFCM17P'), ('VXIN5', 'LLSP6')\n    ]\n    \n    for a, b in corr_pairs:\n        if a in sig_features and b in sig_features:\n            to_remove.add(b)\n    \n    # Build final feature set\n    selected_features = [f for f in sig_features if f not in to_remove]\n    \n    # Limit to MAX_DRIVERS\n    selected_features = selected_features[:MAX_DRIVERS]\n    \n    # If we have features, compute weighted score\n    if selected_features:\n        # Compute weighted score based on correlation with outcome\n        weights = {}\n        for fid in selected_features:\n            col_idx = feats.column(fid)\n            x = feats.x[:, col_idx]\n            y = feats.y.astype(float)\n            cor = np.corrcoef(x, y)[0, 1]\n            weights[fid] = cor\n        \n        return Design(\n            drivers=tuple(selected_features),\n            columns=tuple(selected_features),\n            products=(),\n            loadings=weights\n        )\n    \n    # No strong mechanism found\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8908,
+  "completion_tokens": 2158,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2588
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2299
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2247
+   }
+  ],
+  "wall_s": 24.7
+ }
+}

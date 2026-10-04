@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ij1qmiee",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'expression':\n            # Calculate effect size (difference in means)\n            effect_size = feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean()\n            # Calculate Welch's t-statistic\n            n1, n2 = np.sum(feats.y==1), np.sum(feats.y==0)\n            var1, var2 = feats.x[feats.y==1, i].var(), feats.x[feats.y==0, i].var()\n            t_stat = effect_size / np.sqrt(var1/n1 + var2/n2)\n            p_val = 2 * (1 - stats.t.cdf(abs(t_stat), df=n1+n2-2))\n            effects.append((abs(effect_size), p_val, fid))\n    \n    # Sort by effect size (descending) and p-value (ascending)\n    effects.sort(reverse=True)\n    \n    # Select top 3 drivers that are not highly correlated\n    selected_drivers = []\n    used_features = set()\n    \n    for _, _, fid in effects[:10]:\n        if fid in used_features or len(selected_drivers) >= 3:\n            continue\n            \n        # Check correlation with already selected features\n        is_correlated = False\n        for selected_fid in selected_drivers:\n            col_a = feats.column(selected_fid)\n            col_b = feats.column(fid)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0, 1]\n            if abs(corr) > 0.6:\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            selected_drivers.append(fid)\n            used_features.add(fid)\n    \n    drivers = tuple(selected_drivers)\n    \n    # Use only top 5 features as columns\n    columns = tuple([fid for _, _, fid in effects[:5]])\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(columns[:3]):  # Top 3 features\n        col_idx = feats.column(fid)\n        # Weight by standardized effect size\n        effect = feats.x[feats.y==1, col_idx].mean() - feats.x[feats.y==0, col_idx].mean()\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'expression':\n            # Calculate effect size (difference in means)\n            effect_size = feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean()\n            # Calculate Welch's t-statistic\n            n1, n2 = np.sum(feats.y==1), np.sum(feats.y==0)\n            var1, var2 = feats.x[feats.y==1, i].var(), feats.x[feats.y==0, i].var()\n            t_stat = effect_size / np.sqrt(var1/n1 + var2/n2)\n            p_val = 2 * (1 - stats.t.cdf(abs(t_stat), df=n1+n2-2))\n            effects.append((abs(effect_size), p_val, fid))\n    \n    # Sort by effect size (descending) and p-value (ascending)\n    effects.sort(reverse=True)\n    \n    # Select top 3 drivers that are not highly correlated\n    selected_drivers = []\n    used_features = set()\n    \n    for _, _, fid in effects[:10]:\n        if fid in used_features or len(selected_drivers) >= 3:\n            continue\n            \n        # Check correlation with already selected features\n        is_correlated = False\n        for selected_fid in selected_drivers:\n            col_a = feats.column(selected_fid)\n            col_b = feats.column(fid)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0, 1]\n            if abs(corr) > 0.6:\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            selected_drivers.append(fid)\n            used_features.add(fid)\n    \n    drivers = tuple(selected_drivers)\n    \n    # Use only top 5 features as columns\n    columns = tuple([fid for _, _, fid in effects[:5]])\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(columns[:3]):  # Top 3 features\n        col_idx = feats.column(fid)\n        # Weight by standardized effect size\n        effect = feats.x[feats.y==1, col_idx].mean() - feats.x[feats.y==0, col_idx].mean()\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8700,
+  "completion_tokens": 2152,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3205
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3203
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2288
+   }
+  ],
+  "wall_s": 24.4
+ }
+}

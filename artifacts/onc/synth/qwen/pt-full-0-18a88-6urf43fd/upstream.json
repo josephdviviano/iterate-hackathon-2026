@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-6urf43fd",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with significant effect sizes\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        y0 = feats.x[feats.y==0, i]\n        y1 = feats.x[feats.y==1, i]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effects.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select top features\n    top_features = [f[0] for f in effects[:10]]\n    \n    # Check for correlations among top features\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n    correlated_pairs = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                correlated_pairs.append((top_features[i], top_features[j]))\n    \n    # Remove near-duplicates, prefer stronger effects\n    selected = set()\n    for fid, _, _ in effects[:10]:\n        if any(fid in pair for pair in correlated_pairs):\n            # Check if this feature is part of a correlated pair\n            found = False\n            for pair in correlated_pairs:\n                if fid in pair:\n                    other = pair[0] if pair[0] != fid else pair[1]\n                    # Prefer the feature with larger effect\n                    if other in selected:\n                        continue\n                    selected.add(fid)\n                    found = True\n                    break\n            if not found:\n                selected.add(fid)\n        else:\n            selected.add(fid)\n    \n    # If no strong signals, return empty design\n    if len(selected) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select best drivers based on effect size and correlation structure\n    drivers = []\n    remaining = list(selected)\n    \n    # Create a mapping from feature id to effect size for sorting\n    effect_map = {fid: effect[1] for fid, effect in zip([f[0] for f in effects], [f[1] for f in effects])}\n    \n    # Add top features to drivers if they're not highly correlated with others\n    for fid in sorted(remaining, key=lambda x: effect_map.get(x, 0), reverse=True):\n        if len(drivers) >= MAX_DRIVERS:\n            break\n        # Check if this feature is correlated with any already selected\n        correlated_with_selected = any(\n            any(fid in pair and other in drivers for pair in correlated_pairs)\n            for other in drivers\n        )\n        if not correlated_with_selected or not drivers:\n            drivers.append(fid)\n    \n    # Build columns and products\n    columns = tuple(selected)\n    products = ()\n    \n    # Build loadings from top features\n    loadings = {}\n    for fid in drivers:\n        idx = feats.column(fid)\n        y0 = feats.x[feats.y==0, idx]\n        y1 = feats.x[feats.y==1, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        loadings[fid] = mean_diff\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8727,
+  "completion_tokens": 2318,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3253
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3253
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: invalid index to scalar variable.",
+    "bytes": 3411
+   }
+  ],
+  "wall_s": 26.4
+ }
+}

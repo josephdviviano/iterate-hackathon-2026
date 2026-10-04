@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9zwytf3z",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out correlated features (keep only one from each pair)\n    correlated_pairs = {\n        ('PSQR10L', 'CDYF12B'), ('PSQR10L', 'TEEO17'), ('OUB15P', 'AHA2'),\n        ('TUES13', 'PSQR10L'), ('NPR17', 'TEEO17'), ('CDYF12B', 'TEEO17'),\n        ('JRBQ19P', 'PSQR10L'), ('TUES13', 'CDYF12B'), ('WXLS6', 'IVQS9'),\n        ('PBAE5', 'PSQR10L'), ('TUES13', 'FVOE11'), ('JRBQ19P', 'CDYF12B'),\n        ('TUES13', 'TEEO17'), ('EMM14', 'TEEO17'), ('REP5', 'PSQR10L'),\n        ('JRBQ19P', 'TEEO17'), ('PSQR10L', 'NPR17'), ('IBL2L', 'PSQR10L'),\n        ('PSQR10L', 'BVKH10'), ('PSQR10L', 'FVOE11')\n    }\n    \n    keep_ids = set(feats.ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher t-statistic\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            t_a = abs(stats.ttest_ind(feats.x[:, idx_a][feats.y==1], feats.x[:, idx_a][feats.y==0]).statistic)\n            t_b = abs(stats.ttest_ind(feats.x[:, idx_b][feats.y==1], feats.x[:, idx_b][feats.y==0]).statistic)\n            if t_a > t_b:\n                keep_ids.remove(b)\n            else:\n                keep_ids.remove(a)\n    \n    # Calculate effect sizes and select top candidates\n    effects = []\n    for fid in keep_ids:\n        idx = feats.column(fid)\n        y0 = feats.x[:, idx][feats.y == 0]\n        y1 = feats.x[:, idx][feats.y == 1]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat = stats.ttest_ind(y1, y0).statistic\n        effects.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    effects.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select drivers based on effect size and significance\n    drivers = [f for f, _, _ in effects[:MAX_DRIVERS] if abs(stats.ttest_ind(\n        feats.x[:, feats.column(f)][feats.y==1], \n        feats.x[:, feats.column(f)][feats.y==0]).statistic) > 2.5]\n    \n    # Limit to at most 4 drivers\n    drivers = drivers[:4]\n    \n    # Build columns list with top 8 features\n    columns = [f for f, _, _ in effects[:8] if abs(stats.ttest_ind(\n        feats.x[:, feats.column(f)][feats.y==1], \n        feats.x[:, feats.column(f)][feats.y==0]).statistic) > 2.0]\n    \n    # Identify product features from correlations (limit to 4 pairs)\n    products = []\n    for a, b in list(correlated_pairs)[:4]:\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    # Create simple loading weights (top 6 features get weights)\n    loadings = {}\n    for i, (fid, _, _) in enumerate(effects[:6]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out correlated features (keep only one from each pair)\n    correlated_pairs = {\n        ('PSQR10L', 'CDYF12B'), ('PSQR10L', 'TEEO17'), ('OUB15P', 'AHA2'),\n        ('TUES13', 'PSQR10L'), ('NPR17', 'TEEO17'), ('CDYF12B', 'TEEO17'),\n        ('JRBQ19P', 'PSQR10L'), ('TUES13', 'CDYF12B'), ('WXLS6', 'IVQS9'),\n        ('PBAE5', 'PSQR10L'), ('TUES13', 'FVOE11'), ('JRBQ19P', 'CDYF12B'),\n        ('TUES13', 'TEEO17'), ('EMM14', 'TEEO17'), ('REP5', 'PSQR10L'),\n        ('JRBQ19P', 'TEEO17'), ('PSQR10L', 'NPR17'), ('IBL2L', 'PSQR10L'),\n        ('PSQR10L', 'BVKH10'), ('PSQR10L', 'FVOE11')\n    }\n    \n    keep_ids = set(feats.ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher t-statistic\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            t_a = abs(stats.ttest_ind(feats.x[:, idx_a][feats.y==1], feats.x[:, idx_a][feats.y==0]).statistic)\n            t_b = abs(stats.ttest_ind(feats.x[:, idx_b][feats.y==1], feats.x[:, idx_b][feats.y==0]).statistic)\n            if t_a > t_b:\n                keep_ids.remove(b)\n            else:\n                keep_ids.remove(a)\n    \n    # Calculate effect sizes and select top candidates\n    effects = []\n    for fid in keep_ids:\n        idx = feats.column(fid)\n        y0 = feats.x[:, idx][feats.y == 0]\n        y1 = feats.x[:, idx][feats.y == 1]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat = stats.ttest_ind(y1, y0).statistic\n        effects.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    effects.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select drivers based on effect size and significance\n    drivers = [f for f, _, _ in effects[:MAX_DRIVERS] if abs(stats.ttest_ind(\n        feats.x[:, feats.column(f)][feats.y==1], \n        feats.x[:, feats.column(f)][feats.y==0]).statistic) > 2.5]\n    \n    # Limit to at most 4 drivers\n    drivers = drivers[:4]\n    \n    # Build columns list with top 8 features\n    columns = [f for f, _, _ in effects[:8] if abs(stats.ttest_ind(\n        feats.x[:, feats.column(f)][feats.y==1], \n        feats.x[:, feats.column(f)][feats.y==0]).statistic) > 2.0]\n    \n    # Identify product features from correlations (limit to 4 pairs)\n    products = []\n    for a, b in list(correlated_pairs)[:4]:\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    # Create simple loading weights (top 6 features get weights)\n    loadings = {}\n    for i, (fid, _, _) in enumerate(effects[:6]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9256,
+  "completion_tokens": 2690,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2860
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2924
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2788
+   }
+  ],
+  "wall_s": 30.8
+ }
+}

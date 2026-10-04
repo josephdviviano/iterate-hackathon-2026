@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-1f3v385z",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find highly correlated pairs and cluster them\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Cluster features based on correlation\n    clustering = AgglomerativeClustering(\n        n_clusters=None, \n        distance_threshold=1-0.6,\n        linkage='average'\n    )\n    clusters = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Find best cluster by t-statistics\n    best_cluster = None\n    best_t = -np.inf\n    \n    for i in set(clusters):\n        cluster_features = [feats.ids[j] for j in range(len(feats.ids)) if clusters[j] == i]\n        if len(cluster_features) < 2:\n            continue\n            \n        # Calculate mean difference for each feature in cluster\n        t_stats = []\n        for fid in cluster_features:\n            col_idx = feats.column(fid)\n            y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n            y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n            t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n            t_stats.append(abs(t_stat))\n        \n        avg_t = np.mean(t_stats)\n        if avg_t > best_t:\n            best_t = avg_t\n            best_cluster = cluster_features\n    \n    # If no good cluster found, return empty design\n    if best_cluster is None or len(best_cluster) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build weighted score using top features\n    loadings = {}\n    for fid in best_cluster:\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        loadings[fid] = y1_mean - y0_mean\n    \n    # Normalize loadings\n    total_weight = sum(abs(w) for w in loadings.values())\n    if total_weight > 0:\n        for fid in loadings:\n            loadings[fid] /= total_weight\n    \n    # Return design with best cluster features\n    return Design(\n        drivers=(best_cluster[0],) if best_cluster else (),\n        columns=tuple(best_cluster),\n        products=(),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find highly correlated pairs and cluster them\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Cluster features based on correlation\n    clustering = AgglomerativeClustering(\n        n_clusters=None, \n        distance_threshold=1-0.6,\n        linkage='average'\n    )\n    clusters = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Find best cluster by t-statistics\n    best_cluster = None\n    best_t = -np.inf\n    \n    for i in set(clusters):\n        cluster_features = [feats.ids[j] for j in range(len(feats.ids)) if clusters[j] == i]\n        if len(cluster_features) < 2:\n            continue\n            \n        # Calculate mean difference for each feature in cluster\n        t_stats = []\n        for fid in cluster_features:\n            col_idx = feats.column(fid)\n            y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n            y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n            t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n            t_stats.append(abs(t_stat))\n        \n        avg_t = np.mean(t_stats)\n        if avg_t > best_t:\n            best_t = avg_t\n            best_cluster = cluster_features\n    \n    # If no good cluster found, return empty design\n    if best_cluster is None or len(best_cluster) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build weighted score using top features\n    loadings = {}\n    for fid in best_cluster:\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        loadings[fid] = y1_mean - y0_mean\n    \n    # Normalize loadings\n    total_weight = sum(abs(w) for w in loadings.values())\n    if total_weight > 0:\n        for fid in loadings:\n            loadings[fid] /= total_weight\n    \n    # Return design with best cluster features\n    return Design(\n        drivers=(best_cluster[0],) if best_cluster else (),\n        columns=tuple(best_cluster),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5104,
+  "completion_tokens": 1192,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2364
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2332
+   }
+  ],
+  "wall_s": 13.5
+ }
+}

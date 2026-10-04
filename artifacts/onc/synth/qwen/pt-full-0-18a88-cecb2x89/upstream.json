@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-cecb2x89",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on t-statistics\n    t_stats = [abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                  feats.x[feats.y==0, feats.column(fid)], \n                                  equal_var=False)[0]) \n               for fid in feats.ids]\n    \n    # Sort by t-statistic descending\n    sorted_idx = np.argsort(t_stats)[::-1]\n    strong_features = [feats.ids[i] for i in sorted_idx[:20]]\n    \n    # Find correlated pairs with |r| >= 0.6\n    correlated_pairs = []\n    for i in range(len(strong_features)):\n        for j in range(i+1, len(strong_features)):\n            corr = np.corrcoef(feats.x[:, feats.column(strong_features[i])], \n                              feats.x[:, feats.column(strong_features[j])])[0,1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.append((strong_features[i], strong_features[j]))\n    \n    # Cluster correlated features using Agglomerative Clustering\n    if correlated_pairs:\n        feature_set = set()\n        for a, b in correlated_pairs:\n            feature_set.add(a)\n            feature_set.add(b)\n        \n        # Create feature matrix for clustering\n        feature_list = list(feature_set)\n        X = feats.x[:, [feats.column(fid) for fid in feature_list]]\n        \n        # Use hierarchical clustering to group correlated features\n        clustering = AgglomerativeClustering(n_clusters=None, \n                                            distance_threshold=1-0.6,\n                                            linkage='average')\n        clusters = clustering.fit_predict(X.T)\n        \n        # Select representative feature from each cluster (highest t-statistic)\n        cluster_representatives = {}\n        for i, cluster_id in enumerate(clusters):\n            fid = feature_list[i]\n            t_stat = t_stats[sorted_idx.index(feats.ids.index(fid))]\n            if cluster_id not in cluster_representatives or \\\n               t_stat > cluster_representatives[cluster_id][1]:\n                cluster_representatives[cluster_id] = (fid, t_stat)\n        \n        # Get final drivers from representatives\n        drivers = [fid for fid, _ in cluster_representatives.values()]\n        drivers = sorted(drivers, key=lambda x: t_stats[feats.ids.index(x)], reverse=True)\n    else:\n        # No strong correlations; use top features directly\n        drivers = [feats.ids[i] for i in sorted_idx[:min(MAX_DRIVERS, len(feats.ids))]]\n    \n    # Return design with top drivers and all features for regression\n    return Design(\n        drivers=tuple(drivers[:MAX_DRIVERS]),\n        columns=feats.ids,\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8336,
+  "completion_tokens": 1841,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_pairwise' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 2812
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nAttributeError: 'numpy.ndarray' object has no attribute 'index'",
+    "bytes": 2809
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nAttributeError: 'numpy.ndarray' object has no attribute 'index'",
+    "bytes": 2791
+   }
+  ],
+  "wall_s": 21.1
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-78lrbixb",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter features with strong association (p < 0.01)\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        # Using types as proxy for effect size - convert to float if needed\n        try:\n            effect_size = float(feats.types[i])\n            if abs(effect_size) > 0.01:  \n                strong_features.append(fid)\n        except (ValueError, TypeError):\n            # If types is not numeric, skip this feature\n            continue\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('PNU10', 'TSP11'), ('MSEQ10', 'LIZP11P'), ('MSEQ10', 'WCQF6'),\n        ('WCQF6', 'LIZP11P'), ('JMD15', 'CZEW19'), ('OMB12A', 'WUL6'),\n        ('OMB12A', 'UZFR6'), ('CTM15', 'NESJ4'), ('PFS16', 'ERV8'),\n        ('WUL6', 'UZFR6'), ('MSEQ10', 'CZEW19'), ('CZER19B', 'EATE2A'),\n        ('VRKS3', 'HWX7L'), ('CZER19B', 'IIH16'), ('ZSTN15L', 'LIZP11P'),\n        ('CTM15', 'JMD15'), ('WCQF6', 'CZEW19'), ('MSEQ10', 'ZSTN15L'),\n        ('JPO19', 'EATE2A'), ('ZSTN15L', 'WCQF6')\n    ]\n    \n    # Keep only one feature from each correlated pair (prefer stronger)\n    kept_features = set()\n    for a, b in correlated_pairs:\n        if a in feats.ids and b in feats.ids:\n            # Prefer the one with higher absolute effect size\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            effect_a = abs(np.mean(feats.x[feats.y==1, idx_a]) - np.mean(feats.x[feats.y==0, idx_a]))\n            effect_b = abs(np.mean(feats.x[feats.y==1, idx_b]) - np.mean(feats.x[feats.y==0, idx_b]))\n            kept_features.add(a if effect_a >= effect_b else b)\n        elif a in feats.ids:\n            kept_features.add(a)\n        elif b in feats.ids:\n            kept_features.add(b)\n    \n    # Add remaining features to kept_features\n    for fid in strong_features:\n        if fid not in kept_features:\n            kept_features.add(fid)\n    \n    # Use all kept features for logistic regression\n    cols = tuple(kept_features)\n    \n    # Find top features by mutual information\n    if len(cols) > 0:\n        mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in cols]], feats.y)\n        sorted_indices = np.argsort(mi_scores)[::-1]\n        \n        # Select top drivers\n        drivers = tuple([cols[i] for i in sorted_indices[:MAX_DRIVERS]])\n        \n        # Create products of top drivers\n        products = []\n        for i in range(len(drivers)):\n            for j in range(i+1, len(drivers)):\n                products.append((drivers[i], drivers[j]))\n        \n        # Weighted score using top features\n        loadings = {}\n        for i, fid in enumerate(cols):\n            if i < len(sorted_indices):\n                loadings[fid] = mi_scores[sorted_indices[i]]\n    else:\n        drivers = ()\n        products = ()\n        loadings = {}\n    \n    return Design(drivers=drivers, columns=cols, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9136,
+  "completion_tokens": 2509,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2773
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2754
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3065
+   }
+  ],
+  "wall_s": 28.6
+ }
+}

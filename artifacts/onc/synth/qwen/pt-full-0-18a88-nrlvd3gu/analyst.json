@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nrlvd3gu",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_ids = [fid for fid, t in zip(feats.ids, feats.types) if t != 'derived']\n    \n    # Calculate effect sizes using Welch's t-test\n    effect_sizes = []\n    for fid in non_derived_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        if len(group0) > 0 and len(group1) > 0:\n            t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            effect_sizes.append((fid, abs(t_stat)))\n    \n    # Sort by effect size and select top 3 drivers\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    driver_ids = [fid for fid, _ in effect_sizes[:3]]\n    \n    # Remove near-duplicates based on correlation\n    selected = []\n    used = set()\n    for fid in driver_ids:\n        if fid in used:\n            continue\n        selected.append(fid)\n        used.add(fid)\n        \n        # Check correlations with remaining candidates\n        col_idx = feats.column(fid)\n        for other_fid in non_derived_ids:\n            if other_fid == fid or other_fid in used:\n                continue\n            other_idx = feats.column(other_fid)\n            corr = np.corrcoef(feats.x[:, col_idx], feats.x[:, other_idx])[0, 1]\n            if abs(corr) >= 0.6:\n                used.add(other_fid)\n    \n    # Final drivers (max 3 to keep model small)\n    final_drivers = selected[:3]\n    \n    # For columns, use all non-derived features except those in drivers\n    columns = [fid for fid in feats.ids if fid not in used]\n    \n    # No products to keep model small\n    products = ()\n    \n    # Weighted score: use top driver\n    loadings = {}\n    if final_drivers:\n        loadings[final_drivers[0]] = 1.0\n    \n    return Design(\n        drivers=tuple(final_drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8618,
+  "completion_tokens": 1883,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2718
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2771
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2005
+   }
+  ],
+  "wall_s": 22.8
+ }
+}

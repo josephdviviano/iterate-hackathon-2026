@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-jsaw6bu4",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_threshold = 0.6\n    n_features = len(feats.ids)\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find pairs with |r| >= 0.6\n    high_corr_pairs = []\n    for i in range(n_features):\n        for j in range(i+1, n_features):\n            if abs(corr_matrix[i, j]) >= corr_threshold:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # If no strong correlations, return empty design\n    if not high_corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features based on correlation\n    clustering = SpectralClustering(n_clusters=1, affinity='precomputed', random_state=0)\n    similarity = 1 - np.abs(corr_matrix)\n    clusters = clustering.fit_predict(similarity)\n    \n    # Get cluster 0 features (the main module)\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) if clusters[i] == 0]\n    \n    # Remove near-duplicates (keep one representative)\n    unique_module = []\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        feature_vec = feats.x[:, col_idx]\n        \n        # Check if this vector is similar to any already selected\n        is_similar = False\n        for existing_fid in unique_module:\n            existing_col = feats.column(existing_fid)\n            existing_vec = feats.x[:, existing_col]\n            corr = np.corrcoef(feature_vec, existing_vec)[0, 1]\n            if abs(corr) > 0.95:\n                is_similar = True\n                break\n        \n        if not is_similar:\n            unique_module.append(fid)\n    \n    # Select top features by effect size\n    effect_sizes = []\n    for fid in unique_module:\n        col_idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        effect_sizes.append(abs(y1_mean - y0_mean))\n    \n    # Sort by effect size and take top 4 (max 4 due to constraint)\n    sorted_indices = np.argsort(effect_sizes)[::-1][:4]\n    drivers = tuple(unique_module[i] for i in sorted_indices if i < len(unique_module))\n    \n    # Create loadings dictionary (weighted sum of all module features)\n    loadings = {}\n    for fid in unique_module:\n        col_idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        loadings[fid] = y1_mean - y0_mean\n    \n    # Keep design small - only include essential elements\n    return Design(\n        drivers=drivers,\n        columns=drivers,  # Only include drivers in columns\n        products=(),\n        loadings={fid: loadings[fid] for fid in drivers}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_threshold = 0.6\n    n_features = len(feats.ids)\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find pairs with |r| >= 0.6\n    high_corr_pairs = []\n    for i in range(n_features):\n        for j in range(i+1, n_features):\n            if abs(corr_matrix[i, j]) >= corr_threshold:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # If no strong correlations, return empty design\n    if not high_corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features based on correlation\n    clustering = SpectralClustering(n_clusters=1, affinity='precomputed', random_state=0)\n    similarity = 1 - np.abs(corr_matrix)\n    clusters = clustering.fit_predict(similarity)\n    \n    # Get cluster 0 features (the main module)\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) if clusters[i] == 0]\n    \n    # Remove near-duplicates (keep one representative)\n    unique_module = []\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        feature_vec = feats.x[:, col_idx]\n        \n        # Check if this vector is similar to any already selected\n        is_similar = False\n        for existing_fid in unique_module:\n            existing_col = feats.column(existing_fid)\n            existing_vec = feats.x[:, existing_col]\n            corr = np.corrcoef(feature_vec, existing_vec)[0, 1]\n            if abs(corr) > 0.95:\n                is_similar = True\n                break\n        \n        if not is_similar:\n            unique_module.append(fid)\n    \n    # Select top features by effect size\n    effect_sizes = []\n    for fid in unique_module:\n        col_idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        effect_sizes.append(abs(y1_mean - y0_mean))\n    \n    # Sort by effect size and take top 4 (max 4 due to constraint)\n    sorted_indices = np.argsort(effect_sizes)[::-1][:4]\n    drivers = tuple(unique_module[i] for i in sorted_indices if i < len(unique_module))\n    \n    # Create loadings dictionary (weighted sum of all module features)\n    loadings = {}\n    for fid in unique_module:\n        col_idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        loadings[fid] = y1_mean - y0_mean\n    \n    # Keep design small - only include essential elements\n    return Design(\n        drivers=drivers,\n        columns=drivers,  # Only include drivers in columns\n        products=(),\n        loadings={fid: loadings[fid] for fid in drivers}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8667,
+  "completion_tokens": 2125,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2811
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2827
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2866
+   }
+  ],
+  "wall_s": 24.3
+ }
+}

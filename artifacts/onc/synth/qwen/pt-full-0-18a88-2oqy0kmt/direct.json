@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2oqy0kmt",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Group correlated features and keep one from each group\n    groups = []\n    used = set()\n    for fid1, fid2 in corr_pairs:\n        if fid1 not in used and fid2 not in used:\n            groups.append([fid1, fid2])\n            used.add(fid1)\n            used.add(fid2)\n        elif fid1 in used and fid2 not in used:\n            for group in groups:\n                if fid1 in group:\n                    group.append(fid2)\n                    used.add(fid2)\n                    break\n        elif fid2 in used and fid1 not in used:\n            for group in groups:\n                if fid2 in group:\n                    group.append(fid1)\n                    used.add(fid1)\n                    break\n    \n    # Add remaining features as singleton groups\n    for fid in feats.ids:\n        if fid not in used:\n            groups.append([fid])\n    \n    # Select representative feature from each group (highest mean_y1-mean_y0)\n    selected_features = []\n    for group in groups:\n        best_fid = max(group, key=lambda fid: abs(np.mean(feats.x[feats.y==1, feats.column(fid)] - \n                                                          feats.x[feats.y==0, feats.column(fid)])))\n        selected_features.append(best_fid)\n    \n    # Compute effect sizes for selected features\n    effect_sizes = []\n    for fid in selected_features:\n        col_idx = feats.column(fid)\n        effect_size = np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx])\n        effect_sizes.append((fid, abs(effect_size)))\n    \n    # Sort by effect size and take top 2\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    drivers = [fid for fid, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # Build columns, products, and loadings\n    columns = selected_features\n    products = []\n    loadings = {}\n    \n    # Simple weighted sum using effect sizes as weights\n    for fid, effect_size in effect_sizes:\n        loadings[fid] = effect_size\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8346,
+  "completion_tokens": 1809,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: operands could not be broadcast together with shapes (132,) (279,)",
+    "bytes": 2578
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: operands could not be broadcast together with shapes (132,) (279,)",
+    "bytes": 2578
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: operands could not be broadcast together with shapes (132,) (279,)",
+    "bytes": 2578
+   }
+  ],
+  "wall_s": 20.7
+ }
+}

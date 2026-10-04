@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s38ri4cb",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    \n    # Identify near-duplicates (|r| >= 0.6)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Filter out near-duplicates\n    filtered_ids = [id for id in ids if id not in to_remove]\n    filtered_indices = [i for i, id in enumerate(ids) if id not in to_remove]\n    filtered_x = x[:, filtered_indices]\n    \n    # Compute effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(filtered_ids):\n        group0 = filtered_x[y==0, i]\n        group1 = filtered_x[y==1, i]\n        effect = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect))\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_features = [filtered_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # If no strong effects, return empty design\n    if not top_features or max(effect_sizes) < 0.1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features with strongest effects\n    drivers = tuple(top_features[:min(MAX_DRIVERS, len(top_features))])\n    \n    # Use all features in regression (to avoid overfitting)\n    columns = tuple(filtered_ids)\n    \n    # Check for interactions between top features\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a, b))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(top_features):\n        idx = feats.column(fid)\n        loadings[fid] = effect_sizes[sorted_indices[i]]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8181,
+  "completion_tokens": 1602,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2144
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2168
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2168
+   }
+  ],
+  "wall_s": 19.6
+ }
+}

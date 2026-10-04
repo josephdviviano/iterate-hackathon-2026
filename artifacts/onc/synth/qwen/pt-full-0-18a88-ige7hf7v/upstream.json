@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ige7hf7v",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features by t-statistic\n    ids = list(feats.ids)\n    tstats = [abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                 feats.x[feats.y==0, feats.column(fid)])[0]) \n              for fid in ids]\n    \n    # Sort by t-statistic and take top 10\n    sorted_indices = np.argsort(tstats)[::-1]\n    top_ids = [ids[i] for i in sorted_indices[:10]]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('IDM6', 'QWK15B'), ('EEN15', 'YWC15'), ('EEN15', 'TJO6'), ('EEN15', 'JNYL10P'),\n        ('PLL7', 'NCB6'), ('VHX1A', 'NMJD8'), ('TJO6', 'JNYL10P'), ('TJO6', 'NMJD8'),\n        ('TJO6', 'YWC15'), ('EEN15', 'GDM6'), ('YWC15', 'JNYL10P'), ('KIE15', 'CDD15'),\n        ('EEN15', 'MXC13'), ('JNYL10P', 'GDM6'), ('JSTE5', 'YSO11'), ('TJO6', 'GDM6'),\n        ('PLL7', 'MXC13'), ('NMJD8', 'JNYL10P'), ('NMJD8', 'VDO6'), ('JSTE5', 'SAHW1')\n    ]\n    \n    # Keep only one feature from each highly correlated pair\n    keep = set()\n    for a, b in correlated_pairs:\n        if a in top_ids and b in top_ids:\n            # Prefer the one with higher t-statistic\n            idx_a = top_ids.index(a)\n            idx_b = top_ids.index(b)\n            if tstats[ids.index(a)] >= tstats[ids.index(b)]:\n                keep.add(a)\n                keep.discard(b)\n            else:\n                keep.add(b)\n                keep.discard(a)\n        elif a in top_ids:\n            keep.add(a)\n        elif b in top_ids:\n            keep.add(b)\n    \n    # Add remaining top features to keep\n    for fid in top_ids:\n        if fid not in keep and len(keep) < 5:\n            keep.add(fid)\n    \n    # Select final features\n    selected = list(keep)\n    \n    # Fit logistic regression to select drivers\n    X = feats.x[:, [feats.column(fid) for fid in selected]]\n    model = LogisticRegression(penalty='l1', solver='liblinear', random_state=42)\n    model.fit(X, feats.y)\n    \n    # Get coefficients and rank features by importance\n    coefs = np.abs(model.coef_[0])\n    ranked_indices = np.argsort(coefs)[::-1]\n    \n    # Select drivers (top features with non-zero coefficients)\n    drivers = [selected[i] for i in ranked_indices if coefs[i] > 0][:4]\n    \n    # For products, look for interactions between top drivers\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a, b))\n    \n    # Create loadings for weighted score\n    loadings = dict(zip(selected, coefs))\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(selected),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9014,
+  "completion_tokens": 2548,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2884
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3081
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2790
+   }
+  ],
+  "wall_s": 28.9
+ }
+}

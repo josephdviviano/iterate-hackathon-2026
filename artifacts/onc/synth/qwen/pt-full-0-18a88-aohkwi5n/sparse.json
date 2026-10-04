@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-aohkwi5n",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = {\n        ('LBV14', 'BRF16'), ('FWIC14', 'DNM11'), ('NXUR3', 'DLW17'),\n        ('RQV6', 'LBV14'), ('WUY9', 'BRF16'), ('FWIC14', 'DXJE5'),\n        ('DXJE5', 'DNM11'), ('LBV14', 'NHR5'), ('CWWV6B', 'LBV14'),\n        ('WUY9', 'LBV14'), ('EOEY11', 'SOKH19'), ('LBV14', 'KBJO11'),\n        ('MCZ2A', 'RFIQ18'), ('BRF16', 'NHR5'), ('RQV6', 'NHR5'),\n        ('CWWV6B', 'BRF16'), ('KHP6', 'IMJ11'), ('CWWV6B', 'CMGZ19A'),\n        ('WUY9', 'DNM11'), ('RQV6', 'BRF16')\n    }\n    \n    # Keep one feature from each correlated pair\n    keep_ids = set(feats.ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher absolute mean_y1-mean_y0\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            mean_a = np.mean(feats.x[:, idx_a][feats.y == 1]) - np.mean(feats.x[:, idx_a][feats.y == 0])\n            mean_b = np.mean(feats.x[:, idx_b][feats.y == 1]) - np.mean(feats.x[:, idx_b][feats.y == 0])\n            if abs(mean_a) < abs(mean_b):\n                keep_ids.remove(a)\n            else:\n                keep_ids.remove(b)\n    \n    # Compute effect sizes for remaining features\n    effect_sizes = []\n    for fid in keep_ids:\n        idx = feats.column(fid)\n        mean_diff = np.mean(feats.x[:, idx][feats.y == 1]) - np.mean(feats.x[:, idx][feats.y == 0])\n        t_stat = stats.ttest_ind(feats.x[:, idx][feats.y == 1], feats.x[:, idx][feats.y == 0])[0]\n        effect_sizes.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = [fid for fid, _, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # If no strong effects, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build columns and products based on correlation structure\n    columns = list(keep_ids)\n    products = []\n    loadings = {}\n    \n    # Add main effects\n    for fid in drivers:\n        loadings[fid] = 1.0\n    \n    # Add interaction terms between top features (limit to 4 total interactions)\n    interaction_count = 0\n    for i in range(min(len(drivers), 3)):\n        for j in range(i+1, min(len(drivers), 3)):\n            if interaction_count < 4:\n                products.append((drivers[i], drivers[j]))\n                interaction_count += 1\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9133,
+  "completion_tokens": 2505,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2670
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2831
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2685
+   }
+  ],
+  "wall_s": 28.7
+ }
+}

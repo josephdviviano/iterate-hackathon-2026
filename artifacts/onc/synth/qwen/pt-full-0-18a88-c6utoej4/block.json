@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-c6utoej4",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify top features by effect size (mean_y1-mean_y0)\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        # Calculate mean difference for this feature\n        y0_mean = np.mean(feats.x[feats.y==0, i])\n        y1_mean = np.mean(feats.x[feats.y==1, i])\n        effect = abs(y1_mean - y0_mean)\n        effects.append((effect, fid))\n    \n    # Sort by effect size and take top 10\n    effects.sort(reverse=True)\n    top_features = [fid for _, fid in effects[:10]]\n    \n    # Check for strong correlations among top features\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n    \n    # Find highly correlated pairs (|r| >= 0.6)\n    correlated_pairs = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                correlated_pairs.append((top_features[i], top_features[j]))\n    \n    # If we have correlated pairs, use the first feature as driver\n    if correlated_pairs:\n        # Use first feature from first correlated pair as driver\n        driver = correlated_pairs[0][0]\n        # Use all features in the correlation group\n        module_features = set()\n        for a, b in correlated_pairs:\n            module_features.add(a)\n            module_features.add(b)\n        module_features = list(module_features)\n        \n        # Return simple design with driver and module\n        return Design(\n            drivers=(driver,),\n            columns=tuple(module_features),\n            products=(),\n            loadings={fid: 1.0/len(module_features) for fid in module_features}\n        )\n    \n    # No strong correlations found, just return top feature\n    if top_features:\n        return Design(\n            drivers=(top_features[0],),\n            columns=(top_features[0],),\n            products=(),\n            loadings={top_features[0]: 1.0}\n        )\n    \n    return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify top features by effect size (mean_y1-mean_y0)\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        # Calculate mean difference for this feature\n        y0_mean = np.mean(feats.x[feats.y==0, i])\n        y1_mean = np.mean(feats.x[feats.y==1, i])\n        effect = abs(y1_mean - y0_mean)\n        effects.append((effect, fid))\n    \n    # Sort by effect size and take top 10\n    effects.sort(reverse=True)\n    top_features = [fid for _, fid in effects[:10]]\n    \n    # Check for strong correlations among top features\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n    \n    # Find highly correlated pairs (|r| >= 0.6)\n    correlated_pairs = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                correlated_pairs.append((top_features[i], top_features[j]))\n    \n    # If we have correlated pairs, use the first feature as driver\n    if correlated_pairs:\n        # Use first feature from first correlated pair as driver\n        driver = correlated_pairs[0][0]\n        # Use all features in the correlation group\n        module_features = set()\n        for a, b in correlated_pairs:\n            module_features.add(a)\n            module_features.add(b)\n        module_features = list(module_features)\n        \n        # Return simple design with driver and module\n        return Design(\n            drivers=(driver,),\n            columns=tuple(module_features),\n            products=(),\n            loadings={fid: 1.0/len(module_features) for fid in module_features}\n        )\n    \n    # No strong correlations found, just return top feature\n    if top_features:\n        return Design(\n            drivers=(top_features[0],),\n            columns=(top_features[0],),\n            products=(),\n            loadings={top_features[0]: 1.0}\n        )\n    \n    return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8069,
+  "completion_tokens": 1372,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 1814
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1790
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2054
+   }
+  ],
+  "wall_s": 16.1
+ }
+}

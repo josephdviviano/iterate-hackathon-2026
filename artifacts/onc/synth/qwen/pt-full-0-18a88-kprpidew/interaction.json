@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-kprpidew",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Find features with strong association to outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for driver selection\n        y1 = feats.x[feats.y == 1, i]\n        y0 = feats.x[feats.y == 0, i]\n        tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effect = abs(tstat)\n        effects.append((effect, fid))\n    \n    effects.sort(reverse=True)\n    drivers = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # Remove duplicates and ensure at most MAX_DRIVERS\n    seen = set()\n    unique_drivers = []\n    for fid in drivers:\n        if fid not in seen:\n            seen.add(fid)\n            unique_drivers.append(fid)\n            if len(unique_drivers) >= MAX_DRIVERS:\n                break\n    drivers = unique_drivers\n    \n    # Check for product terms among top features\n    products = set()\n    correlated_pairs = [\n        ('EML6B', 'TGAY15'), ('TLS3', 'BEYD13'), ('EML6B', 'BEYD13'),\n        ('BEYD13', 'EME7'), ('ZWZ17P', 'BEYD13'), ('NRQ2', 'WVO13P'),\n        ('EML6B', 'TLS3'), ('BEYD13', 'UFY17'), ('QTQ11', 'BEYD13'),\n        ('BEYD13', 'TGAY15'), ('TLS3', 'ZWZ17P'), ('EML6B', 'EME7'),\n        ('TLS3', 'EME7'), ('PICS11A', 'PTO11'), ('ZWZ17P', 'EME7'),\n        ('EML6B', 'ZWZ17P'), ('TLS3', 'TGAY15'), ('QTQ11', 'TLS3'),\n        ('EML6B', 'UFY17'), ('EME7', 'UFY17')\n    ]\n    \n    # If we have drivers, look for interactions\n    if drivers:\n        # Check if any top drivers form correlated pairs\n        for a, b in correlated_pairs:\n            if a in drivers and b in drivers:\n                products.add((a, b))\n    \n    # Select all features with strong effect for regression\n    columns = [fid for _, fid in effects[:min(20, len(effects))]]\n    \n    # Build loadings based on effect sizes\n    loadings = {}\n    for effect, fid in effects:\n        if effect > 2.0:  # Strong effect threshold\n            loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8329,
+  "completion_tokens": 1952,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1972
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2292
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2198
+   }
+  ],
+  "wall_s": 22.3
+ }
+}

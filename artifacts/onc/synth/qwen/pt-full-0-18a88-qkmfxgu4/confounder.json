@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qkmfxgu4",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers (clinical or cohort variables)\n    clinical_vars = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'clinical']\n    \n    # Check if any clinical variable shows strong association with outcome\n    best_clinical = None\n    best_p = 1.0\n    for fid in clinical_vars:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        if p_val < best_p:\n            best_p = p_val\n            best_clinical = fid\n    \n    # If we have a strong clinical driver, adjust for it\n    if best_clinical and best_p < 0.05:\n        col_idx = feats.column(best_clinical)\n        adjusted_x = feats.x.copy()\n        # Remove linear effect of clinical variable\n        for i in range(feats.x.shape[1]):\n            if i != col_idx:\n                coef = np.corrcoef(adjusted_x[:, col_idx], adjusted_x[:, i])[0,1]\n                adjusted_x[:, i] -= coef * adjusted_x[:, col_idx]\n        \n        # Use adjusted data for further analysis\n        x = adjusted_x\n    else:\n        x = feats.x\n        best_clinical = None\n    \n    # Calculate correlations between features to identify near-duplicates\n    corr_matrix = np.corrcoef(x.T)\n    near_duplicates = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                near_duplicates.add((feats.ids[i], feats.ids[j]))\n    \n    # Rank features by association with outcome\n    feature_scores = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        x_col = x[:, col_idx]\n        t_stat, p_val = stats.ttest_ind(x_col[feats.y==1], x_col[feats.y==0])\n        effect_size = np.mean(x_col[feats.y==1]) - np.mean(x_col[feats.y==0])\n        feature_scores.append((fid, abs(effect_size), abs(t_stat), p_val))\n    \n    # Sort by effect size and significance\n    feature_scores.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features, avoiding near-duplicates\n    selected_features = []\n    used_ids = set()\n    \n    for fid, _, _, _ in feature_scores:\n        # Skip if this feature or its duplicate is already selected\n        skip = False\n        for dup_pair in near_duplicates:\n            if fid in dup_pair:\n                other_fid = dup_pair[0] if dup_pair[0] != fid else dup_pair[1]\n                if other_fid in used_ids:\n                    skip = True\n                    break\n        \n        if not skip:\n            selected_features.append(fid)\n            used_ids.add(fid)\n            \n            # Stop when we have enough features or hit limit\n            if len(selected_features) >= 10:\n                break\n    \n    # If no strong associations found, return empty design\n    if not selected_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For simplicity, use first few features as drivers\n    # Ensure we don't exceed MAX_DRIVERS\n    drivers = tuple(selected_features[:min(MAX_DRIVERS, len(selected_features))])\n    \n    # Select all features for regression\n    columns = tuple(selected_features)\n    \n    # Look for interactions between top features\n    products = []\n    top_features = selected_features[:5]  # Top 5 features for interaction testing\n    \n    # Simple pairwise interaction detection\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            products.append((a, b))\n    \n    # Weighted score based on standardized values\n    loadings = {}\n    for fid in selected_features:\n        col_idx = feats.column(fid)\n        # Use effect size as weight\n        x_col = x[:, col_idx]\n        effect_size = np.mean(x_col[feats.y==1]) - np.mean(x_col[feats.y==0])\n        loadings[fid] = effect_size\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9314,
+  "completion_tokens": 2915,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4055
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4125
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3988
+   }
+  ],
+  "wall_s": 33.2
+ }
+}

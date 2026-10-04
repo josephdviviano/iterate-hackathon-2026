@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-fnvhzj6b",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [\n        ('ROXB19', 'CDSL12A'), ('ZVQX3', 'ROXB19'), ('CDSL12A', 'NRU12'),\n        ('SFIQ9', 'WMS11'), ('ZVQX3', 'CDSL12A'), ('RRPK18', 'PVEM3A'),\n        ('QBAF4', 'RRPK18'), ('ROXB19', 'XTY18'), ('ROXB19', 'GYZ4'),\n        ('ZVQX3', 'XTY18'), ('EOK12L', 'UHG2L'), ('CDSL12A', 'XTY18'),\n        ('WMS11', 'RZIS1'), ('ROXB19', 'NRU12'), ('SFIQ9', 'RZIS1'),\n        ('WMS11', 'ROXB19'), ('QBAF4', 'PVEM3A'), ('ISOM4', 'ROXB19'),\n        ('ROXB19', 'FNIR4'), ('ZVQX3', 'GYZ4')\n    ]\n    \n    # Keep only one feature from each near-duplicate pair\n    to_remove = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            corr = np.corrcoef(feats.x[:, idx_a], feats.x[:, idx_b])[0, 1]\n            if abs(corr) >= 0.6:\n                to_remove.add(b)\n    \n    valid_ids = [fid for fid in feats.ids if fid not in to_remove]\n    \n    # Calculate effect sizes using Welch's t-test\n    effect_sizes = []\n    for fid in valid_ids:\n        idx = feats.column(fid)\n        x1 = feats.x[feats.y == 1, idx]\n        x0 = feats.x[feats.y == 0, idx]\n        if len(x1) > 0 and len(x0) > 0:\n            t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n            effect_sizes.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers\n    drivers = tuple(fid for fid, _ in effect_sizes[:MAX_DRIVERS])\n    \n    # For columns, use top 3 features\n    columns = tuple(fid for fid, _ in effect_sizes[:3])\n    \n    # For products, use simple interaction between top two drivers\n    products = []\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    # Simple weighted score using top driver\n    loadings = {drivers[0]: 1.0} if drivers else {}\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [\n        ('ROXB19', 'CDSL12A'), ('ZVQX3', 'ROXB19'), ('CDSL12A', 'NRU12'),\n        ('SFIQ9', 'WMS11'), ('ZVQX3', 'CDSL12A'), ('RRPK18', 'PVEM3A'),\n        ('QBAF4', 'RRPK18'), ('ROXB19', 'XTY18'), ('ROXB19', 'GYZ4'),\n        ('ZVQX3', 'XTY18'), ('EOK12L', 'UHG2L'), ('CDSL12A', 'XTY18'),\n        ('WMS11', 'RZIS1'), ('ROXB19', 'NRU12'), ('SFIQ9', 'RZIS1'),\n        ('WMS11', 'ROXB19'), ('QBAF4', 'PVEM3A'), ('ISOM4', 'ROXB19'),\n        ('ROXB19', 'FNIR4'), ('ZVQX3', 'GYZ4')\n    ]\n    \n    # Keep only one feature from each near-duplicate pair\n    to_remove = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            corr = np.corrcoef(feats.x[:, idx_a], feats.x[:, idx_b])[0, 1]\n            if abs(corr) >= 0.6:\n                to_remove.add(b)\n    \n    valid_ids = [fid for fid in feats.ids if fid not in to_remove]\n    \n    # Calculate effect sizes using Welch's t-test\n    effect_sizes = []\n    for fid in valid_ids:\n        idx = feats.column(fid)\n        x1 = feats.x[feats.y == 1, idx]\n        x0 = feats.x[feats.y == 0, idx]\n        if len(x1) > 0 and len(x0) > 0:\n            t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n            effect_sizes.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers\n    drivers = tuple(fid for fid, _ in effect_sizes[:MAX_DRIVERS])\n    \n    # For columns, use top 3 features\n    columns = tuple(fid for fid, _ in effect_sizes[:3])\n    \n    # For products, use simple interaction between top two drivers\n    products = []\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    # Simple weighted score using top driver\n    loadings = {drivers[0]: 1.0} if drivers else {}\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5036,
+  "completion_tokens": 1458,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2481
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2093
+   }
+  ],
+  "wall_s": 16.7
+ }
+}

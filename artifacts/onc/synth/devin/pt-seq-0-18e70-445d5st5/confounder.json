@@ -1,0 +1,32 @@
+{
+ "world_id": "pt-seq-0-18e70-445d5st5",
+ "seed": "confounder",
+ "ok": true,
+ "source": "def design(feats):\n    import numpy as np\n    X = np.asarray(feats.x, dtype=float)\n    y = np.asarray(feats.y, dtype=float)\n    ids = list(feats.ids)\n    types = list(feats.types)\n    n, p = X.shape\n    X = X - X.mean(0)\n    sd = X.std(0)\n    sd[sd < 1e-9] = 1e-9\n    X = X / sd\n    yc = y - y.mean()\n\n    def corr(a, b):\n        return float(a @ b) / (np.sqrt((a @ a) * (b @ b)) + 1e-12)\n\n    marg = np.array([corr(X[:, j], yc) for j in range(p)])\n    tmarg = np.abs(marg) * np.sqrt(n - 2) / np.sqrt(1.0 - marg ** 2 + 1e-12)\n    C = np.corrcoef(X.T) if p > 1 else np.zeros((p, p))\n    np.fill_diagonal(C, 0.0)\n\n    clin = np.array([t == \"clinical\" for t in types])\n    hub = (np.abs(C) > 0.2).sum(0)\n    score = np.abs(marg) * (1.0 + 0.2 * hub) * (1.0 + 0.6 * clin)\n    cand = [int(j) for j in np.argsort(-score) if tmarg[j] > 1.8]\n\n    ci = cand[0] if cand else -1\n    strong = tmarg.max() >= 3.0\n    confounder_pattern = ci >= 0 and clin[ci] and tmarg[ci] >= 2.2 and hub[ci] >= 4\n    if not (strong or confounder_pattern):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n\n    b = X[:, ci]\n    Xr = X - np.outer(b, b @ X / (b @ b + 1e-12))\n    yr = yc - b * (b @ yc) / (b @ b + 1e-12)\n    res = np.array([corr(Xr[:, j], yr) for j in range(p)])\n    res[ci] = 0.0\n    tres = np.abs(res) * np.sqrt(n - 3) / np.sqrt(1.0 - res ** 2 + 1e-12)\n\n    cols = [ci]\n    for j in np.argsort(-tres):\n        if len(cols) >= MAX_DRIVERS or tres[j] <= 3.0:\n            break\n        if all(abs(C[j, k]) < 0.7 for k in cols):\n            cols.append(int(j))\n\n    loadings = {}\n    w = {ids[j]: float(C[j, ci]) for j in range(p)\n         if j != ci and abs(C[j, ci]) > 0.25}\n    if len(w) >= 3:\n        loadings = w\n    return Design(drivers=tuple(ids[j] for j in cols),\n                  columns=tuple(ids[j] for j in cols),\n                  products=(), loadings=loadings)\n",
+ "last_source": "def design(feats):\n    import numpy as np\n    X = np.asarray(feats.x, dtype=float)\n    y = np.asarray(feats.y, dtype=float)\n    ids = list(feats.ids)\n    types = list(feats.types)\n    n, p = X.shape\n    X = X - X.mean(0)\n    sd = X.std(0)\n    sd[sd < 1e-9] = 1e-9\n    X = X / sd\n    yc = y - y.mean()\n\n    def corr(a, b):\n        return float(a @ b) / (np.sqrt((a @ a) * (b @ b)) + 1e-12)\n\n    marg = np.array([corr(X[:, j], yc) for j in range(p)])\n    tmarg = np.abs(marg) * np.sqrt(n - 2) / np.sqrt(1.0 - marg ** 2 + 1e-12)\n    C = np.corrcoef(X.T) if p > 1 else np.zeros((p, p))\n    np.fill_diagonal(C, 0.0)\n\n    clin = np.array([t == \"clinical\" for t in types])\n    hub = (np.abs(C) > 0.2).sum(0)\n    score = np.abs(marg) * (1.0 + 0.2 * hub) * (1.0 + 0.6 * clin)\n    cand = [int(j) for j in np.argsort(-score) if tmarg[j] > 1.8]\n\n    ci = cand[0] if cand else -1\n    strong = tmarg.max() >= 3.0\n    confounder_pattern = ci >= 0 and clin[ci] and tmarg[ci] >= 2.2 and hub[ci] >= 4\n    if not (strong or confounder_pattern):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n\n    b = X[:, ci]\n    Xr = X - np.outer(b, b @ X / (b @ b + 1e-12))\n    yr = yc - b * (b @ yc) / (b @ b + 1e-12)\n    res = np.array([corr(Xr[:, j], yr) for j in range(p)])\n    res[ci] = 0.0\n    tres = np.abs(res) * np.sqrt(n - 3) / np.sqrt(1.0 - res ** 2 + 1e-12)\n\n    cols = [ci]\n    for j in np.argsort(-tres):\n        if len(cols) >= MAX_DRIVERS or tres[j] <= 3.0:\n            break\n        if all(abs(C[j, k]) < 0.7 for k in cols):\n            cols.append(int(j))\n\n    loadings = {}\n    w = {ids[j]: float(C[j, ci]) for j in range(p)\n         if j != ci and abs(C[j, ci]) > 0.25}\n    if len(w) >= 3:\n        loadings = w\n    return Design(drivers=tuple(ids[j] for j in cols),\n                  columns=tuple(ids[j] for j in cols),\n                  products=(), loadings=loadings)\n",
+ "meta": {
+  "backend": "devin",
+  "rounds": 2,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ValueError: forbidden token(s) ['getattr(']",
+    "bytes": 1913
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1883
+   }
+  ],
+  "attachment": true,
+  "session_id": "devin-1734e34c5b3644cda57bd35650aedda0",
+  "session_url": "https://app.devin.ai/sessions/1734e34c5b3644cda57bd35650aedda0",
+  "status": "blocked",
+  "wall_s": 372.8
+ }
+}

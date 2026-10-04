@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-nk8v5iiw",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for each feature\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        if len(group0) > 1 and len(group1) > 1:\n            t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        else:\n            p_val = 1.0\n            \n        effects.append((fid, effect_size, p_val))\n    \n    # Sort by absolute effect size\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top drivers (max 2)\n    drivers = []\n    for fid, effect, pval in effects[:5]:  # Look at top 5\n        if pval < 0.05:  # Only consider significant features\n            drivers.append(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # Simple approach: just use the most significant features\n    # Select features for regression (top 5 significant ones)\n    columns = []\n    for fid, effect, pval in effects[:5]:\n        if pval < 0.05:\n            columns.append(fid)\n    \n    # If we have drivers, include them in columns\n    for d in drivers:\n        if d not in columns:\n            columns.append(d)\n    \n    # No products for simplicity\n    products = ()\n    \n    # Weighted score using drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for each feature\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        if len(group0) > 1 and len(group1) > 1:\n            t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        else:\n            p_val = 1.0\n            \n        effects.append((fid, effect_size, p_val))\n    \n    # Sort by absolute effect size\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top drivers (max 2)\n    drivers = []\n    for fid, effect, pval in effects[:5]:  # Look at top 5\n        if pval < 0.05:  # Only consider significant features\n            drivers.append(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # Simple approach: just use the most significant features\n    # Select features for regression (top 5 significant ones)\n    columns = []\n    for fid, effect, pval in effects[:5]:\n        if pval < 0.05:\n            columns.append(fid)\n    \n    # If we have drivers, include them in columns\n    for d in drivers:\n        if d not in columns:\n            columns.append(d)\n    \n    # No products for simplicity\n    products = ()\n    \n    # Weighted score using drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5127,
+  "completion_tokens": 1085,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2614
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1708
+   }
+  ],
+  "wall_s": 13.9
+ }
+}

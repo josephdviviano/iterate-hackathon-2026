@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-ds04yo44",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong features by mean difference and t-test\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(feats.x[:, i].mean() * 2 * feats.y.mean()) > 0.2:\n            strong_features.append(i)\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    corr_matrix = np.corrcoef(feats.x.T)\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i, j]) > 0.6:\n                to_remove.add(j)\n    \n    # Build candidate set\n    candidates = [i for i in strong_features if i not in to_remove]\n    \n    # If no candidates, return empty design\n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use mutual information to rank features\n    mi_scores = mutual_info_classif(feats.x[:, candidates], feats.y)\n    ranked_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    selected_ids = [feats.ids[candidates[i]] for i in ranked_indices]\n    \n    # Try simple logistic regression with selected features\n    X_selected = feats.x[:, candidates]\n    lr = LogisticRegression(penalty='l1', solver='liblinear', C=0.1)\n    lr.fit(X_selected, feats.y)\n    \n    # Get coefficients for weighting\n    weights = dict(zip(selected_ids, lr.coef_[0]))\n    \n    # Check for interactions between top features\n    products = []\n    if len(selected_ids) >= 2:\n        # Consider top 2 features for interaction\n        top_features = selected_ids[:2]\n        for i, a in enumerate(top_features):\n            for b in top_features[i+1:]:\n                products.append((a, b))\n    \n    # Return design\n    return Design(\n        drivers=tuple(selected_ids),\n        columns=tuple(selected_ids),\n        products=tuple(products),\n        loadings=weights\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong features by mean difference and t-test\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(feats.x[:, i].mean() * 2 * feats.y.mean()) > 0.2:\n            strong_features.append(i)\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    corr_matrix = np.corrcoef(feats.x.T)\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i, j]) > 0.6:\n                to_remove.add(j)\n    \n    # Build candidate set\n    candidates = [i for i in strong_features if i not in to_remove]\n    \n    # If no candidates, return empty design\n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use mutual information to rank features\n    mi_scores = mutual_info_classif(feats.x[:, candidates], feats.y)\n    ranked_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    selected_ids = [feats.ids[candidates[i]] for i in ranked_indices]\n    \n    # Try simple logistic regression with selected features\n    X_selected = feats.x[:, candidates]\n    lr = LogisticRegression(penalty='l1', solver='liblinear', C=0.1)\n    lr.fit(X_selected, feats.y)\n    \n    # Get coefficients for weighting\n    weights = dict(zip(selected_ids, lr.coef_[0]))\n    \n    # Check for interactions between top features\n    products = []\n    if len(selected_ids) >= 2:\n        # Consider top 2 features for interaction\n        top_features = selected_ids[:2]\n        for i, a in enumerate(top_features):\n            for b in top_features[i+1:]:\n                products.append((a, b))\n    \n    # Return design\n    return Design(\n        drivers=tuple(selected_ids),\n        columns=tuple(selected_ids),\n        products=tuple(products),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4884,
+  "completion_tokens": 976,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: 5 drivers; at most 4",
+    "bytes": 2043
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2043
+   }
+  ],
+  "wall_s": 11.4
+ }
+}

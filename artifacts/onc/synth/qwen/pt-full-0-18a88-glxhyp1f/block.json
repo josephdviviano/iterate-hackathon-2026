@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-glxhyp1f",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check for strong correlations (|r| >= 0.6) among features\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # If no strong correlations, no mechanism\n    if not high_corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Group correlated features into modules\n    feature_groups = []\n    used_features = set()\n    \n    for a, b in high_corr_pairs:\n        if a in used_features or b in used_features:\n            # Try to merge with existing group\n            merged = False\n            for group in feature_groups:\n                if a in group or b in group:\n                    group.add(a)\n                    group.add(b)\n                    merged = True\n                    break\n            if not merged:\n                feature_groups.append({a, b})\n        else:\n            feature_groups.append({a, b})\n        \n        used_features.add(a)\n        used_features.add(b)\n    \n    # If no groups formed, no mechanism\n    if not feature_groups:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use the largest group as our module\n    largest_group = max(feature_groups, key=len)\n    module_features = list(largest_group)\n    \n    # Calculate weighted loading score using mean values\n    loadings = {}\n    for fid in module_features:\n        idx = feats.column(fid)\n        # Weight by effect size difference\n        mean_y1 = np.mean(feats.x[feats.y==1, idx])\n        mean_y0 = np.mean(feats.x[feats.y==0, idx])\n        loadings[fid] = mean_y1 - mean_y0\n    \n    # Select drivers by effect size (max 4 to stay under limit)\n    effect_sizes = [(fid, abs(loadings[fid])) for fid in module_features]\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    drivers = tuple(fid for fid, _ in effect_sizes[:min(4, len(effect_sizes))])\n    \n    # Include all module features in columns\n    columns = tuple(module_features)\n    \n    # No interaction terms\n    products = ()\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8496,
+  "completion_tokens": 1839,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3103
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2337
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2355
+   }
+  ],
+  "wall_s": 21.1
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tznf9695",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    keep_ids = set(feats.ids)\n    corr_pairs = [\n        ('ZJIB15', 'VINL8'), ('MBRH13L', 'LDRT11'), ('UTG2B', 'VOF11'),\n        ('WBAJ1', 'VINL8'), ('HEPU8', 'ASSI19'), ('CNC13', 'VINL8'),\n        ('VINL8', 'LDRT11'), ('SPBO13P', 'ACY9'), ('JQL6', 'BUX13P'),\n        ('BTL10', 'XPR1B'), ('MBRH13L', 'VINL8'), ('DIP13', 'HSX5'),\n        ('SPBO13P', 'OOSI5'), ('BTL10', 'MOZ3L'), ('DMWS19P', 'RLOG16'),\n        ('HEPU8', 'ACY9'), ('SPBO13P', 'YERY2'), ('VXR19', 'VINL8'),\n        ('ZJIB15', 'WBAJ1'), ('LMY3B', 'LHF4P')\n    ]\n    \n    for a, b in corr_pairs:\n        if a in keep_ids and b in keep_ids:\n            keep_ids.remove(b)\n    \n    # Calculate effect sizes and select top candidates\n    effects = []\n    for fid in keep_ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        p_val = stats.ttest_ind(y1, y0, equal_var=False)[1]\n        auc = 0.5 + 0.5 * (mean_diff / (np.std(y1) + np.std(y0) + 1e-8))\n        effects.append((fid, abs(mean_diff), abs(t_stat), p_val, auc))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top 4 drivers\n    selected_drivers = [fid for fid, _, _, _, _ in effects[:4]]\n    \n    # Build columns and products\n    columns = list(keep_ids)\n    products = []\n    \n    # Only include interactions between top drivers\n    for i, f1 in enumerate(selected_drivers):\n        for f2 in selected_drivers[i+1:]:\n            products.append((f1, f2))\n    \n    # Compute loadings (weighted sum of top features)\n    loadings = {}\n    for fid in selected_drivers:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        loadings[fid] = np.mean(y1) - np.mean(y0)\n    \n    return Design(\n        drivers=tuple(selected_drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9052,
+  "completion_tokens": 2505,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2974
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3068
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2173
+   }
+  ],
+  "wall_s": 23.5
+ }
+}

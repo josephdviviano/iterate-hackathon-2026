@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9jvrfhtd",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out derived features as they're less likely to be causal\n    non_derived_mask = [t != 'derived' for t in feats.types]\n    ids = [feats.ids[i] for i in range(len(feats.ids)) if non_derived_mask[i]]\n    \n    # Remove near-duplicates based on correlation\n    keep_ids = []\n    seen = set()\n    for i, id1 in enumerate(ids):\n        if id1 in seen:\n            continue\n        keep_ids.append(id1)\n        seen.add(id1)\n        \n        # Check correlations with remaining features\n        for j, id2 in enumerate(ids[i+1:], i+1):\n            if id2 in seen:\n                continue\n            col1_idx = feats.column(id1)\n            col2_idx = feats.column(id2)\n            corr = np.corrcoef(feats.x[:, col1_idx], feats.x[:, col2_idx])[0,1]\n            if abs(corr) >= 0.6:\n                seen.add(id2)\n    \n    # Calculate effect sizes and select top candidates\n    effect_sizes = []\n    for id in keep_ids:\n        col_idx = feats.column(id)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        effect_size = y1_mean - y0_mean\n        effect_sizes.append((id, abs(effect_size)))\n    \n    # Sort by effect size and take top 4\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    drivers = [id for id, _ in effect_sizes[:4]]\n    \n    # Use all kept features for columns\n    columns = keep_ids\n    \n    # No products for simplicity\n    products = ()\n    \n    # Single loading for the first driver\n    loadings = {drivers[0]: 1.0} if drivers else {}\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8122,
+  "completion_tokens": 1621,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2256
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2276
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1731
+   }
+  ],
+  "wall_s": 18.8
+ }
+}

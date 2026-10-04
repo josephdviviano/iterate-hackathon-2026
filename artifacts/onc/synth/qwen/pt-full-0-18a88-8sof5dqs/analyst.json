@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-8sof5dqs",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    keep_ids = set(feats.ids)\n    corr_pairs = [\n        ('BTCK14', 'OBBC5L'), ('ZVM14', 'NDD3'), ('NSNG16', 'OBBC5L'),\n        ('CPJ1', 'NSNG16'), ('LJF2', 'NSNG16'), ('NSNG16', 'EQHQ2'),\n        ('NSNG16', 'RDN1'), ('KTL14L', 'NDD3'), ('VVA1', 'EQHQ2'),\n        ('BTCK14', 'NSNG16'), ('ZJT16', 'KYX3'), ('BCQT6', 'NSNG16'),\n        ('KET8', 'NSNG16'), ('CVF15', 'NSNG16'), ('VVA1', 'NSNG16'),\n        ('CQNR15', 'EQHQ2'), ('CPJ1', 'OBBC5L'), ('KTL14L', 'ZVM14'),\n        ('VBN1', 'NSNG16'), ('OBBC5L', 'RDN1')\n    ]\n    \n    for a, b in corr_pairs:\n        if a in keep_ids and b in keep_ids:\n            keep_ids.remove(b)\n    \n    # Select top features by t-statistic\n    top_features = []\n    for i, fid in enumerate(feats.ids):\n        if fid in keep_ids:\n            t_stat = abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1])\n            top_features.append((fid, t_stat))\n    \n    top_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # If no strong signal, return empty design\n    if not top_features or top_features[0][1] < 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select drivers (top 3 or fewer to keep model small)\n    drivers = tuple(fid for fid, _ in top_features[:3])\n    \n    # Build columns (keep only top 5 features)\n    columns = [fid for fid in feats.ids if fid in keep_ids][:5]\n    \n    # Build products (only one interaction term max)\n    products = []\n    if len(columns) >= 2:\n        products = [(columns[0], columns[1])]\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, (fid, _) in enumerate(top_features[:len(columns)]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    keep_ids = set(feats.ids)\n    corr_pairs = [\n        ('BTCK14', 'OBBC5L'), ('ZVM14', 'NDD3'), ('NSNG16', 'OBBC5L'),\n        ('CPJ1', 'NSNG16'), ('LJF2', 'NSNG16'), ('NSNG16', 'EQHQ2'),\n        ('NSNG16', 'RDN1'), ('KTL14L', 'NDD3'), ('VVA1', 'EQHQ2'),\n        ('BTCK14', 'NSNG16'), ('ZJT16', 'KYX3'), ('BCQT6', 'NSNG16'),\n        ('KET8', 'NSNG16'), ('CVF15', 'NSNG16'), ('VVA1', 'NSNG16'),\n        ('CQNR15', 'EQHQ2'), ('CPJ1', 'OBBC5L'), ('KTL14L', 'ZVM14'),\n        ('VBN1', 'NSNG16'), ('OBBC5L', 'RDN1')\n    ]\n    \n    for a, b in corr_pairs:\n        if a in keep_ids and b in keep_ids:\n            keep_ids.remove(b)\n    \n    # Select top features by t-statistic\n    top_features = []\n    for i, fid in enumerate(feats.ids):\n        if fid in keep_ids:\n            t_stat = abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1])\n            top_features.append((fid, t_stat))\n    \n    top_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # If no strong signal, return empty design\n    if not top_features or top_features[0][1] < 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select drivers (top 3 or fewer to keep model small)\n    drivers = tuple(fid for fid, _ in top_features[:3])\n    \n    # Build columns (keep only top 5 features)\n    columns = [fid for fid in feats.ids if fid in keep_ids][:5]\n    \n    # Build products (only one interaction term max)\n    products = []\n    if len(columns) >= 2:\n        products = [(columns[0], columns[1])]\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, (fid, _) in enumerate(top_features[:len(columns)]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8375,
+  "completion_tokens": 2034,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2286
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2304
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2060
+   }
+  ],
+  "wall_s": 23.0
+ }
+}

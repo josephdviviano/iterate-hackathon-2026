@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-lz75bizb",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('QZQQ11', 'MYPE17B'), ('KSM7', 'NWVR16'), ('QZQQ11', 'LJZ11'), \n        ('LJZ11', 'MYPE17B'), ('QSKT1B', 'NAV7'), ('DVTW13P', 'QZQQ11'),\n        ('DVTW13P', 'MYPE17B'), ('DVTW13P', 'LJZ11'), ('OPBN13', 'WLN8A'),\n        ('ELCD19P', 'PSBF19'), ('LSS6', 'XRAB13P'), ('FSL5', 'QZQQ11'),\n        ('QZQQ11', 'GPJ12'), ('QZQQ11', 'NAV7'), ('FSL5', 'MYPE17B'),\n        ('GPJ12', 'MYPE17B'), ('QZQQ11', 'QSKT1B'), ('NAV7', 'MYPE17B'),\n        ('NLH4', 'XRAB13P'), ('QZQQ11', 'OMU15L')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Remove near-duplicates (keep first in pair)\n    dup_features = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            try:\n                corr_val = np.corrcoef(feats.x[:, feats.column(a)], feats.x[:, feats.column(b)])[0,1]\n                if abs(corr_val) >= 0.6:\n                    dup_features.add(b)\n            except:\n                pass\n    \n    # Get non-duplicate features\n    keep_ids = [fid for fid in feats.ids if fid not in dup_features]\n    \n    # Compute effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for fid in keep_ids:\n        col_idx = feats.column(fid)\n        x_col = feats.x[:, col_idx]\n        y = feats.y\n        mean_0 = np.mean(x_col[y == 0])\n        mean_1 = np.mean(x_col[y == 1])\n        effect_size = abs(mean_1 - mean_0)\n        effect_sizes.append((fid, effect_size))\n    \n    # Sort by effect size descending\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = [fid for fid, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # For logistic regression, we want all features that are significantly associated\n    # Use Welch's t-test to identify significant features\n    columns = []\n    loadings = {}\n    \n    for fid in keep_ids:\n        col_idx = feats.column(fid)\n        x_col = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Welch's t-test\n        group0 = x_col[y == 0]\n        group1 = x_col[y == 1]\n        \n        if len(group0) > 1 and len(group1) > 1:\n            t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n            if p_val < 0.05:\n                columns.append(fid)\n                # Use standardized effect size as loading\n                mean_diff = np.mean(group1) - np.mean(group0)\n                std_pooled = np.sqrt(((len(group0)-1)*np.var(group0) + (len(group1)-1)*np.var(group1)) / (len(group0)+len(group1)-2))\n                if std_pooled > 0:\n                    loading = mean_diff / std_pooled\n                    loadings[fid] = loading\n    \n    # Identify potential interaction terms (correlated features)\n    products = []\n    for a, b in corr_pairs:\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9353,
+  "completion_tokens": 2817,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3020
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3331
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3104
+   }
+  ],
+  "wall_s": 31.5
+ }
+}

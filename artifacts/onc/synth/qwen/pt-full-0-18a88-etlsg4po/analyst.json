@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-etlsg4po",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Calculate correlations and identify near-duplicates\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Remove near-duplicates\n    keep_indices = [i for i in range(len(ids)) if ids[i] not in to_remove]\n    keep_ids = [ids[i] for i in keep_indices]\n    \n    # Compute effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        group0 = x[y==0, i]\n        group1 = x[y==1, i]\n        mean_diff = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(mean_diff))\n    \n    # Sort by effect size\n    sorted_idx = np.argsort(effect_sizes)[::-1]\n    sorted_ids = [keep_ids[i] for i in sorted_idx]\n    \n    # Select top drivers (max MAX_DRIVERS)\n    drivers = tuple(sorted_ids[:min(MAX_DRIVERS, len(sorted_ids))])\n    \n    # For columns, use all features with significant effect (p < 0.1)\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Simple logistic regression approach: select features with large effect sizes\n    for i, fid in enumerate(keep_ids):\n        group0 = x[y==0, i]\n        group1 = x[y==1, i]\n        t_stat, p_val = stats.ttest_ind(group0, group1)\n        if p_val < 0.1 or abs(np.mean(group1) - np.mean(group0)) > 0.1:\n            columns.append(fid)\n            \n            # Add interaction terms for top features\n            if len(columns) <= 3 and len(columns) > 1:\n                # Add pairwise products between top features\n                for prev_fid in columns[:-1]:\n                    products.append((prev_fid, fid))\n    \n    # Create weighted loading for top features\n    for i, fid in enumerate(columns[:3]):\n        loadings[fid] = effect_sizes[keep_ids.index(fid)]\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Calculate correlations and identify near-duplicates\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Remove near-duplicates\n    keep_indices = [i for i in range(len(ids)) if ids[i] not in to_remove]\n    keep_ids = [ids[i] for i in keep_indices]\n    \n    # Compute effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        group0 = x[y==0, i]\n        group1 = x[y==1, i]\n        mean_diff = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(mean_diff))\n    \n    # Sort by effect size\n    sorted_idx = np.argsort(effect_sizes)[::-1]\n    sorted_ids = [keep_ids[i] for i in sorted_idx]\n    \n    # Select top drivers (max MAX_DRIVERS)\n    drivers = tuple(sorted_ids[:min(MAX_DRIVERS, len(sorted_ids))])\n    \n    # For columns, use all features with significant effect (p < 0.1)\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Simple logistic regression approach: select features with large effect sizes\n    for i, fid in enumerate(keep_ids):\n        group0 = x[y==0, i]\n        group1 = x[y==1, i]\n        t_stat, p_val = stats.ttest_ind(group0, group1)\n        if p_val < 0.1 or abs(np.mean(group1) - np.mean(group0)) > 0.1:\n            columns.append(fid)\n            \n            # Add interaction terms for top features\n            if len(columns) <= 3 and len(columns) > 1:\n                # Add pairwise products between top features\n                for prev_fid in columns[:-1]:\n                    products.append((prev_fid, fid))\n    \n    # Create weighted loading for top features\n    for i, fid in enumerate(columns[:3]):\n        loadings[fid] = effect_sizes[keep_ids.index(fid)]\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8080,
+  "completion_tokens": 1715,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2314
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2229
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2229
+   }
+  ],
+  "wall_s": 19.7
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-rtx1yvih",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find strongest correlates of outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        x = feats.x[:, i]\n        y = feats.y\n        mean_diff = np.mean(x[y==1]) - np.mean(x[y==0])\n        tstat, pval = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        auc = 0.5 + 0.5 * (np.mean(x[y==1]) - np.mean(x[y==0])) / (np.std(x) + 1e-8)\n        effects.append((fid, mean_diff, tstat, pval, auc))\n    \n    effects.sort(key=lambda x: abs(x[2]), reverse=True)\n    \n    # Check for near-duplicates and keep only unique features\n    seen = set()\n    unique_effects = []\n    for fid, mean_diff, tstat, pval, auc in effects:\n        if fid in seen:\n            continue\n        # Check correlations with already selected features\n        is_dup = False\n        for selected_fid, _, _, _, _ in unique_effects:\n            if abs(np.corrcoef(feats.x[:, feats.column(selected_fid)], \n                               feats.x[:, feats.column(fid)])[0,1]) > 0.6:\n                is_dup = True\n                break\n        if not is_dup:\n            seen.add(fid)\n            unique_effects.append((fid, mean_diff, tstat, pval, auc))\n    \n    # Select top features\n    top_features = [fid for fid, _, _, _, _ in unique_effects[:10]]\n    \n    # Try to find a driver by looking at strong associations\n    drivers = []\n    if len(top_features) >= 1:\n        # Look for features with strong effect sizes and low p-values\n        candidates = [(fid, mean_diff, tstat, pval) \n                      for fid, mean_diff, tstat, pval, auc in unique_effects \n                      if abs(mean_diff) > 0.2 and pval < 0.01]\n        if candidates:\n            drivers = [fid for fid, _, _, _ in candidates[:min(MAX_DRIVERS, len(candidates))]]\n    \n    # Use all top features for regression\n    columns = tuple(top_features[:10])\n    \n    # Add interaction terms for strong correlated pairs\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Weighted score: use top features with highest effect sizes\n    loadings = {}\n    for fid, mean_diff, _, _, _ in unique_effects[:5]:\n        loadings[fid] = mean_diff\n    \n    # Ensure we don't exceed MAX_DRIVERS\n    if len(drivers) > MAX_DRIVERS:\n        drivers = drivers[:MAX_DRIVERS]\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8703,
+  "completion_tokens": 2120,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2727
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2749
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2754
+   }
+  ],
+  "wall_s": 37.2
+ }
+}

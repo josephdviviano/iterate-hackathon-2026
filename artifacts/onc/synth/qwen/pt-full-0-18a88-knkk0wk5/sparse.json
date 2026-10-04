@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-knkk0wk5",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify top features by effect size (Welch's t-statistic)\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'clinical', 'derived'):\n            # Calculate Welch's t-statistic\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            n0, n1 = len(group0), len(group1)\n            mean0, mean1 = np.mean(group0), np.mean(group1)\n            var0, var1 = np.var(group0, ddof=1), np.var(group1, ddof=1)\n            se = np.sqrt(var0/n0 + var1/n1)\n            t_stat = (mean1 - mean0) / se\n            effects.append((abs(t_stat), fid))\n    \n    # Sort by effect size and remove near-duplicates\n    effects.sort(reverse=True)\n    selected_ids = set()\n    for _, fid in effects:\n        # Check if correlated with already selected features\n        is_duplicate = False\n        for selected_fid in selected_ids:\n            col_a = feats.column(selected_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected_ids.add(fid)\n    \n    # Select top 4 non-duplicates as drivers\n    drivers = tuple(list(selected_ids)[:4])\n    \n    # For columns, use top 8 features by effect size\n    columns = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'clinical', 'derived'):\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            n0, n1 = len(group0), len(group1)\n            mean0, mean1 = np.mean(group0), np.mean(group1)\n            var0, var1 = np.var(group0, ddof=1), np.var(group1, ddof=1)\n            se = np.sqrt(var0/n0 + var1/n1)\n            t_stat = (mean1 - mean0) / se\n            if abs(t_stat) > 1.0:\n                columns.append(fid)\n    \n    # Remove duplicates and limit to 8\n    seen = set()\n    unique_columns = []\n    for fid in columns:\n        if fid not in seen and len(unique_columns) < 8:\n            seen.add(fid)\n            unique_columns.append(fid)\n    \n    columns = tuple(unique_columns)\n    \n    # Create minimal products - only strong correlations between selected columns\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n            if abs(corr) > 0.7:\n                products.append((fid1, fid2))\n    \n    # Loadings for weighted score\n    loadings = {}\n    for fid in columns:\n        loadings[fid] = 1.0\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify top features by effect size (Welch's t-statistic)\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'clinical', 'derived'):\n            # Calculate Welch's t-statistic\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            n0, n1 = len(group0), len(group1)\n            mean0, mean1 = np.mean(group0), np.mean(group1)\n            var0, var1 = np.var(group0, ddof=1), np.var(group1, ddof=1)\n            se = np.sqrt(var0/n0 + var1/n1)\n            t_stat = (mean1 - mean0) / se\n            effects.append((abs(t_stat), fid))\n    \n    # Sort by effect size and remove near-duplicates\n    effects.sort(reverse=True)\n    selected_ids = set()\n    for _, fid in effects:\n        # Check if correlated with already selected features\n        is_duplicate = False\n        for selected_fid in selected_ids:\n            col_a = feats.column(selected_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected_ids.add(fid)\n    \n    # Select top 4 non-duplicates as drivers\n    drivers = tuple(list(selected_ids)[:4])\n    \n    # For columns, use top 8 features by effect size\n    columns = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'clinical', 'derived'):\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            n0, n1 = len(group0), len(group1)\n            mean0, mean1 = np.mean(group0), np.mean(group1)\n            var0, var1 = np.var(group0, ddof=1), np.var(group1, ddof=1)\n            se = np.sqrt(var0/n0 + var1/n1)\n            t_stat = (mean1 - mean0) / se\n            if abs(t_stat) > 1.0:\n                columns.append(fid)\n    \n    # Remove duplicates and limit to 8\n    seen = set()\n    unique_columns = []\n    for fid in columns:\n        if fid not in seen and len(unique_columns) < 8:\n            seen.add(fid)\n            unique_columns.append(fid)\n    \n    columns = tuple(unique_columns)\n    \n    # Create minimal products - only strong correlations between selected columns\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n            if abs(corr) > 0.7:\n                products.append((fid1, fid2))\n    \n    # Loadings for weighted score\n    loadings = {}\n    for fid in columns:\n        loadings[fid] = 1.0\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8507,
+  "completion_tokens": 2075,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2712
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2732
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2888
+   }
+  ],
+  "wall_s": 23.6
+ }
+}

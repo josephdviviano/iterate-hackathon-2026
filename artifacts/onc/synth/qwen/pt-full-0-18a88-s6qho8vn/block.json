@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-s6qho8vn",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly associated features using Welch t-test\n    t_stats = [stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                              feats.x[feats.y==0, feats.column(fid)])[0] \n               for fid in feats.ids]\n    \n    # Select top features by absolute t-statistic\n    top_indices = np.argsort(np.abs(t_stats))[::-1][:20]\n    top_features = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates based on correlation\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n    to_remove = set()\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i,j]) > 0.6:\n                to_remove.add(top_features[j])\n    \n    unique_features = [fid for fid in top_features if fid not in to_remove]\n    \n    # If no mechanism, return empty design\n    if len(unique_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features into modules\n    X = feats.x[:, [feats.column(fid) for fid in unique_features]]\n    clustering = AgglomerativeClustering(n_clusters=1, linkage='ward')\n    cluster_labels = clustering.fit_predict(X)\n    \n    # Select best module (most significant features)\n    module_features = unique_features\n    \n    # Create weighted score from module features\n    weights = np.array([abs(t_stats[feats.column(fid)]) for fid in module_features])\n    weights = weights / np.sum(weights)  # Normalize\n    \n    # Return design with module features\n    return Design(\n        drivers=tuple(module_features[:MAX_DRIVERS]),\n        columns=tuple(module_features),\n        products=(),\n        loadings=dict(zip(module_features, weights))\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly associated features using Welch t-test\n    t_stats = [stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                              feats.x[feats.y==0, feats.column(fid)])[0] \n               for fid in feats.ids]\n    \n    # Select top features by absolute t-statistic\n    top_indices = np.argsort(np.abs(t_stats))[::-1][:20]\n    top_features = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates based on correlation\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n    to_remove = set()\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i,j]) > 0.6:\n                to_remove.add(top_features[j])\n    \n    unique_features = [fid for fid in top_features if fid not in to_remove]\n    \n    # If no mechanism, return empty design\n    if len(unique_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features into modules\n    X = feats.x[:, [feats.column(fid) for fid in unique_features]]\n    clustering = AgglomerativeClustering(n_clusters=1, linkage='ward')\n    cluster_labels = clustering.fit_predict(X)\n    \n    # Select best module (most significant features)\n    module_features = unique_features\n    \n    # Create weighted score from module features\n    weights = np.array([abs(t_stats[feats.column(fid)]) for fid in module_features])\n    weights = weights / np.sum(weights)  # Normalize\n    \n    # Return design with module features\n    return Design(\n        drivers=tuple(module_features[:MAX_DRIVERS]),\n        columns=tuple(module_features),\n        products=(),\n        loadings=dict(zip(module_features, weights))\n    )\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2191,
+  "completion_tokens": 455,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1929
+   }
+  ],
+  "wall_s": 5.0
+ }
+}

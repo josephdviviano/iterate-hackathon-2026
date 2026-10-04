@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-al5ydt3z",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    effects = []\n    \n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            # For clinical/cohort variables, check correlation with outcome\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            p_val = 1 - stats.norm.cdf(abs(corr) * np.sqrt(len(feats.y) - 2) / np.sqrt(1 - corr**2))\n            p_values.append(p_val)\n            effects.append(abs(corr))\n        else:\n            # For other features, use Welch's t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            p_values.append(p_val)\n            effects.append(np.mean(y1) - np.mean(y0))\n    \n    # Find significant features (p < 0.05)\n    sig_indices = [i for i, p in enumerate(p_values) if p < 0.05]\n    \n    # If no significant features, return empty design\n    if not sig_indices:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by effect size\n    sorted_indices = sorted(sig_indices, key=lambda i: abs(effects[i]), reverse=True)\n    \n    # Remove near-duplicates (correlation >= 0.6)\n    keep_indices = []\n    for i in sorted_indices:\n        is_duplicate = False\n        for j in keep_indices:\n            if abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep_indices.append(i)\n    \n    # If no mechanism found, return empty design\n    if len(keep_indices) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use first few features as drivers (up to MAX_DRIVERS)\n    drivers = tuple(feats.ids[i] for i in keep_indices[:min(MAX_DRIVERS, len(keep_indices))])\n    \n    # All features with significant associations\n    columns = tuple(feats.ids[i] for i in keep_indices)\n    \n    # No products needed\n    products = ()\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(columns):\n        loadings[fid] = effects[keep_indices[i]]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    effects = []\n    \n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            # For clinical/cohort variables, check correlation with outcome\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            p_val = 1 - stats.norm.cdf(abs(corr) * np.sqrt(len(feats.y) - 2) / np.sqrt(1 - corr**2))\n            p_values.append(p_val)\n            effects.append(abs(corr))\n        else:\n            # For other features, use Welch's t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            p_values.append(p_val)\n            effects.append(np.mean(y1) - np.mean(y0))\n    \n    # Find significant features (p < 0.05)\n    sig_indices = [i for i, p in enumerate(p_values) if p < 0.05]\n    \n    # If no significant features, return empty design\n    if not sig_indices:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by effect size\n    sorted_indices = sorted(sig_indices, key=lambda i: abs(effects[i]), reverse=True)\n    \n    # Remove near-duplicates (correlation >= 0.6)\n    keep_indices = []\n    for i in sorted_indices:\n        is_duplicate = False\n        for j in keep_indices:\n            if abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep_indices.append(i)\n    \n    # If no mechanism found, return empty design\n    if len(keep_indices) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use first few features as drivers (up to MAX_DRIVERS)\n    drivers = tuple(feats.ids[i] for i in keep_indices[:min(MAX_DRIVERS, len(keep_indices))])\n    \n    # All features with significant associations\n    columns = tuple(feats.ids[i] for i in keep_indices)\n    \n    # No products needed\n    products = ()\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(columns):\n        loadings[fid] = effects[keep_indices[i]]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8377,
+  "completion_tokens": 1886,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2484
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2407
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2407
+   }
+  ],
+  "wall_s": 21.9
+ }
+}

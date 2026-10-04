@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-n7e2iyfa",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find strongest correlates of outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, check if they're strongly associated with outcome\n            y1 = feats.x[feats.y==1, i]\n            y0 = feats.x[feats.y==0, i]\n            if len(y1) > 0 and len(y0) > 0:\n                tstat, pval = stats.ttest_ind(y1, y0, equal_var=False)\n                mean_diff = np.mean(y1) - np.mean(y0)\n                effects.append((fid, abs(mean_diff), abs(tstat), pval))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # If we have strong clinical driver, use it to adjust other features\n    if effects and effects[0][1] > 1.0:\n        driver_fid = effects[0][0]\n        driver_idx = feats.column(driver_fid)\n        \n        # Adjust all other features using simple linear regression\n        adjusted_features = []\n        for i, fid in enumerate(feats.ids):\n            if i != driver_idx:\n                # Simple adjustment: regress out driver\n                X = feats.x[:, driver_idx].reshape(-1, 1)\n                y = feats.x[:, i]\n                # Use least squares to get residuals\n                coeffs = np.linalg.lstsq(X, y, rcond=None)[0]\n                adjusted = y - X @ coeffs\n                adjusted_features.append((fid, adjusted))\n        \n        # Now rank features by correlation with outcome after adjustment\n        correlations = []\n        for fid, adj_feat in adjusted_features:\n            corr = np.corrcoef(adj_feat, feats.y)[0, 1]\n            correlations.append((fid, abs(corr)))\n        correlations.sort(key=lambda x: x[1], reverse=True)\n        \n        # Return top features as drivers\n        drivers = [driver_fid] + [fid for fid, _ in correlations[:MAX_DRIVERS-1]]\n        return Design(\n            drivers=tuple(drivers),\n            columns=drivers,\n            products=(),\n            loadings={fid: 1.0 for fid in drivers}\n        )\n    \n    # No clear driver, look for direct associations\n    correlations = []\n    for i, fid in enumerate(feats.ids):\n        corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n        correlations.append((fid, abs(corr)))\n    correlations.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates\n    selected = []\n    used = set()\n    for fid, _ in correlations:\n        if fid in used:\n            continue\n        # Check if this feature is correlated with any already selected\n        is_duplicate = False\n        for sel_fid in selected:\n            idx1 = feats.column(sel_fid)\n            idx2 = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0, 1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected.append(fid)\n            used.add(fid)\n            if len(selected) >= MAX_DRIVERS:\n                break\n    \n    # Return selected features\n    return Design(\n        drivers=tuple(selected),\n        columns=selected,\n        products=(),\n        loadings={fid: 1.0 for fid in selected}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9116,
+  "completion_tokens": 2312,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Unknown label type: continuous. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.",
+    "bytes": 3310
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Unknown label type: continuous. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.",
+    "bytes": 3298
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3239
+   }
+  ],
+  "wall_s": 26.4
+ }
+}

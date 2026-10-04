@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-bazakc9k",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('VLTU15', 'MCAN10'), ('SDIH10', 'VSY8B'), ('SDIH10', 'ELKU11B'),\n        ('ACB13A', 'DCZJ10B'), ('ELKU11B', 'VSY8B'), ('DCZJ10B', 'BKX11B'),\n        ('ZGRT4', 'NNR5'), ('XWU10A', 'QRNL6P'), ('EQKY16', 'ACB13A'),\n        ('BKX11B', 'ZGRT4'), ('OSDB3', 'VSY8B'), ('ELKU11B', 'ACB13A'),\n        ('BKX11B', 'MCAN10'), ('BKX11B', 'NNR5'), ('ELKU11B', 'DCZJ10B'),\n        ('DCZJ10B', 'MCAN10'), ('SDIH10', 'OSDB3'), ('KKV13', 'PGPW8'),\n        ('BKX11B', 'VLTU15'), ('EQKY16', 'DCZJ10B')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Build set of features to exclude (keep only one from each near-duplicate pair)\n    exclude_set = set()\n    for a, b in corr_pairs:\n        exclude_set.add(b)  # arbitrarily exclude the second in pair\n    \n    # Select candidate features (not near-duplicates)\n    candidates = [fid for fid in feats.ids if fid not in exclude_set]\n    \n    # Compute t-statistics for all candidates\n    t_stats = []\n    for fid in candidates:\n        col_idx = feats.column(fid)\n        x1 = feats.x[feats.y == 1, col_idx]\n        x0 = feats.x[feats.y == 0, col_idx]\n        t, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(reverse=True)\n    \n    # Select top features for drivers\n    drivers = tuple(fid for _, fid in t_stats[:MAX_DRIVERS])\n    \n    # For logistic regression, include only drivers\n    columns = drivers\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Weighted score: use top driver's standardized values\n    loadings = {drivers[0]: 1.0} if drivers else {}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('VLTU15', 'MCAN10'), ('SDIH10', 'VSY8B'), ('SDIH10', 'ELKU11B'),\n        ('ACB13A', 'DCZJ10B'), ('ELKU11B', 'VSY8B'), ('DCZJ10B', 'BKX11B'),\n        ('ZGRT4', 'NNR5'), ('XWU10A', 'QRNL6P'), ('EQKY16', 'ACB13A'),\n        ('BKX11B', 'ZGRT4'), ('OSDB3', 'VSY8B'), ('ELKU11B', 'ACB13A'),\n        ('BKX11B', 'MCAN10'), ('BKX11B', 'NNR5'), ('ELKU11B', 'DCZJ10B'),\n        ('DCZJ10B', 'MCAN10'), ('SDIH10', 'OSDB3'), ('KKV13', 'PGPW8'),\n        ('BKX11B', 'VLTU15'), ('EQKY16', 'DCZJ10B')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Build set of features to exclude (keep only one from each near-duplicate pair)\n    exclude_set = set()\n    for a, b in corr_pairs:\n        exclude_set.add(b)  # arbitrarily exclude the second in pair\n    \n    # Select candidate features (not near-duplicates)\n    candidates = [fid for fid in feats.ids if fid not in exclude_set]\n    \n    # Compute t-statistics for all candidates\n    t_stats = []\n    for fid in candidates:\n        col_idx = feats.column(fid)\n        x1 = feats.x[feats.y == 1, col_idx]\n        x0 = feats.x[feats.y == 0, col_idx]\n        t, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(reverse=True)\n    \n    # Select top features for drivers\n    drivers = tuple(fid for _, fid in t_stats[:MAX_DRIVERS])\n    \n    # For logistic regression, include only drivers\n    columns = drivers\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Weighted score: use top driver's standardized values\n    loadings = {drivers[0]: 1.0} if drivers else {}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8713,
+  "completion_tokens": 2028,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2204
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2204
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1896
+   }
+  ],
+  "wall_s": 23.0
+ }
+}

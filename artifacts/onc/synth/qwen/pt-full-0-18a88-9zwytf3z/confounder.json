@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9zwytf3z",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import f_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        stat, p = f_classif(x.reshape(-1, 1), feats.y)\n        p_values.append(p[0])\n    \n    # If no significant associations, return empty design\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find features with p < 0.05\n    significant_features = [fid for fid, p in zip(feats.ids, p_values) if p < 0.05]\n    \n    # Look for correlated pairs with |r| >= 0.6\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0,1]) >= 0.6:\n                correlated_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Remove near-duplicates (keep one from each pair)\n    to_remove = set()\n    for a, b in correlated_pairs:\n        to_remove.add(b)  # Remove the second in each pair\n    \n    # Select features excluding near-duplicates\n    selected_features = [f for f in significant_features if f not in to_remove]\n    \n    # Sort by p-value (most significant first)\n    selected_features.sort(key=lambda fid: p_values[feats.ids.index(fid)])\n    \n    # Choose top features as drivers (at most MAX_DRIVERS)\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    \n    # For columns, include all significant features\n    columns = tuple(selected_features)\n    \n    # For products, consider interactions between highly correlated pairs\n    products = []\n    for a, b in correlated_pairs:\n        if a in selected_features and b in selected_features:\n            products.append((a, b))\n    \n    # Loadings: weight features by their effect size (mean difference)\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        mean_y0 = np.mean(x[feats.y == 0])\n        mean_y1 = np.mean(x[feats.y == 1])\n        loadings[fid] = mean_y1 - mean_y0\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import f_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        stat, p = f_classif(x.reshape(-1, 1), feats.y)\n        p_values.append(p[0])\n    \n    # If no significant associations, return empty design\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find features with p < 0.05\n    significant_features = [fid for fid, p in zip(feats.ids, p_values) if p < 0.05]\n    \n    # Look for correlated pairs with |r| >= 0.6\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0,1]) >= 0.6:\n                correlated_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Remove near-duplicates (keep one from each pair)\n    to_remove = set()\n    for a, b in correlated_pairs:\n        to_remove.add(b)  # Remove the second in each pair\n    \n    # Select features excluding near-duplicates\n    selected_features = [f for f in significant_features if f not in to_remove]\n    \n    # Sort by p-value (most significant first)\n    selected_features.sort(key=lambda fid: p_values[feats.ids.index(fid)])\n    \n    # Choose top features as drivers (at most MAX_DRIVERS)\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    \n    # For columns, include all significant features\n    columns = tuple(selected_features)\n    \n    # For products, consider interactions between highly correlated pairs\n    products = []\n    for a, b in correlated_pairs:\n        if a in selected_features and b in selected_features:\n            products.append((a, b))\n    \n    # Loadings: weight features by their effect size (mean difference)\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        mean_y0 = np.mean(x[feats.y == 0])\n        mean_y1 = np.mean(x[feats.y == 1])\n        loadings[fid] = mean_y1 - mean_y0\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8390,
+  "completion_tokens": 1795,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2374
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2308
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2308
+   }
+  ],
+  "wall_s": 21.2
+ }
+}

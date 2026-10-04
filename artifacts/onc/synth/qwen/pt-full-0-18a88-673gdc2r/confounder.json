@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-673gdc2r",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers by correlation with outcome\n    drivers = []\n    correlations = []\n    \n    # Calculate correlations for all features\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('clinical', 'cohort'):\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            correlations.append((abs(corr), fid))\n    \n    # Sort by absolute correlation strength and limit to MAX_DRIVERS\n    correlations.sort(reverse=True)\n    drivers = [fid for _, fid in correlations[:MAX_DRIVERS]]\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features with high mutual information and low correlation with drivers\n    mi_scores = mutual_info_classif(feats.x, feats.y)\n    selected_features = []\n    \n    # Filter out near-duplicates and correlated features\n    feature_indices = {fid: i for i, fid in enumerate(feats.ids)}\n    used_features = set()\n    \n    for i, fid in enumerate(feats.ids):\n        if fid in used_features:\n            continue\n            \n        # Check correlation with drivers\n        is_correlated = False\n        for driver_fid in drivers:\n            if driver_fid in feature_indices:\n                j = feature_indices[driver_fid]\n                corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n                if abs(corr) > 0.6:\n                    is_correlated = True\n                    break\n        \n        if not is_correlated:\n            selected_features.append(fid)\n            used_features.add(fid)\n            \n            # Add correlated features as products\n            for other_fid in feats.ids:\n                if other_fid == fid or other_fid in used_features:\n                    continue\n                j = feature_indices[other_fid]\n                corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n                if abs(corr) >= 0.6:\n                    selected_features.append(other_fid)\n                    used_features.add(other_fid)\n    \n    # Create products for highly correlated pairs\n    products = []\n    for i, fid_a in enumerate(selected_features):\n        for j, fid_b in enumerate(selected_features[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, feature_indices[fid_a]], \n                              feats.x[:, feature_indices[fid_b]])[0, 1]) >= 0.6:\n                products.append((fid_a, fid_b))\n    \n    # Weighted loading based on mutual information\n    loadings = {}\n    for fid in selected_features:\n        idx = feature_indices[fid]\n        loadings[fid] = mi_scores[idx]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(selected_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8465,
+  "completion_tokens": 1984,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2994
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3100
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2931
+   }
+  ],
+  "wall_s": 22.8
+ }
+}

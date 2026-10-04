@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1f3v385z",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set()\n    seen = set()\n    for i, fid1 in enumerate(feats.ids):\n        if fid1 in seen:\n            continue\n        keep.add(fid1)\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if fid2 in seen:\n                continue\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                seen.add(fid2)\n    \n    # Calculate effect sizes and select top candidates\n    candidates = []\n    for fid in keep:\n        idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, idx]\n        y1 = feats.x[feats.y == 1, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        candidates.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size\n    candidates.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select drivers (top 2)\n    drivers = tuple(c[0] for c in candidates[:MAX_DRIVERS])\n    \n    # Build columns list with all features except near-duplicates\n    columns = tuple(c[0] for c in candidates)\n    \n    # Check for strong correlations to add products\n    products = []\n    for i, (fid1, _, _) in enumerate(candidates):\n        for j, (fid2, _, _) in enumerate(candidates[i+1:], i+1):\n            idx1 = feats.column(fid1)\n            idx2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:,idx1], feats.x[:,idx2])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Create loadings for weighted score (using top feature)\n    loadings = {}\n    if drivers:\n        top_driver = drivers[0]\n        idx = feats.column(top_driver)\n        # Simple weighting by effect size\n        y0 = feats.x[feats.y == 0, idx]\n        y1 = feats.x[feats.y == 1, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        loadings[top_driver] = mean_diff\n    \n    # Limit total terms to avoid overfitting\n    all_terms = len(columns) + len(products) + len(loadings)\n    if all_terms > 12:\n        # Reduce columns to minimum needed\n        columns = columns[:min(6, len(columns))]\n        # Keep only products involving features in reduced columns\n        products = [(a,b) for a,b in products if a in columns and b in columns]\n        # Keep only top loading\n        if loadings:\n            top_loading = max(loadings.keys(), key=lambda k: abs(loadings[k]))\n            loadings = {top_loading: loadings[top_loading]}\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set()\n    seen = set()\n    for i, fid1 in enumerate(feats.ids):\n        if fid1 in seen:\n            continue\n        keep.add(fid1)\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if fid2 in seen:\n                continue\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                seen.add(fid2)\n    \n    # Calculate effect sizes and select top candidates\n    candidates = []\n    for fid in keep:\n        idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, idx]\n        y1 = feats.x[feats.y == 1, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        candidates.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size\n    candidates.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select drivers (top 2)\n    drivers = tuple(c[0] for c in candidates[:MAX_DRIVERS])\n    \n    # Build columns list with all features except near-duplicates\n    columns = tuple(c[0] for c in candidates)\n    \n    # Check for strong correlations to add products\n    products = []\n    for i, (fid1, _, _) in enumerate(candidates):\n        for j, (fid2, _, _) in enumerate(candidates[i+1:], i+1):\n            idx1 = feats.column(fid1)\n            idx2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:,idx1], feats.x[:,idx2])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Create loadings for weighted score (using top feature)\n    loadings = {}\n    if drivers:\n        top_driver = drivers[0]\n        idx = feats.column(top_driver)\n        # Simple weighting by effect size\n        y0 = feats.x[feats.y == 0, idx]\n        y1 = feats.x[feats.y == 1, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        loadings[top_driver] = mean_diff\n    \n    # Limit total terms to avoid overfitting\n    all_terms = len(columns) + len(products) + len(loadings)\n    if all_terms > 12:\n        # Reduce columns to minimum needed\n        columns = columns[:min(6, len(columns))]\n        # Keep only products involving features in reduced columns\n        products = [(a,b) for a,b in products if a in columns and b in columns]\n        # Keep only top loading\n        if loadings:\n            top_loading = max(loadings.keys(), key=lambda k: abs(loadings[k]))\n            loadings = {top_loading: loadings[top_loading]}\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8610,
+  "completion_tokens": 1926,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2181
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2345
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2652
+   }
+  ],
+  "wall_s": 22.2
+ }
+}

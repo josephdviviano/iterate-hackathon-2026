@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nn9pdd6u",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    keep_ids = set(feats.ids)\n    correlated_pairs = {\n        ('WCO9', 'CZFZ17'), ('DYTL8', 'PHS10P'), ('WCO9', 'VCV17P'),\n        ('DYTL8', 'JHGL5'), ('PHS10P', 'JHGL5'), ('WCO9', 'UKR3'),\n        ('LTV10', 'WCO9'), ('DYTL8', 'JUW16'), ('UKR3', 'CZFZ17'),\n        ('ART15L', 'WCO9'), ('VCV17P', 'CZFZ17'), ('LTV10', 'CZFZ17'),\n        ('PHS10P', 'JUW16'), ('LTV10', 'VCV17P'), ('VCV17P', 'UKR3'),\n        ('WCO9', 'RKE15'), ('LFO4', 'LQES8'), ('ART15L', 'VCV17P'),\n        ('LTV10', 'RKE15'), ('ART15L', 'CZFZ17')\n    }\n    \n    # Remove one from each correlated pair\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher t-statistic\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            ta = abs(np.corrcoef(feats.x[:, idx_a], feats.y)[0, 1])\n            tb = abs(np.corrcoef(feats.x[:, idx_b], feats.y)[0, 1])\n            if ta < tb:\n                keep_ids.remove(a)\n            else:\n                keep_ids.remove(b)\n    \n    # Calculate effect sizes and select top candidates\n    effects = []\n    for fid in keep_ids:\n        idx = feats.column(fid)\n        x = feats.x[:, idx]\n        y = feats.y\n        mean1 = np.mean(x[y == 1])\n        mean0 = np.mean(x[y == 0])\n        effect = mean1 - mean0\n        tstat = stats.ttest_ind(x[y == 1], x[y == 0], equal_var=False)[0]\n        effects.append((fid, abs(effect), abs(tstat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (max MAX_DRIVERS)\n    drivers = tuple(f[0] for f in effects[:min(MAX_DRIVERS, len(effects))])\n    \n    # For columns, use all significant features\n    columns = tuple(f[0] for f in effects if f[2] > 1.5)  # t-stat > 1.5\n    \n    # Check for interactions among top features\n    products = []\n    top_features = [f[0] for f in effects[:5]]\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            # Check if they're not correlated (to avoid multicollinearity)\n            if (a, b) not in correlated_pairs and (b, a) not in correlated_pairs:\n                products.append((a, b))\n    \n    # Calculate loadings using mutual information\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        mi = mutual_info_classif(feats.x[:, idx].reshape(-1, 1), feats.y)[0]\n        loadings[fid] = mi\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8919,
+  "completion_tokens": 2506,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2702
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2721
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2685
+   }
+  ],
+  "wall_s": 43.0
+ }
+}

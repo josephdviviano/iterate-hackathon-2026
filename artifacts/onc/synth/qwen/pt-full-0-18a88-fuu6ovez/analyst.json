@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-fuu6ovez",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    correlations = []\n    for i, a in enumerate(ids):\n        for j, b in enumerate(ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, feats.column(a)], feats.x[:, feats.column(b)])[0,1]) >= 0.6:\n                correlations.append((a, b))\n    \n    # Remove near-duplicates, keeping first occurrence\n    keep_ids = set()\n    seen = set()\n    for a, b in correlations:\n        if a not in seen and b not in seen:\n            keep_ids.add(a)\n            seen.add(a)\n            seen.add(b)\n    \n    # Add remaining features\n    for fid in ids:\n        if fid not in seen:\n            keep_ids.add(fid)\n    \n    # Calculate effect sizes using t-test\n    effects = []\n    for fid in keep_ids:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, p_val = stats.ttest_ind(y1, y0, equal_var=False)\n            mean_diff = np.mean(y1) - np.mean(y0)\n            effects.append((fid, abs(mean_diff), abs(t_stat), p_val))\n    \n    # Sort by effect size and statistical significance\n    effects.sort(key=lambda x: (-x[1], -x[2], x[3]))\n    \n    # Select top drivers (max 4 as per checker report)\n    drivers = [fid for fid, _, _, _ in effects[:4]]\n    \n    # For products, use only top 3 features for interaction terms\n    top_features = [f for f in effects[:3]]  # Top 3 features\n    products = []\n    for i, (a, _, _, _) in enumerate(top_features):\n        for b, _, _, _ in top_features[i+1:]:\n            if a != b:\n                products.append((a, b))\n    \n    # Loadings: use mutual information scores\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in keep_ids]], feats.y)\n    loadings = dict(zip(keep_ids, mi_scores))\n    \n    # Keep design small by limiting to minimal necessary components\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(keep_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8308,
+  "completion_tokens": 1800,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2312
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2332
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2211
+   }
+  ],
+  "wall_s": 20.9
+ }
+}

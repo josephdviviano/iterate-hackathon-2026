@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-aac294a0",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effects = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y==1, idx]\n        y0 = feats.x[feats.y==0, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat = stats.ttest_ind(y1, y0).statistic\n        effects.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size (t-statistic)\n    effects.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = [fid for fid, _, _ in effects[:MAX_DRIVERS]]\n    \n    # Include only top 3 features for logistic regression to keep model small\n    columns = [fid for fid, _, _ in effects[:3]]\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Create weighted score from top features\n    loadings = {}\n    for i, (fid, _, _) in enumerate(effects[:3]):\n        # Weight by effect size\n        loadings[fid] = effects[i][1] / max([e[1] for e in effects]) if effects else 1\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effects = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y==1, idx]\n        y0 = feats.x[feats.y==0, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        t_stat = stats.ttest_ind(y1, y0).statistic\n        effects.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size (t-statistic)\n    effects.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = [fid for fid, _, _ in effects[:MAX_DRIVERS]]\n    \n    # Include only top 3 features for logistic regression to keep model small\n    columns = [fid for fid, _, _ in effects[:3]]\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    # Create weighted score from top features\n    loadings = {}\n    for i, (fid, _, _) in enumerate(effects[:3]):\n        # Weight by effect size\n        loadings[fid] = effects[i][1] / max([e[1] for e in effects]) if effects else 1\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8488,
+  "completion_tokens": 1503,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2710
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1247
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1227
+   }
+  ],
+  "wall_s": 17.6
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-tyj3br30",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using correlation with outcome\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Compute t-statistics for all non-clinical features\n    tstats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue\n        group0 = feats.x[feats.y==0, i]\n        group1 = feats.x[feats.y==1, i]\n        if len(group0) > 1 and len(group1) > 1:\n            tstat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            tstats.append((abs(tstat), fid, i))\n    \n    # Sort by t-statistic and take top 3\n    tstats.sort(reverse=True)\n    selected_indices = [idx for _, _, idx in tstats[:3]]\n    \n    # If no significant features found, return empty design\n    if not selected_indices:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use top feature as driver if it's significantly associated\n    if tstats and tstats[0][0] > 1.5:\n        drivers = [tstats[0][1]]\n    \n    # Add selected features to columns\n    columns = [feats.ids[i] for i in selected_indices]\n    \n    # Create products between top features (max 3 pairs)\n    for i in range(len(selected_indices)):\n        for j in range(i+1, len(selected_indices)):\n            if len(products) >= 3:\n                break\n            products.append((feats.ids[selected_indices[i]], feats.ids[selected_indices[j]]))\n    \n    # Simple weighted loading using standardized values\n    for i, fid in enumerate(feats.ids):\n        if i in selected_indices:\n            loadings[fid] = 1.0\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using correlation with outcome\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Compute t-statistics for all non-clinical features\n    tstats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue\n        group0 = feats.x[feats.y==0, i]\n        group1 = feats.x[feats.y==1, i]\n        if len(group0) > 1 and len(group1) > 1:\n            tstat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            tstats.append((abs(tstat), fid, i))\n    \n    # Sort by t-statistic and take top 3\n    tstats.sort(reverse=True)\n    selected_indices = [idx for _, _, idx in tstats[:3]]\n    \n    # If no significant features found, return empty design\n    if not selected_indices:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use top feature as driver if it's significantly associated\n    if tstats and tstats[0][0] > 1.5:\n        drivers = [tstats[0][1]]\n    \n    # Add selected features to columns\n    columns = [feats.ids[i] for i in selected_indices]\n    \n    # Create products between top features (max 3 pairs)\n    for i in range(len(selected_indices)):\n        for j in range(i+1, len(selected_indices)):\n            if len(products) >= 3:\n                break\n            products.append((feats.ids[selected_indices[i]], feats.ids[selected_indices[j]]))\n    \n    # Simple weighted loading using standardized values\n    for i, fid in enumerate(feats.ids):\n        if i in selected_indices:\n            loadings[fid] = 1.0\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5077,
+  "completion_tokens": 1274,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 3372
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1772
+   }
+  ],
+  "wall_s": 17.9
+ }
+}

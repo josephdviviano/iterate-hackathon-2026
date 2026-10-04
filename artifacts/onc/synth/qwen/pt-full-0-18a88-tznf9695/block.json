@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tznf9695",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = np.array([abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                           feats.x[feats.y==0, feats.column(fid)])[0]) \n                       for fid in feats.ids])\n    \n    # Find top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    top_ids = [feats.ids[i] for i in top_indices]\n    \n    # Check for correlated pairs and remove near-duplicates\n    corr_pairs = []\n    for i in range(len(top_ids)):\n        for j in range(i+1, len(top_ids)):\n            fid1, fid2 = top_ids[i], top_ids[j]\n            if abs(np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Remove one feature from each correlated pair (keep higher t-stat)\n    selected_ids = set()\n    for fid1, fid2 in corr_pairs:\n        t1, t2 = t_stats[feats.ids.index(fid1)], t_stats[feats.ids.index(fid2)]\n        if t1 > t2:\n            selected_ids.add(fid1)\n        else:\n            selected_ids.add(fid2)\n    \n    # Add remaining top features not in correlated pairs\n    for fid in top_ids:\n        if fid not in selected_ids:\n            selected_ids.add(fid)\n    \n    # Select final drivers (highest t-stats among selected)\n    final_drivers = sorted(list(selected_ids), key=lambda x: t_stats[feats.ids.index(x)], reverse=True)\n    final_drivers = final_drivers[:MAX_DRIVERS]\n    \n    # Cluster features to find modules\n    if len(final_drivers) > 1:\n        driver_indices = [feats.column(fid) for fid in final_drivers]\n        driver_data = feats.x[:, driver_indices]\n        \n        # Use hierarchical clustering to group correlated features\n        similarity_matrix = cosine_similarity(driver_data)\n        clustering = AgglomerativeClustering(n_clusters=1, linkage='average')\n        cluster_labels = clustering.fit_predict(1 - similarity_matrix)\n        \n        # If we have a coherent module, use all features in it\n        if len(set(cluster_labels)) == 1:\n            columns = tuple(final_drivers)\n            # Create products between all pairs in the module\n            products = [(a, b) for i, a in enumerate(columns) for b in columns[i+1:]]\n            # Create loadings for weighted score\n            loadings = dict(zip(columns, np.ones(len(columns))))\n            return Design(drivers=tuple(final_drivers), columns=columns, products=products, loadings=loadings)\n    \n    # Default case: use top features without interaction terms\n    return Design(drivers=tuple(final_drivers), columns=tuple(final_drivers), products=(), loadings={})\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = np.array([abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                           feats.x[feats.y==0, feats.column(fid)])[0]) \n                       for fid in feats.ids])\n    \n    # Find top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    top_ids = [feats.ids[i] for i in top_indices]\n    \n    # Check for correlated pairs and remove near-duplicates\n    corr_pairs = []\n    for i in range(len(top_ids)):\n        for j in range(i+1, len(top_ids)):\n            fid1, fid2 = top_ids[i], top_ids[j]\n            if abs(np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Remove one feature from each correlated pair (keep higher t-stat)\n    selected_ids = set()\n    for fid1, fid2 in corr_pairs:\n        t1, t2 = t_stats[feats.ids.index(fid1)], t_stats[feats.ids.index(fid2)]\n        if t1 > t2:\n            selected_ids.add(fid1)\n        else:\n            selected_ids.add(fid2)\n    \n    # Add remaining top features not in correlated pairs\n    for fid in top_ids:\n        if fid not in selected_ids:\n            selected_ids.add(fid)\n    \n    # Select final drivers (highest t-stats among selected)\n    final_drivers = sorted(list(selected_ids), key=lambda x: t_stats[feats.ids.index(x)], reverse=True)\n    final_drivers = final_drivers[:MAX_DRIVERS]\n    \n    # Cluster features to find modules\n    if len(final_drivers) > 1:\n        driver_indices = [feats.column(fid) for fid in final_drivers]\n        driver_data = feats.x[:, driver_indices]\n        \n        # Use hierarchical clustering to group correlated features\n        similarity_matrix = cosine_similarity(driver_data)\n        clustering = AgglomerativeClustering(n_clusters=1, linkage='average')\n        cluster_labels = clustering.fit_predict(1 - similarity_matrix)\n        \n        # If we have a coherent module, use all features in it\n        if len(set(cluster_labels)) == 1:\n            columns = tuple(final_drivers)\n            # Create products between all pairs in the module\n            products = [(a, b) for i, a in enumerate(columns) for b in columns[i+1:]]\n            # Create loadings for weighted score\n            loadings = dict(zip(columns, np.ones(len(columns))))\n            return Design(drivers=tuple(final_drivers), columns=columns, products=products, loadings=loadings)\n    \n    # Default case: use top features without interaction terms\n    return Design(drivers=tuple(final_drivers), columns=tuple(final_drivers), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8476,
+  "completion_tokens": 2033,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2896
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2872
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2872
+   }
+  ],
+  "wall_s": 23.7
+ }
+}

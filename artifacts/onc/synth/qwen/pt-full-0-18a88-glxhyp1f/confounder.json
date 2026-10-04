@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-glxhyp1f",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            # Skip clinical/cohort variables for driver selection\n            continue\n        # Use Welch's t-test for continuous features\n        if feats.types[i] in ('expression', 'copy_number'):\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            p_values.append((p_val, fid))\n    \n    # Sort by p-value\n    p_values.sort()\n    \n    # If no significant features, return empty design\n    if not p_values or p_values[0][0] > 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features based on significance\n    selected_features = [fid for _, fid in p_values[:MAX_DRIVERS]]\n    \n    # Check for near-duplicates (correlated features)\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Remove near-duplicates\n    to_remove = set()\n    for (fid1, fid2), _ in correlations.items():\n        if fid1 in selected_features and fid2 in selected_features:\n            # Keep the one with better p-value\n            for k, (p_val, fid) in enumerate(p_values):\n                if fid == fid1:\n                    idx1 = k\n                elif fid == fid2:\n                    idx2 = k\n            if p_values[idx1][0] > p_values[idx2][0]:\n                to_remove.add(fid1)\n            else:\n                to_remove.add(fid2)\n    \n    final_drivers = tuple(f for f in selected_features if f not in to_remove)\n    \n    # Build loadings using top features\n    loadings = {}\n    for fid in final_drivers:\n        idx = feats.column(fid)\n        # Weight by effect size (inverse of p-value, capped)\n        for p_val, f in p_values:\n            if f == fid:\n                weight = min(10, 1 / max(p_val, 1e-10))\n                loadings[fid] = weight\n                break\n    \n    # Include all features with significant associations\n    columns = tuple(selected_features)\n    products = ()\n    \n    return Design(drivers=final_drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            # Skip clinical/cohort variables for driver selection\n            continue\n        # Use Welch's t-test for continuous features\n        if feats.types[i] in ('expression', 'copy_number'):\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            p_values.append((p_val, fid))\n    \n    # Sort by p-value\n    p_values.sort()\n    \n    # If no significant features, return empty design\n    if not p_values or p_values[0][0] > 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features based on significance\n    selected_features = [fid for _, fid in p_values[:MAX_DRIVERS]]\n    \n    # Check for near-duplicates (correlated features)\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Remove near-duplicates\n    to_remove = set()\n    for (fid1, fid2), _ in correlations.items():\n        if fid1 in selected_features and fid2 in selected_features:\n            # Keep the one with better p-value\n            for k, (p_val, fid) in enumerate(p_values):\n                if fid == fid1:\n                    idx1 = k\n                elif fid == fid2:\n                    idx2 = k\n            if p_values[idx1][0] > p_values[idx2][0]:\n                to_remove.add(fid1)\n            else:\n                to_remove.add(fid2)\n    \n    final_drivers = tuple(f for f in selected_features if f not in to_remove)\n    \n    # Build loadings using top features\n    loadings = {}\n    for fid in final_drivers:\n        idx = feats.column(fid)\n        # Weight by effect size (inverse of p-value, capped)\n        for p_val, f in p_values:\n            if f == fid:\n                weight = min(10, 1 / max(p_val, 1e-10))\n                loadings[fid] = weight\n                break\n    \n    # Include all features with significant associations\n    columns = tuple(selected_features)\n    products = ()\n    \n    return Design(drivers=final_drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8446,
+  "completion_tokens": 1981,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 2563
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 2667
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2733
+   }
+  ],
+  "wall_s": 22.8
+ }
+}

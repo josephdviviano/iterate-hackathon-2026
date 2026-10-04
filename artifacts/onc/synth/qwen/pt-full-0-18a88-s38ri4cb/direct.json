@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-s38ri4cb",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Identify strong candidates using t-test and correlation\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('copy_number', 'expression', 'clinical'):\n            t_stat = feats.x[:, i].T @ feats.y / np.sqrt(np.var(feats.x[:, i]) * np.sum(feats.y))\n            if abs(t_stat) > 4.0:\n                strong_candidates.append((fid, abs(t_stat)))\n    \n    # Sort by strength\n    strong_candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates\n    filtered_candidates = []\n    seen = set()\n    for fid, _ in strong_candidates:\n        if any(abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(other_fid)])[0,1]) > 0.6 \n                for other_fid in seen):\n            continue\n        filtered_candidates.append(fid)\n        seen.add(fid)\n        if len(filtered_candidates) >= MAX_DRIVERS:\n            break\n    \n    # If no strong candidates, return empty design\n    if not filtered_candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    drivers = tuple(filtered_candidates[:MAX_DRIVERS])\n    columns = tuple(filtered_candidates)\n    \n    # Add interaction terms for top 2 drivers\n    products = []\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    # Weighted score: use standardized values of drivers\n    loadings = {}\n    for fid in drivers:\n        loadings[fid] = 1.0\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Identify strong candidates using t-test and correlation\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('copy_number', 'expression', 'clinical'):\n            t_stat = feats.x[:, i].T @ feats.y / np.sqrt(np.var(feats.x[:, i]) * np.sum(feats.y))\n            if abs(t_stat) > 4.0:\n                strong_candidates.append((fid, abs(t_stat)))\n    \n    # Sort by strength\n    strong_candidates.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates\n    filtered_candidates = []\n    seen = set()\n    for fid, _ in strong_candidates:\n        if any(abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(other_fid)])[0,1]) > 0.6 \n                for other_fid in seen):\n            continue\n        filtered_candidates.append(fid)\n        seen.add(fid)\n        if len(filtered_candidates) >= MAX_DRIVERS:\n            break\n    \n    # If no strong candidates, return empty design\n    if not filtered_candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    drivers = tuple(filtered_candidates[:MAX_DRIVERS])\n    columns = tuple(filtered_candidates)\n    \n    # Add interaction terms for top 2 drivers\n    products = []\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    # Weighted score: use standardized values of drivers\n    loadings = {}\n    for fid in drivers:\n        loadings[fid] = 1.0\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2167,
+  "completion_tokens": 414,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1742
+   }
+  ],
+  "wall_s": 5.7
+ }
+}

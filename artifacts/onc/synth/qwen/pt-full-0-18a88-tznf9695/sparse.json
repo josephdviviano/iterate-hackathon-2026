@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tznf9695",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Quick feature selection based on t-statistics\n    t_stats = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        # Only consider non-clinical features for quick filtering\n        if feats.types[col_idx] != 'clinical':\n            try:\n                t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, col_idx], \n                                           feats.x[feats.y==0, col_idx])[0])\n                t_stats.append((fid, t_stat))\n            except:\n                continue\n    \n    # Sort by t-statistic and take top candidates\n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    top_candidates = [fid for fid, _ in t_stats[:15]]  # Limit to top 15\n    \n    # Quick correlation check to remove near-duplicates\n    selected_ids = []\n    for fid in top_candidates:\n        is_duplicate = False\n        col_idx = feats.column(fid)\n        for selected_fid in selected_ids:\n            selected_col = feats.column(selected_fid)\n            try:\n                corr = np.corrcoef(feats.x[:, col_idx], feats.x[:, selected_col])[0,1]\n                if abs(corr) >= 0.6:\n                    is_duplicate = True\n                    break\n            except:\n                continue\n        if not is_duplicate:\n            selected_ids.append(fid)\n        if len(selected_ids) >= MAX_DRIVERS:\n            break\n    \n    # Drivers are top features\n    drivers = tuple(selected_ids)\n    \n    # All selected features for columns\n    columns = tuple(selected_ids)\n    \n    # Simple interaction terms between top features\n    products = []\n    for i in range(min(3, len(selected_ids))):\n        for j in range(i+1, min(3, len(selected_ids))):\n            products.append((selected_ids[i], selected_ids[j]))\n    \n    # Loadings based on correlation with outcome\n    loadings = {}\n    for fid in selected_ids:\n        col_idx = feats.column(fid)\n        try:\n            corr = np.corrcoef(feats.x[:, col_idx], feats.y)[0,1]\n            loadings[fid] = abs(corr)\n        except:\n            loadings[fid] = 0.0\n    \n    # Normalize loadings\n    total = sum(loadings.values())\n    if total > 0:\n        for k in loadings:\n            loadings[k] /= total\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Quick feature selection based on t-statistics\n    t_stats = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        # Only consider non-clinical features for quick filtering\n        if feats.types[col_idx] != 'clinical':\n            try:\n                t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, col_idx], \n                                           feats.x[feats.y==0, col_idx])[0])\n                t_stats.append((fid, t_stat))\n            except:\n                continue\n    \n    # Sort by t-statistic and take top candidates\n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    top_candidates = [fid for fid, _ in t_stats[:15]]  # Limit to top 15\n    \n    # Quick correlation check to remove near-duplicates\n    selected_ids = []\n    for fid in top_candidates:\n        is_duplicate = False\n        col_idx = feats.column(fid)\n        for selected_fid in selected_ids:\n            selected_col = feats.column(selected_fid)\n            try:\n                corr = np.corrcoef(feats.x[:, col_idx], feats.x[:, selected_col])[0,1]\n                if abs(corr) >= 0.6:\n                    is_duplicate = True\n                    break\n            except:\n                continue\n        if not is_duplicate:\n            selected_ids.append(fid)\n        if len(selected_ids) >= MAX_DRIVERS:\n            break\n    \n    # Drivers are top features\n    drivers = tuple(selected_ids)\n    \n    # All selected features for columns\n    columns = tuple(selected_ids)\n    \n    # Simple interaction terms between top features\n    products = []\n    for i in range(min(3, len(selected_ids))):\n        for j in range(i+1, min(3, len(selected_ids))):\n            products.append((selected_ids[i], selected_ids[j]))\n    \n    # Loadings based on correlation with outcome\n    loadings = {}\n    for fid in selected_ids:\n        col_idx = feats.column(fid)\n        try:\n            corr = np.corrcoef(feats.x[:, col_idx], feats.y)[0,1]\n            loadings[fid] = abs(corr)\n        except:\n            loadings[fid] = 0.0\n    \n    # Normalize loadings\n    total = sum(loadings.values())\n    if total > 0:\n        for k in loadings:\n            loadings[k] /= total\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8202,
+  "completion_tokens": 1710,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 11s on all patients; it must run in under 10s",
+    "bytes": 2691
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2144
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2358
+   }
+  ],
+  "wall_s": 26.6
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-aac294a0",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Remove near-duplicates, keeping first occurrence\n    unique_ids = set()\n    kept_ids = []\n    for fid in feats.ids:\n        if any(fid in pair for pair in corr_pairs):\n            # Check if any correlated feature was already added\n            if not any(fid in pair and any(p in kept_ids for p in pair) for pair in corr_pairs):\n                kept_ids.append(fid)\n        else:\n            kept_ids.append(fid)\n    \n    # Remove duplicates while preserving order\n    seen = set()\n    filtered_ids = []\n    for fid in kept_ids:\n        if fid not in seen:\n            seen.add(fid)\n            filtered_ids.append(fid)\n    \n    # Calculate effect sizes for remaining features\n    effects = []\n    for fid in filtered_ids:\n        idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y == 1, idx])\n        y0_mean = np.mean(feats.x[feats.y == 0, idx])\n        effect_size = abs(y1_mean - y0_mean)\n        effects.append((fid, effect_size))\n    \n    # Sort by effect size (descending)\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features as drivers (at most MAX_DRIVERS)\n    drivers = [fid for fid, _ in effects[:MAX_DRIVERS]]\n    \n    # Use all features that are not near-duplicates\n    columns = tuple(filtered_ids)\n    \n    # Look for product terms between highly correlated pairs\n    products = []\n    for fid1, fid2 in corr_pairs:\n        if fid1 in filtered_ids and fid2 in filtered_ids:\n            products.append((fid1, fid2))\n    \n    # Build weighted score using top features\n    loadings = {}\n    for fid, _ in effects[:MAX_DRIVERS]:\n        idx = feats.column(fid)\n        # Weight by effect size\n        y1_mean = np.mean(feats.x[feats.y == 1, idx])\n        y0_mean = np.mean(feats.x[feats.y == 0, idx])\n        loadings[fid] = abs(y1_mean - y0_mean)\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8333,
+  "completion_tokens": 1865,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2435
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2578
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2457
+   }
+  ],
+  "wall_s": 21.7
+ }
+}

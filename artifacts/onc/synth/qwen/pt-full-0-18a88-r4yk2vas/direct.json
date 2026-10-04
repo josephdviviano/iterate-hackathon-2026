@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-r4yk2vas",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features\n    non_derived = [i for i, t in enumerate(feats.types) if t != 'derived']\n    ids = [feats.ids[i] for i in non_derived]\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    y = feats.y\n    effect_sizes = []\n    for i, fid in enumerate(ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        mean_0 = np.mean(x[y == 0])\n        mean_1 = np.mean(x[y == 1])\n        effect_size = mean_1 - mean_0\n        effect_sizes.append(effect_size)\n    \n    # Rank by effect size magnitude\n    sorted_indices = np.argsort(np.abs(effect_sizes))[::-1]\n    \n    # Select top drivers\n    drivers = []\n    seen = set()\n    for idx in sorted_indices:\n        fid = ids[idx]\n        # Skip if highly correlated with already selected drivers\n        is_correlated = False\n        for d in drivers:\n            if abs(stats.pearsonr(feats.x[:, feats.column(fid)], \n                                 feats.x[:, feats.column(d)])[0]) > 0.6:\n                is_correlated = True\n                break\n        if not is_correlated:\n            drivers.append(fid)\n            seen.add(fid)\n        if len(drivers) >= MAX_DRIVERS:\n            break\n    \n    # Build columns (only top features)\n    columns = []\n    for idx in sorted_indices[:10]:  # Limit to top 10 features\n        fid = ids[idx]\n        columns.append(fid)\n    \n    # No products to keep model small\n    products = []\n    \n    # Simple weighted score: sum of top drivers with their effect sizes as weights\n    loadings = {}\n    for i, fid in enumerate(ids):\n        if fid in drivers:\n            loadings[fid] = effect_sizes[sorted_indices[i]]\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                 products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features\n    non_derived = [i for i, t in enumerate(feats.types) if t != 'derived']\n    ids = [feats.ids[i] for i in non_derived]\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    y = feats.y\n    effect_sizes = []\n    for i, fid in enumerate(ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        mean_0 = np.mean(x[y == 0])\n        mean_1 = np.mean(x[y == 1])\n        effect_size = mean_1 - mean_0\n        effect_sizes.append(effect_size)\n    \n    # Rank by effect size magnitude\n    sorted_indices = np.argsort(np.abs(effect_sizes))[::-1]\n    \n    # Select top drivers\n    drivers = []\n    seen = set()\n    for idx in sorted_indices:\n        fid = ids[idx]\n        # Skip if highly correlated with already selected drivers\n        is_correlated = False\n        for d in drivers:\n            if abs(stats.pearsonr(feats.x[:, feats.column(fid)], \n                                 feats.x[:, feats.column(d)])[0]) > 0.6:\n                is_correlated = True\n                break\n        if not is_correlated:\n            drivers.append(fid)\n            seen.add(fid)\n        if len(drivers) >= MAX_DRIVERS:\n            break\n    \n    # Build columns (only top features)\n    columns = []\n    for idx in sorted_indices[:10]:  # Limit to top 10 features\n        fid = ids[idx]\n        columns.append(fid)\n    \n    # No products to keep model small\n    products = []\n    \n    # Simple weighted score: sum of top drivers with their effect sizes as weights\n    loadings = {}\n    for i, fid in enumerate(ids):\n        if fid in drivers:\n            loadings[fid] = effect_sizes[sorted_indices[i]]\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                 products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4901,
+  "completion_tokens": 998,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2298
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1880
+   }
+  ],
+  "wall_s": 11.5
+ }
+}

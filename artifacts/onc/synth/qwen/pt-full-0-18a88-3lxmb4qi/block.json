@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3lxmb4qi",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strongly associated features\n    effect_sizes = [abs(feats.x[:, feats.column(fid)].mean() * feats.y.mean()) \n                   for fid in feats.ids]\n    strong_features = [fid for fid, effect in zip(feats.ids, effect_sizes) if effect > 0.1]\n    \n    # If no strong features, return empty design\n    if not strong_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster correlated features\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in strong_features]].T)\n    clustering = AgglomerativeClustering(n_clusters=2, linkage='average')\n    clusters = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Select the larger cluster as our module\n    module = [strong_features[i] for i in range(len(strong_features)) if clusters[i] == np.bincount(clusters).argmax()]\n    \n    # Compute weighted score using first principal component\n    module_data = feats.x[:, [feats.column(fid) for fid in module]]\n    _, _, vt = np.linalg.svd(module_data, full_matrices=False)\n    weights = vt[0] / np.linalg.norm(vt[0])\n    loadings = dict(zip(module, weights))\n    \n    # Return design with module members as drivers and loadings\n    return Design(\n        drivers=tuple(module),\n        columns=tuple(module),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7849,
+  "completion_tokens": 1091,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 1589
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on a 60 percent training fold:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 1533
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on a 60 percent training fold: 9 drivers; at most 4",
+    "bytes": 1468
+   }
+  ],
+  "wall_s": 12.9
+ }
+}

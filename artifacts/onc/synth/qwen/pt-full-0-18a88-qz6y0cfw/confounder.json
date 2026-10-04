@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-qz6y0cfw",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers (clinical variables)\n    clinical_vars = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'clinical']\n    \n    # If no clinical vars, skip driver selection\n    if not clinical_vars:\n        drivers = ()\n    else:\n        # Find the most strongly correlated clinical variable with outcome\n        max_correlation = 0\n        best_driver = None\n        for fid in clinical_vars:\n            col_idx = feats.column(fid)\n            cor = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n            if abs(cor) > max_correlation:\n                max_correlation = abs(cor)\n                best_driver = fid\n        \n        # Only use driver if correlation is meaningful\n        if max_correlation > 0.1:\n            drivers = (best_driver,)\n        else:\n            drivers = ()\n    \n    # Select features based on correlation with outcome\n    correlations = []\n    for i, fid in enumerate(feats.ids):\n        cor = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n        correlations.append((abs(cor), fid))\n    correlations.sort(reverse=True)\n    \n    # Take top features but limit total terms\n    columns = [fid for _, fid in correlations[:8]]\n    \n    # Remove near-duplicates (correlation >= 0.6)\n    unique_columns = []\n    for fid in columns:\n        col_idx = feats.column(fid)\n        is_unique = True\n        for existing_fid in unique_columns:\n            existing_idx = feats.column(existing_fid)\n            corr = np.corrcoef(feats.x[:, col_idx], feats.x[:, existing_idx])[0, 1]\n            if abs(corr) >= 0.6:\n                is_unique = False\n                break\n        if is_unique:\n            unique_columns.append(fid)\n    \n    # Limit to reasonable number of features\n    columns = unique_columns[:6]\n    \n    # Create products only for top 3 features to avoid overfitting\n    products = []\n    if len(columns) >= 2:\n        top_cols = columns[:3]\n        for i in range(len(top_cols)):\n            for j in range(i+1, len(top_cols)):\n                products.append((top_cols[i], top_cols[j]))\n    \n    # Return design with minimal terms\n    return Design(\n        drivers=drivers,\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers (clinical variables)\n    clinical_vars = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'clinical']\n    \n    # If no clinical vars, skip driver selection\n    if not clinical_vars:\n        drivers = ()\n    else:\n        # Find the most strongly correlated clinical variable with outcome\n        max_correlation = 0\n        best_driver = None\n        for fid in clinical_vars:\n            col_idx = feats.column(fid)\n            cor = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n            if abs(cor) > max_correlation:\n                max_correlation = abs(cor)\n                best_driver = fid\n        \n        # Only use driver if correlation is meaningful\n        if max_correlation > 0.1:\n            drivers = (best_driver,)\n        else:\n            drivers = ()\n    \n    # Select features based on correlation with outcome\n    correlations = []\n    for i, fid in enumerate(feats.ids):\n        cor = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n        correlations.append((abs(cor), fid))\n    correlations.sort(reverse=True)\n    \n    # Take top features but limit total terms\n    columns = [fid for _, fid in correlations[:8]]\n    \n    # Remove near-duplicates (correlation >= 0.6)\n    unique_columns = []\n    for fid in columns:\n        col_idx = feats.column(fid)\n        is_unique = True\n        for existing_fid in unique_columns:\n            existing_idx = feats.column(existing_fid)\n            corr = np.corrcoef(feats.x[:, col_idx], feats.x[:, existing_idx])[0, 1]\n            if abs(corr) >= 0.6:\n                is_unique = False\n                break\n        if is_unique:\n            unique_columns.append(fid)\n    \n    # Limit to reasonable number of features\n    columns = unique_columns[:6]\n    \n    # Create products only for top 3 features to avoid overfitting\n    products = []\n    if len(columns) >= 2:\n        top_cols = columns[:3]\n        for i in range(len(top_cols)):\n            for j in range(i+1, len(top_cols)):\n                products.append((top_cols[i], top_cols[j]))\n    \n    # Return design with minimal terms\n    return Design(\n        drivers=drivers,\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5514,
+  "completion_tokens": 1526,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 4419
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2367
+   }
+  ],
+  "wall_s": 27.1
+ }
+}

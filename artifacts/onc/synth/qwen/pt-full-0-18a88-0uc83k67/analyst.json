@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-0uc83k67",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlations\n    dup_pairs = [\n        ('DZQJ1B', 'IWXU3'), ('WXF10', 'QTLM17'), ('WXF10', 'WZOP11'),\n        ('VBAT15B', 'WZOP11'), ('ZJC5', 'IWXU3'), ('WZOP11', 'QTLM17'),\n        ('BGCQ3', 'QTLM17'), ('IWXU3', 'QTLM17'), ('GAE11', 'WXF10'),\n        ('ZJC5', 'DZQJ1B'), ('ZJC5', 'QTLM17'), ('GAE11', 'QTLM17'),\n        ('HMQJ7', 'QTLM17'), ('XKXG6', 'QTLM17'), ('WXF10', 'BGCQ3'),\n        ('LRK17B', 'QTLM17'), ('IDH14', 'QTLM17'), ('ZJC5', 'SOJ4'),\n        ('HMQJ7', 'YTN8A'), ('XKXG6', 'IWXU3')\n    ]\n    \n    # Keep track of which features to exclude due to duplication\n    excluded = set()\n    for a, b in dup_pairs:\n        if a in feats.ids and b in feats.ids:\n            excluded.add(b)  # Remove the second in pair\n    \n    # Filter features\n    keep_ids = [fid for fid in feats.ids if fid not in excluded]\n    \n    if len(keep_ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute effect sizes (difference in means)\n    keep_indices = [feats.column(fid) for fid in keep_ids]\n    x_keep = feats.x[:, keep_indices]\n    \n    # Compute mean differences for each feature\n    y = feats.y\n    means_0 = np.mean(x_keep[y == 0], axis=0)\n    means_1 = np.mean(x_keep[y == 1], axis=0)\n    effect_sizes = means_1 - means_0\n    \n    # Rank by absolute effect size\n    ranked_indices = np.argsort(np.abs(effect_sizes))[::-1]\n    ranked_ids = [keep_ids[i] for i in ranked_indices]\n    \n    # Select top candidates\n    candidates = ranked_ids[:min(4, len(ranked_ids))]  # Limit to 4\n    \n    # Simple approach: just use the top features directly\n    # No complex modeling, just take the top 4 features by effect size\n    drivers = tuple(candidates)\n    \n    # For columns, we'll use a subset of the most impactful features\n    # Use the top 3 features for the model\n    selected_features = candidates[:3] if len(candidates) >= 3 else candidates\n    \n    # For loadings, use simple weights based on effect sizes\n    loadings = {}\n    for i, fid in enumerate(selected_features):\n        idx = feats.column(fid)\n        loadings[fid] = effect_sizes[i]\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(selected_features),\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlations\n    dup_pairs = [\n        ('DZQJ1B', 'IWXU3'), ('WXF10', 'QTLM17'), ('WXF10', 'WZOP11'),\n        ('VBAT15B', 'WZOP11'), ('ZJC5', 'IWXU3'), ('WZOP11', 'QTLM17'),\n        ('BGCQ3', 'QTLM17'), ('IWXU3', 'QTLM17'), ('GAE11', 'WXF10'),\n        ('ZJC5', 'DZQJ1B'), ('ZJC5', 'QTLM17'), ('GAE11', 'QTLM17'),\n        ('HMQJ7', 'QTLM17'), ('XKXG6', 'QTLM17'), ('WXF10', 'BGCQ3'),\n        ('LRK17B', 'QTLM17'), ('IDH14', 'QTLM17'), ('ZJC5', 'SOJ4'),\n        ('HMQJ7', 'YTN8A'), ('XKXG6', 'IWXU3')\n    ]\n    \n    # Keep track of which features to exclude due to duplication\n    excluded = set()\n    for a, b in dup_pairs:\n        if a in feats.ids and b in feats.ids:\n            excluded.add(b)  # Remove the second in pair\n    \n    # Filter features\n    keep_ids = [fid for fid in feats.ids if fid not in excluded]\n    \n    if len(keep_ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute effect sizes (difference in means)\n    keep_indices = [feats.column(fid) for fid in keep_ids]\n    x_keep = feats.x[:, keep_indices]\n    \n    # Compute mean differences for each feature\n    y = feats.y\n    means_0 = np.mean(x_keep[y == 0], axis=0)\n    means_1 = np.mean(x_keep[y == 1], axis=0)\n    effect_sizes = means_1 - means_0\n    \n    # Rank by absolute effect size\n    ranked_indices = np.argsort(np.abs(effect_sizes))[::-1]\n    ranked_ids = [keep_ids[i] for i in ranked_indices]\n    \n    # Select top candidates\n    candidates = ranked_ids[:min(4, len(ranked_ids))]  # Limit to 4\n    \n    # Simple approach: just use the top features directly\n    # No complex modeling, just take the top 4 features by effect size\n    drivers = tuple(candidates)\n    \n    # For columns, we'll use a subset of the most impactful features\n    # Use the top 3 features for the model\n    selected_features = candidates[:3] if len(candidates) >= 3 else candidates\n    \n    # For loadings, use simple weights based on effect sizes\n    loadings = {}\n    for i, fid in enumerate(selected_features):\n        idx = feats.column(fid)\n        loadings[fid] = effect_sizes[i]\n    \n    # No interaction terms to keep model small\n    products = ()\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(selected_features),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8996,
+  "completion_tokens": 2487,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3015
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3065
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2483
+   }
+  ],
+  "wall_s": 28.7
+ }
+}

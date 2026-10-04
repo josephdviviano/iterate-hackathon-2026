@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-iptuuu8s",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    keep = []\n    seen = set()\n    \n    for i, fid in enumerate(ids):\n        if fid in seen:\n            continue\n            \n        # Check for correlations >= 0.6\n        correlated = False\n        for j in range(i+1, len(ids)):\n            if ids[j] in seen:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlated = True\n                seen.add(ids[j])\n                break\n        \n        if not correlated:\n            keep.append(i)\n            seen.add(fid)\n    \n    # Select top features by t-test statistic\n    t_stats = []\n    for i in keep:\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic and select top features\n    top_indices = np.argsort(t_stats)[::-1][:MAX_DRIVERS]\n    selected_ids = [ids[i] for i in top_indices]\n    \n    # If no strong associations, return empty design\n    if max(t_stats) < 2.0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build design with top features\n    drivers = tuple(selected_ids[:min(MAX_DRIVERS, len(selected_ids))])\n    columns = tuple(selected_ids[:min(MAX_DRIVERS, len(selected_ids))])\n    \n    # Add interaction terms for top two features if they're different\n    products = ()\n    if len(selected_ids) >= 2:\n        products = ((selected_ids[0], selected_ids[1]),)\n    \n    # Create weighted score using top feature\n    loadings = {selected_ids[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    keep = []\n    seen = set()\n    \n    for i, fid in enumerate(ids):\n        if fid in seen:\n            continue\n            \n        # Check for correlations >= 0.6\n        correlated = False\n        for j in range(i+1, len(ids)):\n            if ids[j] in seen:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlated = True\n                seen.add(ids[j])\n                break\n        \n        if not correlated:\n            keep.append(i)\n            seen.add(fid)\n    \n    # Select top features by t-test statistic\n    t_stats = []\n    for i in keep:\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic and select top features\n    top_indices = np.argsort(t_stats)[::-1][:MAX_DRIVERS]\n    selected_ids = [ids[i] for i in top_indices]\n    \n    # If no strong associations, return empty design\n    if max(t_stats) < 2.0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build design with top features\n    drivers = tuple(selected_ids[:min(MAX_DRIVERS, len(selected_ids))])\n    columns = tuple(selected_ids[:min(MAX_DRIVERS, len(selected_ids))])\n    \n    # Add interaction terms for top two features if they're different\n    products = ()\n    if len(selected_ids) >= 2:\n        products = ((selected_ids[0], selected_ids[1]),)\n    \n    # Create weighted score using top feature\n    loadings = {selected_ids[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7915,
+  "completion_tokens": 1436,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1929
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1870
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1870
+   }
+  ],
+  "wall_s": 16.7
+ }
+}

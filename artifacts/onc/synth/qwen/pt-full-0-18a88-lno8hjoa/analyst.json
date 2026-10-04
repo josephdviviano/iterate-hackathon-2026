@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-lno8hjoa",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong univariate predictors\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(np.corrcoef(feats.x[:, i], feats.y)[0, 1]) > 0.1:\n            strong_features.append((fid, i))\n    \n    # Remove near-duplicates\n    keep = []\n    used = set()\n    for fid, i in strong_features:\n        if any(abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]) > 0.6 \n               for j in keep if j != i):\n            continue\n        keep.append(i)\n        used.add(fid)\n    \n    # Build logistic regression features\n    columns = [feats.ids[i] for i in keep]\n    \n    # Check for interactions among top features\n    products = []\n    top_fids = [feats.ids[i] for i in keep[:3]]\n    for i, a in enumerate(top_fids):\n        for b in top_fids[i+1:]:\n            if a in used and b in used:\n                products.append((a, b))\n    \n    # Select drivers based on correlation with outcome\n    correlations = [np.corrcoef(feats.x[:, i], feats.y)[0, 1] \n                    for i in keep]\n    driver_indices = np.argsort(np.abs(correlations))[::-1][:min(MAX_DRIVERS, len(keep))]\n    drivers = [feats.ids[keep[i]] for i in driver_indices]\n    \n    # Create weighted score from top features\n    loadings = dict(zip(columns, correlations))\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7868,
+  "completion_tokens": 1225,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1590
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1606
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1606
+   }
+  ],
+  "wall_s": 14.3
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-j3rht49t",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs and build adjacency matrix\n    adj = np.zeros((len(feats.ids), len(feats.ids)))\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                adj[i,j] = adj[j,i] = 1\n    \n    # Find connected components\n    if adj.sum() == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use spectral clustering to find modules\n    clustering = SpectralClustering(n_clusters=2, affinity='precomputed', random_state=0)\n    labels = clustering.fit_predict(adj)\n    \n    # Select largest module\n    module_ids = [feats.ids[i] for i in range(len(feats.ids)) if labels[i] == np.bincount(labels).argmax()]\n    \n    # If no module found or too small, return empty\n    if len(module_ids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score using first principal component\n    module_cols = [feats.column(fid) for fid in module_ids]\n    module_data = feats.x[:, module_cols]\n    \n    # Center and scale\n    module_data = (module_data - np.mean(module_data, axis=0)) / np.std(module_data, axis=0)\n    \n    # PCA to get first component\n    u, s, vT = np.linalg.svd(module_data, full_matrices=False)\n    weights = vT[0] / np.linalg.norm(vT[0])\n    \n    loadings = dict(zip(module_ids, weights))\n    \n    # Drivers are top features by effect size (mean_y1-mean_y0)\n    effects = []\n    for fid in module_ids:\n        col_idx = feats.column(fid)\n        y1 = feats.x[feats.y==1, col_idx]\n        y0 = feats.x[feats.y==0, col_idx]\n        effect = np.mean(y1) - np.mean(y0)\n        effects.append((effect, fid))\n    \n    # Sort by absolute effect size and take top 4 (at most)\n    sorted_effects = sorted(effects, key=lambda x: -abs(x[0]))\n    drivers = tuple([fid for _, fid in sorted_effects[:4]])\n    \n    # Columns are all module features\n    columns = tuple(module_ids)\n    \n    # Products are pairs with correlation > 0.6\n    products = []\n    for i, fid1 in enumerate(module_ids):\n        for j, fid2 in enumerate(module_ids[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8494,
+  "completion_tokens": 2085,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2550
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2655
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2581
+   }
+  ],
+  "wall_s": 23.8
+ }
+}

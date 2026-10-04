@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-g73nces5",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features to form modules\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Find connected components (modules)\n    clustering = AgglomerativeClustering(\n        n_clusters=None,\n        distance_threshold=1-0.6,\n        linkage='complete'\n    )\n    cluster_labels = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Select the largest module\n    unique_labels, counts = np.unique(cluster_labels, return_counts=True)\n    if len(counts) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_module = unique_labels[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) \n                       if cluster_labels[i] == largest_module]\n    \n    # Compute weighted score using first principal component\n    module_data = feats.x[:, [feats.column(fid) for fid in module_features]]\n    _, _, vh = np.linalg.svd(module_data, full_matrices=False)\n    weights = vh[0] / np.linalg.norm(vh[0])\n    \n    loadings = dict(zip(module_features, weights))\n    \n    # Select top features by t-statistic for drivers\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'clinical':\n            y0 = feats.x[feats.y==0, i]\n            y1 = feats.x[feats.y==1, i]\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            t_stats.append(abs(t_stat))\n        else:\n            t_stats.append(0)\n    \n    # Get indices of top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:MAX_DRIVERS]\n    drivers = tuple([feats.ids[i] for i in top_indices if feats.ids[i] in module_features])\n    \n    # Return design with module features\n    return Design(\n        drivers=drivers,\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features to form modules\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Find connected components (modules)\n    clustering = AgglomerativeClustering(\n        n_clusters=None,\n        distance_threshold=1-0.6,\n        linkage='complete'\n    )\n    cluster_labels = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Select the largest module\n    unique_labels, counts = np.unique(cluster_labels, return_counts=True)\n    if len(counts) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_module = unique_labels[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) \n                       if cluster_labels[i] == largest_module]\n    \n    # Compute weighted score using first principal component\n    module_data = feats.x[:, [feats.column(fid) for fid in module_features]]\n    _, _, vh = np.linalg.svd(module_data, full_matrices=False)\n    weights = vh[0] / np.linalg.norm(vh[0])\n    \n    loadings = dict(zip(module_features, weights))\n    \n    # Select top features by t-statistic for drivers\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'clinical':\n            y0 = feats.x[feats.y==0, i]\n            y1 = feats.x[feats.y==1, i]\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            t_stats.append(abs(t_stat))\n        else:\n            t_stats.append(0)\n    \n    # Get indices of top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:MAX_DRIVERS]\n    drivers = tuple([feats.ids[i] for i in top_indices if feats.ids[i] in module_features])\n    \n    # Return design with module features\n    return Design(\n        drivers=drivers,\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4890,
+  "completion_tokens": 1040,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2136
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2104
+   }
+  ],
+  "wall_s": 12.1
+ }
+}

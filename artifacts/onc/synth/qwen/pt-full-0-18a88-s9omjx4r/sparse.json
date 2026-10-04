@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s9omjx4r",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out correlated features (|r| >= 0.6) keeping only one from each pair\n    correlated_pairs = [\n        ('LLD15B', 'UMER10'), ('PIDK14', 'RVD4'), ('PIDK14', 'UMER10'), \n        ('YHMV15', 'GRD5'), ('MZOE8', 'UMER10'), ('TWDW4', 'UMER10'),\n        ('WIIQ8', 'KQTD7A'), ('DKJ3', 'PAYD9'), ('PIDK14', 'LLD15B'),\n        ('UEHB14L', 'UMER10'), ('TWDW4', 'LJM11B'), ('LLD15B', 'TWDW4'),\n        ('JAAP6P', 'BYR14'), ('LLD15B', 'UEHB14L'), ('NBG10', 'UMER10'),\n        ('UMER10', 'RZE16B'), ('YHMV15', 'ROC5'), ('YZLX11P', 'LLD15B'),\n        ('LLD15B', 'NBG10'), ('PIDK14', 'MZOE8')\n    ]\n    \n    # Build set of features to exclude\n    exclude = set()\n    for a, b in correlated_pairs:\n        if a in feats.ids and b in feats.ids:\n            # Keep the one with higher absolute effect size\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            effect_a = abs(np.mean(feats.x[feats.y==1, idx_a]) - np.mean(feats.x[feats.y==0, idx_a]))\n            effect_b = abs(np.mean(feats.x[feats.y==1, idx_b]) - np.mean(feats.x[feats.y==0, idx_b]))\n            if effect_a >= effect_b:\n                exclude.add(b)\n            else:\n                exclude.add(a)\n    \n    # Select features not in exclude set\n    valid_ids = [fid for fid in feats.ids if fid not in exclude]\n    valid_indices = [feats.column(fid) for fid in valid_ids]\n    \n    # Calculate effect sizes (mean difference)\n    effects = []\n    for i, fid in enumerate(valid_ids):\n        idx = valid_indices[i]\n        effect = np.mean(feats.x[feats.y==1, idx]) - np.mean(feats.x[feats.y==0, idx])\n        effects.append((abs(effect), fid))\n    \n    # Sort by effect size (descending)\n    effects.sort(reverse=True)\n    drivers = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # Remove any duplicate drivers (shouldn't happen but just in case)\n    drivers = list(dict.fromkeys(drivers))  # preserves order, removes duplicates\n    \n    # For products, consider top 3 features\n    top_features = [fid for _, fid in effects[:3]]\n    products = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            products.append((top_features[i], top_features[j]))\n    \n    # Loadings: use effect sizes as weights\n    loadings = {}\n    for _, fid in effects[:len(effects)//2]:\n        idx = feats.column(fid)\n        effect = np.mean(feats.x[feats.y==1, idx]) - np.mean(feats.x[feats.y==0, idx])\n        loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(valid_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8911,
+  "completion_tokens": 2486,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2638
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2796
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2796
+   }
+  ],
+  "wall_s": 31.9
+ }
+}

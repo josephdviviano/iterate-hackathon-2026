@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-mg16m2tg",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_matrix = np.corrcoef(feats.x.T)\n    np.fill_diagonal(corr_matrix, 0)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    to_remove = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if high_corr_mask[i,j] and feats.ids[i] not in to_remove:\n                to_remove.add(feats.ids[j])\n    \n    # Get non-duplicate features\n    keep_ids = [fid for fid in feats.ids if fid not in to_remove]\n    \n    # Handle case where no features remain after deduplication\n    if not keep_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create mapping from feature id to column index\n    id_to_col = {fid: feats.column(fid) for fid in feats.ids}\n    \n    # Get column indices for kept features\n    keep_cols = [id_to_col[fid] for fid in keep_ids]\n    x_filtered = feats.x[:, keep_cols]\n    \n    # Calculate effect sizes (mean difference by outcome)\n    y = feats.y\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        mean_y0 = np.mean(x_filtered[y==0, i])\n        mean_y1 = np.mean(x_filtered[y==1, i])\n        effect_sizes.append(abs(mean_y1 - mean_y0))\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_features = [keep_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check if any features show significant association\n    p_values = []\n    for i, fid in enumerate(keep_ids):\n        col_idx = id_to_col[fid]\n        if len(np.unique(y)) == 2:  # Ensure we have both classes\n            t_stat, p_val = stats.ttest_ind(x_filtered[y==0, col_idx], x_filtered[y==1, col_idx])\n            p_values.append(p_val)\n        else:\n            p_values.append(1.0)  # No meaningful test\n    \n    # Use Bonferroni correction\n    corrected_p = [p * len(keep_ids) for p in p_values]\n    significant_features = [keep_ids[i] for i in range(len(keep_ids)) if corrected_p[i] < 0.05]\n    \n    # If no significant features, return empty design\n    if not significant_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use top features from significant ones\n    top_significant = [fid for fid in top_features if fid in significant_features]\n    if not top_significant:\n        top_significant = top_features[:1]  # At least one\n    \n    # For simplicity, use top features as drivers and columns\n    drivers = tuple(top_significant[:MAX_DRIVERS])\n    columns = tuple(top_significant[:MAX_DRIVERS])\n    \n    # Simple loading: weight by effect size\n    loadings = {}\n    for i, fid in enumerate(keep_ids):\n        if fid in columns:\n            loadings[fid] = effect_sizes[i]\n    \n    # No products for this simple approach\n    products = ()\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9009,
+  "completion_tokens": 2300,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 25 is out of bounds for axis 1 with size 24",
+    "bytes": 3441
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 25 is out of bounds for axis 1 with size 24",
+    "bytes": 2833
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 25 is out of bounds for axis 1 with size 24",
+    "bytes": 2938
+   }
+  ],
+  "wall_s": 26.1
+ }
+}

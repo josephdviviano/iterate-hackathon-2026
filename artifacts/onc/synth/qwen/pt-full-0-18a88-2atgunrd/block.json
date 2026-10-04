@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-2atgunrd",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 3\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Find connected components in correlation graph\n    clustering = AgglomerativeClustering(\n        n_clusters=None,\n        distance_threshold=1-0.6,\n        linkage='complete'\n    )\n    cluster_labels = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Find largest cluster\n    unique_labels, counts = np.unique(cluster_labels, return_counts=True)\n    if len(counts) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_cluster = unique_labels[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) \n                       if cluster_labels[i] == largest_cluster]\n    \n    # If module too small or no mechanism, return empty design\n    if len(module_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Calculate weighted score using first two features' loadings\n    # Use t-statistics as weights for initial selection\n    t_stats = []\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y==1, col_idx])\n        y0_mean = np.mean(feats.x[feats.y==0, col_idx])\n        t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n        t_stats.append(abs(t_stat))\n    \n    # Weight by t-statistic magnitude\n    weights = np.array(t_stats)\n    weights = weights / np.sum(weights)\n    \n    # Create weighted score\n    loadings = dict(zip(module_features, weights))\n    \n    # Return design with module features\n    return Design(\n        drivers=tuple(module_features[:MAX_DRIVERS]),\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 3\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Find connected components in correlation graph\n    clustering = AgglomerativeClustering(\n        n_clusters=None,\n        distance_threshold=1-0.6,\n        linkage='complete'\n    )\n    cluster_labels = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Find largest cluster\n    unique_labels, counts = np.unique(cluster_labels, return_counts=True)\n    if len(counts) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_cluster = unique_labels[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) \n                       if cluster_labels[i] == largest_cluster]\n    \n    # If module too small or no mechanism, return empty design\n    if len(module_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Calculate weighted score using first two features' loadings\n    # Use t-statistics as weights for initial selection\n    t_stats = []\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y==1, col_idx])\n        y0_mean = np.mean(feats.x[feats.y==0, col_idx])\n        t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n        t_stats.append(abs(t_stat))\n    \n    # Weight by t-statistic magnitude\n    weights = np.array(t_stats)\n    weights = weights / np.sum(weights)\n    \n    # Create weighted score\n    loadings = dict(zip(module_features, weights))\n    \n    # Return design with module features\n    return Design(\n        drivers=tuple(module_features[:MAX_DRIVERS]),\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4822,
+  "completion_tokens": 1020,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2083
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2051
+   }
+  ],
+  "wall_s": 11.7
+ }
+}

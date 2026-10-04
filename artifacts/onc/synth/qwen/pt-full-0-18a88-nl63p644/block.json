@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nl63p644",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly associated features using t-statistics\n    t_stats = [abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                   feats.x[feats.y==0, feats.column(fid)])[0]) \n               for fid in feats.ids]\n    \n    # Select top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    top_ids = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_ids]].T)\n    for i in range(len(top_ids)):\n        for j in range(i+1, len(top_ids)):\n            if abs(corr_matrix[i,j]) > 0.6:\n                to_remove.add(top_ids[j])\n    \n    selected_ids = [fid for fid in top_ids if fid not in to_remove]\n    \n    # If no mechanism, return empty design\n    if len(selected_ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster features to find modules\n    if len(selected_ids) > 1:\n        # Use cosine similarity to cluster\n        x_selected = feats.x[:, [feats.column(fid) for fid in selected_ids]]\n        sim = cosine_similarity(x_selected)\n        clustering = AgglomerativeClustering(n_clusters=min(3, len(selected_ids)), \n                                           linkage='average')\n        clusters = clustering.fit_predict(1-sim)\n        \n        # Find the largest cluster\n        unique_clusters, counts = np.unique(clusters, return_counts=True)\n        main_cluster = unique_clusters[np.argmax(counts)]\n        module_features = [selected_ids[i] for i in range(len(selected_ids)) \n                          if clusters[i] == main_cluster]\n    else:\n        module_features = selected_ids\n    \n    # Create weighted score from module features\n    weights = np.array([t_stats[feats.column(fid)] for fid in module_features])\n    weights = weights / np.sum(weights)  # Normalized weights\n    \n    # Return design with module features\n    return Design(\n        drivers=tuple(module_features[:MAX_DRIVERS]),\n        columns=tuple(module_features),\n        products=(),\n        loadings=dict(zip(module_features, weights))\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8320,
+  "completion_tokens": 1637,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2387
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2363
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2363
+   }
+  ],
+  "wall_s": 19.6
+ }
+}

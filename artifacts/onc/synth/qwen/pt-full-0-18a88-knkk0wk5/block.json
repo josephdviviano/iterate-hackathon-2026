@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-knkk0wk5",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs (|r| >= 0.6)\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Find connected components in correlation graph\n    clustering = AgglomerativeClustering(\n        n_clusters=None,\n        distance_threshold=1-0.6,\n        linkage='complete'\n    )\n    clusters = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Select the largest cluster as potential module\n    unique_clusters, counts = np.unique(clusters, return_counts=True)\n    if len(unique_clusters) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_cluster_id = unique_clusters[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) \n                       if clusters[i] == largest_cluster_id]\n    \n    # Remove near-duplicates (keep first occurrence)\n    unique_module = []\n    seen = set()\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        feature_vector = feats.x[:, col_idx]\n        is_duplicate = any(\n            np.allclose(feature_vector, feats.x[:, feats.column(other_fid)], rtol=1e-2)\n            for other_fid in seen\n        )\n        if not is_duplicate:\n            unique_module.append(fid)\n            seen.add(fid)\n    \n    # If no module found or too small, return empty design\n    if len(unique_module) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create weighted score from module features\n    weights = np.array([np.abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0, 1]) \n                        for fid in unique_module])\n    weights = weights / np.sum(weights)  # Normalize\n    \n    # Return design with module members and their loadings\n    return Design(\n        drivers=(unique_module[0],) if unique_module else (),\n        columns=tuple(unique_module),\n        products=(),\n        loadings={fid: float(w) for fid, w in zip(unique_module, weights)}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs (|r| >= 0.6)\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Find connected components in correlation graph\n    clustering = AgglomerativeClustering(\n        n_clusters=None,\n        distance_threshold=1-0.6,\n        linkage='complete'\n    )\n    clusters = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Select the largest cluster as potential module\n    unique_clusters, counts = np.unique(clusters, return_counts=True)\n    if len(unique_clusters) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_cluster_id = unique_clusters[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) \n                       if clusters[i] == largest_cluster_id]\n    \n    # Remove near-duplicates (keep first occurrence)\n    unique_module = []\n    seen = set()\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        feature_vector = feats.x[:, col_idx]\n        is_duplicate = any(\n            np.allclose(feature_vector, feats.x[:, feats.column(other_fid)], rtol=1e-2)\n            for other_fid in seen\n        )\n        if not is_duplicate:\n            unique_module.append(fid)\n            seen.add(fid)\n    \n    # If no module found or too small, return empty design\n    if len(unique_module) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create weighted score from module features\n    weights = np.array([np.abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0, 1]) \n                        for fid in unique_module])\n    weights = weights / np.sum(weights)  # Normalize\n    \n    # Return design with module members and their loadings\n    return Design(\n        drivers=(unique_module[0],) if unique_module else (),\n        columns=tuple(unique_module),\n        products=(),\n        loadings={fid: float(w) for fid, w in zip(unique_module, weights)}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4884,
+  "completion_tokens": 1048,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2252
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2220
+   }
+  ],
+  "wall_s": 12.0
+ }
+}

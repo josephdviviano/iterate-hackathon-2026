@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tznf9695",
+ "seed": "skeptic",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check for significant associations with outcome\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        x = feats.x[:, i]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0])\n        if p_val < 0.05 and abs(t_stat) > 2.0:\n            sig_features.append((fid, t_stat, p_val))\n    \n    # Sort by effect size\n    sig_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Remove near-duplicates (correlated features)\n    filtered_features = []\n    excluded = set()\n    for i, (fid1, _, _) in enumerate(sig_features):\n        if fid1 in excluded:\n            continue\n        filtered_features.append(fid1)\n        # Check correlations with other features\n        for j, (fid2, _, _) in enumerate(sig_features[i+1:], i+1):\n            if fid2 in excluded:\n                continue\n            idx1 = feats.column(fid1)\n            idx2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0,1]\n            if abs(corr) >= 0.6:\n                excluded.add(fid2)\n    \n    # If no significant features, return empty design\n    if len(filtered_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Test for interaction effects\n    products = []\n    for i, fid1 in enumerate(filtered_features):\n        for fid2 in filtered_features[i+1:]:\n            idx1 = feats.column(fid1)\n            idx2 = feats.column(fid2)\n            # Check if interaction term would be significant\n            x1 = feats.x[:, idx1]\n            x2 = feats.x[:, idx2]\n            interaction = x1 * x2\n            t_stat, _ = stats.ttest_ind(interaction[feats.y==1], interaction[feats.y==0])\n            if abs(t_stat) > 2.0:\n                products.append((fid1, fid2))\n    \n    # Fit logistic regression to identify key features\n    selected_features = filtered_features[:MAX_DRIVERS]\n    X = feats.x[:, [feats.column(fid) for fid in selected_features]]\n    lr = LogisticRegression(penalty='l1', solver='liblinear')\n    lr.fit(X, feats.y)\n    \n    # Get coefficients and select features with non-zero weights\n    coefs = lr.coef_[0]\n    final_features = [fid for i, fid in enumerate(selected_features) if abs(coefs[i]) > 0.01]\n    \n    # For weighted score, use top feature with largest coefficient\n    if final_features:\n        top_fid = final_features[0]\n        loading = abs(coefs[final_features.index(top_fid)])\n        loadings = {top_fid: loading}\n    else:\n        loadings = {}\n    \n    return Design(\n        drivers=tuple(final_features),\n        columns=tuple(final_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check for significant associations with outcome\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        x = feats.x[:, i]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0])\n        if p_val < 0.05 and abs(t_stat) > 2.0:\n            sig_features.append((fid, t_stat, p_val))\n    \n    # Sort by effect size\n    sig_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Remove near-duplicates (correlated features)\n    filtered_features = []\n    excluded = set()\n    for i, (fid1, _, _) in enumerate(sig_features):\n        if fid1 in excluded:\n            continue\n        filtered_features.append(fid1)\n        # Check correlations with other features\n        for j, (fid2, _, _) in enumerate(sig_features[i+1:], i+1):\n            if fid2 in excluded:\n                continue\n            idx1 = feats.column(fid1)\n            idx2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0,1]\n            if abs(corr) >= 0.6:\n                excluded.add(fid2)\n    \n    # If no significant features, return empty design\n    if len(filtered_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Test for interaction effects\n    products = []\n    for i, fid1 in enumerate(filtered_features):\n        for fid2 in filtered_features[i+1:]:\n            idx1 = feats.column(fid1)\n            idx2 = feats.column(fid2)\n            # Check if interaction term would be significant\n            x1 = feats.x[:, idx1]\n            x2 = feats.x[:, idx2]\n            interaction = x1 * x2\n            t_stat, _ = stats.ttest_ind(interaction[feats.y==1], interaction[feats.y==0])\n            if abs(t_stat) > 2.0:\n                products.append((fid1, fid2))\n    \n    # Fit logistic regression to identify key features\n    selected_features = filtered_features[:MAX_DRIVERS]\n    X = feats.x[:, [feats.column(fid) for fid in selected_features]]\n    lr = LogisticRegression(penalty='l1', solver='liblinear')\n    lr.fit(X, feats.y)\n    \n    # Get coefficients and select features with non-zero weights\n    coefs = lr.coef_[0]\n    final_features = [fid for i, fid in enumerate(selected_features) if abs(coefs[i]) > 0.01]\n    \n    # For weighted score, use top feature with largest coefficient\n    if final_features:\n        top_fid = final_features[0]\n        loading = abs(coefs[final_features.index(top_fid)])\n        loadings = {top_fid: loading}\n    else:\n        loadings = {}\n    \n    return Design(\n        drivers=tuple(final_features),\n        columns=tuple(final_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8626,
+  "completion_tokens": 2193,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2940
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3082
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2891
+   }
+  ],
+  "wall_s": 19.1
+ }
+}

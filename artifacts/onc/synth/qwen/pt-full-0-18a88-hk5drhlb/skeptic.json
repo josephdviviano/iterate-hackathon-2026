@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-hk5drhlb",
+ "seed": "skeptic",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    if len(feats.ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check if any feature shows significant association with outcome\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])) > 0.1:\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if p_val < 0.05:\n                sig_features.append((fid, abs(t_stat)))\n    \n    # If no significant features, return empty design\n    if not sig_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Sort by effect size\n    sig_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Check for near-duplicates using correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    to_remove = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(feats.ids[j])\n    \n    # Filter out near-duplicates\n    unique_features = [fid for fid, _ in sig_features if fid not in to_remove]\n    \n    # If we have too many features, keep top ones (max MAX_DRIVERS)\n    if len(unique_features) > MAX_DRIVERS:\n        unique_features = unique_features[:MAX_DRIVERS]\n    \n    # Get driver features\n    drivers = tuple(unique_features)\n    \n    # For products, check for interactions between top features\n    products = []\n    for i, fid1 in enumerate(unique_features):\n        for j, fid2 in enumerate(unique_features[i+1:], i+1):\n            products.append((fid1, fid2))\n    \n    # For columns, use all features that show some association\n    columns = tuple([fid for fid, _ in sig_features if fid not in to_remove])\n    \n    # Loadings based on standardized coefficients from simple regression\n    loadings = {}\n    if len(columns) > 0:\n        model = LogisticRegression(fit_intercept=False, max_iter=1000)\n        model.fit(feats.x[:, [feats.column(fid) for fid in columns]], feats.y)\n        for i, fid in enumerate(columns):\n            loadings[fid] = float(model.coef_[0][i])\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    if len(feats.ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check if any feature shows significant association with outcome\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])) > 0.1:\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if p_val < 0.05:\n                sig_features.append((fid, abs(t_stat)))\n    \n    # If no significant features, return empty design\n    if not sig_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Sort by effect size\n    sig_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Check for near-duplicates using correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    to_remove = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(feats.ids[j])\n    \n    # Filter out near-duplicates\n    unique_features = [fid for fid, _ in sig_features if fid not in to_remove]\n    \n    # If we have too many features, keep top ones (max MAX_DRIVERS)\n    if len(unique_features) > MAX_DRIVERS:\n        unique_features = unique_features[:MAX_DRIVERS]\n    \n    # Get driver features\n    drivers = tuple(unique_features)\n    \n    # For products, check for interactions between top features\n    products = []\n    for i, fid1 in enumerate(unique_features):\n        for j, fid2 in enumerate(unique_features[i+1:], i+1):\n            products.append((fid1, fid2))\n    \n    # For columns, use all features that show some association\n    columns = tuple([fid for fid, _ in sig_features if fid not in to_remove])\n    \n    # Loadings based on standardized coefficients from simple regression\n    loadings = {}\n    if len(columns) > 0:\n        model = LogisticRegression(fit_intercept=False, max_iter=1000)\n        model.fit(feats.x[:, [feats.column(fid) for fid in columns]], feats.y)\n        for i, fid in enumerate(columns):\n            loadings[fid] = float(model.coef_[0][i])\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8270,
+  "completion_tokens": 1852,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2447
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2375
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2375
+   }
+  ],
+  "wall_s": 21.1
+ }
+}

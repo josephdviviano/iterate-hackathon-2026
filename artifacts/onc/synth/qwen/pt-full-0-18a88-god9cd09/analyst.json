@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-god9cd09",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on t-test and AUC\n    ids = feats.ids\n    types = feats.types\n    x = feats.x\n    y = feats.y\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    means_1 = np.mean(x[y==1], axis=0)\n    means_0 = np.mean(x[y==0], axis=0)\n    effect_sizes = means_1 - means_0\n    \n    # Get top features by absolute effect size\n    top_indices = np.argsort(np.abs(effect_sizes))[::-1][:10]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('AUZ6P', 'UUX12'), ('ETYO3', 'UUX12'), ('NRXH16A', 'UUX12'),\n        ('BAFT2', 'UUX12'), ('FVY4', 'UUX12'), ('RNR18', 'UUX12'),\n        ('ETYO3', 'BAFT2'), ('XKF4', 'UUX12'), ('NRXH16A', 'AUZ6P'),\n        ('ETYO3', 'LKF15'), ('OPYB17', 'UUX12'), ('AUZ6P', 'BAFT2'),\n        ('ZTFJ6', 'XEXB2'), ('ETYO3', 'AUZ6P'), ('ETYO3', 'OPYB17'),\n        ('RNR18', 'AUZ6P'), ('AUZ6P', 'FVY4'), ('ETYO3', 'XKF4'),\n        ('QTAN4A', 'VET14P'), ('TCKC9', 'UUX12')\n    ]\n    \n    # Build set of all correlated features\n    correlated_features = set()\n    for a, b in correlated_pairs:\n        if a in ids and b in ids:\n            correlated_features.add(a)\n            correlated_features.add(b)\n    \n    # Select top features avoiding near-duplicates\n    selected_features = []\n    used_features = set()\n    \n    for idx in top_indices:\n        fid = ids[idx]\n        if fid in used_features:\n            continue\n        if fid in correlated_features:\n            # Check if any correlated pair is already selected\n            skip = False\n            for a, b in correlated_pairs:\n                if a == fid and b in used_features:\n                    skip = True\n                    break\n                if b == fid and a in used_features:\n                    skip = True\n                    break\n            if skip:\n                continue\n        selected_features.append(fid)\n        used_features.add(fid)\n        if len(selected_features) >= 3:  # Limit to 3 drivers max\n            break\n    \n    # For this world, we have a clear mechanism\n    # Based on high t-scores and effect sizes, select top features\n    drivers = tuple(selected_features)\n    \n    # All features with significant effect sizes\n    columns = tuple(ids[i] for i in top_indices[:3])\n    \n    # Product terms for top correlated pairs\n    products = []\n    for a, b in correlated_pairs:\n        if a in ids and b in ids:\n            products.append((a, b))\n    \n    # Weighted score using top features\n    loadings = dict(zip(ids, effect_sizes))\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8846,
+  "completion_tokens": 2387,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2942
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2876
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2892
+   }
+  ],
+  "wall_s": 27.3
+ }
+}

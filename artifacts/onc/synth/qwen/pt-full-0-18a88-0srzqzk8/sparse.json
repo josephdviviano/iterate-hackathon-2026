@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-0srzqzk8",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out derived features as they're less reliable\n    non_derived_mask = [t != 'derived' for t in feats.types]\n    ids = [feats.ids[i] for i in range(len(feats.ids)) if non_derived_mask[i]]\n    types = [feats.types[i] for i in range(len(feats.types)) if non_derived_mask[i]]\n    \n    # Get indices of non-derived features\n    cols = [feats.column(fid) for fid in ids]\n    \n    # Compute correlations to identify near-duplicates\n    X = feats.x[:, cols]\n    corr_matrix = np.corrcoef(X.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Remove near-duplicates\n    filtered_ids = [ids[i] for i in range(len(ids)) if i not in to_remove]\n    filtered_cols = [cols[i] for i in range(len(cols)) if i not in to_remove]\n    \n    # Calculate effect sizes using Welch's t-test\n    effect_sizes = []\n    for i, fid in enumerate(filtered_ids):\n        col_idx = filtered_cols[i]\n        x = feats.x[:, col_idx]\n        y = feats.y\n        group1 = x[y == 1]\n        group0 = x[y == 0]\n        if len(group1) > 0 and len(group0) > 0:\n            t_stat, _ = stats.ttest_ind(group1, group0, equal_var=False)\n            effect_sizes.append((abs(t_stat), fid))\n        else:\n            effect_sizes.append((0, fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(reverse=True)\n    \n    # Select top candidates for drivers (max 3 to keep model small)\n    drivers = [fid for _, fid in effect_sizes[:3]]\n    \n    # For joint modeling, consider products of top 2 features\n    products = []\n    columns = filtered_ids\n    \n    # Add products between top 2 features only\n    if len(drivers) >= 2:\n        products.append((drivers[0], drivers[1]))\n    \n    # Create weighted score from top features\n    loadings = {}\n    for i, (effect_size, fid) in enumerate(effect_sizes[:2]):\n        if effect_size > 0:\n            loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8266,
+  "completion_tokens": 1805,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2421
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2444
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2207
+   }
+  ],
+  "wall_s": 20.9
+ }
+}

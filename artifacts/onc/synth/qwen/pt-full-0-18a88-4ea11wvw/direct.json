@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-4ea11wvw",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [\n        ('CRL8', 'BHE14B'), ('SMB7', 'EWPQ3'), ('RGDN4', 'HFCM17P'),\n        ('XTB2', 'HFCM17P'), ('LLSP6', 'HFCM17P'), ('PFD13A', 'HFCM17P'),\n        ('FMJP10', 'HFCM17P'), ('LFIP19', 'HFCM17P'), ('EWK12', 'HFCM17P'),\n        ('LLSP6', 'PFD13A'), ('RGDN4', 'LLSP6'), ('EGP15A', 'HFCM17P'),\n        ('DKHF13', 'HFCM17P'), ('WZBE5', 'HFCM17P'), ('PFD13A', 'FMJP10'),\n        ('TVQI19', 'PVK1'), ('RGDN4', 'PFD13A'), ('RGDN4', 'XTB2'),\n        ('VXIN5', 'HFCM17P'), ('VXIN5', 'LLSP6')\n    ]\n    \n    # Create set of features to exclude due to near-duplication\n    exclude = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            # Keep the one with higher mean_y1-mean_y0 (stronger effect)\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            y_a = feats.x[:, idx_a]\n            y_b = feats.x[:, idx_b]\n            mean_y1_a = np.mean(y_a[feats.y == 1])\n            mean_y1_b = np.mean(y_b[feats.y == 1])\n            if abs(mean_y1_a - np.mean(y_a[feats.y == 0])) > abs(mean_y1_b - np.mean(y_b[feats.y == 0])):\n                exclude.add(b)\n            else:\n                exclude.add(a)\n    \n    # Filter features\n    valid_ids = [fid for fid in feats.ids if fid not in exclude]\n    \n    # Calculate effect sizes for valid features\n    effects = []\n    for fid in valid_ids:\n        idx = feats.column(fid)\n        x = feats.x[:, idx]\n        y1 = x[feats.y == 1]\n        y0 = x[feats.y == 0]\n        effect = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effects.append((fid, abs(effect), abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers\n    drivers = tuple(fid for fid, _, _ in effects[:MAX_DRIVERS])\n    \n    # For columns, include only the strongest features\n    columns = []\n    for fid, _, _ in effects[:5]:  # Limit to top 5 features\n        columns.append(fid)\n    \n    # No products for this simple approach\n    products = ()\n    \n    # Weighted score: use top feature's standardized values\n    loadings = {}\n    if drivers:\n        top_driver = drivers[0]\n        loadings[top_driver] = 1.0\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [\n        ('CRL8', 'BHE14B'), ('SMB7', 'EWPQ3'), ('RGDN4', 'HFCM17P'),\n        ('XTB2', 'HFCM17P'), ('LLSP6', 'HFCM17P'), ('PFD13A', 'HFCM17P'),\n        ('FMJP10', 'HFCM17P'), ('LFIP19', 'HFCM17P'), ('EWK12', 'HFCM17P'),\n        ('LLSP6', 'PFD13A'), ('RGDN4', 'LLSP6'), ('EGP15A', 'HFCM17P'),\n        ('DKHF13', 'HFCM17P'), ('WZBE5', 'HFCM17P'), ('PFD13A', 'FMJP10'),\n        ('TVQI19', 'PVK1'), ('RGDN4', 'PFD13A'), ('RGDN4', 'XTB2'),\n        ('VXIN5', 'HFCM17P'), ('VXIN5', 'LLSP6')\n    ]\n    \n    # Create set of features to exclude due to near-duplication\n    exclude = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            # Keep the one with higher mean_y1-mean_y0 (stronger effect)\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            y_a = feats.x[:, idx_a]\n            y_b = feats.x[:, idx_b]\n            mean_y1_a = np.mean(y_a[feats.y == 1])\n            mean_y1_b = np.mean(y_b[feats.y == 1])\n            if abs(mean_y1_a - np.mean(y_a[feats.y == 0])) > abs(mean_y1_b - np.mean(y_b[feats.y == 0])):\n                exclude.add(b)\n            else:\n                exclude.add(a)\n    \n    # Filter features\n    valid_ids = [fid for fid in feats.ids if fid not in exclude]\n    \n    # Calculate effect sizes for valid features\n    effects = []\n    for fid in valid_ids:\n        idx = feats.column(fid)\n        x = feats.x[:, idx]\n        y1 = x[feats.y == 1]\n        y0 = x[feats.y == 0]\n        effect = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effects.append((fid, abs(effect), abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers\n    drivers = tuple(fid for fid, _, _ in effects[:MAX_DRIVERS])\n    \n    # For columns, include only the strongest features\n    columns = []\n    for fid, _, _ in effects[:5]:  # Limit to top 5 features\n        columns.append(fid)\n    \n    # No products for this simple approach\n    products = ()\n    \n    # Weighted score: use top feature's standardized values\n    loadings = {}\n    if drivers:\n        top_driver = drivers[0]\n        loadings[top_driver] = 1.0\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5266,
+  "completion_tokens": 1633,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2716
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2448
+   }
+  ],
+  "wall_s": 18.6
+ }
+}

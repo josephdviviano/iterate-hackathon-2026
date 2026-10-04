@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-i1fcinoo",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [\n        (a, b) for a, b in [\n            (\"PSV2\", \"ATUU4\"), (\"GOZY11\", \"ATUU4\"), (\"DYLJ15B\", \"ATUU4\"),\n            (\"FXBJ12L\", \"OZR2B\"), (\"GOZY11\", \"PSV2\"), (\"PSV2\", \"DYLJ15B\"),\n            (\"XHB10\", \"ATUU4\"), (\"GOZY11\", \"DYLJ15B\"), (\"XHB10\", \"PSV2\"),\n            (\"OZR2B\", \"ATUU4\"), (\"KBY1P\", \"RSBZ19\"), (\"PSV2\", \"OZR2B\"),\n            (\"LRN4\", \"ATUU4\"), (\"DYLJ15B\", \"RPJY15\"), (\"NGK12\", \"ATUU4\"),\n            (\"XHB10\", \"OZR2B\"), (\"NGK12\", \"PSV2\"), (\"ZAFP19P\", \"VVF1\"),\n            (\"PSV2\", \"LRN4\"), (\"GOZY11\", \"OZR2B\")\n        ] if a in feats.ids and b in feats.ids\n    ]\n    \n    # Remove near-duplicates, keeping first in each pair\n    exclude = set()\n    for a, b in corr_pairs:\n        exclude.add(b)\n    \n    usable_ids = [fid for fid in feats.ids if fid not in exclude]\n    \n    # Calculate effect sizes using t-statistics\n    effects = {}\n    for fid in usable_ids:\n        idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, idx]\n        y1 = feats.x[feats.y == 1, idx]\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effects[fid] = abs(t_stat)\n    \n    # Sort by effect size\n    sorted_features = sorted(effects.items(), key=lambda x: x[1], reverse=True)\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = [fid for fid, _ in sorted_features[:MAX_DRIVERS]]\n    \n    # Select features for logistic regression\n    columns = [fid for fid in usable_ids if effects[fid] > 3.0]\n    \n    # Add product terms between highly correlated pairs\n    products = []\n    for a, b in corr_pairs:\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    # Build weighted score using top features\n    loadings = {fid: effects[fid] for fid in columns}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8608,
+  "completion_tokens": 2009,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2158
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2313
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2034
+   }
+  ],
+  "wall_s": 22.9
+ }
+}

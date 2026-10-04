@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-8regf5kj",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features (they're not direct causes)\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    \n    # Calculate effect sizes using mean difference\n    effect_sizes = []\n    for fid in non_derived_ids:\n        col_idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        effect_size = y1_mean - y0_mean\n        effect_sizes.append((fid, abs(effect_size)))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates (but not more than MAX_DRIVERS)\n    candidate_ids = [fid for fid, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation > 0.6\n    filtered_candidates = []\n    for fid in candidate_ids:\n        is_duplicate = False\n        for existing_fid in filtered_candidates:\n            # Check if they're correlated (> 0.6)\n            col1 = feats.column(fid)\n            col2 = feats.column(existing_fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            filtered_candidates.append(fid)\n    \n    # If we have any candidates, return them as drivers\n    if filtered_candidates:\n        # For the regression, include only the driver features\n        reg_features = filtered_candidates\n        \n        # Include pairwise products of driver features\n        products = []\n        for i, fid1 in enumerate(filtered_candidates):\n            for fid2 in filtered_candidates[i+1:]:\n                products.append((fid1, fid2))\n        \n        # Return the design\n        return Design(\n            drivers=tuple(filtered_candidates),\n            columns=tuple(reg_features),\n            products=tuple(products),\n            loadings={}\n        )\n    \n    # No mechanism found\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features (they're not direct causes)\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    \n    # Calculate effect sizes using mean difference\n    effect_sizes = []\n    for fid in non_derived_ids:\n        col_idx = feats.column(fid)\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        effect_size = y1_mean - y0_mean\n        effect_sizes.append((fid, abs(effect_size)))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates (but not more than MAX_DRIVERS)\n    candidate_ids = [fid for fid, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation > 0.6\n    filtered_candidates = []\n    for fid in candidate_ids:\n        is_duplicate = False\n        for existing_fid in filtered_candidates:\n            # Check if they're correlated (> 0.6)\n            col1 = feats.column(fid)\n            col2 = feats.column(existing_fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            filtered_candidates.append(fid)\n    \n    # If we have any candidates, return them as drivers\n    if filtered_candidates:\n        # For the regression, include only the driver features\n        reg_features = filtered_candidates\n        \n        # Include pairwise products of driver features\n        products = []\n        for i, fid1 in enumerate(filtered_candidates):\n            for fid2 in filtered_candidates[i+1:]:\n                products.append((fid1, fid2))\n        \n        # Return the design\n        return Design(\n            drivers=tuple(filtered_candidates),\n            columns=tuple(reg_features),\n            products=tuple(products),\n            loadings={}\n        )\n    \n    # No mechanism found\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7954,
+  "completion_tokens": 1559,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2317
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2210
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2175
+   }
+  ],
+  "wall_s": 17.5
+ }
+}

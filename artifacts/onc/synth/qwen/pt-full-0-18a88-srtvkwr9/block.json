@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-srtvkwr9",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly associated features using correlation\n    corr_matrix = np.corrcoef(feats.x.T)\n    np.fill_diagonal(corr_matrix, 0)\n    high_corr_mask = np.abs(corr_matrix) >= 0.6\n    np.fill_diagonal(high_corr_mask, False)\n    \n    # Find connected components in the correlation graph\n    clustering = SpectralClustering(n_clusters=1, affinity='precomputed', \n                                   assign_labels='discretize')\n    clusters = clustering.fit_predict(high_corr_mask.astype(int))\n    \n    # Select the largest cluster\n    unique_clusters, counts = np.unique(clusters, return_counts=True)\n    if len(unique_clusters) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    main_cluster_id = unique_clusters[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) if clusters[i] == main_cluster_id]\n    \n    if not module_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Calculate loadings based on effect sizes\n    loadings = {}\n    for fid in module_features:\n        idx = feats.column(fid)\n        mean_y1 = np.mean(feats.x[feats.y == 1, idx])\n        mean_y0 = np.mean(feats.x[feats.y == 0, idx])\n        loadings[fid] = mean_y1 - mean_y0\n    \n    # Select top features by effect size for drivers (limit to 4 to keep model small)\n    sorted_features = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)\n    drivers = tuple([fid for fid, _ in sorted_features[:min(MAX_DRIVERS, 4)]])\n    \n    # Include all module features in columns\n    columns = tuple(module_features)\n    \n    # Create products between top two features if they exist\n    products = ()\n    if len(sorted_features) >= 2:\n        f1, f2 = sorted_features[0][0], sorted_features[1][0]\n        products = ((f1, f2),)\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8099,
+  "completion_tokens": 1527,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2039
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2080
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2039
+   }
+  ],
+  "wall_s": 20.6
+ }
+}

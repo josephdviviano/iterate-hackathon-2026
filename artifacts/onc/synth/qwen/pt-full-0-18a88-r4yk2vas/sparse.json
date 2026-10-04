@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-r4yk2vas",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    X = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(X.T)\n    \n    # Identify and remove near-duplicates (|r| >= 0.6)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Filter out near-duplicates\n    keep_mask = [i for i in range(len(ids)) if ids[i] not in to_remove]\n    keep_ids = [ids[i] for i in keep_mask]\n    keep_X = X[:, keep_mask]\n    \n    # Handle case where no features remain after filtering\n    if len(keep_ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        group0 = keep_X[y==0, i]\n        group1 = keep_X[y==1, i]\n        effect = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect))\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_ids = [keep_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # If no strong effects, return empty design\n    if not top_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features for regression\n    selected_features = top_ids\n    \n    # Try adding pairwise interactions\n    products = []\n    best_auc = 0\n    \n    # Check top features for interactions (limit to available features)\n    max_features = min(5, len(selected_features))\n    for i in range(max_features):\n        for j in range(i+1, max_features):\n            a = selected_features[i]\n            b = selected_features[j]\n            col_a = feats.column(a)\n            col_b = feats.column(b)\n            interaction = keep_X[:, col_a] * keep_X[:, col_b]\n            \n            # Simple AUC approximation using correlation with outcome\n            try:\n                auc_approx = abs(np.corrcoef(interaction, y)[0,1])\n                if auc_approx > best_auc:\n                    best_auc = auc_approx\n                    products = [(a, b)]\n            except:\n                continue\n    \n    # Build loadings (weighted sum of selected features)\n    loadings = {}\n    for i, fid in enumerate(selected_features):\n        col_idx = feats.column(fid)\n        # Weight by effect size (standardized coefficient estimate)\n        try:\n            effect = effect_sizes[sorted_indices.index(keep_ids.index(fid))]\n            loadings[fid] = effect\n        except:\n            loadings[fid] = 1.0\n    \n    return Design(\n        drivers=tuple(top_ids),\n        columns=tuple(selected_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8554,
+  "completion_tokens": 2016,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 23 is out of bounds for axis 1 with size 23",
+    "bytes": 2678
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 23 is out of bounds for axis 1 with size 23",
+    "bytes": 2722
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 23 is out of bounds for axis 1 with size 23",
+    "bytes": 3030
+   }
+  ],
+  "wall_s": 23.0
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-br8uyky5",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    if len(feats.ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for correlation-based near-duplicates\n    corr_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.add((min(fid1,fid2), max(fid1,fid2)))\n    \n    # Filter out near-duplicates\n    unique_ids = []\n    seen = set()\n    for fid in feats.ids:\n        if any(fid in pair for pair in corr_pairs):\n            # Check if this feature is part of a correlated pair\n            is_duplicate = False\n            for pair in corr_pairs:\n                if fid in pair:\n                    # Only add the first one in the pair to avoid duplicates\n                    if pair[0] not in seen:\n                        unique_ids.append(pair[0])\n                        seen.add(pair[0])\n                    is_duplicate = True\n                    break\n            if not is_duplicate and fid not in seen:\n                unique_ids.append(fid)\n                seen.add(fid)\n        else:\n            if fid not in seen:\n                unique_ids.append(fid)\n                seen.add(fid)\n    \n    # Compute effect sizes using t-test\n    effects = {}\n    for i, fid in enumerate(unique_ids):\n        x = feats.x[:, feats.column(fid)]\n        y = feats.y\n        mean_y1 = np.mean(x[y==1])\n        mean_y0 = np.mean(x[y==0])\n        effects[fid] = mean_y1 - mean_y0\n    \n    # Sort by absolute effect size\n    sorted_effects = sorted(effects.items(), key=lambda x: abs(x[1]), reverse=True)\n    \n    # Test for association with outcome in each stratum\n    stratum_results = {}\n    for stratum in set(feats.stratum):\n        mask = [s == stratum for s in feats.stratum]\n        stratum_x = feats.x[mask]\n        stratum_y = feats.y[mask]\n        \n        stratum_results[stratum] = {}\n        for fid, _ in sorted_effects[:10]:  # Limit to top 10 for speed\n            col_idx = feats.column(fid)\n            x = stratum_x[:, col_idx]\n            t_stat, p_val = stats.ttest_ind(x[stratum_y==1], x[stratum_y==0], equal_var=False)\n            stratum_results[stratum][fid] = (t_stat, p_val)\n    \n    # Determine which features show consistent associations across strata\n    drivers = []\n    for fid, _ in sorted_effects:\n        # Check if feature shows significant effect in all strata\n        valid_strata = 0\n        total_strata = len(set(feats.stratum))\n        for stratum in set(feats.stratum):\n            if fid in stratum_results[stratum]:\n                t_stat, p_val = stratum_results[stratum][fid]\n                if p_val < 0.05:  # Significant\n                    valid_strata += 1\n        \n        # If feature shows effect in > 50% of strata, consider it\n        if valid_strata / total_strata > 0.5:\n            drivers.append(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # If we have no drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features for regression\n    columns = tuple(unique_ids[:10])  # Top 10 features by effect size\n    \n    # Create product terms for top features\n    products = []\n    for i, fid1 in enumerate(columns[:5]):\n        for j, fid2 in enumerate(columns[i+1:5]):\n            products.append((fid1, fid2))\n    \n    # Weighted score based on effect sizes\n    loadings = {}\n    for fid in columns:\n        loadings[fid] = effects[fid]\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9480,
+  "completion_tokens": 2817,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3890
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3868
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3786
+   }
+  ],
+  "wall_s": 32.2
+ }
+}

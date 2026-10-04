@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-8sof5dqs",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features based on t-statistics\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        # Use the actual t-statistic from feats.types if available\n        t_stat = feats.types[i]\n        \n        # Handle different data types\n        if isinstance(t_stat, (list, tuple)) and len(t_stat) > 0:\n            t_stat = t_stat[0]  # Assume first element is t-stat\n        elif isinstance(t_stat, str):\n            try:\n                t_stat = float(t_stat)\n            except ValueError:\n                continue\n        elif not isinstance(t_stat, (int, float)):\n            continue\n            \n        # Convert to float if needed\n        try:\n            t_stat = float(t_stat)\n        except (ValueError, TypeError):\n            continue\n            \n        if abs(t_stat) > 1.5:\n            strong_features.append((fid, t_stat))\n    \n    # Sort by absolute t-statistic\n    strong_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Check for product terms among top features\n    top_features = [fid for fid, _ in strong_features[:10]]\n    \n    # Look for correlated pairs with |r| >= 0.6\n    product_candidates = []\n    correlations = {}\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find highly correlated pairs\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            fid1, fid2 = top_features[i], top_features[j]\n            col1, col2 = feats.column(fid1), feats.column(fid2)\n            if col1 < len(corr_matrix) and col2 < len(corr_matrix):\n                corr = corr_matrix[col1, col2]\n                if abs(corr) >= 0.6:\n                    correlations[(fid1, fid2)] = corr\n                    product_candidates.append((fid1, fid2))\n    \n    # If we have product candidates, try them\n    if product_candidates:\n        # Select the pair with highest absolute correlation\n        best_pair = max(product_candidates, key=lambda p: abs(correlations[p]))\n        return Design(\n            drivers=(),\n            columns=(best_pair[0], best_pair[1]),\n            products=(best_pair,),\n            loadings={}\n        )\n    \n    # If no strong correlation found, return empty design\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features based on t-statistics\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        # Use the actual t-statistic from feats.types if available\n        t_stat = feats.types[i]\n        \n        # Handle different data types\n        if isinstance(t_stat, (list, tuple)) and len(t_stat) > 0:\n            t_stat = t_stat[0]  # Assume first element is t-stat\n        elif isinstance(t_stat, str):\n            try:\n                t_stat = float(t_stat)\n            except ValueError:\n                continue\n        elif not isinstance(t_stat, (int, float)):\n            continue\n            \n        # Convert to float if needed\n        try:\n            t_stat = float(t_stat)\n        except (ValueError, TypeError):\n            continue\n            \n        if abs(t_stat) > 1.5:\n            strong_features.append((fid, t_stat))\n    \n    # Sort by absolute t-statistic\n    strong_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Check for product terms among top features\n    top_features = [fid for fid, _ in strong_features[:10]]\n    \n    # Look for correlated pairs with |r| >= 0.6\n    product_candidates = []\n    correlations = {}\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find highly correlated pairs\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            fid1, fid2 = top_features[i], top_features[j]\n            col1, col2 = feats.column(fid1), feats.column(fid2)\n            if col1 < len(corr_matrix) and col2 < len(corr_matrix):\n                corr = corr_matrix[col1, col2]\n                if abs(corr) >= 0.6:\n                    correlations[(fid1, fid2)] = corr\n                    product_candidates.append((fid1, fid2))\n    \n    # If we have product candidates, try them\n    if product_candidates:\n        # Select the pair with highest absolute correlation\n        best_pair = max(product_candidates, key=lambda p: abs(correlations[p]))\n        return Design(\n            drivers=(),\n            columns=(best_pair[0], best_pair[1]),\n            products=(best_pair,),\n            loadings={}\n        )\n    \n    # If no strong correlation found, return empty design\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7716,
+  "completion_tokens": 1556,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 1882
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'hasattr' is not defined",
+    "bytes": 2365
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2563
+   }
+  ],
+  "wall_s": 17.7
+ }
+}

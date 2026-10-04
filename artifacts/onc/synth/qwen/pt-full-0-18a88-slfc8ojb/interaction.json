@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-slfc8ojb",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick feature selection using pre-computed statistics\n    # Just use the top features from the provided ranking\n    top_features = feats.ids[:10]  # Take top 10 features\n    \n    # Remove near-duplicates based on correlation matrix\n    filtered_features = []\n    used_ids = set()\n    \n    for fid in top_features:\n        # Check if this feature is correlated with any already selected\n        is_correlated = False\n        for selected_fid in filtered_features:\n            col1 = feats.column(fid)\n            col2 = feats.column(selected_fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            filtered_features.append(fid)\n            used_ids.add(fid)\n            if len(filtered_features) >= 10:\n                break\n    \n    # Simple interaction search - just check a few combinations\n    best_interaction = None\n    best_auc = 0.5\n    \n    # Check first few pairs for interactions\n    for i, fid1 in enumerate(filtered_features[:5]):\n        for j, fid2 in enumerate(filtered_features[i+1:5], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            interaction = feats.x[:, col1] * feats.x[:, col2]\n            \n            # Simple logistic regression\n            try:\n                X = np.column_stack([feats.x[:, col1], feats.x[:, col2], interaction])\n                model = LogisticRegression(penalty='l2', C=1.0, solver='liblinear', max_iter=50)\n                model.fit(X, feats.y)\n                y_pred = model.predict_proba(X)[:, 1]\n                auc = roc_auc_score(feats.y, y_pred)\n                \n                if auc > best_auc:\n                    best_auc = auc\n                    best_interaction = (fid1, fid2)\n            except:\n                continue\n    \n    # Return result\n    if best_interaction and best_auc > 0.55:\n        return Design(\n            drivers=(best_interaction[0], best_interaction[1]),\n            columns=(best_interaction[0], best_interaction[1]),\n            products=(best_interaction,),\n            loadings={}\n        )\n    \n    # Return top single features\n    drivers = tuple(filtered_features[:MAX_DRIVERS])\n    return Design(\n        drivers=drivers,\n        columns=drivers,\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick feature selection using pre-computed statistics\n    # Just use the top features from the provided ranking\n    top_features = feats.ids[:10]  # Take top 10 features\n    \n    # Remove near-duplicates based on correlation matrix\n    filtered_features = []\n    used_ids = set()\n    \n    for fid in top_features:\n        # Check if this feature is correlated with any already selected\n        is_correlated = False\n        for selected_fid in filtered_features:\n            col1 = feats.column(fid)\n            col2 = feats.column(selected_fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            filtered_features.append(fid)\n            used_ids.add(fid)\n            if len(filtered_features) >= 10:\n                break\n    \n    # Simple interaction search - just check a few combinations\n    best_interaction = None\n    best_auc = 0.5\n    \n    # Check first few pairs for interactions\n    for i, fid1 in enumerate(filtered_features[:5]):\n        for j, fid2 in enumerate(filtered_features[i+1:5], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            interaction = feats.x[:, col1] * feats.x[:, col2]\n            \n            # Simple logistic regression\n            try:\n                X = np.column_stack([feats.x[:, col1], feats.x[:, col2], interaction])\n                model = LogisticRegression(penalty='l2', C=1.0, solver='liblinear', max_iter=50)\n                model.fit(X, feats.y)\n                y_pred = model.predict_proba(X)[:, 1]\n                auc = roc_auc_score(feats.y, y_pred)\n                \n                if auc > best_auc:\n                    best_auc = auc\n                    best_interaction = (fid1, fid2)\n            except:\n                continue\n    \n    # Return result\n    if best_interaction and best_auc > 0.55:\n        return Design(\n            drivers=(best_interaction[0], best_interaction[1]),\n            columns=(best_interaction[0], best_interaction[1]),\n            products=(best_interaction,),\n            loadings={}\n        )\n    \n    # Return top single features\n    drivers = tuple(filtered_features[:MAX_DRIVERS])\n    return Design(\n        drivers=drivers,\n        columns=drivers,\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8807,
+  "completion_tokens": 2179,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 61s on all patients; it must run in under 10s",
+    "bytes": 3159
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design took 38s on all patients; it must run in under 10s",
+    "bytes": 3644
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2579
+   }
+  ],
+  "wall_s": 128.3
+ }
+}

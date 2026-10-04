@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-r4yk2vas",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Look for strong individual associations\n    strongest = []\n    for i, fid in enumerate(feats.ids):\n        y1 = feats.x[feats.y == 1, i]\n        y0 = feats.x[feats.y == 0, i]\n        if len(y1) > 0 and len(y0) > 0:\n            tstat, pval = stats.ttest_ind(y1, y0, equal_var=False)\n            if pval < 0.001:\n                effect = abs(tstat) * (1 - pval)  # Effect strength measure\n                strongest.append((fid, effect))\n    \n    strongest.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (limit to 4 to satisfy constraint)\n    drivers = tuple([fid for fid, _ in strongest[:4]])\n    \n    # Select columns for regression (limit to 8 to keep model small)\n    columns = []\n    for fid, effect in strongest:\n        if len(columns) >= 8:  # Limit columns to keep model small\n            break\n        # Skip if too correlated with existing columns\n        is_correlated = False\n        for col_fid in columns:\n            col_idx = feats.column(col_fid)\n            fid_idx = feats.column(fid)\n            corr = abs(np.corrcoef(feats.x[:, fid_idx], feats.x[:, col_idx])[0, 1])\n            if corr > 0.7:\n                is_correlated = True\n                break\n        if not is_correlated:\n            columns.append(fid)\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=(), loadings={})\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Look for strong individual associations\n    strongest = []\n    for i, fid in enumerate(feats.ids):\n        y1 = feats.x[feats.y == 1, i]\n        y0 = feats.x[feats.y == 0, i]\n        if len(y1) > 0 and len(y0) > 0:\n            tstat, pval = stats.ttest_ind(y1, y0, equal_var=False)\n            if pval < 0.001:\n                effect = abs(tstat) * (1 - pval)  # Effect strength measure\n                strongest.append((fid, effect))\n    \n    strongest.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (limit to 4 to satisfy constraint)\n    drivers = tuple([fid for fid, _ in strongest[:4]])\n    \n    # Select columns for regression (limit to 8 to keep model small)\n    columns = []\n    for fid, effect in strongest:\n        if len(columns) >= 8:  # Limit columns to keep model small\n            break\n        # Skip if too correlated with existing columns\n        is_correlated = False\n        for col_fid in columns:\n            col_idx = feats.column(col_fid)\n            fid_idx = feats.column(fid)\n            corr = abs(np.corrcoef(feats.x[:, fid_idx], feats.x[:, col_idx])[0, 1])\n            if corr > 0.7:\n                is_correlated = True\n                break\n        if not is_correlated:\n            columns.append(fid)\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8505,
+  "completion_tokens": 1519,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2984
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1426
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1432
+   }
+  ],
+  "wall_s": 18.1
+ }
+}

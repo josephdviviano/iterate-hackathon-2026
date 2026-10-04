@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-kcwiscf6",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Simple approach: use top features by variance, remove duplicates\n    variances = np.var(feats.x, axis=0)\n    sorted_indices = np.argsort(variances)[::-1][:10]\n    candidate_ids = [feats.ids[i] for i in sorted_indices]\n    \n    # Remove near-duplicates based on correlation\n    keep_ids = []\n    for fid in candidate_ids:\n        is_duplicate = False\n        for kept_fid in keep_ids:\n            col1 = feats.column(fid)\n            col2 = feats.column(kept_fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep_ids.append(fid)\n    \n    # Use first few as drivers (max 4 to satisfy constraints)\n    drivers = keep_ids[:min(MAX_DRIVERS, 4)]\n    \n    # For columns, include drivers plus a few more related features\n    columns = list(set(drivers))\n    \n    # Add one strongly correlated feature for each driver\n    for driver_fid in drivers:\n        driver_col = feats.column(driver_fid)\n        best_corr = 0\n        best_fid = None\n        for fid in feats.ids:\n            if fid in columns:\n                continue\n            col = feats.column(fid)\n            corr = np.abs(np.corrcoef(feats.x[:, driver_col], feats.x[:, col])[0, 1])\n            if corr > best_corr and corr >= 0.6:\n                best_corr = corr\n                best_fid = fid\n        if best_fid:\n            columns.append(best_fid)\n    \n    # Limit total features to prevent overfitting\n    columns = columns[:12]\n    \n    # No products in this simple model\n    products = ()\n    \n    # Weighted score: use standardized values of drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Simple approach: use top features by variance, remove duplicates\n    variances = np.var(feats.x, axis=0)\n    sorted_indices = np.argsort(variances)[::-1][:10]\n    candidate_ids = [feats.ids[i] for i in sorted_indices]\n    \n    # Remove near-duplicates based on correlation\n    keep_ids = []\n    for fid in candidate_ids:\n        is_duplicate = False\n        for kept_fid in keep_ids:\n            col1 = feats.column(fid)\n            col2 = feats.column(kept_fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep_ids.append(fid)\n    \n    # Use first few as drivers (max 4 to satisfy constraints)\n    drivers = keep_ids[:min(MAX_DRIVERS, 4)]\n    \n    # For columns, include drivers plus a few more related features\n    columns = list(set(drivers))\n    \n    # Add one strongly correlated feature for each driver\n    for driver_fid in drivers:\n        driver_col = feats.column(driver_fid)\n        best_corr = 0\n        best_fid = None\n        for fid in feats.ids:\n            if fid in columns:\n                continue\n            col = feats.column(fid)\n            corr = np.abs(np.corrcoef(feats.x[:, driver_col], feats.x[:, col])[0, 1])\n            if corr > best_corr and corr >= 0.6:\n                best_corr = corr\n                best_fid = fid\n        if best_fid:\n            columns.append(best_fid)\n    \n    # Limit total features to prevent overfitting\n    columns = columns[:12]\n    \n    # No products in this simple model\n    products = ()\n    \n    # Weighted score: use standardized values of drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7898,
+  "completion_tokens": 1475,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2094
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 2132
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1918
+   }
+  ],
+  "wall_s": 17.1
+ }
+}

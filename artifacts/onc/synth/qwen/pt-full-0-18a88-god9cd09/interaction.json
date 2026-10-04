@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-god9cd09",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong association to outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        y1 = feats.x[feats.y==1, i]\n        y0 = feats.x[feats.y==0, i]\n        tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        if abs(tstat) > 3.0:\n            effects.append((abs(tstat), fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    candidates = [fid for _, fid in effects[:10]]\n    \n    # Look for product terms among top candidates\n    products = []\n    for i, a in enumerate(candidates):\n        for b in candidates[i+1:]:\n            # Check if they're correlated (|r| >= 0.6)\n            col_a = feats.column(a)\n            col_b = feats.column(b)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((a, b))\n    \n    # If we found product terms, return them\n    if products:\n        # Use first product as driver\n        drivers = (products[0][0],) if len(products) > 0 else ()\n        columns = (products[0][0], products[0][1])\n        products = tuple(products)\n        loadings = {}\n        return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n    \n    # No mechanism found\n    return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong association to outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        y1 = feats.x[feats.y==1, i]\n        y0 = feats.x[feats.y==0, i]\n        tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        if abs(tstat) > 3.0:\n            effects.append((abs(tstat), fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    candidates = [fid for _, fid in effects[:10]]\n    \n    # Look for product terms among top candidates\n    products = []\n    for i, a in enumerate(candidates):\n        for b in candidates[i+1:]:\n            # Check if they're correlated (|r| >= 0.6)\n            col_a = feats.column(a)\n            col_b = feats.column(b)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((a, b))\n    \n    # If we found product terms, return them\n    if products:\n        # Use first product as driver\n        drivers = (products[0][0],) if len(products) > 0 else ()\n        columns = (products[0][0], products[0][1])\n        products = tuple(products)\n        loadings = {}\n        return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n    \n    # No mechanism found\n    return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2108,
+  "completion_tokens": 411,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1573
+   }
+  ],
+  "wall_s": 4.8
+ }
+}

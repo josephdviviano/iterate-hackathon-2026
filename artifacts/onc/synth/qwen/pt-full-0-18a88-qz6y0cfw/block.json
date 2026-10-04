@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-qz6y0cfw",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly associated features using correlation\n    corr_matrix = np.corrcoef(feats.x.T)\n    np.fill_diagonal(corr_matrix, 0)\n    \n    # Find strongly correlated pairs (|r| >= 0.6)\n    strong_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                strong_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Cluster features based on correlation\n    if len(strong_pairs) > 0:\n        # Build adjacency matrix\n        adj = np.zeros((len(feats.ids), len(feats.ids)))\n        for a, b in strong_pairs:\n            i, j = feats.column(a), feats.column(b)\n            adj[i,j] = adj[j,i] = 1\n        \n        # Hierarchical clustering to find modules\n        clustering = AgglomerativeClustering(\n            n_clusters=None, \n            distance_threshold=0.5,\n            linkage='average'\n        ).fit(1 - adj)\n        \n        # Get cluster assignments\n        labels = clustering.labels_\n        # Find largest cluster\n        unique_labels, counts = np.unique(labels, return_counts=True)\n        main_cluster = unique_labels[np.argmax(counts)]\n        \n        # Get features in main cluster\n        module_features = [feats.ids[i] for i in range(len(feats.ids)) if labels[i] == main_cluster]\n        \n        # Compute weighted score using t-statistics as weights\n        loadings = {}\n        for fid in module_features:\n            col_idx = feats.column(fid)\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx]).statistic\n            loadings[fid] = abs(t_stat)\n        \n        # Normalize loadings\n        total_weight = sum(loadings.values())\n        if total_weight > 0:\n            for fid in loadings:\n                loadings[fid] /= total_weight\n                \n        # Return design with module features\n        return Design(\n            drivers=tuple([module_features[0]] if module_features else ()),\n            columns=tuple(module_features),\n            products=(),\n            loadings=loadings\n        )\n    \n    # No strong correlations found\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly associated features using correlation\n    corr_matrix = np.corrcoef(feats.x.T)\n    np.fill_diagonal(corr_matrix, 0)\n    \n    # Find strongly correlated pairs (|r| >= 0.6)\n    strong_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                strong_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Cluster features based on correlation\n    if len(strong_pairs) > 0:\n        # Build adjacency matrix\n        adj = np.zeros((len(feats.ids), len(feats.ids)))\n        for a, b in strong_pairs:\n            i, j = feats.column(a), feats.column(b)\n            adj[i,j] = adj[j,i] = 1\n        \n        # Hierarchical clustering to find modules\n        clustering = AgglomerativeClustering(\n            n_clusters=None, \n            distance_threshold=0.5,\n            linkage='average'\n        ).fit(1 - adj)\n        \n        # Get cluster assignments\n        labels = clustering.labels_\n        # Find largest cluster\n        unique_labels, counts = np.unique(labels, return_counts=True)\n        main_cluster = unique_labels[np.argmax(counts)]\n        \n        # Get features in main cluster\n        module_features = [feats.ids[i] for i in range(len(feats.ids)) if labels[i] == main_cluster]\n        \n        # Compute weighted score using t-statistics as weights\n        loadings = {}\n        for fid in module_features:\n            col_idx = feats.column(fid)\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx]).statistic\n            loadings[fid] = abs(t_stat)\n        \n        # Normalize loadings\n        total_weight = sum(loadings.values())\n        if total_weight > 0:\n            for fid in loadings:\n                loadings[fid] /= total_weight\n                \n        # Return design with module features\n        return Design(\n            drivers=tuple([module_features[0]] if module_features else ()),\n            columns=tuple(module_features),\n            products=(),\n            loadings=loadings\n        )\n    \n    # No strong correlations found\n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5106,
+  "completion_tokens": 1120,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2455
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2419
+   }
+  ],
+  "wall_s": 13.2
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ds04yo44",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        feat_vals = feats.x[:, i]\n        y = feats.y\n        mean_y1 = np.mean(feat_vals[y == 1])\n        mean_y0 = np.mean(feat_vals[y == 0])\n        effect_size = mean_y1 - mean_y0\n        effect_sizes.append((effect_size, fid))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: abs(x[0]), reverse=True)\n    \n    # Look for potential drivers (features with large effect sizes)\n    drivers = [fid for _, fid in effect_sizes[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation > 0.6\n    corr_matrix = np.corrcoef(feats.x.T)\n    to_remove = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(feats.ids[j])\n    \n    # Filter out near-duplicates\n    drivers = [d for d in drivers if d not in to_remove]\n    \n    # If no strong associations found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select columns for regression (drivers only)\n    columns = drivers\n    \n    # No products to keep model small\n    products = ()\n    \n    # Simple weighted score: sum of driver effects\n    loadings = {}\n    for d in drivers:\n        idx = feats.column(d)\n        feat_vals = feats.x[:, idx]\n        mean_y1 = np.mean(feat_vals[feats.y == 1])\n        mean_y0 = np.mean(feat_vals[feats.y == 0])\n        loadings[d] = mean_y1 - mean_y0\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        feat_vals = feats.x[:, i]\n        y = feats.y\n        mean_y1 = np.mean(feat_vals[y == 1])\n        mean_y0 = np.mean(feat_vals[y == 0])\n        effect_size = mean_y1 - mean_y0\n        effect_sizes.append((effect_size, fid))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: abs(x[0]), reverse=True)\n    \n    # Look for potential drivers (features with large effect sizes)\n    drivers = [fid for _, fid in effect_sizes[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation > 0.6\n    corr_matrix = np.corrcoef(feats.x.T)\n    to_remove = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(feats.ids[j])\n    \n    # Filter out near-duplicates\n    drivers = [d for d in drivers if d not in to_remove]\n    \n    # If no strong associations found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select columns for regression (drivers only)\n    columns = drivers\n    \n    # No products to keep model small\n    products = ()\n    \n    # Simple weighted score: sum of driver effects\n    loadings = {}\n    for d in drivers:\n        idx = feats.column(d)\n        feat_vals = feats.x[:, idx]\n        mean_y1 = np.mean(feat_vals[feats.y == 1])\n        mean_y0 = np.mean(feat_vals[feats.y == 0])\n        loadings[d] = mean_y1 - mean_y0\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8476,
+  "completion_tokens": 1629,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2573
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2038
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1771
+   }
+  ],
+  "wall_s": 19.0
+ }
+}

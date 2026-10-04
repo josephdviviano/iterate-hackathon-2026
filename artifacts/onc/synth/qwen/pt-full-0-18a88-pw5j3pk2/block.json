@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-pw5j3pk2",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Compute t-statistics for all features\n    t_stats = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y==0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y==1, col_idx])\n        t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n        t_stats.append(abs(t_stat))\n    \n    # Find top features by t-statistic\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [feats.ids[i] for i in sorted_indices[:5]]\n    \n    # Check for strong correlations to identify potential modules\n    corr_matrix = np.corrcoef(feats.x.T)\n    np.fill_diagonal(corr_matrix, 0)\n    \n    # Look for highly correlated pairs\n    high_corr_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((i, j))\n    \n    # If we have strong correlations, try to form a simple module\n    if len(high_corr_pairs) > 0:\n        # Simple approach: take top 3 features with highest t-stats\n        # that also have strong correlations with others\n        module_features = top_features[:3]\n        \n        # Compute weighted score using t-statistics\n        weights = []\n        for fid in module_features:\n            col_idx = feats.column(fid)\n            y0_mean = np.mean(feats.x[feats.y==0, col_idx])\n            y1_mean = np.mean(feats.x[feats.y==1, col_idx])\n            t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n            weights.append(abs(t_stat))\n        \n        # Normalize weights\n        weights = np.array(weights)\n        weights = weights / (np.sum(weights) + 1e-8)\n        loadings = dict(zip(module_features, weights))\n        \n        return Design(\n            drivers=tuple([module_features[0]]),\n            columns=tuple(module_features),\n            products=(),\n            loadings=loadings\n        )\n    \n    # If no strong correlations, just use top features\n    return Design(\n        drivers=tuple([top_features[0]]),\n        columns=tuple(top_features),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Compute t-statistics for all features\n    t_stats = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y==0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y==1, col_idx])\n        t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n        t_stats.append(abs(t_stat))\n    \n    # Find top features by t-statistic\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [feats.ids[i] for i in sorted_indices[:5]]\n    \n    # Check for strong correlations to identify potential modules\n    corr_matrix = np.corrcoef(feats.x.T)\n    np.fill_diagonal(corr_matrix, 0)\n    \n    # Look for highly correlated pairs\n    high_corr_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((i, j))\n    \n    # If we have strong correlations, try to form a simple module\n    if len(high_corr_pairs) > 0:\n        # Simple approach: take top 3 features with highest t-stats\n        # that also have strong correlations with others\n        module_features = top_features[:3]\n        \n        # Compute weighted score using t-statistics\n        weights = []\n        for fid in module_features:\n            col_idx = feats.column(fid)\n            y0_mean = np.mean(feats.x[feats.y==0, col_idx])\n            y1_mean = np.mean(feats.x[feats.y==1, col_idx])\n            t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n            weights.append(abs(t_stat))\n        \n        # Normalize weights\n        weights = np.array(weights)\n        weights = weights / (np.sum(weights) + 1e-8)\n        loadings = dict(zip(module_features, weights))\n        \n        return Design(\n            drivers=tuple([module_features[0]]),\n            columns=tuple(module_features),\n            products=(),\n            loadings=loadings\n        )\n    \n    # If no strong correlations, just use top features\n    return Design(\n        drivers=tuple([top_features[0]]),\n        columns=tuple(top_features),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5052,
+  "completion_tokens": 1355,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3377
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2264
+   }
+  ],
+  "wall_s": 17.8
+ }
+}

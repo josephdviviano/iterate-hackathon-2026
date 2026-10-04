@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ij1qmiee",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Cluster correlated features\n    if not corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build adjacency matrix\n    n_feats = len(feats.ids)\n    adj = np.zeros((n_feats, n_feats))\n    feat_to_idx = {fid: i for i, fid in enumerate(feats.ids)}\n    \n    for fid1, fid2 in corr_pairs:\n        i, j = feat_to_idx[fid1], feat_to_idx[fid2]\n        adj[i,j] = adj[j,i] = 1\n    \n    # Cluster using hierarchical clustering\n    clustering = AgglomerativeClustering(\n        n_clusters=None, \n        distance_threshold=0.5,\n        linkage='average'\n    ).fit(1 - adj)\n    \n    # Find largest cluster\n    labels, counts = np.unique(clustering.labels_, return_counts=True)\n    if len(counts) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_cluster = labels[np.argmax(counts)]\n    cluster_members = [feats.ids[i] for i in range(n_feats) if clustering.labels_[i] == largest_cluster]\n    \n    # Compute weighted score\n    scores = np.zeros(feats.n)\n    weights = np.zeros(len(cluster_members))\n    \n    for i, fid in enumerate(cluster_members):\n        col_idx = feats.column(fid)\n        # Weight by effect size (difference in means between outcome groups)\n        y0_mean = np.mean(feats.x[feats.y==0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y==1, col_idx])\n        weights[i] = y1_mean - y0_mean\n        scores += weights[i] * feats.x[:, col_idx]\n    \n    # Normalize weights\n    weights /= np.linalg.norm(weights)\n    \n    # Create loadings dictionary\n    loadings = dict(zip(cluster_members, weights))\n    \n    # Select top features for drivers based on effect sizes\n    effect_sizes = [abs(loadings[fid]) for fid in cluster_members]\n    sorted_indices = np.argsort(effect_sizes)[::-1][:min(MAX_DRIVERS, len(cluster_members))]\n    drivers = tuple([cluster_members[i] for i in sorted_indices])\n    \n    # For products, consider pairs from cluster members\n    products = []\n    for i, fid1 in enumerate(cluster_members):\n        for j, fid2 in enumerate(cluster_members[i+1:], i+1):\n            products.append((fid1, fid2))\n    \n    return Design(\n        drivers=drivers,\n        columns=cluster_members,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8463,
+  "completion_tokens": 2054,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2744
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2712
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2684
+   }
+  ],
+  "wall_s": 23.4
+ }
+}

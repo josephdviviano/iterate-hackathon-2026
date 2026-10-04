@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3lxmb4qi",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0,1]) >= 0.6:\n                correlated_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Select features with strong t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t_stat), fid))\n    \n    # Sort by t-statistic magnitude\n    t_stats.sort(reverse=True)\n    \n    # Build list of candidate features avoiding near-duplicates\n    candidates = []\n    used_ids = set()\n    for _, fid in t_stats:\n        if any(fid in pair for pair in correlated_pairs):\n            # Check if any member of correlated pair is already selected\n            skip = False\n            for pair in correlated_pairs:\n                if fid in pair and any(member in used_ids for member in pair):\n                    skip = True\n                    break\n            if not skip:\n                candidates.append(fid)\n                used_ids.add(fid)\n        else:\n            candidates.append(fid)\n            used_ids.add(fid)\n    \n    # If no strong signals, return empty design\n    if len(candidates) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top candidates to be drivers (at most MAX_DRIVERS)\n    drivers = tuple(candidates[:MAX_DRIVERS])\n    \n    # For logistic regression, include all features with strong associations\n    columns = tuple(candidates[:10])  # Include top 10 for regression\n    \n    # Identify potential interactions among top features\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            # Add interaction terms if they're not too correlated\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) < 0.6:\n                products.append((fid1, fid2))\n    \n    # Create weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(columns):\n        loadings[fid] = 1.0 / (i + 1)  # Simple inverse rank weighting\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8574,
+  "completion_tokens": 1924,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2692
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2714
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2568
+   }
+  ],
+  "wall_s": 22.3
+ }
+}

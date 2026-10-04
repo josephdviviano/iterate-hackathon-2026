@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-azb7n5eo",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = []\n    correlated = set()\n    for i, fid1 in enumerate(feats.ids):\n        if fid1 in correlated:\n            continue\n        keep.append(i)\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if fid2 in correlated:\n                continue\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                correlated.add(fid2)\n    \n    # Filter to non-duplicate features\n    ids_keep = [feats.ids[i] for i in keep]\n    x_keep = feats.x[:, keep]\n    \n    # Calculate effect sizes (mean difference)\n    effect_sizes = []\n    for i, fid in enumerate(ids_keep):\n        y1 = feats.y[feats.x[:, i] > np.mean(feats.x[:, i])]\n        y0 = feats.y[feats.x[:, i] <= np.mean(feats.x[:, i])]\n        if len(y1) > 0 and len(y0) > 0:\n            effect = np.mean(y1) - np.mean(y0)\n        else:\n            effect = 0\n        effect_sizes.append(abs(effect))\n    \n    # Sort by effect size and limit to MAX_DRIVERS-1 (at most 4)\n    sorted_indices = np.argsort(effect_sizes)[::-1][:MAX_DRIVERS-1]\n    drivers = tuple([ids_keep[i] for i in sorted_indices if effect_sizes[i] > 0])\n    \n    # If no drivers found, return empty\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features for regression (top 20)\n    top_features = np.argsort(effect_sizes)[::-1][:20]\n    columns = tuple([ids_keep[i] for i in top_features])\n    \n    # Check for interactions (product terms)\n    products = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(np.corrcoef(x_keep[:, top_features[i]], x_keep[:, top_features[j]])[0,1]) > 0.6:\n                products.append((ids_keep[top_features[i]], ids_keep[top_features[j]]))\n    \n    # Create weighted score (simple sum of top features)\n    loadings = {}\n    for i, fid in enumerate(columns):\n        loadings[fid] = effect_sizes[ids_keep.index(fid)]\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8450,
+  "completion_tokens": 1750,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2138
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2323
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2339
+   }
+  ],
+  "wall_s": 20.0
+ }
+}

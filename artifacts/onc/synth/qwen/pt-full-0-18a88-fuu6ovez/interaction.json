@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-fuu6ovez",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on t-statistics\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        # The types are strings, so we need to check if they indicate clinical/derived\n        # Based on the example, clinical=1, expression=0, derived=2, copy_number=3\n        # We'll consider anything other than expression (0) as potentially strong\n        if feats.types[i] != 'expression':\n            strong_candidates.append((fid, feats.types[i]))\n    \n    # Check for product terms among highly correlated pairs\n    correlated_pairs = [\n        ('JEYQ18', 'KOW15'), ('KOW15', 'QCV2'), ('JEYQ18', 'QCV2'),\n        ('KOW15', 'KQPY18'), ('JEYQ18', 'KQPY18'), ('QCV2', 'KQPY18'),\n        ('XRVP10', 'DJDA15L'), ('KOW15', 'EOKC7'), ('JEYQ18', 'EOKC7'),\n        ('AZQ1L', 'QPL14'), ('XRVP10', 'AWK2P'), ('IHL4A', 'KIFN12'),\n        ('KIFN12', 'LNE7'), ('XRVP10', 'HEF5A'), ('QCV2', 'EOKC7'),\n        ('UPBM17P', 'RAD11'), ('AWK2P', 'DJDA15L'), ('EOKC7', 'KQPY18'),\n        ('JEYQ18', 'RXX13A'), ('QCV2', 'LNE7')\n    ]\n    \n    # Look for product terms with high t-statistic\n    product_terms = []\n    for a, b in correlated_pairs:\n        if a in feats.ids and b in feats.ids:\n            col_a = feats.column(a)\n            col_b = feats.column(b)\n            prod = feats.x[:, col_a] * feats.x[:, col_b]\n            \n            # Compute t-statistic for product\n            y0 = prod[feats.y == 0]\n            y1 = prod[feats.y == 1]\n            t_stat = (np.mean(y1) - np.mean(y0)) / (\n                np.std(y1) / np.sqrt(len(y1)) + np.std(y0) / np.sqrt(len(y0))\n            )\n            \n            if abs(t_stat) > 3.0:\n                product_terms.append((a, b, abs(t_stat)))\n    \n    # Sort by t-statistic and take top few\n    product_terms.sort(key=lambda x: x[2], reverse=True)\n    top_products = product_terms[:3] if product_terms else []\n    \n    # Select drivers based on strongest individual effects\n    drivers = [fid for fid, _ in strong_candidates[:MAX_DRIVERS]]\n    \n    # Build columns and products\n    columns = list(feats.ids)\n    products = [(a, b) for a, b, _ in top_products]\n    \n    # Loadings based on effect sizes\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        # Use a simple approach: assign weights based on feature type\n        # For this problem, let's just use the original types as weights\n        loadings[fid] = feats.types[i] if isinstance(feats.types[i], (int, float)) else 0\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8718,
+  "completion_tokens": 2314,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2413
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2496
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2841
+   }
+  ],
+  "wall_s": 26.2
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-bazakc9k",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if stratum is a significant driver\n    stratum_counts = defaultdict(int)\n    for s in feats.stratum:\n        stratum_counts[s] += 1\n    \n    drivers = []\n    if len(stratum_counts) > 1:\n        # Test if strata are associated with outcome\n        stratum_labels = np.array([s for s in feats.stratum])\n        unique_strata = list(stratum_counts.keys())\n        \n        # Simple test: check if different strata have different outcome rates\n        stratum_means = {}\n        for s in unique_strata:\n            mask = stratum_labels == s\n            stratum_means[s] = np.mean(feats.y[mask])\n        \n        if len(stratum_means) > 1:\n            # Compute F-statistic between strata\n            stratum_groups = [feats.y[stratum_labels == s] for s in unique_strata]\n            try:\n                f_stat, p_val = stats.f_oneway(*stratum_groups)\n                if p_val < 0.05:\n                    drivers.append('stratum')\n            except:\n                pass\n    \n    # If no driver identified, use top features by effect size\n    if not drivers:\n        effect_sizes = []\n        for fid in feats.ids:\n            idx = feats.column(fid)\n            y1 = feats.x[feats.y == 1, idx]\n            y0 = feats.x[feats.y == 0, idx]\n            if len(y1) > 0 and len(y0) > 0:\n                mean_diff = np.mean(y1) - np.mean(y0)\n                t_stat, p_val = stats.ttest_ind(y1, y0, equal_var=False)\n                effect_sizes.append((abs(mean_diff), p_val, fid))\n        \n        # Sort by effect size and select top ones\n        effect_sizes.sort(reverse=True)\n        candidate_ids = [fid for _, _, fid in effect_sizes[:3]]\n        \n        # Remove near-duplicates\n        keep_ids = []\n        used = set()\n        for fid in candidate_ids:\n            if fid in used:\n                continue\n            keep_ids.append(fid)\n            used.add(fid)\n            \n            # Check correlations with other candidates\n            idx = feats.column(fid)\n            for other_fid in candidate_ids:\n                if other_fid != fid and other_fid not in used:\n                    other_idx = feats.column(other_fid)\n                    corr = np.corrcoef(feats.x[:, idx], feats.x[:, other_idx])[0, 1]\n                    if abs(corr) >= 0.6:\n                        used.add(other_fid)\n        \n        drivers = keep_ids[:MAX_DRIVERS]\n    \n    # Build minimal model\n    columns = list(feats.ids)\n    products = []\n    loadings = {}\n    \n    # Only add a few top features to loadings to keep model small\n    top_features = [fid for fid in feats.ids if fid not in drivers][:3]\n    for i, fid in enumerate(top_features):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8985,
+  "completion_tokens": 2256,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3391
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3387
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2958
+   }
+  ],
+  "wall_s": 25.5
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qkmfxgu4",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs (|r| >= 0.6)\n    corr_threshold = 0.6\n    correlated_pairs = set()\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find pairs with |r| >= 0.6\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i, j]) >= corr_threshold:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                # Normalize pair order to avoid duplicates\n                pair = tuple(sorted([fid1, fid2]))\n                correlated_pairs.add(pair)\n    \n    # Cluster features based on correlation\n    if len(correlated_pairs) > 0:\n        # Build adjacency matrix\n        n_features = len(feats.ids)\n        adj = np.zeros((n_features, n_features))\n        \n        # Set connections from correlations\n        for i in range(n_features):\n            for j in range(i+1, n_features):\n                if (feats.ids[i], feats.ids[j]) in correlated_pairs or \\\n                   (feats.ids[j], feats.ids[i]) in correlated_pairs:\n                    adj[i, j] = adj[j, i] = 1\n        \n        # Use spectral clustering to find modules\n        try:\n            clustering = SpectralClustering(n_clusters=2, affinity='precomputed', random_state=0)\n            labels = clustering.fit_predict(adj)\n            \n            # Find largest cluster\n            unique_labels, counts = np.unique(labels, return_counts=True)\n            main_cluster = unique_labels[np.argmax(counts)]\n            \n            # Get features in main cluster\n            module_features = [feats.ids[i] for i in range(n_features) if labels[i] == main_cluster]\n            \n            # Calculate loadings using weighted average of effect sizes\n            loadings = {}\n            for fid in module_features:\n                idx = feats.column(fid)\n                # Use t-statistic as proxy for effect size\n                t_stat = stats.ttest_ind(feats.x[feats.y==1, idx], feats.x[feats.y==0, idx]).statistic\n                loadings[fid] = t_stat\n            \n            # Sort by effect size\n            sorted_loadings = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)\n            drivers = tuple([fid for fid, _ in sorted_loadings[:min(MAX_DRIVERS, len(sorted_loadings))]])\n            columns = tuple(module_features)\n            \n            # Create products from top features\n            products = []\n            if len(sorted_loadings) >= 2:\n                for i in range(min(3, len(sorted_loadings))):\n                    for j in range(i+1, min(4, len(sorted_loadings))):\n                        products.append((sorted_loadings[i][0], sorted_loadings[j][0]))\n            \n            return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n        except:\n            pass\n    \n    # If no strong correlations found, use top features by effect size\n    effect_sizes = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, idx], feats.x[feats.y==0, idx]).statistic\n        effect_sizes.append((fid, abs(t_stat)))\n    \n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    drivers = tuple([fid for fid, _ in effect_sizes[:min(MAX_DRIVERS, len(effect_sizes))]])\n    columns = tuple([fid for fid, _ in effect_sizes])\n    \n    # Simple loading based on effect sizes\n    loadings = {fid: stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                     feats.x[feats.y==0, feats.column(fid)]).statistic \n                for fid in columns}\n    \n    return Design(drivers=drivers, columns=columns, products=(), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9049,
+  "completion_tokens": 2651,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3812
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3863
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3808
+   }
+  ],
+  "wall_s": 31.4
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s38ri4cb",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 3\n\ndef design(feats):\n    # Quick feature selection using Welch's t-test\n    p_values = []\n    \n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            # Calculate Welch's t-statistic manually\n            n1 = np.sum(feats.y == 1)\n            n2 = np.sum(feats.y == 0)\n            mean1 = feats.x[feats.y == 1, i].mean()\n            mean2 = feats.x[feats.y == 0, i].mean()\n            var1 = feats.x[feats.y == 1, i].var(ddof=1)\n            var2 = feats.x[feats.y == 0, i].var(ddof=1)\n            \n            se = np.sqrt(var1/n1 + var2/n2)\n            t_stat = (mean1 - mean2) / (se + 1e-8)\n            df = (var1/n1 + var2/n2)**2 / (var1**2/(n1**2*(n1-1)) + var2**2/(n2**2*(n2-1)))\n            p_val = 2 * (1 - stats.t.cdf(abs(t_stat), df))\n            p_values.append(p_val)\n    \n    # Identify significant features (p < 0.001)\n    significant_mask = np.array(p_values) < 0.001\n    significant_indices = np.where(significant_mask)[0]\n    \n    # Quick correlation-based duplicate removal\n    keep_features = set()\n    feature_data = [(feats.ids[i], feats.x[:, i]) for i in significant_indices]\n    \n    for i, (fid1, x1) in enumerate(feature_data):\n        is_duplicate = False\n        for j, (fid2, x2) in enumerate(feature_data[:i]):\n            corr = np.corrcoef(x1, x2)[0,1]\n            if abs(corr) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep_features.add(fid1)\n    \n    # Select top drivers\n    drivers = tuple(feat for feat in [feats.ids[i] for i in significant_indices] \n                   if feat in keep_features)[:MAX_DRIVERS]\n    \n    # Simple product terms from top features\n    products = []\n    top_features = [feat for feat in [feats.ids[i] for i in significant_indices] \n                   if feat in keep_features][:3]\n    \n    # Add one product term if we have at least 2 features\n    if len(top_features) >= 2:\n        products.append((top_features[0], top_features[1]))\n    \n    # Columns include all kept features\n    columns = tuple(feat for feat in feats.ids if feat in keep_features)\n    \n    # Simple loadings based on standardized means\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        loadings[fid] = feats.x[:, idx].mean()\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8686,
+  "completion_tokens": 2088,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 58s on all patients; it must run in under 10s",
+    "bytes": 2523
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2666
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2452
+   }
+  ],
+  "wall_s": 87.9
+ }
+}

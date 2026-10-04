@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2nh8ggrx",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers based on t-statistics and effect sizes\n    drivers = []\n    seen_ids = set()\n    \n    # Sort features by t-statistic (absolute value) descending\n    t_stats = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        try:\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, idx], \n                                   feats.x[feats.y==0, idx])[0]\n            t_stats.append(abs(t_stat))\n        except:\n            t_stats.append(0)\n    \n    sorted_indices = np.argsort(t_stats)[::-1]\n    \n    # Select top features, avoiding near-duplicates\n    for i in sorted_indices:\n        if len(drivers) >= MAX_DRIVERS:\n            break\n            \n        fid = feats.ids[i]\n        # Check correlation with already selected drivers\n        is_duplicate = False\n        for d in drivers:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                              feats.x[:, feats.column(d)])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        \n        if not is_duplicate:\n            drivers.append(fid)\n            seen_ids.add(fid)\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build columns list with drivers and their correlates (avoiding duplicates)\n    columns = list(drivers)\n    for fid in feats.ids:\n        if fid in seen_ids:\n            continue\n        # Add correlates of drivers but avoid near-duplicates\n        for d in drivers:\n            corr = abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                                 feats.x[:, feats.column(d)])[0,1])\n            if corr >= 0.6:\n                columns.append(fid)\n                seen_ids.add(fid)\n                break\n    \n    # Create interaction terms between drivers\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            # Only add if both features are in columns\n            if a in columns and b in columns:\n                products.append((a, b))\n    \n    # Simple weighted score using driver coefficients (simplified approach)\n    loadings = {}\n    for fid in columns:\n        # Weight by t-statistic strength\n        idx = feats.column(fid)\n        try:\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, idx], \n                                   feats.x[feats.y==0, idx])[0]\n            loadings[fid] = abs(t_stat)\n        except:\n            loadings[fid] = 0\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                  products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8250,
+  "completion_tokens": 1850,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2649
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2855
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2722
+   }
+  ],
+  "wall_s": 21.1
+ }
+}

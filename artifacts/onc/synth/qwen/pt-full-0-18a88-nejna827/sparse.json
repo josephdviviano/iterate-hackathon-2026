@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nejna827",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Calculate t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        x1 = x[y==1]\n        x0 = x[y==0]\n        if len(x1) > 0 and len(x0) > 0:\n            # Use Welch's t-test for unequal variances\n            var1 = np.var(x1, ddof=1)\n            var0 = np.var(x0, ddof=1)\n            n1, n0 = len(x1), len(x0)\n            se = np.sqrt(var1/n1 + var0/n0)\n            t_stat = (np.mean(x1) - np.mean(x0)) / se\n            t_stats.append(abs(t_stat))\n        else:\n            t_stats.append(0.0)\n    \n    # Sort by t-statistic and get top features\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [feats.ids[i] for i in sorted_indices[:20]]\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    for i, f1 in enumerate(top_features):\n        if f1 in to_remove:\n            continue\n        for j, f2 in enumerate(top_features[i+1:], i+1):\n            if f2 in to_remove:\n                continue\n            col1 = feats.column(f1)\n            col2 = feats.column(f2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n            if abs(corr) >= 0.6:\n                to_remove.add(f2)\n    \n    clean_features = [f for f in top_features if f not in to_remove]\n    \n    # Select drivers (at most MAX_DRIVERS = 4)\n    drivers = clean_features[:MAX_DRIVERS]\n    \n    # Select columns for regression (up to 10)\n    selected_columns = clean_features[:10]\n    \n    # Create products of top pairs\n    products = []\n    for i, f1 in enumerate(selected_columns[:5]):\n        for f2 in selected_columns[i+1:i+3]:\n            products.append((f1, f2))\n    \n    # Weighted score from drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(selected_columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8301,
+  "completion_tokens": 1782,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2412
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2075
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2079
+   }
+  ],
+  "wall_s": 20.4
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-srtvkwr9",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('MZS13', 'IUL10'), ('MZS13', 'YCA13'), ('IUL10', 'YCA13'),\n        ('MZS13', 'DQO5'), ('DQO5', 'IUL10'), ('ZLF19', 'ZSDS19'),\n        ('ABJ6', 'ZNCS12P'), ('KYEX18A', 'RNKO8A'), ('MZS13', 'RVI11'),\n        ('DQO5', 'YCA13'), ('RYDJ15', 'IUL10'), ('YCA13', 'RVI11'),\n        ('WSJB7', 'MZS13'), ('RYDJ15', 'MZS13'), ('MZS13', 'ABJ6'),\n        ('RYDJ15', 'YCA13'), ('IUL10', 'RVI11'), ('LSRM14', 'IUL10'),\n        ('IUL10', 'ALJU2'), ('WSJB7', 'YCA13')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Build set of features to exclude due to near-duplication\n    excluded = set()\n    for a, b in corr_pairs:\n        if a in excluded or b in excluded:\n            continue\n        # Use first feature in pair to represent both\n        excluded.add(b)\n    \n    # Select features not marked for exclusion\n    selected_ids = [fid for fid in feats.ids if fid not in excluded]\n    \n    # Compute effect sizes for selected features\n    effects = []\n    for fid in selected_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean_diff = np.mean(x[y==1]) - np.mean(x[y==0])\n        t_stat, _ = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        effects.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by effect size (descending)\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates for drivers (at most MAX_DRIVERS)\n    drivers = [fid for fid, _, _ in effects[:MAX_DRIVERS]]\n    \n    # For products, look for interactions between top features\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a, b))\n    \n    # For columns, include all selected features\n    columns = selected_ids\n    \n    # Simple weighted score: use standardized values of top features\n    loadings = {}\n    for i, (fid, _, _) in enumerate(effects):\n        loadings[fid] = 1.0 / (i + 1)  # inverse rank weighting\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8697,
+  "completion_tokens": 2136,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2351
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2373
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2279
+   }
+  ],
+  "wall_s": 25.5
+ }
+}

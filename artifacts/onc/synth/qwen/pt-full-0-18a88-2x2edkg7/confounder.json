@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2x2edkg7",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers among clinical features\n    clinical_features = [fid for fid, t in zip(feats.ids, feats.types) if t == 'clinical']\n    \n    # If no clinical features, try to find strong associations\n    if not clinical_features:\n        # Look for features with highest t-statistics\n        t_stats = []\n        for i, fid in enumerate(feats.ids):\n            if feats.types[i] != 'derived':\n                # Compute Welch's t-test\n                y0 = feats.x[feats.y == 0, i]\n                y1 = feats.x[feats.y == 1, i]\n                if len(y0) > 0 and len(y1) > 0:\n                    t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                    t_stats.append((abs(t_stat), fid))\n        t_stats.sort(reverse=True)\n        drivers = [fid for _, fid in t_stats[:MAX_DRIVERS]]\n        return Design(drivers=tuple(drivers), columns=(), products=(), loadings={})\n    \n    # Use clinical features as potential drivers\n    drivers = tuple(clinical_features[:min(MAX_DRIVERS, len(clinical_features))])\n    \n    # Select features for logistic regression\n    columns = []\n    products = []\n    loadings = {}\n    \n    # For simplicity, select top features by t-statistic\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            if len(y0) > 0 and len(y1) > 0:\n                t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                t_stats.append((abs(t_stat), fid))\n    t_stats.sort(reverse=True)\n    \n    # Select top features excluding near-duplicates\n    selected = set()\n    for _, fid in t_stats:\n        # Check if this feature is correlated with already selected ones\n        is_duplicate = False\n        for sel_fid in selected:\n            col1 = feats.column(sel_fid)\n            col2 = feats.column(fid)\n            if col1 < feats.x.shape[1] and col2 < feats.x.shape[1]:\n                corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n                if abs(corr) >= 0.6:\n                    is_duplicate = True\n                    break\n        if not is_duplicate:\n            selected.add(fid)\n            if len(selected) >= 10:  # Limit to reasonable number\n                break\n    \n    # Create products for top features\n    top_features = list(selected)[:5]\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            products.append((top_features[i], top_features[j]))\n    \n    columns = tuple(top_features)\n    \n    # Simple weighted loading based on effect size\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            if len(y0) > 0 and len(y1) > 0:\n                t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                loadings[fid] = abs(t_stat)\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8796,
+  "completion_tokens": 2396,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Array shapes are incompatible for broadcasting.",
+    "bytes": 3127
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3228
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3257
+   }
+  ],
+  "wall_s": 27.4
+ }
+}

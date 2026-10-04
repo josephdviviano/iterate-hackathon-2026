@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-3mkdrfiw",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 3\n\ndef design(feats):\n    # Filter for significant features (p < 0.05)\n    sig_idx = [i for i, fid in enumerate(feats.ids) \n               if abs(stats.ttest_ind(feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0]).statistic) > 2.0]\n    \n    if not sig_idx:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build correlation matrix\n    corr_mat = np.corrcoef(feats.x[:,sig_idx].T)\n    \n    # Cluster features based on correlation\n    clustering = AgglomerativeClustering(n_clusters=2, linkage='average').fit(corr_mat)\n    \n    # Select cluster with highest mean effect size\n    clusters = {}\n    for i, label in enumerate(clustering.labels_):\n        if label not in clusters:\n            clusters[label] = []\n        clusters[label].append(sig_idx[i])\n    \n    # Get cluster with most significant features\n    best_cluster = max(clusters.values(), key=lambda x: np.mean([abs(stats.ttest_ind(\n        feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0]).statistic) for i in x]))\n    \n    # Remove near-duplicates (correlation > 0.6)\n    unique_features = []\n    for i, fid in enumerate([feats.ids[j] for j in best_cluster]):\n        is_unique = True\n        for existing_fid in unique_features:\n            idx1 = feats.column(existing_fid)\n            idx2 = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:,idx1], feats.x[:,idx2])[0,1]) > 0.6:\n                is_unique = False\n                break\n        if is_unique:\n            unique_features.append(fid)\n    \n    # Use top 3 features as drivers\n    drivers = tuple(unique_features[:MAX_DRIVERS])\n    \n    # Create weighted score from all features\n    weights = {}\n    for fid in unique_features:\n        idx = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[:,idx][feats.y==1], feats.x[:,idx][feats.y==0]).statistic\n        weights[fid] = abs(t_stat) / len(unique_features)\n    \n    # Return design\n    return Design(drivers=drivers, columns=unique_features, products=(), loadings=weights)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 3\n\ndef design(feats):\n    # Filter for significant features (p < 0.05)\n    sig_idx = [i for i, fid in enumerate(feats.ids) \n               if abs(stats.ttest_ind(feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0]).statistic) > 2.0]\n    \n    if not sig_idx:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build correlation matrix\n    corr_mat = np.corrcoef(feats.x[:,sig_idx].T)\n    \n    # Cluster features based on correlation\n    clustering = AgglomerativeClustering(n_clusters=2, linkage='average').fit(corr_mat)\n    \n    # Select cluster with highest mean effect size\n    clusters = {}\n    for i, label in enumerate(clustering.labels_):\n        if label not in clusters:\n            clusters[label] = []\n        clusters[label].append(sig_idx[i])\n    \n    # Get cluster with most significant features\n    best_cluster = max(clusters.values(), key=lambda x: np.mean([abs(stats.ttest_ind(\n        feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0]).statistic) for i in x]))\n    \n    # Remove near-duplicates (correlation > 0.6)\n    unique_features = []\n    for i, fid in enumerate([feats.ids[j] for j in best_cluster]):\n        is_unique = True\n        for existing_fid in unique_features:\n            idx1 = feats.column(existing_fid)\n            idx2 = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:,idx1], feats.x[:,idx2])[0,1]) > 0.6:\n                is_unique = False\n                break\n        if is_unique:\n            unique_features.append(fid)\n    \n    # Use top 3 features as drivers\n    drivers = tuple(unique_features[:MAX_DRIVERS])\n    \n    # Create weighted score from all features\n    weights = {}\n    for fid in unique_features:\n        idx = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[:,idx][feats.y==1], feats.x[:,idx][feats.y==0]).statistic\n        weights[fid] = abs(t_stat) / len(unique_features)\n    \n    # Return design\n    return Design(drivers=drivers, columns=unique_features, products=(), loadings=weights)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4869,
+  "completion_tokens": 1117,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2228
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2168
+   }
+  ],
+  "wall_s": 12.8
+ }
+}

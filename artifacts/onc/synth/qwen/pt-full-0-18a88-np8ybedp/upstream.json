@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-np8ybedp",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick\u7b5b\u9009 strong candidates by t-test\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'clinical':\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)\n            # Approximate AUC using correlation with outcome\n            corr_with_outcome = np.corrcoef(feats.x[:, i], feats.y)[0,1]\n            auc = 0.5 + 0.5 * abs(corr_with_outcome)\n            strong_candidates.append((fid, abs(t_stat), p_val, auc))\n    \n    # Sort by t-statistic then AUC\n    strong_candidates.sort(key=lambda x: (-x[1], -x[3]))\n    \n    # Remove near-duplicates quickly\n    keep = []\n    used = set()\n    for fid, t_stat, p_val, auc in strong_candidates:\n        if fid in used:\n            continue\n        keep.append((fid, t_stat, p_val, auc))\n        used.add(fid)\n        \n        # Check correlations with this feature\n        for other_fid, _, _, _ in strong_candidates:\n            if other_fid == fid or other_fid in used:\n                continue\n            col1 = feats.column(fid)\n            col2 = feats.column(other_fid)\n            if col1 < len(feats.x[0]) and col2 < len(feats.x[0]):\n                try:\n                    corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n                    if abs(corr) >= 0.6:\n                        used.add(other_fid)\n                except:\n                    pass\n    \n    # Select top candidates for drivers\n    drivers = tuple(fid for fid, _, _, _ in keep[:MAX_DRIVERS])\n    \n    # For columns, use all features with p < 0.05 or high AUC\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Add all significant features to columns\n    for fid, t_stat, p_val, auc in keep:\n        if p_val < 0.05 or auc > 0.55:\n            columns.append(fid)\n            \n    # Create products for highly correlated pairs\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            if col1 < len(feats.x[0]) and col2 < len(feats.x[0]):\n                try:\n                    corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n                    if abs(corr) >= 0.6:\n                        corr_pairs.append((fid1, fid2))\n                except:\n                    pass\n                \n    # Add products for correlated pairs\n    for fid1, fid2 in corr_pairs:\n        if fid1 in columns and fid2 in columns:\n            products.append((fid1, fid2))\n    \n    # Simple loading for top features\n    for i, fid in enumerate(columns[:5]):\n        col_idx = feats.column(fid)\n        if col_idx < len(feats.x[0]):\n            diff = np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx])\n            loadings[fid] = float(abs(diff))\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8672,
+  "completion_tokens": 2307,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 14s on all patients; it must run in under 10s",
+    "bytes": 2837
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'roc_auc_score' is not defined",
+    "bytes": 3019
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design took 10s on all patients; it must run in under 10s",
+    "bytes": 3054
+   }
+  ],
+  "wall_s": 51.0
+ }
+}

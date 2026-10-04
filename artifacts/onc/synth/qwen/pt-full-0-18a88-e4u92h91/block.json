@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-e4u92h91",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs (|r| >= 0.6)\n    corr = np.corrcoef(feats.x.T)\n    mask = np.abs(corr) >= 0.6\n    np.fill_diagonal(mask, False)\n    \n    # Find connected components in correlation graph\n    clustering = AgglomerativeClustering(\n        n_clusters=None, \n        distance_threshold=1-0.6,\n        linkage='complete',\n        connectivity=mask\n    )\n    clusters = clustering.fit_predict(np.eye(len(feats.ids)))\n    \n    # Select cluster with highest mean effect size\n    best_cluster = None\n    best_effect = -np.inf\n    \n    for i in set(clusters):\n        cluster_ids = [feats.ids[j] for j in range(len(feats.ids)) if clusters[j] == i]\n        if len(cluster_ids) < 2:\n            continue\n            \n        # Compute mean effect size (absolute difference in means)\n        cluster_cols = [feats.column(fid) for fid in cluster_ids]\n        x_cluster = feats.x[:, cluster_cols]\n        effects = [abs(np.mean(x_cluster[feats.y==1, j]) - np.mean(x_cluster[feats.y==0, j])) \n                   for j in range(len(cluster_ids))]\n        mean_effect = np.mean(effects)\n        \n        if mean_effect > best_effect:\n            best_effect = mean_effect\n            best_cluster = cluster_ids\n    \n    # If no strong cluster found, return empty design\n    if best_cluster is None:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create weighted score from best cluster\n    cluster_cols = [feats.column(fid) for fid in best_cluster]\n    x_cluster = feats.x[:, cluster_cols]\n    \n    # Weight by effect sizes (standardized differences)\n    weights = np.array([\n        abs(np.mean(x_cluster[feats.y==1, j]) - np.mean(x_cluster[feats.y==0, j]))\n        for j in range(len(cluster_cols))\n    ])\n    weights = weights / np.sum(weights)  # Normalize\n    \n    # Return design with drivers, columns, products, and loadings\n    return Design(\n        drivers=(best_cluster[0],),  # Most influential feature as driver\n        columns=tuple(best_cluster),\n        products=(),\n        loadings=dict(zip(best_cluster, weights))\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs (|r| >= 0.6)\n    corr = np.corrcoef(feats.x.T)\n    mask = np.abs(corr) >= 0.6\n    np.fill_diagonal(mask, False)\n    \n    # Find connected components in correlation graph\n    clustering = AgglomerativeClustering(\n        n_clusters=None, \n        distance_threshold=1-0.6,\n        linkage='complete',\n        connectivity=mask\n    )\n    clusters = clustering.fit_predict(np.eye(len(feats.ids)))\n    \n    # Select cluster with highest mean effect size\n    best_cluster = None\n    best_effect = -np.inf\n    \n    for i in set(clusters):\n        cluster_ids = [feats.ids[j] for j in range(len(feats.ids)) if clusters[j] == i]\n        if len(cluster_ids) < 2:\n            continue\n            \n        # Compute mean effect size (absolute difference in means)\n        cluster_cols = [feats.column(fid) for fid in cluster_ids]\n        x_cluster = feats.x[:, cluster_cols]\n        effects = [abs(np.mean(x_cluster[feats.y==1, j]) - np.mean(x_cluster[feats.y==0, j])) \n                   for j in range(len(cluster_ids))]\n        mean_effect = np.mean(effects)\n        \n        if mean_effect > best_effect:\n            best_effect = mean_effect\n            best_cluster = cluster_ids\n    \n    # If no strong cluster found, return empty design\n    if best_cluster is None:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create weighted score from best cluster\n    cluster_cols = [feats.column(fid) for fid in best_cluster]\n    x_cluster = feats.x[:, cluster_cols]\n    \n    # Weight by effect sizes (standardized differences)\n    weights = np.array([\n        abs(np.mean(x_cluster[feats.y==1, j]) - np.mean(x_cluster[feats.y==0, j]))\n        for j in range(len(cluster_cols))\n    ])\n    weights = weights / np.sum(weights)  # Normalize\n    \n    # Return design with drivers, columns, products, and loadings\n    return Design(\n        drivers=(best_cluster[0],),  # Most influential feature as driver\n        columns=tuple(best_cluster),\n        products=(),\n        loadings=dict(zip(best_cluster, weights))\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4990,
+  "completion_tokens": 1077,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 2267
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2211
+   }
+  ],
+  "wall_s": 12.4
+ }
+}

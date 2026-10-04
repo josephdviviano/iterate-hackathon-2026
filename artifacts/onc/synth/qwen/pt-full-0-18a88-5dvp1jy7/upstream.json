@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5dvp1jy7",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('ZRVA4L', 'TAI1A'), ('VQA3B', 'KIMC5A'), ('TNH5', 'SWXV11P'),\n        ('FWC14', 'OXMA10'), ('FLB7', 'SWXV11P'), ('OXMA10', 'IQI6P'),\n        ('VQA3B', 'TIAD13A'), ('VQA3B', 'TMB1'), ('FWC14', 'IQI6P'),\n        ('KIMC5A', 'TIAD13A'), ('TNH5', 'FLB7'), ('FWC14', 'VQA3B'),\n        ('BPL10L', 'SDG19'), ('XLDI17', 'VQA3B'), ('AOUQ14', 'NBPK12'),\n        ('HQG1', 'GASL1A'), ('TNH5', 'VQA3B'), ('AIH18L', 'VQA3B'),\n        ('VQA3B', 'JFEA2P'), ('KIMC5A', 'TMB1')\n    ]\n    \n    # Keep only one feature from each correlated pair\n    keep_ids = set(feats.ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher mean_y1-mean_y0 (stronger effect)\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            mean_y1_a = np.mean(feats.y[feats.x[:, idx_a] > 0])\n            mean_y1_b = np.mean(feats.y[feats.x[:, idx_b] > 0])\n            if mean_y1_a < mean_y1_b:\n                keep_ids.remove(a)\n            else:\n                keep_ids.remove(b)\n    \n    # Filter features to only those we're keeping\n    kept_indices = [i for i, fid in enumerate(feats.ids) if fid in keep_ids]\n    kept_ids = tuple(feats.ids[i] for i in kept_indices)\n    \n    # Compute t-statistics and p-values for all kept features\n    t_stats = []\n    for i, fid in enumerate(kept_ids):\n        idx = feats.column(fid)\n        x = feats.x[:, idx]\n        y = feats.y\n        x1 = x[y == 1]\n        x0 = x[y == 0]\n        if len(x1) > 0 and len(x0) > 0:\n            t, _ = stats.ttest_ind(x1, x0, equal_var=False)\n            t_stats.append(t)\n        else:\n            t_stats.append(0)\n    \n    # Sort by absolute t-statistic (descending)\n    sorted_indices = np.argsort(np.abs(t_stats))[::-1]\n    sorted_ids = [kept_ids[i] for i in sorted_indices]\n    \n    # Select top features as drivers (at most MAX_DRIVERS)\n    drivers = tuple(sorted_ids[:MAX_DRIVERS])\n    \n    # Select all features for regression\n    columns = kept_ids\n    \n    # Check for potential interactions between top features\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            # Add interaction term if both are in the dataset\n            if a in feats.ids and b in feats.ids:\n                products.append((a, b))\n    \n    # Create loadings dictionary using t-statistics as weights\n    loadings = {}\n    for i, fid in enumerate(kept_ids):\n        loadings[fid] = abs(t_stats[i])\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9114,
+  "completion_tokens": 2608,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2932
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2954
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2728
+   }
+  ],
+  "wall_s": 29.5
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-juqaovnk",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features (they're not direct causes)\n    non_derived_mask = [t != 'derived' for t in feats.types]\n    ids = [feats.ids[i] for i in range(len(feats.ids)) if non_derived_mask[i]]\n    types = [feats.types[i] for i in range(len(feats.types)) if non_derived_mask[i]]\n    x = feats.x[:, [feats.column(fid) for fid in ids]]\n    \n    # Calculate effect sizes (difference in means)\n    y = feats.y\n    means_1 = np.mean(x[y == 1], axis=0)\n    means_0 = np.mean(x[y == 0], axis=0)\n    effect_sizes = np.abs(means_1 - means_0)\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_ids = [ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check correlation matrix to avoid near-duplicates\n    corr_matrix = np.corrcoef(x.T)\n    selected = []\n    for i, fid in enumerate(top_ids):\n        is_duplicate = any(\n            abs(corr_matrix[feats.column(fid), feats.column(selected_fid)]) > 0.6 \n            for selected_fid in selected\n        )\n        if not is_duplicate:\n            selected.append(fid)\n    \n    # Build regression components\n    drivers = tuple(selected)\n    columns = tuple(selected)  # Only use selected drivers\n    \n    # Add interaction terms for top features\n    products = []\n    if len(selected) >= 2:\n        # Add strongest interaction term\n        products = [(selected[0], selected[1])]\n    \n    # Weighted score using top feature\n    loadings = {fid: effect_sizes[sorted_indices[i]] \n                for i, fid in enumerate(selected)}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features (they're not direct causes)\n    non_derived_mask = [t != 'derived' for t in feats.types]\n    ids = [feats.ids[i] for i in range(len(feats.ids)) if non_derived_mask[i]]\n    types = [feats.types[i] for i in range(len(feats.types)) if non_derived_mask[i]]\n    x = feats.x[:, [feats.column(fid) for fid in ids]]\n    \n    # Calculate effect sizes (difference in means)\n    y = feats.y\n    means_1 = np.mean(x[y == 1], axis=0)\n    means_0 = np.mean(x[y == 0], axis=0)\n    effect_sizes = np.abs(means_1 - means_0)\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_ids = [ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check correlation matrix to avoid near-duplicates\n    corr_matrix = np.corrcoef(x.T)\n    selected = []\n    for i, fid in enumerate(top_ids):\n        is_duplicate = any(\n            abs(corr_matrix[feats.column(fid), feats.column(selected_fid)]) > 0.6 \n            for selected_fid in selected\n        )\n        if not is_duplicate:\n            selected.append(fid)\n    \n    # Build regression components\n    drivers = tuple(selected)\n    columns = tuple(selected)  # Only use selected drivers\n    \n    # Add interaction terms for top features\n    products = []\n    if len(selected) >= 2:\n        # Add strongest interaction term\n        products = [(selected[0], selected[1])]\n    \n    # Weighted score using top feature\n    loadings = {fid: effect_sizes[sorted_indices[i]] \n                for i, fid in enumerate(selected)}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7935,
+  "completion_tokens": 1455,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1869
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2091
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1697
+   }
+  ],
+  "wall_s": 16.7
+ }
+}

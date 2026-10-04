@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-e7qbjol1",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    # using Welch's t-test for each feature\n    p_values = []\n    effects = []\n    \n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        # Split by outcome\n        x0 = x[y == 0]\n        x1 = x[y == 1]\n        # Welch's t-test\n        t_stat, p_val = stats.ttest_ind(x1, x0, equal_var=False)\n        p_values.append(p_val)\n        effects.append(np.mean(x1) - np.mean(x0))\n    \n    # If no feature is significantly associated, return empty design\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find features with p < 0.05 and effect size > 0.1 or < -0.1\n    significant_features = []\n    for i, (fid, p, effect) in enumerate(zip(feats.ids, p_values, effects)):\n        if p < 0.05 and abs(effect) > 0.1:\n            significant_features.append((fid, effect, p))\n    \n    # Sort by effect size (absolute value) descending\n    significant_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # If no significant features found, return empty design\n    if not significant_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for near-duplicates (correlation >= 0.6)\n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    # Create set of feature IDs to remove duplicates\n    feature_set = set()\n    unique_features = []\n    for fid, effect, p in significant_features:\n        # Check if this feature or its correlated pair is already included\n        add_feature = True\n        for existing_fid in feature_set:\n            idx1 = feats.column(fid)\n            idx2 = feats.column(existing_fid)\n            if abs(corr_matrix[idx1, idx2]) >= 0.6:\n                add_feature = False\n                break\n        if add_feature:\n            feature_set.add(fid)\n            unique_features.append((fid, effect, p))\n    \n    # Take top features up to MAX_DRIVERS\n    drivers = tuple(f[0] for f in unique_features[:MAX_DRIVERS])\n    \n    # For regression columns, include all unique features that are not drivers\n    columns = tuple(f[0] for f in unique_features)\n    \n    # No interaction terms (products) needed for this simple approach\n    products = ()\n    \n    # Simple weighted score based on standardized coefficients\n    # Use effect sizes as weights\n    loadings = {}\n    for fid, effect, p in unique_features:\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8852,
+  "completion_tokens": 2095,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2890
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2917
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2682
+   }
+  ],
+  "wall_s": 23.7
+ }
+}

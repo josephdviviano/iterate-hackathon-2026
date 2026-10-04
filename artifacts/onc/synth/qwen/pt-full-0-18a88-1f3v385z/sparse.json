@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1f3v385z",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong individual effects (p < 0.01)\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test effect size\n            t_stat = feats.x[:, i].T @ feats.y / np.sqrt(np.var(feats.x[:, i]) * len(feats.y))\n            if abs(t_stat) > 2.0:\n                strong_features.append((fid, abs(t_stat)))\n        else:\n            # For non-clinical, use mutual information\n            mi = mutual_info_classif(feats.x[:, i:i+1], feats.y)[0]\n            if mi > 0.05:\n                strong_features.append((fid, mi))\n    \n    # Sort by strength\n    strong_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated with r > 0.6)\n    selected = []\n    used = set()\n    for fid, _ in strong_features:\n        if fid in used:\n            continue\n        # Check correlations with already selected features\n        is_duplicate = False\n        for selected_fid in selected:\n            col_a = feats.column(selected_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected.append(fid)\n            used.add(fid)\n            if len(selected) >= MAX_DRIVERS:\n                break\n    \n    # If no strong features, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to at most 4 drivers as per checker report\n    drivers = tuple(selected[:4])\n    \n    # Build the design with minimal complexity\n    columns = list(drivers)\n    \n    # Create interaction terms for top features (at most 1 interaction)\n    products = []\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    # Simple weighted score using top feature\n    loadings = {drivers[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong individual effects (p < 0.01)\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test effect size\n            t_stat = feats.x[:, i].T @ feats.y / np.sqrt(np.var(feats.x[:, i]) * len(feats.y))\n            if abs(t_stat) > 2.0:\n                strong_features.append((fid, abs(t_stat)))\n        else:\n            # For non-clinical, use mutual information\n            mi = mutual_info_classif(feats.x[:, i:i+1], feats.y)[0]\n            if mi > 0.05:\n                strong_features.append((fid, mi))\n    \n    # Sort by strength\n    strong_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated with r > 0.6)\n    selected = []\n    used = set()\n    for fid, _ in strong_features:\n        if fid in used:\n            continue\n        # Check correlations with already selected features\n        is_duplicate = False\n        for selected_fid in selected:\n            col_a = feats.column(selected_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected.append(fid)\n            used.add(fid)\n            if len(selected) >= MAX_DRIVERS:\n                break\n    \n    # If no strong features, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to at most 4 drivers as per checker report\n    drivers = tuple(selected[:4])\n    \n    # Build the design with minimal complexity\n    columns = list(drivers)\n    \n    # Create interaction terms for top features (at most 1 interaction)\n    products = []\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    # Simple weighted score using top feature\n    loadings = {drivers[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8859,
+  "completion_tokens": 1935,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2934
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2989
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2217
+   }
+  ],
+  "wall_s": 22.5
+ }
+}

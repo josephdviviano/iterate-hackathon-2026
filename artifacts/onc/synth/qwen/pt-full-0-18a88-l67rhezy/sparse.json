@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-l67rhezy",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    \n    # Calculate effect sizes (mean difference) and t-stats for all non-derived features\n    effects = {}\n    tstats = {}\n    for fid in non_derived_ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        effects[fid] = np.mean(y1) - np.mean(y0)\n        tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        tstats[fid] = tstat\n    \n    # Sort by absolute t-statistic\n    sorted_features = sorted(non_derived_ids, key=lambda f: abs(tstats[f]), reverse=True)\n    \n    # Remove near-duplicates (correlated with r >= 0.6)\n    keep = []\n    for fid in sorted_features:\n        is_unique = True\n        for kept_fid in keep:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(kept_fid)])[0,1]) >= 0.6:\n                is_unique = False\n                break\n        if is_unique:\n            keep.append(fid)\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = tuple(keep[:MAX_DRIVERS])\n    \n    # For columns, use all non-derived features with strong effects\n    columns = tuple(f for f in non_derived_ids if abs(effects[f]) > 0.1)\n    \n    # For products, look for interaction terms among top features\n    products = set()\n    top_features = [f for f in keep[:5] if f in columns]\n    \n    # Check pairwise correlations to identify potential interactions\n    for i, f1 in enumerate(top_features):\n        for f2 in top_features[i+1:]:\n            corr = np.corrcoef(feats.x[:, feats.column(f1)], feats.x[:, feats.column(f2)])[0,1]\n            if abs(corr) < 0.3:  # Only consider weakly correlated pairs\n                products.add((f1, f2))\n    \n    # Weighted score: sum of top features weighted by effect size\n    loadings = {}\n    for fid in top_features:\n        loadings[fid] = effects[fid]\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8289,
+  "completion_tokens": 1761,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2288
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2310
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2200
+   }
+  ],
+  "wall_s": 20.2
+ }
+}

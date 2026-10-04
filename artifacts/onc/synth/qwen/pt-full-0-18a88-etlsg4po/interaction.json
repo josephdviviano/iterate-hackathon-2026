@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-etlsg4po",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers based on t-statistics\n    drivers = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'expression':\n            t_stat = abs(feats.x[:, feats.column(fid)] @ feats.y)\n            if t_stat > 1.96:\n                drivers.append(fid)\n    \n    # If we have no strong drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find correlated pairs\n    corr_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                corr_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Build candidate features\n    columns = list(set(drivers))\n    products = []\n    \n    # Add interaction terms from correlated pairs\n    for a, b in corr_pairs:\n        if a in drivers and b in drivers:\n            products.append((a, b))\n    \n    # Weighted score: sum of drivers with weights from mutual information\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in drivers]], feats.y)\n    loadings = dict(zip(drivers, mi_scores))\n    \n    # Limit to MAX_DRIVERS\n    if len(drivers) > MAX_DRIVERS:\n        sorted_drivers = sorted(drivers, key=lambda d: loadings[d], reverse=True)\n        drivers = sorted_drivers[:MAX_DRIVERS]\n        loadings = {d: loadings[d] for d in drivers}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7746,
+  "completion_tokens": 1392,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1871
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1871
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1871
+   }
+  ],
+  "wall_s": 16.2
+ }
+}

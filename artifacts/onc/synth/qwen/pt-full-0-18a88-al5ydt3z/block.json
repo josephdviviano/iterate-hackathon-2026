@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-al5ydt3z",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Build adjacency matrix for clustering\n    adj = np.zeros((len(feats.ids), len(feats.ids)))\n    for a, b in high_corr_pairs:\n        i, j = feats.column(a), feats.column(b)\n        adj[i,j] = adj[j,i] = 1\n    \n    # Spectral clustering to find modules\n    try:\n        clusterer = SpectralClustering(n_clusters=2, affinity='precomputed', random_state=0)\n        clusters = clusterer.fit_predict(adj)\n    except:\n        # Fallback to simple correlation-based grouping\n        clusters = np.zeros(len(feats.ids))\n    \n    # Select the largest cluster\n    unique_clusters, counts = np.unique(clusters, return_counts=True)\n    if len(unique_clusters) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_cluster_id = unique_clusters[np.argmax(counts)]\n    module_features = [feats.ids[i] for i in range(len(feats.ids)) if clusters[i] == largest_cluster_id]\n    \n    # Remove near-duplicates (keep one from each group)\n    module_features = list(set(module_features))\n    \n    # Calculate loadings based on effect sizes\n    loadings = {}\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        mean_y1 = np.mean(feats.x[feats.y==1, col_idx])\n        mean_y0 = np.mean(feats.x[feats.y==0, col_idx])\n        loadings[fid] = mean_y1 - mean_y0\n    \n    # Sort by absolute loading strength and limit to MAX_DRIVERS\n    sorted_loadings = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)\n    drivers = tuple([fid for fid, _ in sorted_loadings[:min(MAX_DRIVERS-1, len(sorted_loadings))]])\n    \n    # If we have no drivers, return empty design\n    if len(drivers) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return design with module features and their loadings\n    return Design(\n        drivers=drivers,\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8158,
+  "completion_tokens": 1715,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2210
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2237
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2361
+   }
+  ],
+  "wall_s": 19.9
+ }
+}

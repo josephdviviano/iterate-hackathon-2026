@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-lqbyugz7",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with highest effect sizes (mean_y1-mean_y0)\n    effects = [(fid, abs(feats.x[:, feats.column(fid)].mean() * feats.y.mean())) \n               for fid in feats.ids]\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates for drivers\n    candidates = [fid for fid, _ in effects[:20]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    seen = set()\n    for fid in candidates:\n        if fid in seen:\n            continue\n        keep.append(fid)\n        # Check correlations with already selected features\n        for other_fid in keep[:-1]:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                              feats.x[:, feats.column(other_fid)])[0,1]) > 0.6:\n                seen.add(other_fid)\n    \n    # Look for product terms among top candidates\n    products = []\n    for i, fid1 in enumerate(keep):\n        for fid2 in keep[i+1:]:\n            # Check if product term might be informative\n            prod = feats.x[:, feats.column(fid1)] * feats.x[:, feats.column(fid2)]\n            mi = mutual_info_classif(prod.reshape(-1, 1), feats.y)[0]\n            if mi > 0.01:  # Threshold for inclusion\n                products.append((fid1, fid2))\n    \n    # Return best single driver if any, otherwise empty design\n    if len(keep) > 0:\n        return Design(\n            drivers=(keep[0],),\n            columns=(keep[0],),\n            products=tuple(products[:3]),\n            loadings={keep[0]: 1.0}\n        )\n    \n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with highest effect sizes (mean_y1-mean_y0)\n    effects = [(fid, abs(feats.x[:, feats.column(fid)].mean() * feats.y.mean())) \n               for fid in feats.ids]\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates for drivers\n    candidates = [fid for fid, _ in effects[:20]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    seen = set()\n    for fid in candidates:\n        if fid in seen:\n            continue\n        keep.append(fid)\n        # Check correlations with already selected features\n        for other_fid in keep[:-1]:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                              feats.x[:, feats.column(other_fid)])[0,1]) > 0.6:\n                seen.add(other_fid)\n    \n    # Look for product terms among top candidates\n    products = []\n    for i, fid1 in enumerate(keep):\n        for fid2 in keep[i+1:]:\n            # Check if product term might be informative\n            prod = feats.x[:, feats.column(fid1)] * feats.x[:, feats.column(fid2)]\n            mi = mutual_info_classif(prod.reshape(-1, 1), feats.y)[0]\n            if mi > 0.01:  # Threshold for inclusion\n                products.append((fid1, fid2))\n    \n    # Return best single driver if any, otherwise empty design\n    if len(keep) > 0:\n        return Design(\n            drivers=(keep[0],),\n            columns=(keep[0],),\n            products=tuple(products[:3]),\n            loadings={keep[0]: 1.0}\n        )\n    \n    return Design(\n        drivers=(),\n        columns=(),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2091,
+  "completion_tokens": 428,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1787
+   }
+  ],
+  "wall_s": 5.5
+ }
+}

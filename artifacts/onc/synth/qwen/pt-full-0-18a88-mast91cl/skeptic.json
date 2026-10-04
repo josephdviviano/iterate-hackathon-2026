@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-mast91cl",
+ "seed": "skeptic",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    # using Welch's t-test (as in the stats table)\n    p_values = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Calculate mean difference for each group\n        mean_y0 = np.mean(x[y == 0])\n        mean_y1 = np.mean(x[y == 1])\n        diff = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        n0 = np.sum(1 - y)\n        n1 = np.sum(y)\n        var0 = np.var(x[y == 0], ddof=1)\n        var1 = np.var(x[y == 1], ddof=1)\n        \n        se = np.sqrt(var0/n0 + var1/n1)\n        t_stat = diff / se if se > 0 else 0\n        df = (var0/n0 + var1/n1)**2 / ((var0/n0)**2/(n0-1) + (var1/n1)**2/(n1-1))\n        p_val = 2 * (1 - stats.t.cdf(abs(t_stat), df)) if df > 0 else 1\n        \n        p_values.append(p_val)\n    \n    # If all p-values > 0.05, claim no mechanism\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by p-value\n    sorted_indices = np.argsort(p_values)\n    selected_features = [feats.ids[i] for i in sorted_indices[:10]]\n    \n    # Remove near-duplicates based on correlation\n    keep_features = []\n    for fid in selected_features:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        is_duplicate = False\n        for kept_fid in keep_features:\n            kept_col_idx = feats.column(kept_fid)\n            y = feats.x[:, kept_col_idx]\n            corr = np.corrcoef(x, y)[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep_features.append(fid)\n    \n    # Fit logistic regression to see which features actually contribute\n    X = feats.x[:, [feats.column(fid) for fid in keep_features]]\n    model = LogisticRegression(fit_intercept=True, max_iter=1000)\n    model.fit(X, feats.y)\n    \n    # Get coefficients (absolute values) to rank importance\n    coef_abs = np.abs(model.coef_[0])\n    sorted_coef_indices = np.argsort(coef_abs)[::-1]\n    \n    # Return top features that are drivers (causal)\n    drivers = tuple([keep_features[i] for i in sorted_coef_indices[:min(MAX_DRIVERS, len(keep_features))]])\n    \n    # All features that entered the model\n    columns = tuple(keep_features)\n    \n    # No products since we're not looking for interactions\n    products = ()\n    \n    # Weighted score based on coefficients\n    loadings = dict(zip(keep_features, model.coef_[0]))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    # using Welch's t-test (as in the stats table)\n    p_values = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Calculate mean difference for each group\n        mean_y0 = np.mean(x[y == 0])\n        mean_y1 = np.mean(x[y == 1])\n        diff = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        n0 = np.sum(1 - y)\n        n1 = np.sum(y)\n        var0 = np.var(x[y == 0], ddof=1)\n        var1 = np.var(x[y == 1], ddof=1)\n        \n        se = np.sqrt(var0/n0 + var1/n1)\n        t_stat = diff / se if se > 0 else 0\n        df = (var0/n0 + var1/n1)**2 / ((var0/n0)**2/(n0-1) + (var1/n1)**2/(n1-1))\n        p_val = 2 * (1 - stats.t.cdf(abs(t_stat), df)) if df > 0 else 1\n        \n        p_values.append(p_val)\n    \n    # If all p-values > 0.05, claim no mechanism\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by p-value\n    sorted_indices = np.argsort(p_values)\n    selected_features = [feats.ids[i] for i in sorted_indices[:10]]\n    \n    # Remove near-duplicates based on correlation\n    keep_features = []\n    for fid in selected_features:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        is_duplicate = False\n        for kept_fid in keep_features:\n            kept_col_idx = feats.column(kept_fid)\n            y = feats.x[:, kept_col_idx]\n            corr = np.corrcoef(x, y)[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep_features.append(fid)\n    \n    # Fit logistic regression to see which features actually contribute\n    X = feats.x[:, [feats.column(fid) for fid in keep_features]]\n    model = LogisticRegression(fit_intercept=True, max_iter=1000)\n    model.fit(X, feats.y)\n    \n    # Get coefficients (absolute values) to rank importance\n    coef_abs = np.abs(model.coef_[0])\n    sorted_coef_indices = np.argsort(coef_abs)[::-1]\n    \n    # Return top features that are drivers (causal)\n    drivers = tuple([keep_features[i] for i in sorted_coef_indices[:min(MAX_DRIVERS, len(keep_features))]])\n    \n    # All features that entered the model\n    columns = tuple(keep_features)\n    \n    # No products since we're not looking for interactions\n    products = ()\n    \n    # Weighted score based on coefficients\n    loadings = dict(zip(keep_features, model.coef_[0]))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8609,
+  "completion_tokens": 2251,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2863
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2781
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2781
+   }
+  ],
+  "wall_s": 25.5
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-mast91cl",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('DUT9', 'MFT1A'), ('MFT1A', 'IQOM18A'), ('MFT1A', 'DHT9A'), \n        ('QZX11', 'MFT1A'), ('QZX11', 'DUT9'), ('DUT9', 'IQOM18A'),\n        ('MFT1A', 'LMR4'), ('DUT9', 'DHT9A'), ('IQOM18A', 'DHT9A'),\n        ('IQOM18A', 'LMR4'), ('QZX11', 'IQOM18A'), ('NRQC2', 'LMR4'),\n        ('DHT9A', 'LMR4'), ('QZX11', 'LMR4'), ('QZX11', 'DHT9A'),\n        ('DHT9A', 'ENQ19'), ('DUT9', 'LMR4'), ('IQOM18A', 'WCQB8L'),\n        ('FTMP7', 'HHP6'), ('MFT1A', 'ENQ19')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Build set of near-duplicate groups\n    dup_groups = []\n    seen = set()\n    for a, b in corr_pairs:\n        if a in seen or b in seen:\n            continue\n        group = {a, b}\n        for c, d in corr_pairs:\n            if c in group or d in group:\n                group.add(c)\n                group.add(d)\n        dup_groups.append(list(group))\n        seen.update(group)\n    \n    # Get unique feature IDs after removing near-duplicates\n    unique_ids = set(feats.ids)\n    for group in dup_groups:\n        if len(group) > 1:\n            unique_ids.remove(group[1])  # Remove second element\n    \n    # Calculate effect sizes and select top candidates\n    candidates = []\n    for fid in unique_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean_diff = np.mean(x[y==1]) - np.mean(x[y==0])\n        t_stat, _ = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        auc = np.abs(np.corrcoef(x, y)[0,1])\n        candidates.append((fid, abs(mean_diff), abs(t_stat), auc))\n    \n    # Sort by effect size (mean difference)\n    candidates.sort(key=lambda x: x[1], reverse=True)\n    selected_features = [fid for fid, _, _, _ in candidates[:MAX_DRIVERS]]\n    \n    # If we have more than 4 features, take the top 4\n    if len(selected_features) > 4:\n        selected_features = selected_features[:4]\n    \n    # Build model components\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    columns = tuple(selected_features)\n    products = ()\n    loadings = {fid: 1.0 for fid in selected_features}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('DUT9', 'MFT1A'), ('MFT1A', 'IQOM18A'), ('MFT1A', 'DHT9A'), \n        ('QZX11', 'MFT1A'), ('QZX11', 'DUT9'), ('DUT9', 'IQOM18A'),\n        ('MFT1A', 'LMR4'), ('DUT9', 'DHT9A'), ('IQOM18A', 'DHT9A'),\n        ('IQOM18A', 'LMR4'), ('QZX11', 'IQOM18A'), ('NRQC2', 'LMR4'),\n        ('DHT9A', 'LMR4'), ('QZX11', 'LMR4'), ('QZX11', 'DHT9A'),\n        ('DHT9A', 'ENQ19'), ('DUT9', 'LMR4'), ('IQOM18A', 'WCQB8L'),\n        ('FTMP7', 'HHP6'), ('MFT1A', 'ENQ19')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Build set of near-duplicate groups\n    dup_groups = []\n    seen = set()\n    for a, b in corr_pairs:\n        if a in seen or b in seen:\n            continue\n        group = {a, b}\n        for c, d in corr_pairs:\n            if c in group or d in group:\n                group.add(c)\n                group.add(d)\n        dup_groups.append(list(group))\n        seen.update(group)\n    \n    # Get unique feature IDs after removing near-duplicates\n    unique_ids = set(feats.ids)\n    for group in dup_groups:\n        if len(group) > 1:\n            unique_ids.remove(group[1])  # Remove second element\n    \n    # Calculate effect sizes and select top candidates\n    candidates = []\n    for fid in unique_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean_diff = np.mean(x[y==1]) - np.mean(x[y==0])\n        t_stat, _ = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        auc = np.abs(np.corrcoef(x, y)[0,1])\n        candidates.append((fid, abs(mean_diff), abs(t_stat), auc))\n    \n    # Sort by effect size (mean difference)\n    candidates.sort(key=lambda x: x[1], reverse=True)\n    selected_features = [fid for fid, _, _, _ in candidates[:MAX_DRIVERS]]\n    \n    # If we have more than 4 features, take the top 4\n    if len(selected_features) > 4:\n        selected_features = selected_features[:4]\n    \n    # Build model components\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    columns = tuple(selected_features)\n    products = ()\n    loadings = {fid: 1.0 for fid in selected_features}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4879,
+  "completion_tokens": 1449,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2331
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2475
+   }
+  ],
+  "wall_s": 16.5
+ }
+}

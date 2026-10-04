@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-d86c32cn",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Identify correlated pairs with |r| >= 0.6\n    corr_pairs = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(np.corrcoef(x[:,i], x[:,j])[0,1]) >= 0.6:\n                corr_pairs.add((min(ids[i], ids[j]), max(ids[i], ids[j])))\n    \n    # Group correlated features\n    groups = []\n    used = set()\n    for i in range(len(ids)):\n        if ids[i] in used:\n            continue\n        group = [ids[i]]\n        used.add(ids[i])\n        for j in range(i+1, len(ids)):\n            if (ids[i], ids[j]) in corr_pairs or (ids[j], ids[i]) in corr_pairs:\n                group.append(ids[j])\n                used.add(ids[j])\n        groups.append(group)\n    \n    # Select representative from each group (highest mean_y1-mean_y0)\n    representatives = []\n    for group in groups:\n        if len(group) == 1:\n            representatives.append(group[0])\n        else:\n            # Select feature with highest effect size (mean_y1-mean_y0)\n            best_idx = None\n            best_effect = -np.inf\n            for fid in group:\n                col = feats.column(fid)\n                effect = np.mean(x[y==1, col]) - np.mean(x[y==0, col])\n                if effect > best_effect:\n                    best_effect = effect\n                    best_idx = fid\n            representatives.append(best_idx)\n    \n    # Calculate effect sizes for all features\n    effects = []\n    for fid in representatives:\n        col = feats.column(fid)\n        effect = np.mean(x[y==1, col]) - np.mean(x[y==0, col])\n        effects.append((fid, effect))\n    \n    # Sort by absolute effect size\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = [fid for fid, _ in effects[:MAX_DRIVERS]]\n    \n    # Build columns and products\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Add main effects\n    columns.extend(representatives)\n    \n    # Add interaction terms for top 3 drivers\n    for i in range(min(3, len(drivers))):\n        for j in range(i+1, min(3, len(drivers))):\n            products.append((drivers[i], drivers[j]))\n    \n    # Simple weighted score using top features\n    for i, fid in enumerate(representatives[:5]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8517,
+  "completion_tokens": 2037,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2773
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2795
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2795
+   }
+  ],
+  "wall_s": 23.6
+ }
+}

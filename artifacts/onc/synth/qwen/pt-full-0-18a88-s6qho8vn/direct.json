@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-s6qho8vn",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate mean differences for each feature\n    means_y1 = np.array([np.mean(feats.x[feats.y==1, feats.column(fid)]) \n                         for fid in feats.ids])\n    means_y0 = np.array([np.mean(feats.x[feats.y==0, feats.column(fid)]) \n                         for fid in feats.ids])\n    diffs = means_y1 - means_y0\n    \n    # Sort by absolute difference\n    idxs = np.argsort(np.abs(diffs))[::-1]\n    \n    # Remove correlated features (keep only one from each pair)\n    keep = []\n    used = set()\n    for i in idxs:\n        fid = feats.ids[i]\n        if fid in used:\n            continue\n        keep.append(i)\n        used.add(fid)\n        \n        # Check correlations with remaining features\n        for j in idxs[i+1:]:\n            fid2 = feats.ids[j]\n            if fid2 in used:\n                continue\n            try:\n                corr = np.corrcoef(feats.x[:, feats.column(fid)], \n                                  feats.x[:, feats.column(fid2)])[0,1]\n                if abs(corr) >= 0.6:\n                    used.add(fid2)\n            except:\n                continue\n    \n    # Select top features\n    selected = [feats.ids[i] for i in keep[:MAX_DRIVERS]]\n    \n    # Check if any features have strong effect (p-value < 0.05)\n    pvals = []\n    for i, fid in enumerate(feats.ids):\n        try:\n            tstat, pval = stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                         feats.x[feats.y==0, feats.column(fid)])\n            pvals.append(pval)\n        except:\n            pvals.append(1.0)\n    \n    # If no strong effect, return empty design\n    if min(pvals) > 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use top features with strong effect\n    top_features = []\n    for i, fid in enumerate(feats.ids):\n        if pvals[i] < 0.05 and fid in selected:\n            top_features.append(fid)\n    \n    # Return design with drivers and their columns\n    drivers = tuple(selected[:MAX_DRIVERS]) if selected else ()\n    columns = tuple(top_features)\n    products = ()\n    loadings = {fid: 1.0 for fid in top_features}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate mean differences for each feature\n    means_y1 = np.array([np.mean(feats.x[feats.y==1, feats.column(fid)]) \n                         for fid in feats.ids])\n    means_y0 = np.array([np.mean(feats.x[feats.y==0, feats.column(fid)]) \n                         for fid in feats.ids])\n    diffs = means_y1 - means_y0\n    \n    # Sort by absolute difference\n    idxs = np.argsort(np.abs(diffs))[::-1]\n    \n    # Remove correlated features (keep only one from each pair)\n    keep = []\n    used = set()\n    for i in idxs:\n        fid = feats.ids[i]\n        if fid in used:\n            continue\n        keep.append(i)\n        used.add(fid)\n        \n        # Check correlations with remaining features\n        for j in idxs[i+1:]:\n            fid2 = feats.ids[j]\n            if fid2 in used:\n                continue\n            try:\n                corr = np.corrcoef(feats.x[:, feats.column(fid)], \n                                  feats.x[:, feats.column(fid2)])[0,1]\n                if abs(corr) >= 0.6:\n                    used.add(fid2)\n            except:\n                continue\n    \n    # Select top features\n    selected = [feats.ids[i] for i in keep[:MAX_DRIVERS]]\n    \n    # Check if any features have strong effect (p-value < 0.05)\n    pvals = []\n    for i, fid in enumerate(feats.ids):\n        try:\n            tstat, pval = stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                         feats.x[feats.y==0, feats.column(fid)])\n            pvals.append(pval)\n        except:\n            pvals.append(1.0)\n    \n    # If no strong effect, return empty design\n    if min(pvals) > 0.05:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use top features with strong effect\n    top_features = []\n    for i, fid in enumerate(feats.ids):\n        if pvals[i] < 0.05 and fid in selected:\n            top_features.append(fid)\n    \n    # Return design with drivers and their columns\n    drivers = tuple(selected[:MAX_DRIVERS]) if selected else ()\n    columns = tuple(top_features)\n    products = ()\n    loadings = {fid: 1.0 for fid in top_features}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4957,
+  "completion_tokens": 1108,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: tuple.index(x): x not in tuple",
+    "bytes": 2148
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2301
+   }
+  ],
+  "wall_s": 16.3
+ }
+}

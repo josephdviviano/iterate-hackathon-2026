@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qz6y0cfw",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_threshold = 0.6\n    correlated_pairs = set()\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Identify near-duplicates and keep only one from each pair\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= corr_threshold:\n                correlated_pairs.add((feats.ids[i], feats.ids[j]))\n    \n    # Select features to use\n    selected_ids = list(feats.ids)\n    seen = set()\n    for fid in selected_ids:\n        # Check if this feature is part of any correlated pair\n        is_duplicate = False\n        for pair in correlated_pairs:\n            if fid in pair:\n                # Keep only the first feature in the pair\n                if pair[0] == fid and pair[1] in seen:\n                    is_duplicate = True\n                elif pair[1] == fid and pair[0] in seen:\n                    is_duplicate = True\n        if not is_duplicate:\n            seen.add(fid)\n    \n    selected_ids = [fid for fid in selected_ids if fid in seen]\n    \n    # If we have no mechanism (very rare case)\n    if len(selected_ids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Filter data to selected features\n    selected_indices = [feats.column(fid) for fid in selected_ids]\n    x_selected = feats.x[:, selected_indices]\n    \n    # Calculate effect sizes using t-test (as proxy for causality)\n    effect_sizes = []\n    for i, fid in enumerate(selected_ids):\n        group0 = x_selected[feats.y == 0, i]\n        group1 = x_selected[feats.y == 1, i]\n        if len(group0) > 0 and len(group1) > 0:\n            t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            effect_sizes.append((abs(t_stat), fid))\n        else:\n            effect_sizes.append((0, fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(reverse=True)\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = tuple([fid for _, fid in effect_sizes[:MAX_DRIVERS]])\n    \n    # For logistic regression, we need all features that might be relevant\n    columns = tuple(selected_ids)\n    \n    # Create products of top features\n    products = []\n    for i in range(min(3, len(selected_ids))):\n        for j in range(i+1, min(4, len(selected_ids))):\n            products.append((selected_ids[i], selected_ids[j]))\n    \n    # Simple weighted score: sum of top features\n    loadings = {}\n    for i, fid in enumerate(selected_ids[:5]):\n        # Weight by effect size\n        loadings[fid] = effect_sizes[i][0] / max(1e-6, effect_sizes[0][0])\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8982,
+  "completion_tokens": 2134,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2969
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2991
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2818
+   }
+  ],
+  "wall_s": 25.3
+ }
+}

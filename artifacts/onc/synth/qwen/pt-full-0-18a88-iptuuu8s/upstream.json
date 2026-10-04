@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-iptuuu8s",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        effect = abs(feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean())\n        effect_sizes.append((effect, fid))\n    \n    # Sort by effect size and take top features\n    sorted_effects = sorted(effect_sizes, reverse=True)\n    top_features = [fid for _, fid in sorted_effects[:MAX_DRIVERS]]\n    \n    # Check for strong correlations and remove duplicates\n    final_drivers = []\n    used_features = set()\n    \n    for fid in top_features:\n        if fid in used_features:\n            continue\n            \n        # Check correlation with already selected drivers\n        is_correlated = False\n        for existing in final_drivers:\n            i, j = feats.column(fid), feats.column(existing)\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                is_correlated = True\n                break\n                \n        if not is_correlated:\n            final_drivers.append(fid)\n            used_features.add(fid)\n    \n    # Use all features as columns\n    columns = feats.ids\n    \n    # No products needed\n    products = ()\n    \n    # Simple weighted score based on effect sizes\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        effect = abs(feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean())\n        loadings[fid] = effect\n    \n    return Design(drivers=tuple(final_drivers), \n                  columns=columns, \n                  products=products, \n                  loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9270,
+  "completion_tokens": 2240,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3892
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3892
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1676
+   }
+  ],
+  "wall_s": 25.4
+ }
+}

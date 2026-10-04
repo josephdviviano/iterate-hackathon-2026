@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-e7qbjol1",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates by t-statistic and effect size\n    t_stats = []\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effect_size = np.mean(y1) - np.mean(y0)\n        t_stats.append(abs(t_stat))\n        effect_sizes.append(abs(effect_size))\n    \n    # Select top features based on t-statistics\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    candidates = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates\n    unique_candidates = []\n    seen = set()\n    for fid in candidates:\n        if any(np.corrcoef(feats.x[:, feats.column(fid)], \n                           feats.x[:, feats.column(other_fid)])[0,1] > 0.6 \n               for other_fid in seen if other_fid != fid):\n            continue\n        unique_candidates.append(fid)\n        seen.add(fid)\n    \n    # Use only top 4 unique candidates (as per checker report)\n    selected = unique_candidates[:4]\n    \n    # Build regression components\n    drivers = tuple(selected)\n    columns = tuple(selected)\n    \n    # Add interaction terms for top 3\n    products = []\n    for i in range(min(3, len(selected))):\n        for j in range(i+1, min(3, len(selected))):\n            products.append((selected[i], selected[j]))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(selected):\n        loadings[fid] = float(effect_sizes[i])\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates by t-statistic and effect size\n    t_stats = []\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effect_size = np.mean(y1) - np.mean(y0)\n        t_stats.append(abs(t_stat))\n        effect_sizes.append(abs(effect_size))\n    \n    # Select top features based on t-statistics\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    candidates = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates\n    unique_candidates = []\n    seen = set()\n    for fid in candidates:\n        if any(np.corrcoef(feats.x[:, feats.column(fid)], \n                           feats.x[:, feats.column(other_fid)])[0,1] > 0.6 \n               for other_fid in seen if other_fid != fid):\n            continue\n        unique_candidates.append(fid)\n        seen.add(fid)\n    \n    # Use only top 4 unique candidates (as per checker report)\n    selected = unique_candidates[:4]\n    \n    # Build regression components\n    drivers = tuple(selected)\n    columns = tuple(selected)\n    \n    # Add interaction terms for top 3\n    products = []\n    for i in range(min(3, len(selected))):\n        for j in range(i+1, min(3, len(selected))):\n            products.append((selected[i], selected[j]))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(selected):\n        loadings[fid] = float(effect_sizes[i])\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4879,
+  "completion_tokens": 927,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1888
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1902
+   }
+  ],
+  "wall_s": 10.7
+ }
+}

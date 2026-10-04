@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-f6o34012",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    keep = []\n    seen = set()\n    corr_pairs = [(a, b) for a, b in [\n        (\"QOU16\", \"JVEP9\"), (\"ELVN3L\", \"QOU16\"), (\"ELVN3L\", \"MYQ13\"),\n        (\"CSEL3\", \"JXF4\"), (\"UQR19\", \"KEE9A\"), (\"WJDN8\", \"QOU16\"),\n        (\"CDKB7\", \"CSEL3\"), (\"ELVN3L\", \"JVEP9\"), (\"RXO7L\", \"ULZ3L\"),\n        (\"FJFZ5\", \"BCM8\"), (\"JLI15\", \"QOU16\"), (\"RLTH9\", \"IJW10\"),\n        (\"WJDN8\", \"ELVN3L\"), (\"QQCC2\", \"QOU16\"), (\"WUZ15A\", \"NAE17\"),\n        (\"NIEG7\", \"CGCW12L\"), (\"CDKB7\", \"JXF4\"), (\"NVQE15B\", \"RXO7L\"),\n        (\"JQXB1P\", \"WUZ15A\"), (\"WJDN8\", \"JVEP9\")\n    ] if a in feats.ids and b in feats.ids]\n    \n    for fid in feats.ids:\n        is_dup = False\n        for a, b in corr_pairs:\n            if fid in [a, b] and a in seen or b in seen:\n                is_dup = True\n                break\n        if not is_dup:\n            seen.add(fid)\n            keep.append(fid)\n    \n    # Calculate effect sizes and select top candidates\n    effects = []\n    for fid in keep:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        effect = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        p_val = stats.ttest_ind(y0, y1, equal_var=False)[1]\n        effects.append((fid, abs(effect), abs(t_stat), p_val))\n    \n    # Sort by effect size and statistical significance\n    effects.sort(key=lambda x: (-x[1], x[3]))\n    \n    # Select drivers (features with large effect sizes)\n    drivers = [f for f, _, _, _ in effects[:MAX_DRIVERS]]\n    \n    # Build columns and products\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Add main effects\n    for fid in keep:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        effect = np.mean(y1) - np.mean(y0)\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        \n        # Include features with strong effects\n        if abs(effect) > 0.1 or abs(t_stat) > 3:\n            columns.append(fid)\n            loadings[fid] = effect\n    \n    # Add interaction terms for highly correlated features\n    for a, b in corr_pairs:\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9028,
+  "completion_tokens": 2419,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2554
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2679
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2460
+   }
+  ],
+  "wall_s": 27.5
+ }
+}

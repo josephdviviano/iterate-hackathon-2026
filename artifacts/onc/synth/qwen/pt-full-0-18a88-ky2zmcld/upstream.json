@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ky2zmcld",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with significant association (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            if p_val < 0.05:\n                sig_features.append((fid, abs(t_stat), feats.y.mean() * 2 - 1))\n        else:\n            # For expression/copy_number, use correlation with outcome\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            if abs(corr) > 0.05:\n                sig_features.append((fid, abs(corr), corr))\n    \n    # Sort by effect size\n    sig_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated features)\n    correlated_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            r = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(r) >= 0.6:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                # Prefer the one with stronger association to outcome\n                if (fid1, fid2) not in correlated_pairs and (fid2, fid1) not in correlated_pairs:\n                    # Get effect sizes for both features\n                    eff1 = None\n                    eff2 = None\n                    for f, _, e in sig_features:\n                        if f == fid1:\n                            eff1 = e\n                        elif f == fid2:\n                            eff2 = e\n                    if eff1 is not None and eff2 is not None:\n                        if abs(eff1) >= abs(eff2):\n                            correlated_pairs.add((fid1, fid2))\n                        else:\n                            correlated_pairs.add((fid2, fid1))\n    \n    # Build driver list\n    drivers = []\n    used_features = set()\n    \n    # Try to find drivers using the strongest associations\n    for fid, _, effect_size in sig_features:\n        if len(drivers) >= MAX_DRIVERS:\n            break\n            \n        # Skip if this feature is part of a correlated pair and we've already included the preferred one\n        skip = False\n        for pair in correlated_pairs:\n            if fid in pair:\n                # If we're including the other feature of the pair, skip this one\n                other_fid = pair[0] if pair[1] == fid else pair[1]\n                if other_fid in used_features:\n                    skip = True\n                    break\n                    \n        if not skip:\n            drivers.append(fid)\n            used_features.add(fid)\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select all features with significant association for regression\n    columns = tuple(fid for fid, _, _ in sig_features[:10])  # Limit to top 10\n    \n    # Add interaction terms for highly correlated pairs\n    products = []\n    for fid1, fid2 in correlated_pairs:\n        if fid1 in columns and fid2 in columns:\n            products.append((fid1, fid2))\n    \n    # Create loadings for weighted score\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        # Use standardized coefficients from simple linear regression\n        loadings[fid] = np.corrcoef(feats.x[:, idx], feats.y)[0, 1]\n    \n    # Ensure we don't exceed MAX_DRIVERS in drivers\n    drivers = drivers[:MAX_DRIVERS]\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9076,
+  "completion_tokens": 2631,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3539
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3720
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3813
+   }
+  ],
+  "wall_s": 29.9
+ }
+}

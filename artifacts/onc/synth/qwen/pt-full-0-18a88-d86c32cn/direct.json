@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-d86c32cn",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effect_sizes = []\n    p_values = []\n    \n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        \n        # Effect size: mean difference between groups\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        if len(group0) > 1 and len(group1) > 1:\n            t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        else:\n            p_val = 1.0\n            \n        effect_sizes.append(effect_size)\n        p_values.append(p_val)\n    \n    # Select top features based on effect size and significance\n    # Keep only features with |effect_size| > 0.3 and p < 0.05\n    selected_indices = [i for i in range(len(feats.ids)) \n                       if abs(effect_sizes[i]) > 0.3 and p_values[i] < 0.05]\n    \n    # Sort by effect size magnitude\n    selected_indices.sort(key=lambda i: abs(effect_sizes[i]), reverse=True)\n    \n    # Take top 2 as drivers\n    drivers = tuple(feats.ids[i] for i in selected_indices[:MAX_DRIVERS])\n    \n    # Use all significant features for regression\n    columns = tuple(feats.ids[i] for i in selected_indices)\n    \n    # No interactions to keep model small\n    products = ()\n    \n    # Loadings based on effect sizes\n    loadings = {feats.ids[i]: effect_sizes[i] for i in selected_indices}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effect_sizes = []\n    p_values = []\n    \n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        \n        # Effect size: mean difference between groups\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        if len(group0) > 1 and len(group1) > 1:\n            t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        else:\n            p_val = 1.0\n            \n        effect_sizes.append(effect_size)\n        p_values.append(p_val)\n    \n    # Select top features based on effect size and significance\n    # Keep only features with |effect_size| > 0.3 and p < 0.05\n    selected_indices = [i for i in range(len(feats.ids)) \n                       if abs(effect_sizes[i]) > 0.3 and p_values[i] < 0.05]\n    \n    # Sort by effect size magnitude\n    selected_indices.sort(key=lambda i: abs(effect_sizes[i]), reverse=True)\n    \n    # Take top 2 as drivers\n    drivers = tuple(feats.ids[i] for i in selected_indices[:MAX_DRIVERS])\n    \n    # Use all significant features for regression\n    columns = tuple(feats.ids[i] for i in selected_indices)\n    \n    # No interactions to keep model small\n    products = ()\n    \n    # Loadings based on effect sizes\n    loadings = {feats.ids[i]: effect_sizes[i] for i in selected_indices}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8482,
+  "completion_tokens": 1712,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2869
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2421
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1664
+   }
+  ],
+  "wall_s": 19.9
+ }
+}

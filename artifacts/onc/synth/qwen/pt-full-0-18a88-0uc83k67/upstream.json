@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-0uc83k67",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                correlated_pairs.add((min(fid1,fid2), max(fid1,fid2)))\n    \n    # Identify potential drivers from strongest associations\n    drivers = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        mean_y1 = np.mean(feats.x[feats.y==1, idx])\n        mean_y0 = np.mean(feats.x[feats.y==0, idx])\n        effect_size = mean_y1 - mean_y0\n        if abs(effect_size) > 0.15:\n            drivers.append((fid, abs(effect_size)))\n    \n    # Sort by effect size and limit to MAX_DRIVERS\n    drivers.sort(key=lambda x: x[1], reverse=True)\n    drivers = [d[0] for d in drivers[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates from drivers\n    final_drivers = []\n    used = set()\n    for driver in drivers:\n        # Check if this driver is part of a correlated group\n        group_found = False\n        for fid1, fid2 in correlated_pairs:\n            if driver in (fid1, fid2):\n                # Find the whole group\n                group = set()\n                for fid1_, fid2_ in correlated_pairs:\n                    if fid1_ == driver or fid2_ == driver:\n                        group.add(fid1_)\n                        group.add(fid2_)\n                # Choose the most impactful member of the group\n                representative = sorted(group, \n                                      key=lambda f: abs(np.mean(feats.x[feats.y==1, feats.column(f)]) - \n                                                       np.mean(feats.x[feats.y==0, feats.column(f)])),\n                                      reverse=True)[0]\n                if representative not in used:\n                    final_drivers.append(representative)\n                    used.add(representative)\n                group_found = True\n                break\n        if not group_found and driver not in used:\n            final_drivers.append(driver)\n            used.add(driver)\n    \n    # Build columns and products\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Add drivers to columns\n    columns.extend(final_drivers)\n    \n    # Add other strong features that are not correlated with drivers\n    for fid in feats.ids:\n        if fid in final_drivers:\n            continue\n        # Check if correlated with any driver\n        correlated_with_driver = False\n        for driver in final_drivers:\n            if (driver, fid) in correlated_pairs or (fid, driver) in correlated_pairs:\n                correlated_with_driver = True\n                break\n        \n        if not correlated_with_driver:\n            columns.append(fid)\n    \n    # Add interaction terms for some strong correlations\n    for fid1, fid2 in list(correlated_pairs)[:3]:  # Limit interactions\n        if fid1 in columns and fid2 in columns:\n            products.append((fid1, fid2))\n    \n    # Create weighted score from drivers\n    for fid in final_drivers:\n        idx = feats.column(fid)\n        mean_y1 = np.mean(feats.x[feats.y==1, idx])\n        mean_y0 = np.mean(feats.x[feats.y==0, idx])\n        loadings[fid] = mean_y1 - mean_y0\n    \n    return Design(\n        drivers=tuple(final_drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9026,
+  "completion_tokens": 2538,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3861
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3642
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3642
+   }
+  ],
+  "wall_s": 29.1
+ }
+}

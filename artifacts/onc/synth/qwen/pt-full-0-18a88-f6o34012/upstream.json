@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-f6o34012",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features by t-statistic threshold\n    strong_idx = np.where(np.abs(feats.x.mean(axis=0)) > 0.5)[0]\n    if len(strong_idx) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster correlated features\n    corr_matrix = np.corrcoef(feats.x[:, strong_idx].T)\n    clustering = AgglomerativeClustering(n_clusters=None, \n                                         distance_threshold=0.6,\n                                         linkage='average')\n    clusters = clustering.fit_predict(corr_matrix)\n    \n    # Select representative features from each cluster\n    selected_features = []\n    for i in range(clusters.max() + 1):\n        cluster_features = [feats.ids[strong_idx[j]] for j in np.where(clusters == i)[0]]\n        # Pick feature with highest absolute mean difference\n        best_feature = max(cluster_features, key=lambda fid: abs(feats.x[:, feats.column(fid)].mean()))\n        selected_features.append(best_feature)\n    \n    # Sort by effect size (mean_y1 - mean_y0)\n    selected_features.sort(key=lambda fid: abs(feats.x[:, feats.column(fid)].mean()), reverse=True)\n    \n    # Select top features as drivers\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    \n    # Build columns and products\n    columns = tuple(selected_features[:MAX_DRIVERS])\n    products = ()\n    loadings = {fid: feats.x[:, feats.column(fid)].mean() for fid in columns}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features by t-statistic threshold\n    strong_idx = np.where(np.abs(feats.x.mean(axis=0)) > 0.5)[0]\n    if len(strong_idx) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster correlated features\n    corr_matrix = np.corrcoef(feats.x[:, strong_idx].T)\n    clustering = AgglomerativeClustering(n_clusters=None, \n                                         distance_threshold=0.6,\n                                         linkage='average')\n    clusters = clustering.fit_predict(corr_matrix)\n    \n    # Select representative features from each cluster\n    selected_features = []\n    for i in range(clusters.max() + 1):\n        cluster_features = [feats.ids[strong_idx[j]] for j in np.where(clusters == i)[0]]\n        # Pick feature with highest absolute mean difference\n        best_feature = max(cluster_features, key=lambda fid: abs(feats.x[:, feats.column(fid)].mean()))\n        selected_features.append(best_feature)\n    \n    # Sort by effect size (mean_y1 - mean_y0)\n    selected_features.sort(key=lambda fid: abs(feats.x[:, feats.column(fid)].mean()), reverse=True)\n    \n    # Select top features as drivers\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    \n    # Build columns and products\n    columns = tuple(selected_features[:MAX_DRIVERS])\n    products = ()\n    loadings = {fid: feats.x[:, feats.column(fid)].mean() for fid in columns}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4800,
+  "completion_tokens": 766,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_pairwise' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 1699
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1641
+   }
+  ],
+  "wall_s": 8.9
+ }
+}

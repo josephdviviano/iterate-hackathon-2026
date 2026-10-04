@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ds04yo44",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_threshold = 0.6\n    keep_ids = []\n    used = set()\n    \n    # Build correlation matrix\n    X = feats.x\n    n_features = X.shape[1]\n    corr_matrix = np.corrcoef(X.T)\n    \n    for i, fid in enumerate(feats.ids):\n        if fid in used:\n            continue\n        keep_ids.append(fid)\n        # Mark correlated features as used\n        for j in range(i+1, n_features):\n            if abs(corr_matrix[i,j]) >= corr_threshold:\n                used.add(feats.ids[j])\n    \n    # Calculate effect sizes using mean difference and Welch's t-test\n    effect_sizes = []\n    for i, fid in enumerate(keep_ids):\n        col_idx = feats.column(fid)\n        x = X[:, col_idx]\n        y = feats.y\n        mean_y0 = np.mean(x[y == 0])\n        mean_y1 = np.mean(x[y == 1])\n        effect_size = mean_y1 - mean_y0\n        # Use Welch's t-statistic as proxy for significance\n        t_stat, _ = stats.ttest_ind(x[y==0], x[y==1], equal_var=False)\n        p_val = stats.t.sf(np.abs(t_stat), len(x)-2) * 2  # two-tailed\n        effect_sizes.append((fid, effect_size, abs(t_stat), p_val))\n    \n    # Sort by effect size magnitude and then by t-statistic\n    effect_sizes.sort(key=lambda x: (-abs(x[1]), -x[2]))\n    \n    # Select top drivers\n    drivers = [fid for fid, _, _, _ in effect_sizes[:MAX_DRIVERS]]\n    \n    # For logistic regression, we include all features except near-duplicates\n    columns = keep_ids\n    \n    # Check for strong correlations to form products (limit to 1)\n    products = []\n    corr_pairs = []\n    for i in range(len(keep_ids)):\n        for j in range(i+1, len(keep_ids)):\n            fid1, fid2 = keep_ids[i], keep_ids[j]\n            idx1, idx2 = feats.column(fid1), feats.column(fid2)\n            corr = np.corrcoef(X[:, idx1], X[:, idx2])[0,1]\n            if abs(corr) >= 0.6:\n                corr_pairs.append((fid1, fid2, corr))\n    \n    # Include strongest correlation as product\n    if corr_pairs:\n        corr_pairs.sort(key=lambda x: -abs(x[2]))\n        fid1, fid2, _ = corr_pairs[0]\n        products.append((fid1, fid2))\n    \n    # Simple weighted score: sum of top features weighted by effect size\n    loadings = {}\n    for i, (fid, effect_size, _, _) in enumerate(effect_sizes[:2]):  # limit features\n        loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8757,
+  "completion_tokens": 2057,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2688
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2552
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2552
+   }
+  ],
+  "wall_s": 23.8
+ }
+}

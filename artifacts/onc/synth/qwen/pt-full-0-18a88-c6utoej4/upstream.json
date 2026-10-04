@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-c6utoej4",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set()\n    seen = set()\n    for i, fid1 in enumerate(feats.ids):\n        if fid1 in seen:\n            continue\n        keep.add(fid1)\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if fid2 in seen:\n                continue\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                seen.add(fid2)\n    \n    # Filter to non-duplicate features\n    filtered_ids = tuple(f for f in feats.ids if f in keep)\n    \n    # Find top features by t-statistic\n    effects = []\n    for i, fid in enumerate(filtered_ids):\n        col_idx = feats.column(fid)\n        # Use Welch's t-test statistic\n        t_stat = stats.ttest_ind(\n            feats.x[feats.y==1, col_idx],\n            feats.x[feats.y==0, col_idx],\n            equal_var=False\n        )[0]\n        effects.append((abs(t_stat), fid))\n    \n    # Sort by t-statistic (descending)\n    effects.sort(reverse=True)\n    \n    # Select top drivers\n    drivers = tuple(fid for _, fid in effects[:MAX_DRIVERS])\n    \n    # If no strong drivers, return empty\n    if not drivers:\n        return Design(\n            drivers=(),\n            columns=filtered_ids,\n            products=(),\n            loadings={}\n        )\n    \n    # Return single driver with highest effect\n    return Design(\n        drivers=(drivers[0],),\n        columns=filtered_ids,\n        products=(),\n        loadings={drivers[0]: 1.0}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8791,
+  "completion_tokens": 1774,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2976
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2976
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1563
+   }
+  ],
+  "wall_s": 20.6
+ }
+}

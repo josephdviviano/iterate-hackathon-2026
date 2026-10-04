@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-fuu6ovez",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Use top features based on t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        t_stats.append(t_stat)\n    \n    # Sort by t-statistic and get top 10\n    sorted_indices = np.argsort(t_stats)[::-1][:10]\n    candidates = [feats.ids[i] for i in sorted_indices]\n    \n    # Remove near-duplicates\n    keep = []\n    for fid in candidates:\n        is_duplicate = False\n        for kept_fid in keep:\n            col_a = feats.column(fid)\n            col_b = feats.column(kept_fid)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep.append(fid)\n    \n    # Limit to 4 drivers as per checker feedback\n    drivers = keep[:4]\n    \n    # Simple model with minimal terms\n    columns = tuple(keep[:4])  # Use only top 4 features\n    products = ()\n    loadings = {fid: 1.0 for fid in keep[:4]}\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Use top features based on t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        t_stats.append(t_stat)\n    \n    # Sort by t-statistic and get top 10\n    sorted_indices = np.argsort(t_stats)[::-1][:10]\n    candidates = [feats.ids[i] for i in sorted_indices]\n    \n    # Remove near-duplicates\n    keep = []\n    for fid in candidates:\n        is_duplicate = False\n        for kept_fid in keep:\n            col_a = feats.column(fid)\n            col_b = feats.column(kept_fid)\n            corr = np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep.append(fid)\n    \n    # Limit to 4 drivers as per checker feedback\n    drivers = keep[:4]\n    \n    # Simple model with minimal terms\n    columns = tuple(keep[:4])  # Use only top 4 features\n    products = ()\n    loadings = {fid: 1.0 for fid in keep[:4]}\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8422,
+  "completion_tokens": 1631,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2370
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2403
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1244
+   }
+  ],
+  "wall_s": 18.8
+ }
+}

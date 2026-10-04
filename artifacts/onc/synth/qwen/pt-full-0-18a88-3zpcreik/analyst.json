@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3zpcreik",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    x = feats.x\n    y = feats.y\n    \n    # Calculate correlations\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Keep only non-duplicate features\n    filtered_ids = [id for id in ids if id not in to_remove]\n    \n    if not filtered_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute effect sizes using Welch's t-test\n    effect_sizes = []\n    for fid in filtered_ids:\n        try:\n            col_idx = feats.column(fid)\n            group0 = x[y==0, col_idx]\n            group1 = x[y==1, col_idx]\n            if len(group0) > 0 and len(group1) > 0:\n                t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n                effect_sizes.append((abs(t_stat), fid))\n            else:\n                effect_sizes.append((0, fid))\n        except Exception:\n            effect_sizes.append((0, fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(reverse=True)\n    \n    # Select top features\n    top_features = [fid for _, fid in effect_sizes[:MAX_DRIVERS]]\n    \n    # Check for strong correlations among top features\n    products = []\n    if len(top_features) > 1:\n        try:\n            # Get indices for top features\n            top_indices = []\n            for fid in top_features:\n                try:\n                    idx = feats.column(fid)\n                    top_indices.append(idx)\n                except Exception:\n                    continue\n            \n            if len(top_indices) >= 2:\n                top_corr = np.corrcoef(x[:, top_indices].T)\n                \n                # Create products between correlated features\n                for i in range(len(top_features)):\n                    for j in range(i+1, len(top_features)):\n                        if abs(top_corr[i,j]) >= 0.6:\n                            products.append((top_features[i], top_features[j]))\n        except Exception:\n            pass\n    \n    # Return design\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(filtered_ids),\n        products=tuple(products),\n        loadings={fid: 1.0 for fid in filtered_ids}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8105,
+  "completion_tokens": 1672,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: list index out of range",
+    "bytes": 2151
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: list index out of range",
+    "bytes": 2495
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2446
+   }
+  ],
+  "wall_s": 19.2
+ }
+}

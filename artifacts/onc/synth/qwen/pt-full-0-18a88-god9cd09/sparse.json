@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-god9cd09",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_ids = [fid for fid, t in zip(feats.ids, feats.types) if t != 'derived']\n    \n    # Calculate effect sizes using mean difference\n    effect_sizes = []\n    for i, fid in enumerate(non_derived_ids):\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        effect_sizes.append(abs(y1_mean - y0_mean))\n    \n    # Select top features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    # Take at most MAX_DRIVERS features with substantial effect size\n    driver_candidates = []\n    for i in sorted_indices:\n        if len(driver_candidates) >= MAX_DRIVERS:\n            break\n        if effect_sizes[i] > 0.1:\n            driver_candidates.append(non_derived_ids[i])\n    \n    drivers = tuple(driver_candidates)\n    \n    # Build columns list avoiding near-duplicates\n    columns = list(drivers)\n    seen = set(drivers)\n    \n    # Add correlated features to columns but not as drivers\n    correlations = {}\n    for i, fid1 in enumerate(non_derived_ids):\n        for j, fid2 in enumerate(non_derived_ids[:i]):\n            if abs(np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]) >= 0.6:\n                correlations[(fid1, fid2)] = True\n    \n    # Add correlated features to columns if they're not already there\n    for (fid1, fid2) in correlations:\n        if fid1 in drivers and fid2 not in seen:\n            columns.append(fid2)\n            seen.add(fid2)\n        elif fid2 in drivers and fid1 not in seen:\n            columns.append(fid1)\n            seen.add(fid1)\n    \n    # For products, consider top features with high correlation\n    products = []\n    if len(drivers) >= 2:\n        # Add product terms between top drivers\n        for i in range(min(2, len(drivers))):\n            for j in range(i+1, min(3, len(drivers))):\n                products.append((drivers[i], drivers[j]))\n    \n    # Simple weighted score: sum of top drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_ids = [fid for fid, t in zip(feats.ids, feats.types) if t != 'derived']\n    \n    # Calculate effect sizes using mean difference\n    effect_sizes = []\n    for i, fid in enumerate(non_derived_ids):\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        effect_sizes.append(abs(y1_mean - y0_mean))\n    \n    # Select top features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    # Take at most MAX_DRIVERS features with substantial effect size\n    driver_candidates = []\n    for i in sorted_indices:\n        if len(driver_candidates) >= MAX_DRIVERS:\n            break\n        if effect_sizes[i] > 0.1:\n            driver_candidates.append(non_derived_ids[i])\n    \n    drivers = tuple(driver_candidates)\n    \n    # Build columns list avoiding near-duplicates\n    columns = list(drivers)\n    seen = set(drivers)\n    \n    # Add correlated features to columns but not as drivers\n    correlations = {}\n    for i, fid1 in enumerate(non_derived_ids):\n        for j, fid2 in enumerate(non_derived_ids[:i]):\n            if abs(np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]) >= 0.6:\n                correlations[(fid1, fid2)] = True\n    \n    # Add correlated features to columns if they're not already there\n    for (fid1, fid2) in correlations:\n        if fid1 in drivers and fid2 not in seen:\n            columns.append(fid2)\n            seen.add(fid2)\n        elif fid2 in drivers and fid1 not in seen:\n            columns.append(fid1)\n            seen.add(fid1)\n    \n    # For products, consider top features with high correlation\n    products = []\n    if len(drivers) >= 2:\n        # Add product terms between top drivers\n        for i in range(min(2, len(drivers))):\n            for j in range(i+1, min(3, len(drivers))):\n                products.append((drivers[i], drivers[j]))\n    \n    # Simple weighted score: sum of top drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8167,
+  "completion_tokens": 1740,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2287
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2403
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2330
+   }
+  ],
+  "wall_s": 20.3
+ }
+}

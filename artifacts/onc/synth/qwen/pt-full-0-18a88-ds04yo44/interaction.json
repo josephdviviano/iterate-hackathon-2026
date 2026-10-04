@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ds04yo44",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates based on mean difference and t-test\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n        if abs(mean_diff) > 0.2 and abs(t_stat) > 3:\n            candidates.append((fid, mean_diff, t_stat))\n    \n    # Sort by absolute t-statistic\n    candidates.sort(key=lambda x: abs(x[2]), reverse=True)\n    \n    # Check for correlated pairs\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Look for product terms\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Try to find a pair that works well together\n    for (fid1, fid2), corr in correlations.items():\n        if len(drivers) >= MAX_DRIVERS:\n            break\n            \n        # Check if both features are strong candidates\n        if any(c[0] == fid1 for c in candidates[:10]) and any(c[0] == fid2 for c in candidates[:10]):\n            # Add both features to columns\n            columns.extend([fid1, fid2])\n            \n            # Add their product\n            products.append((fid1, fid2))\n            \n            # Add to drivers (most significant first)\n            if not any(d == fid1 for d in drivers):\n                drivers.append(fid1)\n            if not any(d == fid2 for d in drivers):\n                drivers.append(fid2)\n                \n            # Weighted loading (based on correlation strength)\n            loadings[fid1] = abs(corr)\n            loadings[fid2] = abs(corr)\n    \n    # If no good product found, try single features\n    if not products and candidates:\n        # Use top candidates as drivers and columns\n        for fid, _, _ in candidates[:MAX_DRIVERS]:\n            if fid not in drivers:\n                drivers.append(fid)\n            if fid not in columns:\n                columns.append(fid)\n            loadings[fid] = 1.0\n    \n    # Ensure we don't exceed MAX_DRIVERS\n    if len(drivers) > MAX_DRIVERS:\n        drivers = drivers[:MAX_DRIVERS]\n        \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates based on mean difference and t-test\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n        if abs(mean_diff) > 0.2 and abs(t_stat) > 3:\n            candidates.append((fid, mean_diff, t_stat))\n    \n    # Sort by absolute t-statistic\n    candidates.sort(key=lambda x: abs(x[2]), reverse=True)\n    \n    # Check for correlated pairs\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Look for product terms\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Try to find a pair that works well together\n    for (fid1, fid2), corr in correlations.items():\n        if len(drivers) >= MAX_DRIVERS:\n            break\n            \n        # Check if both features are strong candidates\n        if any(c[0] == fid1 for c in candidates[:10]) and any(c[0] == fid2 for c in candidates[:10]):\n            # Add both features to columns\n            columns.extend([fid1, fid2])\n            \n            # Add their product\n            products.append((fid1, fid2))\n            \n            # Add to drivers (most significant first)\n            if not any(d == fid1 for d in drivers):\n                drivers.append(fid1)\n            if not any(d == fid2 for d in drivers):\n                drivers.append(fid2)\n                \n            # Weighted loading (based on correlation strength)\n            loadings[fid1] = abs(corr)\n            loadings[fid2] = abs(corr)\n    \n    # If no good product found, try single features\n    if not products and candidates:\n        # Use top candidates as drivers and columns\n        for fid, _, _ in candidates[:MAX_DRIVERS]:\n            if fid not in drivers:\n                drivers.append(fid)\n            if fid not in columns:\n                columns.append(fid)\n            loadings[fid] = 1.0\n    \n    # Ensure we don't exceed MAX_DRIVERS\n    if len(drivers) > MAX_DRIVERS:\n        drivers = drivers[:MAX_DRIVERS]\n        \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8633,
+  "completion_tokens": 2003,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2710
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2835
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2689
+   }
+  ],
+  "wall_s": 23.1
+ }
+}

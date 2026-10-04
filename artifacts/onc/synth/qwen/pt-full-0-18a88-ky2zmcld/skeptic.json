@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ky2zmcld",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check for correlation pairs with |r| >= 0.6\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                correlated_pairs.add((min(fid1,fid2), max(fid1,fid2)))\n    \n    # Remove near-duplicates (keep one from each pair)\n    selected_features = set(feats.ids)\n    for fid1, fid2 in correlated_pairs:\n        if fid1 in selected_features and fid2 in selected_features:\n            # Prefer the one with higher t-statistic\n            i1 = feats.column(fid1)\n            i2 = feats.column(fid2)\n            t1 = stats.ttest_ind(feats.x[feats.y==1,i1], feats.x[feats.y==0,i1]).statistic\n            t2 = stats.ttest_ind(feats.x[feats.y==1,i2], feats.x[feats.y==0,i2]).statistic\n            if abs(t1) >= abs(t2):\n                selected_features.remove(fid2)\n            else:\n                selected_features.remove(fid1)\n    \n    # Filter to selected features\n    selected_ids = list(selected_features)\n    \n    # Try to find drivers by checking stratum-specific effects\n    drivers = []\n    for fid in selected_ids:\n        col = feats.column(fid)\n        if len(set(feats.stratum)) > 1:\n            # Check effect size across strata\n            stratum_effects = []\n            for stratum in set(feats.stratum):\n                mask = np.array([s == stratum for s in feats.stratum])\n                y_stratum = feats.y[mask]\n                x_stratum = feats.x[mask, col]\n                if len(y_stratum) > 1 and np.var(x_stratum) > 0:\n                    effect = np.mean(x_stratum[y_stratum==1]) - np.mean(x_stratum[y_stratum==0])\n                    stratum_effects.append(effect)\n            if len(stratum_effects) > 1:\n                # Check if effects are consistent (not too different)\n                if np.std(stratum_effects) < 0.5 * np.abs(np.mean(stratum_effects)):\n                    drivers.append(fid)\n        else:\n            # No strata, just check overall effect\n            effect = np.mean(feats.x[feats.y==1,col]) - np.mean(feats.x[feats.y==0,col])\n            if np.abs(effect) > 0.1:\n                drivers.append(fid)\n    \n    # If no drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top drivers by effect size (limit to MAX_DRIVERS)\n    drivers = drivers[:MAX_DRIVERS]\n    \n    # Build regression variables\n    columns = tuple(selected_ids)\n    products = ()\n    loadings = {fid: 1.0 for fid in selected_ids}\n    \n    return Design(drivers=tuple(drivers), columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8641,
+  "completion_tokens": 2158,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2847
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2946
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2781
+   }
+  ],
+  "wall_s": 24.8
+ }
+}

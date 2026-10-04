@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1jgo1des",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    non_derived_indices = [feats.column(fid) for fid in non_derived_ids]\n    \n    # Calculate effect sizes using mean difference\n    means_y1 = np.mean(feats.x[feats.y == 1][:, non_derived_indices], axis=0)\n    means_y0 = np.mean(feats.x[feats.y == 0][:, non_derived_indices], axis=0)\n    effect_sizes = np.abs(means_y1 - means_y0)\n    \n    # Rank features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_features = [non_derived_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check for correlation to avoid near-duplicates\n    selected = []\n    for fid in top_features:\n        if not selected:\n            selected.append(fid)\n        else:\n            # Check correlation with already selected features\n            col_idx = feats.column(fid)\n            is_correlated = False\n            for sel_fid in selected:\n                sel_col = feats.column(sel_fid)\n                corr = np.corrcoef(feats.x[:, col_idx], feats.x[:, sel_col])[0, 1]\n                if abs(corr) >= 0.6:\n                    is_correlated = True\n                    break\n            if not is_correlated:\n                selected.append(fid)\n    \n    # Select columns for regression (all non-derived)\n    columns = tuple(non_derived_ids)\n    \n    # Build products from top features\n    products = []\n    for i, fid1 in enumerate(selected):\n        for fid2 in selected[i+1:]:\n            products.append((fid1, fid2))\n    \n    # Loadings: weights based on effect size\n    loadings = {}\n    for fid in selected:\n        col_idx = feats.column(fid)\n        loadings[fid] = float(effect_sizes[sorted_indices[list(non_derived_ids).index(fid)]])\n    \n    # Simplify to ensure small model\n    if len(selected) > 1:\n        # Use only main effects to reduce terms\n        columns = tuple(selected)\n        products = ()\n    elif len(selected) == 1:\n        # Single driver\n        columns = tuple(selected)\n        products = ()\n    else:\n        # No drivers\n        columns = ()\n        products = ()\n        loadings = {}\n    \n    return Design(\n        drivers=tuple(selected),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    non_derived_indices = [feats.column(fid) for fid in non_derived_ids]\n    \n    # Calculate effect sizes using mean difference\n    means_y1 = np.mean(feats.x[feats.y == 1][:, non_derived_indices], axis=0)\n    means_y0 = np.mean(feats.x[feats.y == 0][:, non_derived_indices], axis=0)\n    effect_sizes = np.abs(means_y1 - means_y0)\n    \n    # Rank features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_features = [non_derived_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check for correlation to avoid near-duplicates\n    selected = []\n    for fid in top_features:\n        if not selected:\n            selected.append(fid)\n        else:\n            # Check correlation with already selected features\n            col_idx = feats.column(fid)\n            is_correlated = False\n            for sel_fid in selected:\n                sel_col = feats.column(sel_fid)\n                corr = np.corrcoef(feats.x[:, col_idx], feats.x[:, sel_col])[0, 1]\n                if abs(corr) >= 0.6:\n                    is_correlated = True\n                    break\n            if not is_correlated:\n                selected.append(fid)\n    \n    # Select columns for regression (all non-derived)\n    columns = tuple(non_derived_ids)\n    \n    # Build products from top features\n    products = []\n    for i, fid1 in enumerate(selected):\n        for fid2 in selected[i+1:]:\n            products.append((fid1, fid2))\n    \n    # Loadings: weights based on effect size\n    loadings = {}\n    for fid in selected:\n        col_idx = feats.column(fid)\n        loadings[fid] = float(effect_sizes[sorted_indices[list(non_derived_ids).index(fid)]])\n    \n    # Simplify to ensure small model\n    if len(selected) > 1:\n        # Use only main effects to reduce terms\n        columns = tuple(selected)\n        products = ()\n    elif len(selected) == 1:\n        # Single driver\n        columns = tuple(selected)\n        products = ()\n    else:\n        # No drivers\n        columns = ()\n        products = ()\n        loadings = {}\n    \n    return Design(\n        drivers=tuple(selected),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8257,
+  "completion_tokens": 1654,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2127
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2419
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2410
+   }
+  ],
+  "wall_s": 19.0
+ }
+}

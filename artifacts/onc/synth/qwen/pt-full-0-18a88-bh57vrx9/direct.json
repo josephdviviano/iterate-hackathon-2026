@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-bh57vrx9",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Build set of near-duplicates to avoid\n    near_dupes = set()\n    for a, b in corr_pairs:\n        near_dupes.add(a)\n        near_dupes.add(b)\n    \n    # Score features by effect size and statistical significance\n    scores = []\n    for i, fid in enumerate(feats.ids):\n        if fid in near_dupes:\n            continue\n        t_stat = np.abs(np.mean(feats.x[feats.y==1,i]) - np.mean(feats.x[feats.y==0,i]))\n        p_val = stats.ttest_ind(feats.x[feats.y==1,i], feats.x[feats.y==0,i]).pvalue\n        auc = 0.5 + 0.5 * (np.mean(feats.x[feats.y==1,i]) - np.mean(feats.x[feats.y==0,i])) / np.std(feats.x[:,i])\n        scores.append((fid, t_stat, p_val, auc))\n    \n    # Sort by t-statistic (descending)\n    scores.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates\n    candidates = [s[0] for s in scores[:20]]\n    \n    # Try simple logistic regression with each candidate\n    best_drivers = []\n    for fid in candidates:\n        X = feats.x[:, feats.column(fid)].reshape(-1, 1)\n        model = LogisticRegression(penalty='l1', solver='liblinear').fit(X, feats.y)\n        if model.coef_[0][0] != 0:\n            best_drivers.append(fid)\n            if len(best_drivers) >= 4:  # Changed from MAX_DRIVERS to 4\n                break\n    \n    # If we found drivers, return them with their associated features\n    if best_drivers:\n        # Include all correlated features to prevent overfitting\n        columns = set(best_drivers)\n        for a, b in corr_pairs:\n            if a in columns or b in columns:\n                columns.add(a)\n                columns.add(b)\n        columns = list(columns)\n        \n        # Add interaction terms for strong correlations\n        products = []\n        for a, b in corr_pairs:\n            if a in columns and b in columns:\n                products.append((a, b))\n                \n        return Design(\n            drivers=tuple(best_drivers),\n            columns=tuple(columns),\n            products=tuple(products),\n            loadings={fid: 1.0 for fid in columns}\n        )\n    \n    # No mechanism found\n    return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Build set of near-duplicates to avoid\n    near_dupes = set()\n    for a, b in corr_pairs:\n        near_dupes.add(a)\n        near_dupes.add(b)\n    \n    # Score features by effect size and statistical significance\n    scores = []\n    for i, fid in enumerate(feats.ids):\n        if fid in near_dupes:\n            continue\n        t_stat = np.abs(np.mean(feats.x[feats.y==1,i]) - np.mean(feats.x[feats.y==0,i]))\n        p_val = stats.ttest_ind(feats.x[feats.y==1,i], feats.x[feats.y==0,i]).pvalue\n        auc = 0.5 + 0.5 * (np.mean(feats.x[feats.y==1,i]) - np.mean(feats.x[feats.y==0,i])) / np.std(feats.x[:,i])\n        scores.append((fid, t_stat, p_val, auc))\n    \n    # Sort by t-statistic (descending)\n    scores.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates\n    candidates = [s[0] for s in scores[:20]]\n    \n    # Try simple logistic regression with each candidate\n    best_drivers = []\n    for fid in candidates:\n        X = feats.x[:, feats.column(fid)].reshape(-1, 1)\n        model = LogisticRegression(penalty='l1', solver='liblinear').fit(X, feats.y)\n        if model.coef_[0][0] != 0:\n            best_drivers.append(fid)\n            if len(best_drivers) >= 4:  # Changed from MAX_DRIVERS to 4\n                break\n    \n    # If we found drivers, return them with their associated features\n    if best_drivers:\n        # Include all correlated features to prevent overfitting\n        columns = set(best_drivers)\n        for a, b in corr_pairs:\n            if a in columns or b in columns:\n                columns.add(a)\n                columns.add(b)\n        columns = list(columns)\n        \n        # Add interaction terms for strong correlations\n        products = []\n        for a, b in corr_pairs:\n            if a in columns and b in columns:\n                products.append((a, b))\n                \n        return Design(\n            drivers=tuple(best_drivers),\n            columns=tuple(columns),\n            products=tuple(products),\n            loadings={fid: 1.0 for fid in columns}\n        )\n    \n    # No mechanism found\n    return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8479,
+  "completion_tokens": 2006,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "SyntaxError: invalid syntax (<program>, line 1)",
+    "bytes": 2650
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2582
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2569
+   }
+  ],
+  "wall_s": 22.9
+ }
+}

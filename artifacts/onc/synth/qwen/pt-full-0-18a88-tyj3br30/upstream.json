@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tyj3br30",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick screening: use simple correlation-based approach\n    # Focus on top features by effect size\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if len(feats.y) > 0:\n            mean_1 = np.mean(feats.x[feats.y==1, i])\n            mean_0 = np.mean(feats.x[feats.y==0, i])\n            effect_size = abs(mean_1 - mean_0)\n            effect_sizes.append((effect_size, fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(reverse=True)\n    top_features = [fid for _, fid in effect_sizes[:20]]  # Take top 20\n    \n    # Quick correlation check for near-duplicates\n    used = set()\n    final_features = []\n    \n    for fid in top_features:\n        if fid in used:\n            continue\n        # Check if this feature is correlated with already selected features\n        is_duplicate = False\n        fid_idx = feats.column(fid)\n        if fid_idx < feats.x.shape[1]:  # Valid index\n            for selected_fid in final_features:\n                sel_idx = feats.column(selected_fid)\n                if sel_idx < feats.x.shape[1]:\n                    corr = np.corrcoef(feats.x[:, fid_idx], feats.x[:, sel_idx])[0,1]\n                    if abs(corr) >= 0.6:\n                        is_duplicate = True\n                        break\n        if not is_duplicate:\n            final_features.append(fid)\n            used.add(fid)\n        if len(final_features) >= MAX_DRIVERS:\n            break\n    \n    # Simple logistic regression to detect mechanism\n    if len(final_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    try:\n        X_selected = feats.x[:, [feats.column(fid) for fid in final_features if feats.column(fid) < feats.x.shape[1]]]\n        model = LogisticRegression(penalty='l1', solver='liblinear', C=0.1, max_iter=100)\n        model.fit(X_selected, feats.y)\n        coefs = model.coef_[0]\n        if np.any(np.abs(coefs) > 0.1):\n            drivers = tuple(final_features)\n            columns = tuple(final_features)\n            loadings = {fid: coef for fid, coef in zip(final_features, coefs) if not np.isnan(coef)}\n            return Design(drivers=drivers, columns=columns, products=(), loadings=loadings)\n    except:\n        pass\n    \n    return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9036,
+  "completion_tokens": 2388,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 3538
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design took 21s on all patients; it must run in under 10s",
+    "bytes": 4356
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2459
+   }
+  ],
+  "wall_s": 44.0
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-tyj3br30",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    keep = set(feats.ids)\n    corr_pairs = [\n        ('WEYO4', 'ACX18'), ('HALN2P', 'CSIA12'), ('EAKF5', 'ACX18'),\n        ('EAKF5', 'CSIA12'), ('HALN2P', 'EAKF5'), ('LEE2', 'UTR9A'),\n        ('OCGK19', 'FIJ14'), ('UTR9A', 'WEYO4'), ('FIJ14', 'SSU18L'),\n        ('EAKF5', 'WEYO4'), ('EUXF19P', 'RZKC11'), ('WEYO4', 'YQLM6'),\n        ('SYRQ3', 'HPBS1'), ('ACX18', 'YQLM6'), ('OCGK19', 'SSU18L'),\n        ('ZHRJ10', 'SYRQ3'), ('ACX18', 'BAA19B'), ('HNLI7', 'HPBS1'),\n        ('ARM10', 'VSV17P'), ('FIJ14', 'ACX18')\n    ]\n    \n    for a, b in corr_pairs:\n        if a in keep and b in keep:\n            # Keep the one with higher t-statistic\n            ia, ib = feats.column(a), feats.column(b)\n            ta, tb = abs(stats.ttest_ind(feats.x[feats.y==1, ia], feats.x[feats.y==0, ia]).statistic), \\\n                     abs(stats.ttest_ind(feats.x[feats.y==1, ib], feats.x[feats.y==0, ib]).statistic)\n            if ta < tb:\n                keep.remove(a)\n            else:\n                keep.remove(b)\n    \n    # Select features with significant t-test or high AUC\n    selected_ids = []\n    for i, fid in enumerate(feats.ids):\n        if fid not in keep:\n            continue\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        if t_stat > 1.5 or feats.types[i] == 'clinical':\n            selected_ids.append(fid)\n    \n    # If no significant features, return empty design\n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Try to build a simple logistic regression with selected features\n    X = feats.x[:, [feats.column(fid) for fid in selected_ids]]\n    y = feats.y\n    \n    # Use mutual information to select best features\n    mi_scores = mutual_info_classif(X, y)\n    top_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    top_features = [selected_ids[i] for i in top_indices]\n    \n    # Build a weighted score using top features\n    weights = mi_scores[top_indices] / np.sum(mi_scores[top_indices])\n    loadings = dict(zip(top_features, weights))\n    \n    # Return design with top features as drivers\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(selected_ids),\n        products=(),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    keep = set(feats.ids)\n    corr_pairs = [\n        ('WEYO4', 'ACX18'), ('HALN2P', 'CSIA12'), ('EAKF5', 'ACX18'),\n        ('EAKF5', 'CSIA12'), ('HALN2P', 'EAKF5'), ('LEE2', 'UTR9A'),\n        ('OCGK19', 'FIJ14'), ('UTR9A', 'WEYO4'), ('FIJ14', 'SSU18L'),\n        ('EAKF5', 'WEYO4'), ('EUXF19P', 'RZKC11'), ('WEYO4', 'YQLM6'),\n        ('SYRQ3', 'HPBS1'), ('ACX18', 'YQLM6'), ('OCGK19', 'SSU18L'),\n        ('ZHRJ10', 'SYRQ3'), ('ACX18', 'BAA19B'), ('HNLI7', 'HPBS1'),\n        ('ARM10', 'VSV17P'), ('FIJ14', 'ACX18')\n    ]\n    \n    for a, b in corr_pairs:\n        if a in keep and b in keep:\n            # Keep the one with higher t-statistic\n            ia, ib = feats.column(a), feats.column(b)\n            ta, tb = abs(stats.ttest_ind(feats.x[feats.y==1, ia], feats.x[feats.y==0, ia]).statistic), \\\n                     abs(stats.ttest_ind(feats.x[feats.y==1, ib], feats.x[feats.y==0, ib]).statistic)\n            if ta < tb:\n                keep.remove(a)\n            else:\n                keep.remove(b)\n    \n    # Select features with significant t-test or high AUC\n    selected_ids = []\n    for i, fid in enumerate(feats.ids):\n        if fid not in keep:\n            continue\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        if t_stat > 1.5 or feats.types[i] == 'clinical':\n            selected_ids.append(fid)\n    \n    # If no significant features, return empty design\n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Try to build a simple logistic regression with selected features\n    X = feats.x[:, [feats.column(fid) for fid in selected_ids]]\n    y = feats.y\n    \n    # Use mutual information to select best features\n    mi_scores = mutual_info_classif(X, y)\n    top_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    top_features = [selected_ids[i] for i in top_indices]\n    \n    # Build a weighted score using top features\n    weights = mi_scores[top_indices] / np.sum(mi_scores[top_indices])\n    loadings = dict(zip(top_features, weights))\n    \n    # Return design with top features as drivers\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(selected_ids),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4993,
+  "completion_tokens": 1512,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2549
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2497
+   }
+  ],
+  "wall_s": 24.0
+ }
+}

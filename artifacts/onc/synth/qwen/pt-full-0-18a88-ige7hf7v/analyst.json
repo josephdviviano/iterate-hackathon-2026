@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ige7hf7v",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    \n    # Remove near-duplicates (|r| >= 0.6)\n    keep = []\n    seen = set()\n    for i, id1 in enumerate(ids):\n        if id1 in seen:\n            continue\n        keep.append(i)\n        # Check correlations with later features\n        for j in range(i+1, len(ids)):\n            id2 = ids[j]\n            if id2 in seen:\n                continue\n            col1 = feats.column(id1)\n            col2 = feats.column(id2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n            if abs(corr) >= 0.6:\n                seen.add(id2)\n    \n    filtered_ids = [ids[i] for i in keep]\n    filtered_types = [types[i] for i in keep]\n    \n    # Compute effect sizes (mean difference in outcome groups)\n    effects = []\n    for i, fid in enumerate(filtered_ids):\n        col = feats.column(fid)\n        y = feats.y\n        mean1 = np.mean(feats.x[y==1, col])\n        mean0 = np.mean(feats.x[y==0, col])\n        effect = mean1 - mean0\n        effects.append((abs(effect), i, fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = [fid for _, _, fid in effects[:MAX_DRIVERS]]\n    \n    # For logistic regression, include all features with strong effects\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Include all features with |effect| > 0.1\n    for _, i, fid in effects:\n        if abs(effects[i][0]) > 0.1:\n            columns.append(fid)\n            \n    # Add interaction terms between top features\n    top_features = [fid for _, _, fid in effects[:3]]\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            products.append((top_features[i], top_features[j]))\n    \n    # Weighted score using top features\n    for i, (_, _, fid) in enumerate(effects[:3]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8239,
+  "completion_tokens": 1816,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2350
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2487
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2350
+   }
+  ],
+  "wall_s": 20.7
+ }
+}

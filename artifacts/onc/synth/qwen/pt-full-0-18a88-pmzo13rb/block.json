@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-pmzo13rb",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for driver selection\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(reverse=True)\n    \n    # Select top features as potential drivers\n    drivers = [fid for _, fid in t_stats[:MAX_DRIVERS]]\n    \n    # Check for correlated features to avoid near-duplicates\n    corr_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            r, _ = stats.pearsonr(feats.x[:, i], feats.x[:, j])\n            if abs(r) >= 0.6:\n                corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Remove near-duplicates\n    used_ids = set()\n    filtered_drivers = []\n    for fid in drivers:\n        if any(fid in pair for pair in corr_pairs):\n            # Check if any member of a correlated pair is already selected\n            found = False\n            for pair in corr_pairs:\n                if fid in pair:\n                    other = pair[1] if pair[0] == fid else pair[0]\n                    if other in used_ids:\n                        found = True\n                        break\n            if not found:\n                filtered_drivers.append(fid)\n                used_ids.add(fid)\n        else:\n            filtered_drivers.append(fid)\n            used_ids.add(fid)\n    \n    # If no strong drivers, return empty design\n    if not filtered_drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Simple approach: use top 3 drivers as module members\n    module_members = filtered_drivers[:3]\n    \n    # Build weighted score from module members\n    loadings = {}\n    for fid in module_members:\n        idx = feats.column(fid)\n        # Weight by difference in means between outcome groups\n        y0 = feats.x[feats.y == 0, idx]\n        y1 = feats.x[feats.y == 1, idx]\n        mean_diff = np.mean(y1) - np.mean(y0)\n        loadings[fid] = mean_diff\n    \n    # Normalize loadings\n    total_weight = sum(abs(w) for w in loadings.values())\n    if total_weight > 0:\n        for fid in loadings:\n            loadings[fid] /= total_weight\n    \n    # Return design with module members as columns and weighted score\n    return Design(\n        drivers=tuple(filtered_drivers),\n        columns=tuple(module_members),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9275,
+  "completion_tokens": 2529,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 4049
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 4092
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on a 60 percent training fold: 5 drivers; at most 4",
+    "bytes": 2743
+   }
+  ],
+  "wall_s": 28.7
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-jsaw6bu4",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n        else:\n            # For other features, use Welch's t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n        \n        # Effect size: difference in means\n        effect_size = np.mean(y1) - np.mean(y0)\n        effects.append((fid, abs(effect_size), p_val, effect_size))\n    \n    # Sort by effect size (largest first)\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features with significant p-values\n    candidates = [e for e in effects if e[2] < 0.05]\n    \n    # Remove near-duplicates (correlated features)\n    selected_ids = set()\n    for fid, effect_size, p_val, effect in candidates:\n        # Check if this feature is correlated with any already selected feature\n        is_duplicate = False\n        for selected_fid in selected_ids:\n            col1 = feats.column(selected_fid)\n            col2 = feats.column(fid)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected_ids.add(fid)\n    \n    # If no significant features, return empty design\n    if len(selected_ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Get top features by effect size\n    selected_features = sorted([e for e in effects if e[0] in selected_ids], \n                              key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS)\n    drivers = tuple(f[0] for f in selected_features[:MAX_DRIVERS])\n    \n    # All selected features for regression\n    columns = tuple(f[0] for f in selected_features)\n    \n    # Check for potential interactions between top features\n    products = []\n    for i, fid1 in enumerate(columns[:3]):  # Limit to top few\n        for fid2 in columns[i+1:]:\n            # Add interaction term if both features are in the dataset\n            products.append((fid1, fid2))\n    \n    # Create weighted score from top features\n    loadings = {}\n    for i, (fid, _, _, effect) in enumerate(selected_features[:5]):\n        # Weight by effect size (sign matters)\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8717,
+  "completion_tokens": 2169,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2909
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2941
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2802
+   }
+  ],
+  "wall_s": 24.6
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-o49j50e0",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6) and remove near-duplicates\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Build set of unique features involved in strong correlations\n    correlated_features = set()\n    for a, b in high_corr_pairs:\n        correlated_features.add(a)\n        correlated_features.add(b)\n    \n    # If no strong correlations, return empty design\n    if not correlated_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features that are both correlated and have significant effect size\n    significant_features = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        mean_diff = feats.x[feats.y==1, col_idx].mean() - feats.x[feats.y==0, col_idx].mean()\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        if abs(mean_diff) > 0.1 and abs(t_stat) > 1.5:\n            significant_features.append(fid)\n    \n    # Find overlapping features between significant and correlated sets\n    module_features = list(correlated_features & set(significant_features))\n    if not module_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Sort by effect size to prioritize strongest signals\n    effect_sizes = []\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        mean_diff = feats.x[feats.y==1, col_idx].mean() - feats.x[feats.y==0, col_idx].mean()\n        effect_sizes.append(abs(mean_diff))\n    \n    # Sort features by effect size (descending)\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    sorted_features = [module_features[i] for i in sorted_indices]\n    \n    # Take top features up to MAX_DRIVERS\n    selected_features = sorted_features[:MAX_DRIVERS]\n    \n    # For weighted score, use inverse variance weighting\n    weights = []\n    for fid in selected_features:\n        col_idx = feats.column(fid)\n        var = np.var(feats.x[:, col_idx])\n        weights.append(1.0 / (var + 1e-8))  # Add small epsilon to avoid division by zero\n    \n    # Normalize weights\n    weights = np.array(weights)\n    weights = weights / np.sum(weights)\n    \n    # Create loadings dictionary\n    loadings = dict(zip(selected_features, weights))\n    \n    # Return design with module features and their loadings\n    return Design(\n        drivers=selected_features,\n        columns=selected_features,\n        products=(),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6) and remove near-duplicates\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Build set of unique features involved in strong correlations\n    correlated_features = set()\n    for a, b in high_corr_pairs:\n        correlated_features.add(a)\n        correlated_features.add(b)\n    \n    # If no strong correlations, return empty design\n    if not correlated_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features that are both correlated and have significant effect size\n    significant_features = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        mean_diff = feats.x[feats.y==1, col_idx].mean() - feats.x[feats.y==0, col_idx].mean()\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        if abs(mean_diff) > 0.1 and abs(t_stat) > 1.5:\n            significant_features.append(fid)\n    \n    # Find overlapping features between significant and correlated sets\n    module_features = list(correlated_features & set(significant_features))\n    if not module_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Sort by effect size to prioritize strongest signals\n    effect_sizes = []\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        mean_diff = feats.x[feats.y==1, col_idx].mean() - feats.x[feats.y==0, col_idx].mean()\n        effect_sizes.append(abs(mean_diff))\n    \n    # Sort features by effect size (descending)\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    sorted_features = [module_features[i] for i in sorted_indices]\n    \n    # Take top features up to MAX_DRIVERS\n    selected_features = sorted_features[:MAX_DRIVERS]\n    \n    # For weighted score, use inverse variance weighting\n    weights = []\n    for fid in selected_features:\n        col_idx = feats.column(fid)\n        var = np.var(feats.x[:, col_idx])\n        weights.append(1.0 / (var + 1e-8))  # Add small epsilon to avoid division by zero\n    \n    # Normalize weights\n    weights = np.array(weights)\n    weights = weights / np.sum(weights)\n    \n    # Create loadings dictionary\n    loadings = dict(zip(selected_features, weights))\n    \n    # Return design with module features and their loadings\n    return Design(\n        drivers=selected_features,\n        columns=selected_features,\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8333,
+  "completion_tokens": 1990,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: 5 drivers; at most 4",
+    "bytes": 2791
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on a 60 percent training fold: 5 drivers; at most 4",
+    "bytes": 2808
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2808
+   }
+  ],
+  "wall_s": 23.6
+ }
+}

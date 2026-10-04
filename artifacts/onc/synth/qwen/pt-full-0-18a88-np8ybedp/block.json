@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-np8ybedp",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly significant features (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'expression' or feats.types[i] == 'copy_number':\n            # Use Welch's t-test for significance\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            if len(y0) > 0 and len(y1) > 0:\n                t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                p_val = 2 * (1 - stats.t.cdf(abs(t_stat), len(y0) + len(y1) - 2))\n                if p_val < 0.05:\n                    sig_features.append(i)\n    \n    if not sig_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster correlated features using cosine similarity\n    x_subset = feats.x[:, sig_features]\n    sim_matrix = cosine_similarity(x_subset)\n    \n    # Create adjacency matrix for strong correlations (|r| > 0.6)\n    adj_matrix = (abs(sim_matrix) > 0.6).astype(int)\n    np.fill_diagonal(adj_matrix, 0)\n    \n    # Use connected components to find modules\n    # Create proper connectivity matrix for the subset\n    if len(sig_features) <= 1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    clustering = AgglomerativeClustering(\n        n_clusters=None,\n        distance_threshold=0.4,\n        linkage='average',\n        connectivity=adj_matrix\n    )\n    clusters = clustering.fit_predict(np.eye(len(sig_features)))\n    \n    # Find the largest cluster\n    unique_clusters, counts = np.unique(clusters, return_counts=True)\n    if len(unique_clusters) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    largest_cluster_id = unique_clusters[np.argmax(counts)]\n    module_indices = np.where(clusters == largest_cluster_id)[0]\n    \n    if len(module_indices) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    module_fids = [feats.ids[i] for i in sig_features]\n    module_fids = [module_fids[i] for i in module_indices]\n    \n    # Compute weighted score based on standardized values\n    weights = np.abs(np.corrcoef(feats.x[:, sig_features], feats.y)[len(sig_features):, :len(sig_features)])[0]\n    weights = weights / np.sum(np.abs(weights))\n    loadings = dict(zip(module_fids, weights))\n    \n    # Return module members and their loadings\n    return Design(\n        drivers=tuple(module_fids[:MAX_DRIVERS]),\n        columns=tuple(module_fids),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8244,
+  "completion_tokens": 1856,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Wrong shape for connectivity matrix: (560, 560) when X is (40, 40)",
+    "bytes": 2360
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Wrong shape for connectivity matrix: (560, 560) when X is (40, 40)",
+    "bytes": 2360
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: Wrong shape for connectivity matrix: (560, 560) when X is (6, 6)",
+    "bytes": 2690
+   }
+  ],
+  "wall_s": 21.5
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ne7dhd2w",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in [\n        ('NXAE17', 'NQBG5P'), ('DOYC16A', 'SPFJ2'), ('GSH1A', 'XXRC2'),\n        ('XXRC2', 'SPFJ2'), ('DKEL4', 'BRD18A'), ('LPND9', 'CPB2P'),\n        ('GSH1A', 'TPC8'), ('WHS4', 'XXRC2'), ('WHS4', 'SPFJ2'),\n        ('GSH1A', 'WNE14'), ('WNE14', 'XXRC2'), ('XXRC2', 'TPC8'),\n        ('XXRC2', 'AEG14'), ('DFG19', 'TPC8'), ('WNE14', 'TPC8'),\n        ('GSH1A', 'DFG19'), ('XXRC2', 'DFG19'), ('WHS4', 'FHS12L'),\n        ('WHS4', 'GTPI9'), ('WHS4', 'DOYC16A')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Build set of features to exclude (keep only first in each pair)\n    exclude = set()\n    for a, b in corr_pairs:\n        exclude.add(b)\n    \n    # Filter features\n    valid_ids = [fid for fid in feats.ids if fid not in exclude]\n    valid_cols = [feats.column(fid) for fid in valid_ids]\n    \n    if not valid_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Identify strong features (p < 0.05 or |t| > 2)\n    strong_features = []\n    for i, fid in enumerate(valid_ids):\n        col_idx = feats.column(fid)\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        if abs(t_stat) > 2 or p_val < 0.05:\n            strong_features.append((fid, abs(t_stat)))\n    \n    # Sort by t-statistic magnitude\n    strong_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features (limit to MAX_DRIVERS)\n    selected_ids = [fid for fid, _ in strong_features[:MAX_DRIVERS]]\n    \n    # Build interaction terms for top features (limit to 3 pairs)\n    products = []\n    for i, a in enumerate(selected_ids):\n        for b in selected_ids[i+1:]:\n            products.append((a, b))\n    products = products[:3]\n    \n    # Build weighted score using mutual information\n    X = feats.x[:, valid_cols]\n    mi_scores = mutual_info_classif(X, feats.y)\n    loadings = dict(zip(valid_ids, mi_scores))\n    \n    # Return design with limited terms\n    return Design(\n        drivers=tuple(selected_ids),\n        columns=tuple(valid_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8539,
+  "completion_tokens": 2196,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2452
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2419
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2315
+   }
+  ],
+  "wall_s": 25.6
+ }
+}

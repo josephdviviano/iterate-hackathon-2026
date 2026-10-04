@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-le4ozk2j",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    p_values = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        x = feats.x[:, col]\n        y = feats.y\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        p_values.append(p_val)\n    \n    # If no feature is significantly associated, return empty design\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features with p < 0.05 and correlation < 0.6 with others\n    selected_ids = []\n    for i, fid in enumerate(feats.ids):\n        if p_values[i] < 0.05:\n            selected_ids.append(fid)\n    \n    # Remove near-duplicates (correlated features)\n    filtered_ids = []\n    for fid in selected_ids:\n        col = feats.column(fid)\n        x = feats.x[:, col]\n        is_correlated = False\n        for existing_fid in filtered_ids:\n            existing_col = feats.column(existing_fid)\n            existing_x = feats.x[:, existing_col]\n            corr = np.corrcoef(x, existing_x)[0,1]\n            if abs(corr) >= 0.6:\n                is_correlated = True\n                break\n        if not is_correlated:\n            filtered_ids.append(fid)\n    \n    # If no features remain after filtering, return empty design\n    if len(filtered_ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for interaction terms between top features\n    top_features = filtered_ids[:min(3, len(filtered_ids))]\n    products = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            products.append((top_features[i], top_features[j]))\n    \n    # Perform logistic regression to get loadings\n    X = feats.x[:, [feats.column(fid) for fid in filtered_ids]]\n    scaler = StandardScaler()\n    X_scaled = scaler.fit_transform(X)\n    lr = LogisticRegression(penalty='l1', solver='liblinear')\n    lr.fit(X_scaled, feats.y)\n    \n    # Create weighted score using coefficients\n    loadings = dict(zip(filtered_ids, lr.coef_[0]))\n    \n    # Determine drivers based on coefficient magnitude\n    sorted_drivers = sorted(loadings.keys(), key=lambda k: abs(loadings[k]), reverse=True)\n    drivers = tuple(sorted_drivers[:min(MAX_DRIVERS, len(sorted_drivers))])\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(filtered_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8407,
+  "completion_tokens": 1883,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2624
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2650
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2650
+   }
+  ],
+  "wall_s": 21.7
+ }
+}

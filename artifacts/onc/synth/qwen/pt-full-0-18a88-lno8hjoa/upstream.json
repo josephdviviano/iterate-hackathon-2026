@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-lno8hjoa",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates using t-test and effect size\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n        mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n        auc = 0.5 + 0.5 * np.abs(mean_diff) / np.std(feats.x[:, i])  # Simplified AUC estimate\n        candidates.append((fid, abs(mean_diff), abs(t_stat), p_val, auc))\n    \n    candidates.sort(key=lambda x: x[2], reverse=True)  # Sort by t-statistic\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    correlated = set()\n    for i, (fid1, _, _, _, _) in enumerate(candidates):\n        if fid1 in correlated:\n            continue\n        keep.append(i)\n        # Check correlations with subsequent features\n        for j, (fid2, _, _, _, _) in enumerate(candidates[i+1:], i+1):\n            if fid2 in correlated:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                correlated.add(fid2)\n    \n    selected = [candidates[i][0] for i in keep[:MAX_DRIVERS]]\n    \n    # If no strong candidate, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    columns = list(selected)\n    loadings = {fid: 1.0 for fid in columns}\n    \n    # Add interaction terms between highly correlated pairs\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Select top drivers based on effect size, but limit to MAX_DRIVERS\n    drivers = [fid for fid, _, _, _, _ in sorted(candidates[:MAX_DRIVERS], \n                                                 key=lambda x: x[1], reverse=True)]\n    drivers = drivers[:MAX_DRIVERS]  # Ensure we don't exceed maximum\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates using t-test and effect size\n    candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n        mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n        auc = 0.5 + 0.5 * np.abs(mean_diff) / np.std(feats.x[:, i])  # Simplified AUC estimate\n        candidates.append((fid, abs(mean_diff), abs(t_stat), p_val, auc))\n    \n    candidates.sort(key=lambda x: x[2], reverse=True)  # Sort by t-statistic\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    correlated = set()\n    for i, (fid1, _, _, _, _) in enumerate(candidates):\n        if fid1 in correlated:\n            continue\n        keep.append(i)\n        # Check correlations with subsequent features\n        for j, (fid2, _, _, _, _) in enumerate(candidates[i+1:], i+1):\n            if fid2 in correlated:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                correlated.add(fid2)\n    \n    selected = [candidates[i][0] for i in keep[:MAX_DRIVERS]]\n    \n    # If no strong candidate, return empty design\n    if not selected:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build regression components\n    columns = list(selected)\n    loadings = {fid: 1.0 for fid in columns}\n    \n    # Add interaction terms between highly correlated pairs\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]\n            if abs(corr) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Select top drivers based on effect size, but limit to MAX_DRIVERS\n    drivers = [fid for fid, _, _, _, _ in sorted(candidates[:MAX_DRIVERS], \n                                                 key=lambda x: x[1], reverse=True)]\n    drivers = drivers[:MAX_DRIVERS]  # Ensure we don't exceed maximum\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8574,
+  "completion_tokens": 1903,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2447
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2543
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2397
+   }
+  ],
+  "wall_s": 21.9
+ }
+}

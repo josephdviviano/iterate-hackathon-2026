@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-673gdc2r",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    correlations = {}\n    for i, id1 in enumerate(ids):\n        for j, id2 in enumerate(ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, feats.column(id1)], feats.x[:, feats.column(id2)])[0,1]) >= 0.6:\n                correlations[id1] = id2\n    \n    # Remove near-duplicates (keep first occurrence)\n    unique_ids = []\n    seen = set()\n    for id in ids:\n        if id not in seen:\n            unique_ids.append(id)\n            seen.add(id)\n            if id in correlations:\n                seen.add(correlations[id])\n    \n    # Calculate effect sizes using t-tests\n    effects = []\n    for id in unique_ids:\n        col = feats.column(id)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effects.append((id, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates\n    candidates = [id for id, _ in effects[:MAX_DRIVERS]]\n    \n    # If no strong effect, return empty design\n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check if any pair has high correlation\n    products = []\n    for i, id1 in enumerate(candidates):\n        for id2 in candidates[i+1:]:\n            if abs(np.corrcoef(feats.x[:, feats.column(id1)], feats.x[:, feats.column(id2)])[0,1]) >= 0.6:\n                products.append((id1, id2))\n    \n    # Return design with drivers and their columns\n    return Design(\n        drivers=tuple(candidates),\n        columns=tuple(candidates),\n        products=tuple(products),\n        loadings={id: 1.0 for id in candidates}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    correlations = {}\n    for i, id1 in enumerate(ids):\n        for j, id2 in enumerate(ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, feats.column(id1)], feats.x[:, feats.column(id2)])[0,1]) >= 0.6:\n                correlations[id1] = id2\n    \n    # Remove near-duplicates (keep first occurrence)\n    unique_ids = []\n    seen = set()\n    for id in ids:\n        if id not in seen:\n            unique_ids.append(id)\n            seen.add(id)\n            if id in correlations:\n                seen.add(correlations[id])\n    \n    # Calculate effect sizes using t-tests\n    effects = []\n    for id in unique_ids:\n        col = feats.column(id)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        t_stat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        effects.append((id, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates\n    candidates = [id for id, _ in effects[:MAX_DRIVERS]]\n    \n    # If no strong effect, return empty design\n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check if any pair has high correlation\n    products = []\n    for i, id1 in enumerate(candidates):\n        for id2 in candidates[i+1:]:\n            if abs(np.corrcoef(feats.x[:, feats.column(id1)], feats.x[:, feats.column(id2)])[0,1]) >= 0.6:\n                products.append((id1, id2))\n    \n    # Return design with drivers and their columns\n    return Design(\n        drivers=tuple(candidates),\n        columns=tuple(candidates),\n        products=tuple(products),\n        loadings={id: 1.0 for id in candidates}\n    )\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2124,
+  "completion_tokens": 496,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1938
+   }
+  ],
+  "wall_s": 5.8
+ }
+}

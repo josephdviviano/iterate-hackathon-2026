@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-pw5j3pk2",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify significant features (p < 0.05)\n    sig_ids = [feats.ids[i] for i in range(len(feats.ids)) \n               if feats.types[i] != 'derived' and feats.types[i] != 'clinical']\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    to_remove = set()\n    \n    for i in range(len(sig_ids)):\n        for j in range(i+1, len(sig_ids)):\n            # Compute correlation between features\n            col_i = feats.column(sig_ids[i])\n            col_j = feats.column(sig_ids[j])\n            corr = np.corrcoef(feats.x[:, col_i], feats.x[:, col_j])[0, 1]\n            \n            if abs(corr) >= 0.6:\n                # Remove the less significant one based on t-statistic\n                ti = feats.types[i]\n                tj = feats.types[j]\n                if ti == 'expression' and tj == 'copy_number':\n                    to_remove.add(sig_ids[j])\n                elif ti == 'copy_number' and tj == 'expression':\n                    to_remove.add(sig_ids[i])\n                elif ti == 'expression' and tj == 'expression':\n                    # Keep the one with higher absolute t-stat\n                    t_i = stats.ttest_ind(feats.x[feats.y==0, col_i], \n                                        feats.x[feats.y==1, col_i])[0]\n                    t_j = stats.ttest_ind(feats.x[feats.y==0, col_j], \n                                        feats.x[feats.y==1, col_j])[0]\n                    if abs(t_i) < abs(t_j):\n                        to_remove.add(sig_ids[i])\n                    else:\n                        to_remove.add(sig_ids[j])\n                else:\n                    to_remove.add(sig_ids[j])\n    \n    # Final set of features\n    final_ids = [fid for fid in sig_ids if fid not in to_remove]\n    \n    # If no significant features remain, return empty design\n    if not final_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster correlated features\n    if len(final_ids) > 1:\n        corr_data = feats.x[:, [feats.column(fid) for fid in final_ids]]\n        clustering = AgglomerativeClustering(n_clusters=None, \n                                           distance_threshold=1-0.6, linkage='average')\n        clusters = clustering.fit_predict(corr_data.T)\n        \n        # Select representative from each cluster\n        rep_ids = []\n        for i in range(max(clusters)+1):\n            cluster_features = [final_ids[j] for j in range(len(final_ids)) if clusters[j] == i]\n            # Choose the feature with highest absolute t-statistic\n            best_fid = max(cluster_features, key=lambda fid: \n                          abs(stats.ttest_ind(feats.x[feats.y==0, feats.column(fid)], \n                                            feats.x[feats.y==1, feats.column(fid)])[0]))\n            rep_ids.append(best_fid)\n    else:\n        rep_ids = final_ids\n    \n    # Build design\n    drivers = tuple(rep_ids[:MAX_DRIVERS])\n    columns = tuple(rep_ids)\n    \n    # No products needed for this simple approach\n    products = ()\n    \n    # Weighted score: use standardized coefficients from logistic regression\n    # Approximate with t-statistics as weights\n    loadings = {}\n    for fid in rep_ids:\n        t_stat = stats.ttest_ind(feats.x[feats.y==0, feats.column(fid)], \n                               feats.x[feats.y==1, feats.column(fid)])[0]\n        loadings[fid] = t_stat\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8970,
+  "completion_tokens": 2462,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 3466
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3581
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3581
+   }
+  ],
+  "wall_s": 41.0
+ }
+}

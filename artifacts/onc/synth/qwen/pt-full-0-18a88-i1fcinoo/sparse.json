@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-i1fcinoo",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [(a, b) for a, b in \n        [('PSV2', 'ATUU4'), ('GOZY11', 'ATUU4'), ('DYLJ15B', 'ATUU4'),\n         ('FXBJ12L', 'OZR2B'), ('GOZY11', 'PSV2'), ('PSV2', 'DYLJ15B'),\n         ('XHB10', 'ATUU4'), ('GOZY11', 'DYLJ15B'), ('XHB10', 'PSV2'),\n         ('OZR2B', 'ATUU4'), ('KBY1P', 'RSBZ19'), ('PSV2', 'OZR2B'),\n         ('LRN4', 'ATUU4'), ('DYLJ15B', 'RPJY15'), ('NGK12', 'ATUU4'),\n         ('XHB10', 'OZR2B'), ('NGK12', 'PSV2'), ('ZAFP19P', 'VVF1'),\n         ('PSV2', 'LRN4'), ('GOZY11', 'OZR2B')]\n        if a in feats.ids and b in feats.ids]\n    \n    # Build set of features to exclude (keep only one from each pair)\n    exclude = set()\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids:\n            # Prefer features with higher t-statistics\n            ta = abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(a)], \n                                   feats.x[feats.y==0, feats.column(a)])[0])\n            tb = abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(b)], \n                                   feats.x[feats.y==0, feats.column(b)])[0])\n            exclude.add(b if ta > tb else a)\n    \n    # Get non-correlated features\n    candidates = [fid for fid in feats.ids if fid not in exclude]\n    \n    # If no candidates, return empty design\n    if len(candidates) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute mutual information to rank features\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in candidates]], \n                                   feats.y)\n    ranked_features = [fid for _, fid in sorted(zip(mi_scores, candidates), reverse=True)]\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = tuple(ranked_features[:min(MAX_DRIVERS, len(ranked_features))])\n    \n    # For logistic regression, include all significant features\n    columns = tuple(ranked_features[:min(20, len(ranked_features))])\n    \n    # Form products between drivers\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a, b))\n    \n    # Create loadings using top features\n    loadings = {}\n    for i, fid in enumerate(columns[:len(columns)//2]):\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8860,
+  "completion_tokens": 2278,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2591
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2640
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2552
+   }
+  ],
+  "wall_s": 26.1
+ }
+}

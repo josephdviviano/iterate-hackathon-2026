@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ly2xu1r0",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to significant features based on Welch's t-test\n    p_values = stats.ttest_ind(feats.x[feats.y==1, :], feats.x[feats.y==0, :], equal_var=False)[1]\n    sig_features = [i for i, p in enumerate(p_values) if p < 0.05]\n    \n    # Remove near-duplicates (correlated with |r| >= 0.6)\n    correlated_pairs = [\n        ('RWU10', 'GISL4B'), ('RWU10', 'HQE19L'), ('GISL4B', 'YVM19P'), ('GISL4B', 'WJT16'),\n        ('QITT2', 'HQE19L'), ('HVW4', 'HAWA3P'), ('YVM19P', 'YGBY15'), ('AGXR17A', 'GPPB14B'),\n        ('GISL4B', 'HQE19L'), ('RWU10', 'WJT16'), ('RWU10', 'YVM19P'), ('RWU10', 'QITT2'),\n        ('CYB9', 'HQE19L'), ('YVM19P', 'WJT16'), ('RWU10', 'CYB9'), ('GPPB14B', 'TEAB1'),\n        ('GISL4B', 'CYB9'), ('GISL4B', 'ULBP2A'), ('GISL4B', 'IMAY4P'), ('CYB9', 'WJT16')\n    ]\n    \n    # Keep one feature from each correlated pair (prefer higher t-stat)\n    kept_features = set()\n    for fid1, fid2 in correlated_pairs:\n        if fid1 in feats.ids and fid2 in feats.ids:\n            idx1, idx2 = feats.column(fid1), feats.column(fid2)\n            t1, t2 = abs(stats.ttest_ind(feats.x[feats.y==1, idx1], feats.x[feats.y==0, idx1], equal_var=False)[0]), \\\n                     abs(stats.ttest_ind(feats.x[feats.y==1, idx2], feats.x[feats.y==0, idx2], equal_var=False)[0])\n            kept_features.add(fid1 if t1 > t2 else fid2)\n    \n    # Add non-correlated significant features\n    for i in sig_features:\n        fid = feats.ids[i]\n        if not any(fid in pair for pair in correlated_pairs):\n            kept_features.add(fid)\n    \n    # Use only kept features\n    kept_indices = [feats.column(fid) for fid in kept_features if fid in feats.ids]\n    X_sub = feats.x[:, kept_indices]\n    \n    # Compute mutual information to rank features\n    mi_scores = mutual_info_classif(X_sub, feats.y)\n    sorted_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    drivers = tuple([feats.ids[i] for i in sorted_indices if feats.ids[i] in kept_features])\n    \n    # Build products from top features\n    products = []\n    for i in range(min(2, len(drivers))):\n        for j in range(i+1, min(3, len(drivers))):\n            products.append((drivers[i], drivers[j]))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(drivers):\n        idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, idx], feats.x[feats.y==0, idx], equal_var=False)\n        loadings[fid] = abs(t_stat)\n    \n    # Ensure we don't exceed 12 total terms\n    total_terms = len(drivers) + len(products) + len(loadings)\n    if total_terms > 12:\n        # Reduce products to maintain limit\n        products = products[:max(0, 12 - len(drivers) - len(loadings))]\n    \n    return Design(\n        drivers=drivers,\n        columns=kept_features,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9256,
+  "completion_tokens": 2764,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3020
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3019
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2978
+   }
+  ],
+  "wall_s": 31.1
+ }
+}

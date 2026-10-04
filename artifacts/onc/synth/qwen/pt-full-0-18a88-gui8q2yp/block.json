@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-gui8q2yp",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify highly associated features using t-statistics\n    t_stats = [abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                   feats.x[feats.y==0, feats.column(fid)])[0]) \n               for fid in feats.ids]\n    \n    # Select top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    top_ids = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates based on correlation\n    keep_ids = []\n    for fid in top_ids:\n        is_duplicate = False\n        for kept in keep_ids:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                               feats.x[:, feats.column(kept)])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep_ids.append(fid)\n    \n    # If no strong mechanism, return empty design\n    if len(keep_ids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Formulate potential mechanism: cluster features\n    X = feats.x[:, [feats.column(fid) for fid in keep_ids]]\n    clustering = SpectralClustering(n_clusters=1, affinity='precomputed', \n                                    random_state=0)\n    similarity = cosine_similarity(X)\n    clusters = clustering.fit_predict(1 - similarity)  # Convert to distance\n    \n    # Select features in the same cluster as the strongest\n    best_feature_idx = np.argmax(t_stats)\n    best_cluster = clusters[best_feature_idx]\n    selected_features = [keep_ids[i] for i in range(len(keep_ids)) \n                         if clusters[i] == best_cluster]\n    \n    # Compute weighted loading score\n    loadings = {}\n    for fid in selected_features:\n        idx = feats.column(fid)\n        # Weight by effect size (t-statistic)\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, idx], \n                                feats.x[feats.y==0, idx])[0]\n        loadings[fid] = abs(t_stat)\n    \n    # Normalize loadings\n    total_weight = sum(loadings.values())\n    if total_weight > 0:\n        loadings = {fid: w/total_weight for fid, w in loadings.items()}\n    \n    # Return mechanism design\n    return Design(\n        drivers=tuple(selected_features[:MAX_DRIVERS]),\n        columns=tuple(selected_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8346,
+  "completion_tokens": 1764,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2490
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2490
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2490
+   }
+  ],
+  "wall_s": 20.5
+ }
+}

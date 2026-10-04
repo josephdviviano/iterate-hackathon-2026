@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5dukr5nd",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        x = feats.x[:, col]\n        y = feats.y\n        mean1 = np.mean(x[y == 1])\n        mean0 = np.mean(x[y == 0])\n        effect = mean1 - mean0\n        \n        # Welch's t-test\n        group1 = x[y == 1]\n        group0 = x[y == 0]\n        n1, n0 = len(group1), len(group0)\n        if n1 > 1 and n0 > 1:\n            var1, var0 = np.var(group1, ddof=1), np.var(group0, ddof=1)\n            se = np.sqrt(var1/n1 + var0/n0)\n            t_stat = effect / se if se > 0 else 0\n            df = (var1/n1 + var0/n0)**2 / (var1**2/(n1**2*(n1-1)) + var0**2/(n0**2*(n0-1)))\n            p_val = 2 * (1 - stats.t.cdf(abs(t_stat), df))\n        else:\n            p_val = 1.0\n            \n        effects.append((fid, effect, p_val))\n    \n    # Sort by effect size (absolute value)\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top candidates with significant p-values\n    candidates = [fid for fid, _, p in effects if p < 0.05]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = set()\n    for fid1, fid2, r in [(a,b,r) for a,b,r in [\n        (\"BKT18A\", \"ZQFH2\", 0.88), (\"FOMN6\", \"ZOOT19\", 0.87),\n        (\"YIZG3\", \"VUDM1\", 0.86), (\"FOS18\", \"ZQFH2\", -0.85),\n        (\"FJT3L\", \"GRL4\", 0.83), (\"NSC2\", \"KVKG2\", 0.82),\n        (\"LBAP15B\", \"ZQFH2\", -0.81), (\"FOS18\", \"KDZG17\", 0.81),\n        (\"ZQFH2\", \"SYDZ9\", -0.80), (\"FOS18\", \"BKT18A\", -0.79),\n        (\"LBAP15B\", \"SYDZ9\", 0.77), (\"MQE14L\", \"ZQFH2\", -0.76),\n        (\"VUDM1\", \"ZQFH2\", 0.75), (\"KVKG2\", \"YBZ3\", 0.74),\n        (\"WZH19\", \"SYDZ9\", 0.74), (\"NMZC11\", \"ZQFH2\", -0.73),\n        (\"PYVK16\", \"SYDZ9\", -0.73), (\"GGN3\", \"MQE14L\", -0.72),\n        (\"NSC2\", \"YBZ3\", 0.72), (\"GRL4\", \"ZIN6\", 0.72)\n    ] if abs(r) >= 0.6]:\n        correlated_pairs.add((fid1, fid2))\n        \n    # Keep only one from each correlated pair\n    selected = []\n    used = set()\n    for fid in candidates:\n        if fid in used:\n            continue\n        # Check if this feature is part of a correlated pair\n        found_pair = False\n        for fid1, fid2 in correlated_pairs:\n            if fid == fid1 or fid == fid2:\n                # If we haven't added the other member of the pair, add this one\n                if not (fid1 in used or fid2 in used):\n                    selected.append(fid)\n                    used.add(fid)\n                    used.add(fid1)\n                    used.add(fid2)\n                    found_pair = True\n                    break\n        if not found_pair:\n            selected.append(fid)\n            used.add(fid)\n    \n    # Select top features by effect size\n    effect_dict = dict(effects)\n    selected = sorted(selected, key=lambda fid: effect_dict[fid], reverse=True)\n    drivers = tuple(selected[:MAX_DRIVERS])\n    \n    # For columns, use all significant features\n    columns = tuple([fid for fid in feats.ids if fid in selected])\n    \n    # For products, look for interactions between top drivers\n    products = []\n    if len(drivers) >= 2:\n        # Simple pairwise products\n        for i in range(len(drivers)):\n            for j in range(i+1, len(drivers)):\n                products.append((drivers[i], drivers[j]))\n    \n    # Simple weighted score: sum of standardized values of top features\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        loadings[fid] = np.std(feats.x[:, col_idx])  # Weight by standard deviation\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 10011,
+  "completion_tokens": 3621,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3845
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3845
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: dictionary update sequence element #0 has length 3; 2 is required",
+    "bytes": 3851
+   }
+  ],
+  "wall_s": 41.0
+ }
+}

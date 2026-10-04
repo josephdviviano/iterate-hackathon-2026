@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-nk8v5iiw",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    X = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(X.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Filter features\n    keep = [i for i in range(len(ids)) if i not in to_remove]\n    filtered_ids = [ids[i] for i in keep]\n    filtered_X = X[:, keep]\n    \n    # Compute t-statistics for each feature\n    t_stats = []\n    for i in range(len(filtered_ids)):\n        group0 = filtered_X[y==0, i]\n        group1 = filtered_X[y==1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic magnitude\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [filtered_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check if any features show strong association (t > 4)\n    strong_features = [f for f, t in zip(top_features, [t_stats[i] for i in sorted_indices[:MAX_DRIVERS]]) if t > 4]\n    \n    # If no strong features, return empty design\n    if not strong_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to at most 4 drivers as required\n    drivers = tuple(strong_features[:4])\n    columns = tuple(strong_features[:4])\n    \n    # Add interaction terms for top two features if they exist\n    products = ()\n    if len(strong_features) >= 2:\n        products = ((strong_features[0], strong_features[1]),)\n    \n    # Weighted score using top feature\n    loadings = {strong_features[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    X = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(X.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Filter features\n    keep = [i for i in range(len(ids)) if i not in to_remove]\n    filtered_ids = [ids[i] for i in keep]\n    filtered_X = X[:, keep]\n    \n    # Compute t-statistics for each feature\n    t_stats = []\n    for i in range(len(filtered_ids)):\n        group0 = filtered_X[y==0, i]\n        group1 = filtered_X[y==1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic magnitude\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [filtered_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check if any features show strong association (t > 4)\n    strong_features = [f for f, t in zip(top_features, [t_stats[i] for i in sorted_indices[:MAX_DRIVERS]]) if t > 4]\n    \n    # If no strong features, return empty design\n    if not strong_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to at most 4 drivers as required\n    drivers = tuple(strong_features[:4])\n    columns = tuple(strong_features[:4])\n    \n    # Add interaction terms for top two features if they exist\n    products = ()\n    if len(strong_features) >= 2:\n        products = ((strong_features[0], strong_features[1]),)\n    \n    # Weighted score using top feature\n    loadings = {strong_features[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5003,
+  "completion_tokens": 1058,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2069
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2054
+   }
+  ],
+  "wall_s": 12.8
+ }
+}

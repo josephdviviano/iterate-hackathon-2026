@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-cvw5xj5k",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong association to outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        y1 = feats.x[feats.y==1, i]\n        y0 = feats.x[feats.y==0, i]\n        if len(y1) > 0 and len(y0) > 0:\n            tstat, pval = stats.ttest_ind(y1, y0, equal_var=False)\n            mean_diff = np.mean(y1) - np.mean(y0)\n            auc = 0.5 + 0.5 * (np.mean(y1 > y0) - np.mean(y0 > y1))\n            effects.append((fid, abs(mean_diff), abs(tstat), pval, auc))\n    \n    effects.sort(key=lambda x: x[2], reverse=True)\n    \n    # Select top features\n    top_features = [f[0] for f in effects[:20]]\n    \n    # Check for correlated pairs (|r| >= 0.6)\n    pairs = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            fid1, fid2 = top_features[i], top_features[j]\n            col1, col2 = feats.column(fid1), feats.column(fid2)\n            if col1 < feats.x.shape[1] and col2 < feats.x.shape[1]:\n                try:\n                    corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n                    if abs(corr) >= 0.6:\n                        pairs.append((fid1, fid2))\n                except:\n                    continue\n    \n    # Try product terms\n    best_score = -np.inf\n    best_product = None\n    \n    for fid1, fid2 in pairs:\n        col1, col2 = feats.column(fid1), feats.column(fid2)\n        if col1 >= feats.x.shape[1] or col2 >= feats.x.shape[1]:\n            continue\n        prod = feats.x[:, col1] * feats.x[:, col2]\n        \n        # Get all features except the two in the pair\n        other_features = [fid for fid in top_features if fid != fid1 and fid != fid2]\n        \n        # Build feature matrix\n        X_cols = []\n        valid_features = []\n        for fid in other_features:\n            col_idx = feats.column(fid)\n            if col_idx < feats.x.shape[1]:\n                X_cols.append(feats.x[:, col_idx])\n                valid_features.append(fid)\n        \n        # Add product term\n        X_cols.append(prod)\n        \n        if len(X_cols) > 0:\n            try:\n                X = np.column_stack(X_cols)\n                \n                # Handle case where X might be empty or have issues\n                if X.ndim == 1:\n                    X = X.reshape(-1, 1)\n                    \n                model = LogisticRegression(penalty='l2', C=1.0, max_iter=1000, random_state=42)\n                model.fit(X, feats.y)\n                score = model.score(X, feats.y)\n                if score > best_score:\n                    best_score = score\n                    best_product = (fid1, fid2)\n            except:\n                continue\n    \n    # If we found a good product term, return it\n    if best_product:\n        return Design(\n            drivers=(best_product[0], best_product[1]),\n            columns=(best_product[0], best_product[1]),\n            products=(best_product,),\n            loadings={best_product[0]: 1.0, best_product[1]: 1.0}\n        )\n    \n    # Otherwise, return top individual features\n    drivers = tuple(f[0] for f in effects[:MAX_DRIVERS] if f[2] > 2.0)\n    \n    if not drivers:\n        return Design(\n            drivers=(),\n            columns=(),\n            products=(),\n            loadings={}\n        )\n    \n    # Return top features\n    return Design(\n        drivers=drivers,\n        columns=drivers,\n        products=(),\n        loadings={fid: 1.0 for fid in drivers}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8980,
+  "completion_tokens": 2605,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: operands could not be broadcast together with shapes (117,) (578,)",
+    "bytes": 3024
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: operands could not be broadcast together with shapes (117,) (578,)",
+    "bytes": 3363
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: operands could not be broadcast together with shapes (117,) (578,)",
+    "bytes": 3653
+   }
+  ],
+  "wall_s": 29.6
+ }
+}

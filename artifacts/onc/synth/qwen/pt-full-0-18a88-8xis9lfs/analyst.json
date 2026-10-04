@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-8xis9lfs",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out derived features and keep only expression, clinical, copy_number\n    usable_ids = [fid for fid, typ in zip(feats.ids, feats.types) \n                  if typ in ('expression', 'clinical', 'copy_number')]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('HVP4', 'THX18'), ('XJEY10L', 'EIAZ16L'), ('EIAZ16L', 'HNNQ8'),\n        ('KWPU14', 'THX18'), ('EIAZ16L', 'THX18'), ('KWPU14', 'RPOQ3'),\n        ('VTA11A', 'THX18'), ('XJEY10L', 'THX18'), ('BLPP6', 'PPHL13'),\n        ('XJEY10L', 'HNNQ8'), ('EIAZ16L', 'HVP4'), ('THX18', 'AIFJ14'),\n        ('XJEY10L', 'HVP4'), ('TSG17B', 'EIAZ16L'), ('EIAZ16L', 'VTA11A'),\n        ('HVP4', 'VTA11A'), ('KWPU14', 'HVP4'), ('VMLO12', 'HVP4'),\n        ('EIAZ16L', 'VMLO12'), ('VMLO12', 'THX18')\n    ]\n    \n    # Keep one feature from each correlated pair\n    keep_ids = set(usable_ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher effect size (mean_y1-mean_y0)\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            mean_diff_a = np.mean(feats.x[feats.y==1, idx_a]) - np.mean(feats.x[feats.y==0, idx_a])\n            mean_diff_b = np.mean(feats.x[feats.y==1, idx_b]) - np.mean(feats.x[feats.y==0, idx_b])\n            if abs(mean_diff_a) >= abs(mean_diff_b):\n                keep_ids.remove(b)\n            else:\n                keep_ids.remove(a)\n    \n    # Compute effect sizes for remaining features\n    selected_ids = list(keep_ids)\n    effect_sizes = []\n    for fid in selected_ids:\n        idx = feats.column(fid)\n        mean_diff = np.mean(feats.x[feats.y==1, idx]) - np.mean(feats.x[feats.y==0, idx])\n        effect_sizes.append(abs(mean_diff))\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    top_ids = [selected_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # For logistic regression, include all features with significant t-tests\n    columns = []\n    loadings = {}\n    \n    for fid in selected_ids:\n        idx = feats.column(fid)\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, idx], feats.x[feats.y==0, idx])\n        if p_val < 0.05 or abs(t_stat) > 2.0:\n            columns.append(fid)\n            loadings[fid] = t_stat\n    \n    # Check for interactions between top features\n    products = []\n    for i, a in enumerate(top_ids):\n        for b in top_ids[i+1:]:\n            # Add interaction term if both features are in columns\n            if a in columns and b in columns:\n                products.append((a, b))\n    \n    return Design(\n        drivers=tuple(top_ids),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9118,
+  "completion_tokens": 2660,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2932
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2957
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2825
+   }
+  ],
+  "wall_s": 30.3
+ }
+}

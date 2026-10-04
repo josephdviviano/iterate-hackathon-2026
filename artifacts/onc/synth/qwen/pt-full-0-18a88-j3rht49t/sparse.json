@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-j3rht49t",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Remove highly correlated pairs (keep first in pair)\n    keep = []\n    seen = set()\n    for i, id1 in enumerate(ids):\n        if id1 in seen:\n            continue\n        keep.append(i)\n        for j, id2 in enumerate(ids[i+1:], i+1):\n            if id2 in seen:\n                continue\n            corr = np.corrcoef(x[:,i], x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                seen.add(id2)\n                break\n    \n    filtered_ids = [ids[i] for i in keep]\n    filtered_x = x[:, keep]\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(filtered_ids):\n        group0 = filtered_x[y==0, i]\n        group1 = filtered_x[y==1, i]\n        mean_diff = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(mean_diff))\n    \n    # Select top features by effect size\n    top_indices = np.argsort(effect_sizes)[::-1][:MAX_DRIVERS]\n    top_features = [filtered_ids[i] for i in top_indices]\n    \n    # Check for interactions among top features\n    products = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            fid1 = top_features[i]\n            fid2 = top_features[j]\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            # Check if interaction term would be useful\n            if abs(np.corrcoef(feats.x[:,col1], feats.x[:,col2])[0,1]) < 0.6:\n                products.append((fid1, fid2))\n    \n    # Build final design\n    drivers = tuple(top_features[:min(len(top_features), MAX_DRIVERS)])\n    columns = tuple(filtered_ids)\n    products = tuple(products)\n    \n    # Create loadings using weighted sum of top features\n    loadings = {}\n    for i, fid in enumerate(filtered_ids):\n        if fid in top_features:\n            loadings[fid] = effect_sizes[i]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8084,
+  "completion_tokens": 1693,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2286
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2310
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2310
+   }
+  ],
+  "wall_s": 19.3
+ }
+}

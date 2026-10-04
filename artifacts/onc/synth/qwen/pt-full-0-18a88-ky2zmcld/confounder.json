@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ky2zmcld",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check for clinical/cohort variables that might drive outcomes\n    clinical_drivers = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            x = feats.x[:, i]\n            corr, p = stats.pearsonr(x, feats.y)\n            if p < 0.05:\n                clinical_drivers.append((abs(corr), fid))\n    \n    # Use clinical variable as driver if found\n    if clinical_drivers:\n        clinical_drivers.sort(reverse=True)\n        drivers = [clinical_drivers[0][1]]\n        columns = list(feats.ids)\n        return Design(\n            drivers=tuple(drivers),\n            columns=tuple(columns),\n            products=(),\n            loadings={}\n        )\n    \n    # No clinical driver found - look for top associations\n    correlations = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        corr, p = stats.pearsonr(x, feats.y)\n        correlations.append((abs(corr), p, fid))\n    \n    # Sort by correlation strength\n    correlations.sort(reverse=True)\n    \n    # Select top drivers (max 4)\n    drivers = []\n    columns = []\n    \n    for _, p, fid in correlations[:10]:\n        if len(drivers) < MAX_DRIVERS and p < 0.05:\n            drivers.append(fid)\n        columns.append(fid)\n    \n    # Limit drivers to at most 4\n    drivers = drivers[:4]\n    \n    # Simple approach: just use top features without complex interactions\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns[:10]),  # Limit columns to avoid too many terms\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check for clinical/cohort variables that might drive outcomes\n    clinical_drivers = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' or feats.types[i] == 'cohort':\n            x = feats.x[:, i]\n            corr, p = stats.pearsonr(x, feats.y)\n            if p < 0.05:\n                clinical_drivers.append((abs(corr), fid))\n    \n    # Use clinical variable as driver if found\n    if clinical_drivers:\n        clinical_drivers.sort(reverse=True)\n        drivers = [clinical_drivers[0][1]]\n        columns = list(feats.ids)\n        return Design(\n            drivers=tuple(drivers),\n            columns=tuple(columns),\n            products=(),\n            loadings={}\n        )\n    \n    # No clinical driver found - look for top associations\n    correlations = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        corr, p = stats.pearsonr(x, feats.y)\n        correlations.append((abs(corr), p, fid))\n    \n    # Sort by correlation strength\n    correlations.sort(reverse=True)\n    \n    # Select top drivers (max 4)\n    drivers = []\n    columns = []\n    \n    for _, p, fid in correlations[:10]:\n        if len(drivers) < MAX_DRIVERS and p < 0.05:\n            drivers.append(fid)\n        columns.append(fid)\n    \n    # Limit drivers to at most 4\n    drivers = drivers[:4]\n    \n    # Simple approach: just use top features without complex interactions\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns[:10]),  # Limit columns to avoid too many terms\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9124,
+  "completion_tokens": 2188,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3185
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3291
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1669
+   }
+  ],
+  "wall_s": 24.8
+ }
+}

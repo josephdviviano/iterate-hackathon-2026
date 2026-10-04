@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ryd87dd8",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression and clinical features for clustering\n    expr_clin_ids = [fid for fid, t in zip(feats.ids, feats.types) \n                     if t in ('expression', 'clinical')]\n    \n    if len(expr_clin_ids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    expr_clin_idx = [feats.column(fid) for fid in expr_clin_ids]\n    X = feats.x[:, expr_clin_idx]\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(X.T)\n    np.fill_diagonal(corr_matrix, 0)\n    \n    # Find highly correlated pairs\n    high_corr_pairs = []\n    for i in range(len(expr_clin_ids)):\n        for j in range(i+1, len(expr_clin_ids)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                high_corr_pairs.append((expr_clin_ids[i], expr_clin_ids[j]))\n    \n    if not high_corr_pairs:\n        # No strong correlations, try simple univariate selection\n        effects = [(fid, abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                            feats.x[feats.y==0, feats.column(fid)])[0])) \n                   for fid in feats.ids]\n        effects.sort(key=lambda x: x[1], reverse=True)\n        drivers = tuple(f[0] for f in effects[:MAX_DRIVERS] if f[1] > 0)\n        return Design(drivers=drivers, columns=drivers, products=(), loadings={})\n    \n    # Cluster features based on correlation\n    clustering = AgglomerativeClustering(n_clusters=2, metric='precomputed', linkage='average')\n    cluster_labels = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Select features from the cluster with highest average effect size\n    cluster_0_idx = np.where(cluster_labels == 0)[0]\n    cluster_1_idx = np.where(cluster_labels == 1)[0]\n    \n    if len(cluster_0_idx) == 0 or len(cluster_1_idx) == 0:\n        # If clustering fails, use all features\n        selected_features = expr_clin_ids\n    else:\n        # Calculate average effect sizes for each cluster\n        avg_effects_0 = np.mean([abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                                    feats.x[feats.y==0, feats.column(fid)])[0]) \n                                for fid in [expr_clin_ids[i] for i in cluster_0_idx]])\n        avg_effects_1 = np.mean([abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                                    feats.x[feats.y==0, feats.column(fid)])[0]) \n                                for fid in [expr_clin_ids[i] for i in cluster_1_idx]])\n        \n        # Select the cluster with higher average effect\n        selected_indices = cluster_0_idx if avg_effects_0 > avg_effects_1 else cluster_1_idx\n        selected_features = [expr_clin_ids[i] for i in selected_indices]\n    \n    # Remove near-duplicates (correlated features with |r| >= 0.8)\n    unique_features = set()\n    for fid in selected_features:\n        is_duplicate = False\n        for existing_fid in unique_features:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                               feats.x[:, feats.column(existing_fid)])[0,1]) >= 0.8:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            unique_features.add(fid)\n    \n    selected_features = list(unique_features)\n    \n    # Build a weighted score using top features\n    loadings = {}\n    if selected_features:\n        # Simple approach: use standardized coefficients from logistic regression\n        # Since we can't fit LR here, just assign equal weights to top features\n        for i, fid in enumerate(selected_features[:MAX_DRIVERS-1]):\n            loadings[fid] = 1.0 / len(selected_features)\n    \n    drivers = tuple(selected_features[:MAX_DRIVERS-1])\n    return Design(drivers=drivers, columns=selected_features, products=(), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9315,
+  "completion_tokens": 2833,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 3974
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3972
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design took 10s on all patients; it must run in under 10s",
+    "bytes": 3921
+   }
+  ],
+  "wall_s": 42.6
+ }
+}

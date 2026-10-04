@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-c6utoej4",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find highly correlated pairs (|r| >= 0.6)\n    corr_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.add((min(fid1,fid2), max(fid1,fid2)))\n    \n    # Identify potential driver features using t-statistics\n    drivers = []\n    for i, fid in enumerate(feats.ids):\n        # Calculate t-statistic for this feature\n        if feats.x[:,i].std() > 0:\n            y0_mean = np.mean(feats.x[feats.y==0,i])\n            y1_mean = np.mean(feats.x[feats.y==1,i])\n            y0_std = np.std(feats.x[feats.y==0,i])\n            y1_std = np.std(feats.x[feats.y==1,i])\n            t_stat = abs(y1_mean - y0_mean) / (y0_std + y1_std + 1e-8)\n            if t_stat > 5:\n                drivers.append((fid, t_stat))\n    \n    # Sort by strength and limit to MAX_DRIVERS\n    drivers.sort(key=lambda x: x[1], reverse=True)\n    drivers = [d[0] for d in drivers[:MAX_DRIVERS]]\n    \n    # Check for product terms among drivers (avoid near-duplicates)\n    products = []\n    for i, fid1 in enumerate(drivers):\n        for j, fid2 in enumerate(drivers[i+1:], i+1):\n            if (min(fid1,fid2), max(fid1,fid2)) not in corr_pairs:\n                products.append((fid1, fid2))\n    \n    # Simple approach: just use drivers and their products\n    columns = list(drivers)\n    \n    # Limit total features to prevent exceeding 12\n    if len(columns) + len(products) > 12:\n        # Keep only top drivers and products\n        total_needed = min(12, len(columns) + len(products))\n        columns = columns[:total_needed]\n        products = products[:max(0, total_needed - len(columns))]\n    \n    # Create loadings dictionary\n    loadings = {}\n    for fid in columns:\n        # Simple weighting based on correlation with outcome\n        corr = np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1]\n        loadings[fid] = abs(corr)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find highly correlated pairs (|r| >= 0.6)\n    corr_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.add((min(fid1,fid2), max(fid1,fid2)))\n    \n    # Identify potential driver features using t-statistics\n    drivers = []\n    for i, fid in enumerate(feats.ids):\n        # Calculate t-statistic for this feature\n        if feats.x[:,i].std() > 0:\n            y0_mean = np.mean(feats.x[feats.y==0,i])\n            y1_mean = np.mean(feats.x[feats.y==1,i])\n            y0_std = np.std(feats.x[feats.y==0,i])\n            y1_std = np.std(feats.x[feats.y==1,i])\n            t_stat = abs(y1_mean - y0_mean) / (y0_std + y1_std + 1e-8)\n            if t_stat > 5:\n                drivers.append((fid, t_stat))\n    \n    # Sort by strength and limit to MAX_DRIVERS\n    drivers.sort(key=lambda x: x[1], reverse=True)\n    drivers = [d[0] for d in drivers[:MAX_DRIVERS]]\n    \n    # Check for product terms among drivers (avoid near-duplicates)\n    products = []\n    for i, fid1 in enumerate(drivers):\n        for j, fid2 in enumerate(drivers[i+1:], i+1):\n            if (min(fid1,fid2), max(fid1,fid2)) not in corr_pairs:\n                products.append((fid1, fid2))\n    \n    # Simple approach: just use drivers and their products\n    columns = list(drivers)\n    \n    # Limit total features to prevent exceeding 12\n    if len(columns) + len(products) > 12:\n        # Keep only top drivers and products\n        total_needed = min(12, len(columns) + len(products))\n        columns = columns[:total_needed]\n        products = products[:max(0, total_needed - len(columns))]\n    \n    # Create loadings dictionary\n    loadings = {}\n    for fid in columns:\n        # Simple weighting based on correlation with outcome\n        corr = np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1]\n        loadings[fid] = abs(corr)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8555,
+  "completion_tokens": 1861,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2217
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2545
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2201
+   }
+  ],
+  "wall_s": 21.9
+ }
+}

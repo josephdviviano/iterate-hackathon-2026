@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-n7e2iyfa",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-test and correlation filtering\n    ids = list(feats.ids)\n    types = feats.types\n    x = feats.x\n    y = feats.y\n    \n    # Calculate effect sizes (mean difference)\n    means_1 = np.mean(x[y == 1], axis=0)\n    means_0 = np.mean(x[y == 0], axis=0)\n    effect_sizes = means_1 - means_0\n    \n    # Rank by effect size magnitude\n    ranked_indices = np.argsort(np.abs(effect_sizes))[::-1]\n    \n    # Filter out correlated pairs (|r| >= 0.6)\n    correlated_pairs = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(np.corrcoef(x[:,i], x[:,j])[0,1]) >= 0.6:\n                correlated_pairs.add((min(ids[i], ids[j]), max(ids[i], ids[j])))\n    \n    # Select top candidates avoiding near-duplicates\n    drivers = []\n    selected_ids = set()\n    for idx in ranked_indices:\n        fid = ids[idx]\n        # Skip if already selected or correlated with selected\n        skip = False\n        for selected_fid in selected_ids:\n            if (min(fid, selected_fid), max(fid, selected_fid)) in correlated_pairs:\n                skip = True\n                break\n        if not skip:\n            drivers.append(fid)\n            selected_ids.add(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # For logistic regression, use all features with significant effect\n    columns = []\n    for i, fid in enumerate(ids):\n        if np.abs(effect_sizes[i]) > 0.1:  # Threshold for inclusion\n            columns.append(fid)\n    \n    # Check for interactions between top drivers\n    products = []\n    if len(drivers) >= 2:\n        # Simple approach: check pairwise products among top drivers\n        for i in range(min(3, len(drivers))):\n            for j in range(i+1, min(3, len(drivers))):\n                products.append((drivers[i], drivers[j]))\n    \n    # Create weighted score from top features\n    loadings = {}\n    if drivers:\n        # Use effect sizes as weights for top features\n        for i, fid in enumerate(drivers):\n            idx = feats.column(fid)\n            loadings[fid] = effect_sizes[idx]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8492,
+  "completion_tokens": 1784,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2498
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2598
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2498
+   }
+  ],
+  "wall_s": 20.8
+ }
+}

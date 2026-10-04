@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-aohkwi5n",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers based on t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for driver selection\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    # Sort by absolute t-statistic and take top 3\n    t_stats.sort(reverse=True)\n    drivers = [fid for _, fid in t_stats[:3]]\n    \n    # Check for correlated pairs with |r| >= 0.6\n    correlations = {}\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find highly correlated pairs\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                correlations[(fid1, fid2)] = corr_matrix[i,j]\n    \n    # If no strong correlations, return just drivers\n    if not correlations:\n        return Design(\n            drivers=tuple(drivers),\n            columns=tuple(drivers),\n            products=(),\n            loadings={}\n        )\n    \n    # Look for product terms involving correlated pairs\n    products = []\n    for (fid1, fid2), corr in correlations.items():\n        # Only consider pairs where both features have strong effect\n        if fid1 in drivers and fid2 in drivers:\n            products.append((fid1, fid2))\n    \n    # If we found product terms, include them\n    if products:\n        columns = tuple(set([fid for pair in products for fid in pair] + drivers))\n        return Design(\n            drivers=tuple(drivers),\n            columns=columns,\n            products=tuple(products),\n            loadings={}\n        )\n    \n    # Otherwise, return just drivers\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(drivers),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers based on t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for driver selection\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    # Sort by absolute t-statistic and take top 3\n    t_stats.sort(reverse=True)\n    drivers = [fid for _, fid in t_stats[:3]]\n    \n    # Check for correlated pairs with |r| >= 0.6\n    correlations = {}\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Find highly correlated pairs\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                correlations[(fid1, fid2)] = corr_matrix[i,j]\n    \n    # If no strong correlations, return just drivers\n    if not correlations:\n        return Design(\n            drivers=tuple(drivers),\n            columns=tuple(drivers),\n            products=(),\n            loadings={}\n        )\n    \n    # Look for product terms involving correlated pairs\n    products = []\n    for (fid1, fid2), corr in correlations.items():\n        # Only consider pairs where both features have strong effect\n        if fid1 in drivers and fid2 in drivers:\n            products.append((fid1, fid2))\n    \n    # If we found product terms, include them\n    if products:\n        columns = tuple(set([fid for pair in products for fid in pair] + drivers))\n        return Design(\n            drivers=tuple(drivers),\n            columns=columns,\n            products=tuple(products),\n            loadings={}\n        )\n    \n    # Otherwise, return just drivers\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(drivers),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8407,
+  "completion_tokens": 1706,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2351
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2643
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2050
+   }
+  ],
+  "wall_s": 19.9
+ }
+}

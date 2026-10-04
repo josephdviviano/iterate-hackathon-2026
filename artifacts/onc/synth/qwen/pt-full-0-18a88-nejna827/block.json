@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nejna827",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = np.array([stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                       feats.x[feats.y==0, feats.column(fid)], \n                                       equal_var=False)[0] \n                       for fid in feats.ids])\n    \n    # Select top features by absolute t-statistic\n    top_indices = np.argsort(np.abs(t_stats))[::-1][:20]\n    top_features = [feats.ids[i] for i in top_indices]\n    \n    # Check for correlated pairs and remove near-duplicates\n    corr_pairs = []\n    if len(top_features) > 1:\n        X_subset = feats.x[:, [feats.column(fid) for fid in top_features]]\n        corr_matrix = np.corrcoef(X_subset.T)\n        for i in range(len(top_features)):\n            for j in range(i+1, len(top_features)):\n                if abs(corr_matrix[i,j]) >= 0.6:\n                    corr_pairs.append((top_features[i], top_features[j]))\n    \n    # Remove one feature from each highly correlated pair\n    to_remove = set()\n    for a, b in corr_pairs:\n        if a in to_remove or b in to_remove:\n            continue\n        # Prefer the one with higher t-statistic\n        try:\n            idx_a = top_features.index(a)\n            idx_b = top_features.index(b)\n            if abs(t_stats[idx_a]) > abs(t_stats[idx_b]):\n                to_remove.add(b)\n            else:\n                to_remove.add(a)\n        except ValueError:\n            # Skip if feature not found (shouldn't happen but just in case)\n            continue\n    \n    # Build final driver list\n    drivers = [fid for fid in top_features if fid not in to_remove][:MAX_DRIVERS]\n    \n    # If no mechanism found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For module-based approach, cluster features with high correlation\n    X_subset = feats.x[:, [feats.column(fid) for fid in drivers]]\n    if len(drivers) > 1:\n        # Use hierarchical clustering to group correlated features\n        try:\n            clustering = AgglomerativeClustering(n_clusters=min(3, len(drivers)), \n                                               linkage='ward', \n                                               affinity='euclidean')\n            clusters = clustering.fit_predict(X_subset)\n            \n            # Find best cluster (highest average t-statistic)\n            cluster_means = []\n            for c in set(clusters):\n                cluster_mean = np.mean([t_stats[feats.column(fid)] \n                                      for i, fid in enumerate(drivers) if clusters[i] == c])\n                cluster_means.append(cluster_mean)\n            \n            best_cluster_idx = np.argmax(cluster_means)\n            \n            # Select features in best cluster\n            module_features = [drivers[i] for i in range(len(drivers)) if clusters[i] == best_cluster_idx]\n            \n            # Create weighted score from module features\n            weights = np.array([abs(t_stats[feats.column(fid)]) for fid in module_features])\n            weights = weights / np.sum(weights)  # Normalize\n            \n            # Return design with module features and their loadings\n            return Design(\n                drivers=tuple(module_features),\n                columns=tuple(module_features),\n                products=(),\n                loadings={fid: float(w) for fid, w in zip(module_features, weights)}\n            )\n        except:\n            # Fallback to simple approach if clustering fails\n            pass\n    \n    # Single driver case or fallback\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(drivers),\n        products=(),\n        loadings={drivers[0]: 1.0}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8676,
+  "completion_tokens": 2291,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: 'WUBC12' is not in list",
+    "bytes": 3226
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3601
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3873
+   }
+  ],
+  "wall_s": 26.5
+ }
+}

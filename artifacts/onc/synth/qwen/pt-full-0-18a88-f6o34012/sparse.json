@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-f6o34012",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Compute correlations\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Keep only unique features\n    keep = [i for i in range(len(ids)) if i not in to_remove]\n    filtered_ids = [ids[i] for i in keep]\n    filtered_x = x[:, keep]\n    \n    # Select top features by t-statistic\n    t_stats = []\n    for i in range(len(filtered_ids)):\n        group0 = filtered_x[y==0, i]\n        group1 = filtered_x[y==1, i]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [filtered_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Check if any features have strong effect\n    if not top_features or max(t_stats) < 5.0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build design\n    drivers = tuple(top_features[:min(MAX_DRIVERS, len(top_features))])\n    columns = tuple(filtered_ids)\n    \n    # Add product terms between top features\n    products = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            a, b = top_features[i], top_features[j]\n            if abs(corr_matrix[ids.index(a), ids.index(b)]) < 0.6:\n                products.append((a, b))\n    \n    # Weighted score using top features\n    loadings = {fid: t_stats[sorted_indices[ids.index(fid)]] \n                for fid in top_features}\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8134,
+  "completion_tokens": 1529,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2009
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1926
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1926
+   }
+  ],
+  "wall_s": 17.5
+ }
+}

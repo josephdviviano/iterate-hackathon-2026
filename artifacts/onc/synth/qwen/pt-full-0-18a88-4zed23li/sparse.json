@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-4zed23li",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates by t-statistic and correlation with outcome\n    t_stats = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        # Compute Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        mean_diff = np.mean(group1) - np.mean(group0)\n        var0 = np.var(group0, ddof=1)\n        var1 = np.var(group1, ddof=1)\n        n0 = len(group0)\n        n1 = len(group1)\n        se = np.sqrt(var0/n0 + var1/n1)\n        t_stat = mean_diff / se if se > 0 else 0\n        t_stats.append(t_stat)\n    \n    # Sort by absolute t-statistic\n    sorted_indices = np.argsort(np.abs(t_stats))[::-1]\n    candidates = [feats.ids[i] for i in sorted_indices]\n    \n    # Remove near-duplicates based on correlation\n    kept = []\n    for fid in candidates:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        is_duplicate = False\n        for kept_fid in kept:\n            kept_col_idx = feats.column(kept_fid)\n            kept_x = feats.x[:, kept_col_idx]\n            corr = np.corrcoef(x, kept_x)[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            kept.append(fid)\n    \n    # Select top drivers using mutual information\n    drivers = []\n    mi_scores = []\n    for fid in kept[:5]:  # Limit to top 5 candidates\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx].reshape(-1, 1)\n        mi = mutual_info_classif(x, feats.y)[0]\n        mi_scores.append((mi, fid))\n    \n    mi_scores.sort(reverse=True)\n    drivers = [fid for _, fid in mi_scores[:MAX_DRIVERS]]\n    \n    # Use only top 3 drivers to keep model small\n    drivers = drivers[:3]\n    \n    # Simple approach: use top 3 drivers directly as columns\n    columns = []\n    for fid in kept[:5]:\n        if fid not in drivers:\n            columns.append(fid)\n    \n    # Limit columns to prevent too many terms\n    columns = columns[:2]\n    \n    # Add interaction terms between top drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            products.append((d1, d2))\n    \n    # Weighted score: use top 3 features with highest t-stats\n    loadings = {}\n    for i, fid in enumerate(kept[:3]):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        # Use t-stat as weight\n        t = t_stats[feats.ids.index(fid)]\n        loadings[fid] = t\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates by t-statistic and correlation with outcome\n    t_stats = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        # Compute Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        mean_diff = np.mean(group1) - np.mean(group0)\n        var0 = np.var(group0, ddof=1)\n        var1 = np.var(group1, ddof=1)\n        n0 = len(group0)\n        n1 = len(group1)\n        se = np.sqrt(var0/n0 + var1/n1)\n        t_stat = mean_diff / se if se > 0 else 0\n        t_stats.append(t_stat)\n    \n    # Sort by absolute t-statistic\n    sorted_indices = np.argsort(np.abs(t_stats))[::-1]\n    candidates = [feats.ids[i] for i in sorted_indices]\n    \n    # Remove near-duplicates based on correlation\n    kept = []\n    for fid in candidates:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        is_duplicate = False\n        for kept_fid in kept:\n            kept_col_idx = feats.column(kept_fid)\n            kept_x = feats.x[:, kept_col_idx]\n            corr = np.corrcoef(x, kept_x)[0, 1]\n            if abs(corr) >= 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            kept.append(fid)\n    \n    # Select top drivers using mutual information\n    drivers = []\n    mi_scores = []\n    for fid in kept[:5]:  # Limit to top 5 candidates\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx].reshape(-1, 1)\n        mi = mutual_info_classif(x, feats.y)[0]\n        mi_scores.append((mi, fid))\n    \n    mi_scores.sort(reverse=True)\n    drivers = [fid for _, fid in mi_scores[:MAX_DRIVERS]]\n    \n    # Use only top 3 drivers to keep model small\n    drivers = drivers[:3]\n    \n    # Simple approach: use top 3 drivers directly as columns\n    columns = []\n    for fid in kept[:5]:\n        if fid not in drivers:\n            columns.append(fid)\n    \n    # Limit columns to prevent too many terms\n    columns = columns[:2]\n    \n    # Add interaction terms between top drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            products.append((d1, d2))\n    \n    # Weighted score: use top 3 features with highest t-stats\n    loadings = {}\n    for i, fid in enumerate(kept[:3]):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        # Use t-stat as weight\n        t = t_stats[feats.ids.index(fid)]\n        loadings[fid] = t\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9001,
+  "completion_tokens": 2379,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3226
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3305
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2760
+   }
+  ],
+  "wall_s": 27.3
+ }
+}

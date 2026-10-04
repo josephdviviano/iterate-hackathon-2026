@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-sz58g7vc",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if we have a strong driver (p < 0.01, |t| > 3)\n    strong_drivers = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('clinical', 'cohort'):\n            t_stat = feats.x[:, i].std() * (feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean())\n            if abs(t_stat) > 3 and feats.y.mean() > 0.1:\n                strong_drivers.append(fid)\n    \n    # If no strong driver found, look for interaction terms\n    if not strong_drivers:\n        # Find features with strong associations (p < 0.05, |t| > 2)\n        candidates = []\n        for i, fid in enumerate(feats.ids):\n            t_stat = feats.x[:, i].std() * (feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean())\n            if abs(t_stat) > 2 and feats.y.mean() > 0.1:\n                candidates.append((fid, abs(t_stat)))\n        \n        # Sort by strength\n        candidates.sort(key=lambda x: x[1], reverse=True)\n        drivers = [fid for fid, _ in candidates[:min(MAX_DRIVERS, len(candidates))]]\n        \n        # For small models, just return the strongest features\n        return Design(\n            drivers=tuple(drivers),\n            columns=tuple(drivers),\n            products=(),\n            loadings={}\n        )\n    \n    # We have a strong driver, use it\n    driver = strong_drivers[0]\n    \n    # Simple approach: return just the driver\n    return Design(\n        drivers=(driver,),\n        columns=(driver,),\n        products=(),\n        loadings={driver: 1.0}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if we have a strong driver (p < 0.01, |t| > 3)\n    strong_drivers = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('clinical', 'cohort'):\n            t_stat = feats.x[:, i].std() * (feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean())\n            if abs(t_stat) > 3 and feats.y.mean() > 0.1:\n                strong_drivers.append(fid)\n    \n    # If no strong driver found, look for interaction terms\n    if not strong_drivers:\n        # Find features with strong associations (p < 0.05, |t| > 2)\n        candidates = []\n        for i, fid in enumerate(feats.ids):\n            t_stat = feats.x[:, i].std() * (feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean())\n            if abs(t_stat) > 2 and feats.y.mean() > 0.1:\n                candidates.append((fid, abs(t_stat)))\n        \n        # Sort by strength\n        candidates.sort(key=lambda x: x[1], reverse=True)\n        drivers = [fid for fid, _ in candidates[:min(MAX_DRIVERS, len(candidates))]]\n        \n        # For small models, just return the strongest features\n        return Design(\n            drivers=tuple(drivers),\n            columns=tuple(drivers),\n            products=(),\n            loadings={}\n        )\n    \n    # We have a strong driver, use it\n    driver = strong_drivers[0]\n    \n    # Simple approach: return just the driver\n    return Design(\n        drivers=(driver,),\n        columns=(driver,),\n        products=(),\n        loadings={driver: 1.0}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5124,
+  "completion_tokens": 1306,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3482
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1659
+   }
+  ],
+  "wall_s": 24.9
+ }
+}

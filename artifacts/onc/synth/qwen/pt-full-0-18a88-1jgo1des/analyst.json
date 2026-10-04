@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1jgo1des",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = set(feats.ids)\n    correlated_pairs = [\n        ('GHMN5', 'NDKE19'), ('UCN10', 'HHED3'), ('UCN10', 'GHMN5'),\n        ('UCN10', 'NDKE19'), ('HHED3', 'GHMN5'), ('HHED3', 'NDKE19'),\n        ('UCN10', 'EXG2A'), ('UCN10', 'DKXM5A'), ('IWQI16', 'ZFR18P'),\n        ('UCN10', 'ABF14'), ('UCN10', 'ARG5'), ('TTF14', 'ARG5'),\n        ('EXG2A', 'HHED3'), ('EZNQ9', 'ZFR18P'), ('IWQI16', 'GHMN5'),\n        ('ARG5', 'HHED3'), ('UCN10', 'ERWQ17'), ('EXG2A', 'NDKE19'),\n        ('HHED3', 'DKXM5A'), ('ZFR18P', 'OHYT16')\n    ]\n    \n    for a, b in correlated_pairs:\n        if a in keep and b in keep:\n            # Keep the one with higher effect size\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            effect_a = np.mean(feats.x[feats.y==1, idx_a]) - np.mean(feats.x[feats.y==0, idx_a])\n            effect_b = np.mean(feats.x[feats.y==1, idx_b]) - np.mean(feats.x[feats.y==0, idx_b])\n            if abs(effect_a) >= abs(effect_b):\n                keep.remove(b)\n            else:\n                keep.remove(a)\n    \n    # Filter to keep features\n    keep_ids = tuple(id for id in feats.ids if id in keep)\n    \n    # Calculate effect sizes for all features\n    effects = []\n    for fid in keep_ids:\n        idx = feats.column(fid)\n        effect = np.mean(feats.x[feats.y==1, idx]) - np.mean(feats.x[feats.y==0, idx])\n        effects.append((fid, abs(effect)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (at most MAX_DRIVERS = 4)\n    drivers = tuple(fid for fid, _ in effects[:MAX_DRIVERS])\n    \n    # For logistic regression, include all features with significant effects\n    columns = keep_ids\n    \n    # Check for strong pairwise interactions among top features\n    products = []\n    top_features = [fid for fid, _ in effects[:min(4, len(effects))]]\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            # Simple heuristic: check if interaction term shows some association\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            interaction = feats.x[:, idx_a] * feats.x[:, idx_b]\n            # Test if interaction term shows association with outcome\n            try:\n                tstat, pval = stats.ttest_ind(interaction[feats.y==1], interaction[feats.y==0])\n                if pval < 0.05:\n                    products.append((a, b))\n            except:\n                pass\n    \n    # Loadings: weight by effect size\n    loadings = {}\n    for fid, effect_size in effects:\n        loadings[fid] = effect_size\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9469,
+  "completion_tokens": 2691,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3467
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3089
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2857
+   }
+  ],
+  "wall_s": 30.5
+ }
+}

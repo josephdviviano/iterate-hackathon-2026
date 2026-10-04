@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-br8uyky5",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly significant features (p < 0.001)\n    sig_feats = [fid for i, fid in enumerate(feats.ids) \n                 if feats.types[i] != 'derived' and \n                 abs(stats.ttest_ind(feats.x[:, feats.column(fid)][feats.y==1], \n                                   feats.x[:, feats.column(fid)][feats.y==0])[0]) > 3.5]\n    \n    if not sig_feats:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find correlated pairs with |r| >= 0.6\n    corr_pairs = []\n    for i, a in enumerate(sig_feats):\n        for b in sig_feats[i+1:]:\n            r = np.corrcoef(feats.x[:, feats.column(a)], feats.x[:, feats.column(b)])[0,1]\n            if abs(r) >= 0.6:\n                corr_pairs.append((a, b))\n    \n    # Cluster correlated features\n    if corr_pairs:\n        # Build adjacency matrix\n        feat_to_idx = {fid: i for i, fid in enumerate(sig_feats)}\n        n = len(sig_feats)\n        adj = np.zeros((n, n))\n        for a, b in corr_pairs:\n            i, j = feat_to_idx[a], feat_to_idx[b]\n            adj[i,j] = adj[j,i] = 1\n        \n        # Spectral clustering to find modules\n        try:\n            clustering = SpectralClustering(n_clusters=1, affinity='precomputed', \n                                          random_state=0).fit(adj)\n            cluster_labels = clustering.labels_\n            module = [sig_feats[i] for i in range(n) if cluster_labels[i] == 0]\n            \n            # Select top features by effect size\n            module.sort(key=lambda fid: abs(stats.ttest_ind(\n                feats.x[:, feats.column(fid)][feats.y==1], \n                feats.x[:, feats.column(fid)][feats.y==0])[0]), reverse=True)\n            \n            # Select top 4 for drivers (max 4 as per error message)\n            drivers = tuple(module[:4])\n            \n            # Use all module features in regression\n            columns = tuple(module)\n            \n            # Weighted score based on standardized values\n            loadings = {fid: np.mean(feats.x[:, feats.column(fid)]) for fid in module}\n            \n            # Limit to small model\n            if len(columns) > 12:\n                columns = columns[:12]\n                drivers = drivers[:min(4, len(drivers))]\n                loadings = {fid: loadings[fid] for fid in columns}\n            \n            return Design(drivers=drivers, columns=columns, products=(), loadings=loadings)\n        except:\n            pass\n    \n    # Fallback to single strongest feature\n    strongest = max(sig_feats, key=lambda fid: abs(stats.ttest_ind(\n        feats.x[:, feats.column(fid)][feats.y==1], \n        feats.x[:, feats.column(fid)][feats.y==0])[0]))\n    \n    return Design(drivers=(strongest,), columns=(strongest,), products=(), loadings={strongest: 1.0})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8569,
+  "completion_tokens": 1985,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2690
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2654
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2899
+   }
+  ],
+  "wall_s": 22.9
+ }
+}

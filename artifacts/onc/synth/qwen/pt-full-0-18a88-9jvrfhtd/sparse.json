@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-9jvrfhtd",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates\n    keep = set()\n    dup_pairs = [\n        ('AGP8', 'OAJN16'), ('SRFN16L', 'SQRO8'), ('SQRO8', 'DCE16'),\n        ('GJND9', 'MXX8'), ('IKQK4', 'GJND9'), ('AGNX14L', 'TOQ2'),\n        ('CQLI16A', 'MKY10'), ('GJND9', 'TOQ2'), ('SRFN16L', 'DCE16'),\n        ('IKQK4', 'MXX8'), ('IKQK4', 'MKY10'), ('TSTG8A', 'GVK10'),\n        ('AGP8', 'GJND9'), ('URJD8', 'BCHM17'), ('EAJW2', 'GJND9'),\n        ('EAJW2', 'TOQ2'), ('VKU1A', 'MXX8'), ('GJND9', 'MKY10'),\n        ('GJND9', 'AGNX14L'), ('GKS6', 'QFC15')\n    ]\n    dup_set = set()\n    for a, b in dup_pairs:\n        dup_set.add(a)\n        dup_set.add(b)\n    \n    # Select top features by t-statistic\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if fid in dup_set:\n            continue\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    t_stats.sort(reverse=True)\n    top_features = [fid for _, fid in t_stats[:20]]\n    \n    # Build logistic regression with selected features\n    X = feats.x[:, [feats.column(fid) for fid in top_features]]\n    lr = LogisticRegression(penalty='l1', solver='liblinear', C=0.1)\n    lr.fit(X, feats.y)\n    \n    # Get coefficients and select drivers\n    coefs = lr.coef_[0]\n    driver_indices = np.argsort(np.abs(coefs))[::-1][:MAX_DRIVERS]\n    drivers = [top_features[i] for i in driver_indices if abs(coefs[i]) > 1e-6]\n    \n    # Limit to at most 4 drivers\n    drivers = drivers[:4]\n    \n    # Create columns and products based on drivers\n    columns = drivers[:]\n    products = []\n    loadings = {}\n    \n    # Add pairwise interactions for top drivers\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            if abs(coefs[drivers.index(drivers[i])] * coefs[drivers.index(drivers[j])]) > 1e-6:\n                products.append((drivers[i], drivers[j]))\n    \n    # Weighted score from top features\n    for i, fid in enumerate(top_features):\n        if abs(coefs[i]) > 1e-6:\n            loadings[fid] = coefs[i]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates\n    keep = set()\n    dup_pairs = [\n        ('AGP8', 'OAJN16'), ('SRFN16L', 'SQRO8'), ('SQRO8', 'DCE16'),\n        ('GJND9', 'MXX8'), ('IKQK4', 'GJND9'), ('AGNX14L', 'TOQ2'),\n        ('CQLI16A', 'MKY10'), ('GJND9', 'TOQ2'), ('SRFN16L', 'DCE16'),\n        ('IKQK4', 'MXX8'), ('IKQK4', 'MKY10'), ('TSTG8A', 'GVK10'),\n        ('AGP8', 'GJND9'), ('URJD8', 'BCHM17'), ('EAJW2', 'GJND9'),\n        ('EAJW2', 'TOQ2'), ('VKU1A', 'MXX8'), ('GJND9', 'MKY10'),\n        ('GJND9', 'AGNX14L'), ('GKS6', 'QFC15')\n    ]\n    dup_set = set()\n    for a, b in dup_pairs:\n        dup_set.add(a)\n        dup_set.add(b)\n    \n    # Select top features by t-statistic\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if fid in dup_set:\n            continue\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        t, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((abs(t), fid))\n    \n    t_stats.sort(reverse=True)\n    top_features = [fid for _, fid in t_stats[:20]]\n    \n    # Build logistic regression with selected features\n    X = feats.x[:, [feats.column(fid) for fid in top_features]]\n    lr = LogisticRegression(penalty='l1', solver='liblinear', C=0.1)\n    lr.fit(X, feats.y)\n    \n    # Get coefficients and select drivers\n    coefs = lr.coef_[0]\n    driver_indices = np.argsort(np.abs(coefs))[::-1][:MAX_DRIVERS]\n    drivers = [top_features[i] for i in driver_indices if abs(coefs[i]) > 1e-6]\n    \n    # Limit to at most 4 drivers\n    drivers = drivers[:4]\n    \n    # Create columns and products based on drivers\n    columns = drivers[:]\n    products = []\n    loadings = {}\n    \n    # Add pairwise interactions for top drivers\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            if abs(coefs[drivers.index(drivers[i])] * coefs[drivers.index(drivers[j])]) > 1e-6:\n                products.append((drivers[i], drivers[j]))\n    \n    # Weighted score from top features\n    for i, fid in enumerate(top_features):\n        if abs(coefs[i]) > 1e-6:\n            loadings[fid] = coefs[i]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4976,
+  "completion_tokens": 1536,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2403
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2467
+   }
+  ],
+  "wall_s": 17.6
+ }
+}

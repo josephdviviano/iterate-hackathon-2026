@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-78lrbixb",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly associated features (p < 0.001)\n    p_values = [stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                               feats.x[feats.y==0, feats.column(fid)], \n                               equal_var=False)[1] \n                for fid in feats.ids]\n    \n    strong_features = [fid for fid, p in zip(feats.ids, p_values) if p < 0.001]\n    \n    # If fewer than 2 strong features, return empty design\n    if len(strong_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for highly correlated pairs (|r| >= 0.6)\n    correlated_pairs = []\n    for i, f1 in enumerate(strong_features):\n        for j, f2 in enumerate(strong_features[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, feats.column(f1)], \n                              feats.x[:, feats.column(f2)])[0,1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.append((f1, f2))\n    \n    # If we have correlated pairs, use the first pair's features\n    if correlated_pairs:\n        f1, f2 = correlated_pairs[0]\n        # Use both features but only include one in drivers\n        return Design(\n            drivers=(f1,),\n            columns=(f1, f2),\n            products=(),\n            loadings={f1: 0.5, f2: 0.5}\n        )\n    \n    # Otherwise, just use the top feature\n    return Design(\n        drivers=(strong_features[0],) if strong_features else (),\n        columns=tuple(strong_features[:2]),\n        products=(),\n        loadings={strong_features[0]: 1.0} if strong_features else {}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly associated features (p < 0.001)\n    p_values = [stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                               feats.x[feats.y==0, feats.column(fid)], \n                               equal_var=False)[1] \n                for fid in feats.ids]\n    \n    strong_features = [fid for fid, p in zip(feats.ids, p_values) if p < 0.001]\n    \n    # If fewer than 2 strong features, return empty design\n    if len(strong_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for highly correlated pairs (|r| >= 0.6)\n    correlated_pairs = []\n    for i, f1 in enumerate(strong_features):\n        for j, f2 in enumerate(strong_features[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, feats.column(f1)], \n                              feats.x[:, feats.column(f2)])[0,1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.append((f1, f2))\n    \n    # If we have correlated pairs, use the first pair's features\n    if correlated_pairs:\n        f1, f2 = correlated_pairs[0]\n        # Use both features but only include one in drivers\n        return Design(\n            drivers=(f1,),\n            columns=(f1, f2),\n            products=(),\n            loadings={f1: 0.5, f2: 0.5}\n        )\n    \n    # Otherwise, just use the top feature\n    return Design(\n        drivers=(strong_features[0],) if strong_features else (),\n        columns=tuple(strong_features[:2]),\n        products=(),\n        loadings={strong_features[0]: 1.0} if strong_features else {}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8558,
+  "completion_tokens": 1638,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nsklearn.utils._param_validation.InvalidParameterError: The 'assign_labels' parameter of SpectralClustering must be a str among {'kmeans', 'discretize', 'cluster_qr'}. Got 'cluster' instead.",
+    "bytes": 2553
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2556
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1642
+   }
+  ],
+  "wall_s": 19.1
+ }
+}

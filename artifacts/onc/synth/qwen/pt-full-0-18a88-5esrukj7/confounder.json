@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5esrukj7",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('copy_number', 'expression'):\n            # Use Welch's t-test effect size\n            t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)\n            effects.append((abs(t_stat), fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    \n    # Check for near-duplicates and remove them\n    to_remove = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if feats.types[i] == feats.types[j]:\n                corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n                if abs(corr) >= 0.6:\n                    to_remove.add(fid2)\n    \n    # Filter out near-duplicates\n    filtered_effects = [(eff, fid) for eff, fid in effects if fid not in to_remove]\n    \n    # If no strong effects, return empty design\n    if len(filtered_effects) < 1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features (at most MAX_DRIVERS-1 to leave room for other mechanisms)\n    top_features = [fid for _, fid in filtered_effects[:MAX_DRIVERS-1]]\n    \n    # For simplicity, just use the top effect sizes as drivers\n    drivers = tuple([fid for _, fid in filtered_effects[:MAX_DRIVERS-1]])\n    \n    # Return design with drivers and their columns\n    return Design(\n        drivers=drivers,\n        columns=tuple(top_features),\n        products=(),\n        loadings={fid: 1.0 for fid in top_features}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('copy_number', 'expression'):\n            # Use Welch's t-test effect size\n            t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)\n            effects.append((abs(t_stat), fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    \n    # Check for near-duplicates and remove them\n    to_remove = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if feats.types[i] == feats.types[j]:\n                corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n                if abs(corr) >= 0.6:\n                    to_remove.add(fid2)\n    \n    # Filter out near-duplicates\n    filtered_effects = [(eff, fid) for eff, fid in effects if fid not in to_remove]\n    \n    # If no strong effects, return empty design\n    if len(filtered_effects) < 1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features (at most MAX_DRIVERS-1 to leave room for other mechanisms)\n    top_features = [fid for _, fid in filtered_effects[:MAX_DRIVERS-1]]\n    \n    # For simplicity, just use the top effect sizes as drivers\n    drivers = tuple([fid for _, fid in filtered_effects[:MAX_DRIVERS-1]])\n    \n    # Return design with drivers and their columns\n    return Design(\n        drivers=drivers,\n        columns=tuple(top_features),\n        products=(),\n        loadings={fid: 1.0 for fid in top_features}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8186,
+  "completion_tokens": 1625,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2381
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2373
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1740
+   }
+  ],
+  "wall_s": 18.6
+ }
+}

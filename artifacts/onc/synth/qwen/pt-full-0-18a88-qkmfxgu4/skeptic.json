@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qkmfxgu4",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import StratifiedKFold\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    significant_features = []\n    for i, fid in enumerate(feats.ids):\n        # Use the actual effect size from feats.types if available\n        effect_size = feats.types[i]\n        if effect_size != 0:  # expression or copy_number\n            # Approximate t-statistic using effect size and sample size\n            t_stat = effect_size * np.sqrt(feats.n - 2)  # simplified t-statistic\n            p_val = 2 * (1 - stats.t.cdf(abs(t_stat), feats.n - 2))\n            if p_val < 0.05:\n                significant_features.append((fid, effect_size))\n    \n    # If no significant features, return empty design\n    if not significant_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build candidate set of features to consider\n    candidates = [f[0] for f in significant_features]\n    \n    # Check for strong correlations among candidates\n    correlated_pairs = set()\n    for i, fid1 in enumerate(candidates):\n        for j, fid2 in enumerate(candidates[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Remove near-duplicates\n    keep = set(candidates)\n    for pair in correlated_pairs:\n        keep.discard(pair[1])  # Keep the first one\n    \n    # Perform cross-validated logistic regression\n    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\n    best_score = -np.inf\n    best_features = []\n    \n    for train_idx, val_idx in skf.split(feats.x, feats.y):\n        x_train = feats.x[train_idx]\n        y_train = feats.y[train_idx]\n        x_val = feats.x[val_idx]\n        y_val = feats.y[val_idx]\n        \n        # Fit logistic regression with all features\n        model = LogisticRegression(penalty='l1', solver='liblinear', C=1.0)\n        model.fit(x_train[:, [feats.column(f) for f in keep]], y_train)\n        \n        # Score on validation set\n        score = model.score(x_val[:, [feats.column(f) for f in keep]], y_val)\n        if score > best_score:\n            best_score = score\n            best_features = list(keep)\n    \n    # Return the best performing subset of features\n    return Design(\n        drivers=(),\n        columns=tuple(best_features),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8333,
+  "completion_tokens": 1922,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2525
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: can't multiply sequence by non-int of type 'numpy.float64'",
+    "bytes": 2686
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: can't multiply sequence by non-int of type 'numpy.float64'",
+    "bytes": 2650
+   }
+  ],
+  "wall_s": 21.1
+ }
+}

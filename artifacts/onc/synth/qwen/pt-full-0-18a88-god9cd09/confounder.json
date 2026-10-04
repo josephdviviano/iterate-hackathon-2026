@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-god9cd09",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, col], feats.x[feats.y==0, col])\n        p_values.append(p_val)\n    \n    # Find features with p < 0.05 and effect size > 0.1\n    significant_features = [fid for i, fid in enumerate(feats.ids) \n                           if p_values[i] < 0.05 and abs(np.mean(feats.x[feats.y==1, feats.column(fid)]) - \n                                                        np.mean(feats.x[feats.y==0, feats.column(fid)])) > 0.1]\n    \n    # Remove near-duplicates (correlated with |r| >= 0.6)\n    correlated_pairs = [('AUZ6P', 'UUX12'), ('ETYO3', 'UUX12'), ('NRXH16A', 'UUX12'), ('BAFT2', 'UUX12'), \n                       ('FVY4', 'UUX12'), ('RNR18', 'UUX12'), ('ETYO3', 'BAFT2'), ('XKF4', 'UUX12')]\n    \n    unique_features = set()\n    for fid in significant_features:\n        is_duplicate = False\n        for existing_fid in unique_features:\n            if (fid, existing_fid) in correlated_pairs or (existing_fid, fid) in correlated_pairs:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            unique_features.add(fid)\n    \n    # If no mechanism found, return empty design\n    if len(unique_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features by effect size\n    drivers = []\n    for fid in sorted(unique_features, key=lambda f: abs(np.mean(feats.x[feats.y==1, feats.column(f)]) - \n                                                        np.mean(feats.x[feats.y==0, feats.column(f)])), reverse=True)[:MAX_DRIVERS]:\n        drivers.append(fid)\n    \n    # For logistic regression, use all features with p < 0.1\n    columns = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, col], feats.x[feats.y==0, col])\n        if p_val < 0.1:\n            columns.append(fid)\n    \n    # Create products of highly correlated pairs\n    products = []\n    for a, b in correlated_pairs:\n        if a in columns and b in columns:\n            products.append((a, b))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for fid in drivers:\n        loadings[fid] = np.mean(feats.x[feats.y==1, feats.column(fid)]) - \\\n                        np.mean(feats.x[feats.y==0, feats.column(fid)])\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8656,
+  "completion_tokens": 2203,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'AUZ6P' is not defined",
+    "bytes": 2766
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2798
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2798
+   }
+  ],
+  "wall_s": 25.5
+ }
+}

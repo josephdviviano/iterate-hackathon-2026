@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3lxmb4qi",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression features for initial analysis\n    expr_ids = [fid for fid, t in zip(feats.ids, feats.types) if t == 'expression']\n    \n    # Calculate effect sizes and p-values for all expression features\n    effects = []\n    for fid in expr_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Effect size: mean difference between groups\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group1 = x[y == 1]\n        group0 = x[y == 0]\n        if len(group1) > 1 and len(group0) > 1:\n            t_stat, p_val = stats.ttest_ind(group1, group0, equal_var=False)\n        else:\n            t_stat, p_val = 0, 1\n            \n        effects.append((fid, effect_size, abs(t_stat), p_val))\n    \n    # Sort by effect size magnitude\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top candidates\n    candidates = [fid for fid, _, _, _ in effects[:20]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    used = set()\n    for fid in candidates:\n        if fid in used:\n            continue\n        keep.append(fid)\n        used.add(fid)\n        \n        # Check correlations\n        col_idx = feats.column(fid)\n        x_fid = feats.x[:, col_idx]\n        for fid2 in candidates:\n            if fid2 == fid or fid2 in used:\n                continue\n            col_idx2 = feats.column(fid2)\n            x_fid2 = feats.x[:, col_idx2]\n            corr = np.corrcoef(x_fid, x_fid2)[0, 1]\n            if abs(corr) >= 0.6:\n                used.add(fid2)\n    \n    # Use only kept features\n    final_features = keep\n    \n    # If no strong signals, return empty design\n    if not final_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Simple approach: select top features for drivers and columns\n    drivers = tuple(final_features[:min(MAX_DRIVERS-1, len(final_features))])\n    columns = tuple(final_features)\n    \n    # Identify potential interaction terms among top features\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            # Only include if both features are in columns\n            if a in columns and b in columns:\n                products.append((a, b))\n    \n    # Create simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(columns[:len(columns)]):\n        # Weight based on effect size ranking\n        loadings[fid] = 1.0 / (i + 1)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8739,
+  "completion_tokens": 2091,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2871
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2897
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2753
+   }
+  ],
+  "wall_s": 23.9
+ }
+}

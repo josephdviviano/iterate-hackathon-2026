@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-j0cixqs0",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify top drivers based on t-statistics\n    driver_scores = []\n    for i, fid in enumerate(feats.ids):\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        driver_scores.append(t_stat)\n    \n    # Select top 4 drivers\n    sorted_indices = np.argsort(driver_scores)[::-1][:4]\n    drivers = [feats.ids[i] for i in sorted_indices if driver_scores[i] > 1.0]\n    \n    # Use only top drivers as columns to keep model small\n    columns = drivers.copy()\n    \n    # Create products only between the drivers themselves\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a,b))\n    \n    # Create loadings for weighted score using drivers\n    loadings = {}\n    for fid in drivers:\n        col_idx = feats.column(fid)\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx]).statistic)\n        loadings[fid] = t_stat\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify top drivers based on t-statistics\n    driver_scores = []\n    for i, fid in enumerate(feats.ids):\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        driver_scores.append(t_stat)\n    \n    # Select top 4 drivers\n    sorted_indices = np.argsort(driver_scores)[::-1][:4]\n    drivers = [feats.ids[i] for i in sorted_indices if driver_scores[i] > 1.0]\n    \n    # Use only top drivers as columns to keep model small\n    columns = drivers.copy()\n    \n    # Create products only between the drivers themselves\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a,b))\n    \n    # Create loadings for weighted score using drivers\n    loadings = {}\n    for fid in drivers:\n        col_idx = feats.column(fid)\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx]).statistic)\n        loadings[fid] = t_stat\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8042,
+  "completion_tokens": 1456,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2252
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2299
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1242
+   }
+  ],
+  "wall_s": 17.0
+ }
+}

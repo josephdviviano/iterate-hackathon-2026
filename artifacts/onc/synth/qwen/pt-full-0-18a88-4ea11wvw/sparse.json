@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-4ea11wvw",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using effect size and significance\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use mean difference\n            y0_mean = np.mean(feats.x[feats.y==0, i])\n            y1_mean = np.mean(feats.x[feats.y==1, i])\n            effect = abs(y1_mean - y0_mean)\n        else:\n            # For expression/copy number, use t-statistic\n            effect = abs(stats.ttest_ind(feats.x[feats.y==0, i], feats.x[feats.y==1, i]).statistic)\n        effects.append(effect)\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effects)[::-1]\n    candidates = [feats.ids[i] for i in sorted_indices[:20]]  # Top 20 candidates\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    if len(candidates) > 1:\n        corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in candidates]].T)\n        for i in range(len(candidates)):\n            for j in range(i+1, len(candidates)):\n                if abs(corr_matrix[i,j]) >= 0.6:\n                    to_remove.add(candidates[j])\n    \n    drivers = [fid for fid in candidates if fid not in to_remove][:MAX_DRIVERS]\n    \n    # Build columns list including drivers and their interactions\n    columns = list(drivers)\n    \n    # Add significant pairwise interactions\n    products = []\n    for i, fid1 in enumerate(columns):\n        for fid2 in columns[i+1:]:\n            # Check if interaction term would be useful\n            col1_idx = feats.column(fid1)\n            col2_idx = feats.column(fid2)\n            interaction = feats.x[:, col1_idx] * feats.x[:, col2_idx]\n            \n            # Test interaction significance\n            mi = mutual_info_classif(interaction.reshape(-1,1), feats.y)[0]\n            if mi > 0.01:  # Threshold for inclusion\n                products.append((fid1, fid2))\n                \n    # If no clear drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n        \n    # Create weighted score from top drivers\n    loadings = {}\n    for i, fid in enumerate(drivers):\n        loadings[fid] = 1.0 / (i+1)  # Weight inversely by rank\n        \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                 products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using effect size and significance\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use mean difference\n            y0_mean = np.mean(feats.x[feats.y==0, i])\n            y1_mean = np.mean(feats.x[feats.y==1, i])\n            effect = abs(y1_mean - y0_mean)\n        else:\n            # For expression/copy number, use t-statistic\n            effect = abs(stats.ttest_ind(feats.x[feats.y==0, i], feats.x[feats.y==1, i]).statistic)\n        effects.append(effect)\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effects)[::-1]\n    candidates = [feats.ids[i] for i in sorted_indices[:20]]  # Top 20 candidates\n    \n    # Remove near-duplicates based on correlation\n    to_remove = set()\n    if len(candidates) > 1:\n        corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in candidates]].T)\n        for i in range(len(candidates)):\n            for j in range(i+1, len(candidates)):\n                if abs(corr_matrix[i,j]) >= 0.6:\n                    to_remove.add(candidates[j])\n    \n    drivers = [fid for fid in candidates if fid not in to_remove][:MAX_DRIVERS]\n    \n    # Build columns list including drivers and their interactions\n    columns = list(drivers)\n    \n    # Add significant pairwise interactions\n    products = []\n    for i, fid1 in enumerate(columns):\n        for fid2 in columns[i+1:]:\n            # Check if interaction term would be useful\n            col1_idx = feats.column(fid1)\n            col2_idx = feats.column(fid2)\n            interaction = feats.x[:, col1_idx] * feats.x[:, col2_idx]\n            \n            # Test interaction significance\n            mi = mutual_info_classif(interaction.reshape(-1,1), feats.y)[0]\n            if mi > 0.01:  # Threshold for inclusion\n                products.append((fid1, fid2))\n                \n    # If no clear drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n        \n    # Create weighted score from top drivers\n    loadings = {}\n    for i, fid in enumerate(drivers):\n        loadings[fid] = 1.0 / (i+1)  # Weight inversely by rank\n        \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                 products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8489,
+  "completion_tokens": 1832,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2497
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2448
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2496
+   }
+  ],
+  "wall_s": 21.2
+ }
+}

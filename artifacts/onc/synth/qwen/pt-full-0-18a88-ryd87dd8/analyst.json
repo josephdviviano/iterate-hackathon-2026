@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ryd87dd8",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Get top features by t-statistic\n    top_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'expression':\n            t_stat = abs(stats.ttest_ind(feats.x[:, i][feats.y==1], feats.x[:, i][feats.y==0]).statistic)\n            top_features.append((fid, t_stat))\n    \n    top_features.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in top_features[:10]]\n    \n    # Remove near-duplicates based on correlation\n    corr_pairs = [\n        ('VGG7', 'LKG19'), ('LKG19', 'YGE14'), ('LKG19', 'VFJA11L'), \n        ('LKG19', 'PYVC4'), ('TSEY12', 'LKG19'), ('LKG19', 'GCX7'),\n        ('VGG7', 'GCX7'), ('EXG10', 'GCX7'), ('VGG7', 'VFJA11L'),\n        ('VGG7', 'YGE14'), ('VGG7', 'VILW17A'), ('ECGB3', 'INMV1B'),\n        ('EXG10', 'LKG19'), ('KGLO14', 'AVK4'), ('VFJA11L', 'GCX7'),\n        ('LKG19', 'VILW17A'), ('TSEY12', 'YGE14'), ('PVXY10', 'INMV1B'),\n        ('VILW17A', 'INMV1B'), ('JLO1A', 'AUSV14')\n    ]\n    \n    # Remove duplicates (keep first occurrence)\n    filtered_features = []\n    used = set()\n    for fid in top_features:\n        is_duplicate = False\n        for pair in corr_pairs:\n            if fid in pair and any(p in used for p in pair):\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            filtered_features.append(fid)\n            used.add(fid)\n    \n    # If no mechanism, return empty design\n    if len(filtered_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features for model\n    selected_features = filtered_features[:MAX_DRIVERS]\n    \n    # Create columns and products\n    columns = tuple(selected_features)\n    products = tuple([(a, b) for i, a in enumerate(selected_features) \n                      for j, b in enumerate(selected_features) if i < j])\n    \n    # Weighted score: use mean difference as weights\n    loadings = {}\n    for fid in selected_features:\n        col_idx = feats.column(fid)\n        diff = np.mean(feats.x[:, col_idx][feats.y==1]) - np.mean(feats.x[:, col_idx][feats.y==0])\n        loadings[fid] = diff\n    \n    # Drivers: top features by effect size\n    drivers = tuple([fid for fid, _ in sorted([(fid, loadings[fid]) for fid in selected_features], \n                                              key=lambda x: abs(x[1]), reverse=True)])\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Get top features by t-statistic\n    top_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'expression':\n            t_stat = abs(stats.ttest_ind(feats.x[:, i][feats.y==1], feats.x[:, i][feats.y==0]).statistic)\n            top_features.append((fid, t_stat))\n    \n    top_features.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in top_features[:10]]\n    \n    # Remove near-duplicates based on correlation\n    corr_pairs = [\n        ('VGG7', 'LKG19'), ('LKG19', 'YGE14'), ('LKG19', 'VFJA11L'), \n        ('LKG19', 'PYVC4'), ('TSEY12', 'LKG19'), ('LKG19', 'GCX7'),\n        ('VGG7', 'GCX7'), ('EXG10', 'GCX7'), ('VGG7', 'VFJA11L'),\n        ('VGG7', 'YGE14'), ('VGG7', 'VILW17A'), ('ECGB3', 'INMV1B'),\n        ('EXG10', 'LKG19'), ('KGLO14', 'AVK4'), ('VFJA11L', 'GCX7'),\n        ('LKG19', 'VILW17A'), ('TSEY12', 'YGE14'), ('PVXY10', 'INMV1B'),\n        ('VILW17A', 'INMV1B'), ('JLO1A', 'AUSV14')\n    ]\n    \n    # Remove duplicates (keep first occurrence)\n    filtered_features = []\n    used = set()\n    for fid in top_features:\n        is_duplicate = False\n        for pair in corr_pairs:\n            if fid in pair and any(p in used for p in pair):\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            filtered_features.append(fid)\n            used.add(fid)\n    \n    # If no mechanism, return empty design\n    if len(filtered_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select features for model\n    selected_features = filtered_features[:MAX_DRIVERS]\n    \n    # Create columns and products\n    columns = tuple(selected_features)\n    products = tuple([(a, b) for i, a in enumerate(selected_features) \n                      for j, b in enumerate(selected_features) if i < j])\n    \n    # Weighted score: use mean difference as weights\n    loadings = {}\n    for fid in selected_features:\n        col_idx = feats.column(fid)\n        diff = np.mean(feats.x[:, col_idx][feats.y==1]) - np.mean(feats.x[:, col_idx][feats.y==0])\n        loadings[fid] = diff\n    \n    # Drivers: top features by effect size\n    drivers = tuple([fid for fid, _ in sorted([(fid, loadings[fid]) for fid in selected_features], \n                                              key=lambda x: abs(x[1]), reverse=True)])\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9065,
+  "completion_tokens": 2511,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3143
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3264
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2518
+   }
+  ],
+  "wall_s": 27.9
+ }
+}

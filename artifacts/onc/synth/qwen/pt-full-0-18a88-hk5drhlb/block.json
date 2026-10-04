@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-hk5drhlb",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with significant association (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'copy_number':  # Skip copy numbers for simplicity\n            continue\n        t_stat = feats.x[:, i].std() * np.sqrt(feats.n) / (feats.x[:, i].std() + 1e-8)\n        p_val = 2 * (1 - stats.t.cdf(abs(t_stat), feats.n - 2))\n        if p_val < 0.05:\n            sig_features.append(fid)\n    \n    # Check for correlated pairs and remove near-duplicates\n    correlations = {}\n    for a, b in [('NWZ14', 'NVFC13L'), ('SEXS7', 'BQLU5'), ('SEXS7', 'KVTD6'),\n                 ('BEKD2', 'YRCJ5'), ('KRA19B', 'BQLU5'), ('SEXS7', 'NWDZ4L'),\n                 ('KVTD6', 'KOCP3P'), ('RDXD13', 'GWBR18'), ('SEXS7', 'OHUR8A'),\n                 ('JIW6', 'SEXS7'), ('OHUR8A', 'BQLU5'), ('CBVT17', 'SEXS7'),\n                 ('SEXS7', 'RQJ15'), ('KVTD6', 'BQLU5'), ('VDB1', 'GURM16'),\n                 ('NWDZ4L', 'OHUR8A'), ('JIW6', 'BQLU5'), ('NWDZ4L', 'BQLU5'),\n                 ('TXA3', 'LKK10L'), ('CBVT17', 'BQLU5')]:\n        if a in feats.ids and b in feats.ids:\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            corr = np.corrcoef(feats.x[:, idx_a], feats.x[:, idx_b])[0, 1]\n            correlations[(a, b)] = abs(corr)\n    \n    # Remove near-duplicates\n    to_remove = set()\n    for (a, b), r in correlations.items():\n        if r >= 0.6:\n            to_remove.add(b)\n    \n    # Select remaining features\n    selected = [fid for fid in sig_features if fid not in to_remove][:MAX_DRIVERS]\n    \n    # If no strong signals, return empty design\n    if len(selected) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create a weighted score using selected features\n    weights = {}\n    for fid in selected:\n        idx = feats.column(fid)\n        # Simple correlation-based weight\n        weight = np.abs(np.corrcoef(feats.x[:, idx], feats.y)[0, 1])\n        weights[fid] = weight\n    \n    # For logistic regression, we include all selected features\n    return Design(\n        drivers=tuple(selected[:4]),  # Limit to at most 4 drivers\n        columns=tuple(selected),\n        products=(),\n        loadings=weights\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with significant association (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'copy_number':  # Skip copy numbers for simplicity\n            continue\n        t_stat = feats.x[:, i].std() * np.sqrt(feats.n) / (feats.x[:, i].std() + 1e-8)\n        p_val = 2 * (1 - stats.t.cdf(abs(t_stat), feats.n - 2))\n        if p_val < 0.05:\n            sig_features.append(fid)\n    \n    # Check for correlated pairs and remove near-duplicates\n    correlations = {}\n    for a, b in [('NWZ14', 'NVFC13L'), ('SEXS7', 'BQLU5'), ('SEXS7', 'KVTD6'),\n                 ('BEKD2', 'YRCJ5'), ('KRA19B', 'BQLU5'), ('SEXS7', 'NWDZ4L'),\n                 ('KVTD6', 'KOCP3P'), ('RDXD13', 'GWBR18'), ('SEXS7', 'OHUR8A'),\n                 ('JIW6', 'SEXS7'), ('OHUR8A', 'BQLU5'), ('CBVT17', 'SEXS7'),\n                 ('SEXS7', 'RQJ15'), ('KVTD6', 'BQLU5'), ('VDB1', 'GURM16'),\n                 ('NWDZ4L', 'OHUR8A'), ('JIW6', 'BQLU5'), ('NWDZ4L', 'BQLU5'),\n                 ('TXA3', 'LKK10L'), ('CBVT17', 'BQLU5')]:\n        if a in feats.ids and b in feats.ids:\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            corr = np.corrcoef(feats.x[:, idx_a], feats.x[:, idx_b])[0, 1]\n            correlations[(a, b)] = abs(corr)\n    \n    # Remove near-duplicates\n    to_remove = set()\n    for (a, b), r in correlations.items():\n        if r >= 0.6:\n            to_remove.add(b)\n    \n    # Select remaining features\n    selected = [fid for fid in sig_features if fid not in to_remove][:MAX_DRIVERS]\n    \n    # If no strong signals, return empty design\n    if len(selected) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create a weighted score using selected features\n    weights = {}\n    for fid in selected:\n        idx = feats.column(fid)\n        # Simple correlation-based weight\n        weight = np.abs(np.corrcoef(feats.x[:, idx], feats.y)[0, 1])\n        weights[fid] = weight\n    \n    # For logistic regression, we include all selected features\n    return Design(\n        drivers=tuple(selected[:4]),  # Limit to at most 4 drivers\n        columns=tuple(selected),\n        products=(),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4947,
+  "completion_tokens": 1456,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2420
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2454
+   }
+  ],
+  "wall_s": 16.5
+ }
+}

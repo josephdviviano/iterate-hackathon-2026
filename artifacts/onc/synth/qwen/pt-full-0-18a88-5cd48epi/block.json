@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5cd48epi",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Calculate t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'clinical':\n            y0 = feats.x[feats.y==0, i]\n            y1 = feats.x[feats.y==1, i]\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic and get top features\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [feats.ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # If no strong signals, return empty design\n    if max(t_stats) <= 2.0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return top features as drivers and columns\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(top_features),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Calculate t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'clinical':\n            y0 = feats.x[feats.y==0, i]\n            y1 = feats.x[feats.y==1, i]\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic and get top features\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [feats.ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # If no strong signals, return empty design\n    if max(t_stats) <= 2.0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return top features as drivers and columns\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(top_features),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8881,
+  "completion_tokens": 1832,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3581
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3581
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 927
+   }
+  ],
+  "wall_s": 21.7
+ }
+}

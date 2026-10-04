@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-bh57vrx9",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated features (|r| >= 0.6)\n    corr_matrix = np.corrcoef(feats.x.T)\n    high_corr_pairs = []\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                high_corr_pairs.append((feats.ids[i], feats.ids[j]))\n    \n    # Group correlated features into modules using hierarchical clustering\n    if not high_corr_pairs:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create adjacency matrix for clustering\n    all_features = set()\n    for a, b in high_corr_pairs:\n        all_features.add(a)\n        all_features.add(b)\n    \n    feature_list = sorted(list(all_features))\n    n_features = len(feature_list)\n    \n    adj_matrix = np.zeros((n_features, n_features))\n    for a, b in high_corr_pairs:\n        i, j = feature_list.index(a), feature_list.index(b)\n        adj_matrix[i,j] = adj_matrix[j,i] = 1\n    \n    # Cluster features based on correlation\n    clustering = AgglomerativeClustering(n_clusters=1, linkage='complete')\n    clusters = clustering.fit_predict(adj_matrix)\n    \n    # Get the main module (most correlated features)\n    module_features = [feature_list[i] for i in range(n_features) if clusters[i] == 0]\n    \n    # Compute weighted score using t-statistics as weights\n    loadings = {}\n    for fid in module_features:\n        col_idx = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx]).statistic\n        loadings[fid] = t_stat\n    \n    # Select top features by absolute t-statistic for drivers\n    sorted_features = sorted(loadings.keys(), key=lambda x: abs(loadings[x]), reverse=True)\n    drivers = tuple(sorted_features[:min(MAX_DRIVERS, len(sorted_features))])\n    \n    # Include all module features in regression\n    columns = tuple(module_features)\n    products = ()\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8087,
+  "completion_tokens": 1573,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2196
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2178
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2117
+   }
+  ],
+  "wall_s": 18.2
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-83fffk7e",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression and clinical features\n    expr_clin_ids = [fid for fid, typ in zip(feats.ids, feats.types) \n                     if typ in ('expression', 'clinical')]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    feature_indices = [feats.column(fid) for fid in expr_clin_ids]\n    x_subset = feats.x[:, feature_indices]\n    \n    # Compute correlation matrix manually\n    corr_mat = np.corrcoef(x_subset.T)\n    n_features = len(expr_clin_ids)\n    \n    # Create adjacency matrix for correlated features\n    adj = np.abs(corr_mat) >= 0.6\n    np.fill_diagonal(adj, False)\n    \n    # Cluster correlated features using hierarchical clustering\n    clustering = AgglomerativeClustering(\n        n_clusters=None, \n        distance_threshold=1-0.6,\n        linkage='average'\n    )\n    clusters = clustering.fit_predict(1 - corr_mat)\n    \n    # For each cluster, select the feature with highest t-statistic\n    drivers = []\n    seen = set()\n    \n    for i in range(max(clusters) + 1):\n        cluster_features = [expr_clin_ids[j] for j in range(n_features) if clusters[j] == i]\n        if not cluster_features:\n            continue\n            \n        # Find feature with highest absolute t-statistic in this cluster\n        best_fid = max(cluster_features, key=lambda fid: abs(stats.ttest_ind(\n            feats.x[feats.y==1, feats.column(fid)], \n            feats.x[feats.y==0, feats.column(fid)], \n            equal_var=False\n        )[0]))\n        \n        if best_fid not in seen:\n            drivers.append(best_fid)\n            seen.add(best_fid)\n            \n        # Stop when we have MAX_DRIVERS or no more features\n        if len(drivers) >= MAX_DRIVERS:\n            break\n    \n    # Return design\n    return Design(\n        drivers=tuple(drivers),\n        columns=expr_clin_ids,\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8037,
+  "completion_tokens": 1418,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 1975
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2030
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1998
+   }
+  ],
+  "wall_s": 16.6
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-le4ozk2j",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers (clinical or cohort variables)\n    clinical_vars = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'clinical']\n    \n    # If we have clinical variables, check if any drives outcome strongly\n    if clinical_vars:\n        # Check correlation between clinical variables and outcome\n        best_clinical = None\n        max_corr = 0\n        for fid in clinical_vars:\n            col_idx = feats.column(fid)\n            corr = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n            if abs(corr) > max_corr:\n                max_corr = abs(corr)\n                best_clinical = fid\n        \n        # If strong correlation, use as driver\n        if max_corr > 0.2:\n            return Design(\n                drivers=(best_clinical,),\n                columns=feats.ids,\n                products=(),\n                loadings={}\n            )\n    \n    # No clear driver found, look for strong individual predictors\n    # Use Welch's t-test to rank features\n    scores = []\n    for i, fid in enumerate(feats.ids):\n        feat_vals = feats.x[:, i]\n        y0 = feat_vals[feats.y == 0]\n        y1 = feat_vals[feats.y == 1]\n        \n        # Welch's t-test\n        if len(y0) > 1 and len(y1) > 1:\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        else:\n            t_stat = 0\n            \n        scores.append(abs(t_stat))\n    \n    # Rank features by score\n    ranked_indices = np.argsort(scores)[::-1]\n    drivers = []\n    for i in ranked_indices:\n        if len(drivers) >= MAX_DRIVERS:\n            break\n        if scores[i] > 1.0:\n            drivers.append(feats.ids[i])\n    \n    drivers = tuple(drivers)\n    \n    # If no strong drivers, return empty design\n    if not drivers:\n        return Design(\n            drivers=(),\n            columns=feats.ids,\n            products=(),\n            loadings={}\n        )\n    \n    # For the design, include all features and add some products of top features\n    columns = feats.ids\n    products = []\n    \n    # Add products of top features (if more than one driver)\n    if len(drivers) > 1:\n        top_drivers = list(drivers)[:3]  # Top 3 drivers\n        for i in range(len(top_drivers)):\n            for j in range(i+1, len(top_drivers)):\n                products.append((top_drivers[i], top_drivers[j]))\n    \n    # Create weighted loading based on t-scores\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        feat_vals = feats.x[:, i]\n        y0 = feat_vals[feats.y == 0]\n        y1 = feat_vals[feats.y == 1]\n        if len(y0) > 1 and len(y1) > 1:\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            loadings[fid] = t_stat\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8688,
+  "completion_tokens": 2175,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2928
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2895
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2895
+   }
+  ],
+  "wall_s": 24.9
+ }
+}

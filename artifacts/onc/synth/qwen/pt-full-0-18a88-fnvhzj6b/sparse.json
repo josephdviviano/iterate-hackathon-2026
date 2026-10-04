@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-fnvhzj6b",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics and correlation filtering\n    ids = feats.ids\n    types = feats.types\n    x = feats.x\n    y = feats.y\n    \n    # Calculate t-statistics for each feature\n    t_stats = []\n    for i, fid in enumerate(ids):\n        x1 = x[y==1, i]\n        x0 = x[y==0, i]\n        if len(x1) > 1 and len(x0) > 1:\n            t, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        else:\n            t = 0\n        t_stats.append(abs(t))\n    \n    # Sort by absolute t-statistic\n    sorted_idx = np.argsort(t_stats)[::-1]\n    candidates = [ids[i] for i in sorted_idx]\n    \n    # Remove near-duplicates based on correlations\n    keep = []\n    correlated_pairs = set()\n    \n    # Check for strong correlations (|r| >= 0.6)\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            corr = np.corrcoef(x[:,i], x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.add((ids[i], ids[j]))\n    \n    # Filter out correlated features, keeping only one from each pair\n    used = set()\n    for fid in candidates:\n        if fid in used:\n            continue\n        keep.append(fid)\n        used.add(fid)\n        # Also mark correlated features as used\n        for other_fid, corr_fid in correlated_pairs:\n            if other_fid == fid:\n                used.add(corr_fid)\n            elif corr_fid == fid:\n                used.add(other_fid)\n    \n    # Limit to MAX_DRIVERS\n    drivers = tuple(keep[:MAX_DRIVERS])\n    \n    # For columns, use all features with significant t-stats\n    columns = tuple([fid for i, fid in enumerate(ids) \n                     if t_stats[i] > 1.5])\n    \n    # For products, look for interactions between top features\n    products = []\n    top_features = list(columns)[:10]  # Top 10 features for interaction search\n    \n    # Simple approach: check pairwise products of top features\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            a, b = top_features[i], top_features[j]\n            if a != b:\n                products.append((a, b))\n    \n    # Create loadings dictionary for weighted score\n    loadings = {}\n    for i, fid in enumerate(ids):\n        if t_stats[i] > 1.5:\n            loadings[fid] = t_stats[i]\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8425,
+  "completion_tokens": 1968,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2636
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2775
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2477
+   }
+  ],
+  "wall_s": 22.7
+ }
+}

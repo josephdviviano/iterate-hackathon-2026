@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-8sof5dqs",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Compute t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        col_idx = feats.column(fid)\n        t_stat = stats.ttest_ind(\n            feats.x[feats.y==1, col_idx], \n            feats.x[feats.y==0, col_idx]\n        )[0]\n        t_stats.append((fid, t_stat))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top features (at most MAX_DRIVERS)\n    drivers = tuple([fid for fid, _ in t_stats[:MAX_DRIVERS]])\n    columns = tuple([fid for fid, _ in t_stats])\n    \n    # Add some interaction terms\n    products = []\n    if len(columns) >= 2:\n        products = [(columns[0], columns[1])]\n    \n    # Weighted loading based on t-statistics\n    loadings = {fid: t for fid, t in t_stats}\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9121,
+  "completion_tokens": 2149,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4270
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4316
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1004
+   }
+  ],
+  "wall_s": 24.4
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-d86c32cn",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using effect size and significance\n    ids = feats.ids\n    types = feats.types\n    x = feats.x\n    y = feats.y\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    means_1 = np.mean(x[y==1], axis=0)\n    means_0 = np.mean(x[y==0], axis=0)\n    effect_sizes = means_1 - means_0\n    \n    # Welch's t-test for significance\n    t_stats = []\n    for i, fid in enumerate(ids):\n        group1 = x[y==1, i]\n        group0 = x[y==0, i]\n        if len(group1) > 1 and len(group0) > 1:\n            t, _ = stats.ttest_ind(group1, group0, equal_var=False)\n        else:\n            t = 0\n        t_stats.append(t)\n    \n    # Rank by absolute t-statistic (significance) then effect size\n    scores = [(abs(t), abs(es), i) for i, (t, es) in enumerate(zip(t_stats, effect_sizes))]\n    scores.sort(reverse=True)\n    \n    # Select top features, avoiding near-duplicates\n    selected_ids = set()\n    drivers = []\n    used_indices = set()\n    \n    # Remove near-duplicates based on correlation\n    corr_matrix = np.corrcoef(x.T)\n    correlated_pairs = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                correlated_pairs.add((min(i,j), max(i,j)))\n    \n    for _, _, idx in scores[:20]:  # Consider top 20 features\n        if idx in used_indices:\n            continue\n            \n        # Check if this feature is correlated with any already selected\n        is_correlated = False\n        for sel_idx in selected_ids:\n            if (min(idx, sel_idx), max(idx, sel_idx)) in correlated_pairs:\n                is_correlated = True\n                break\n                \n        if not is_correlated:\n            selected_ids.add(idx)\n            drivers.append(ids[idx])\n            used_indices.add(idx)\n            \n        if len(selected_ids) >= MAX_DRIVERS:\n            break\n    \n    # If no strong drivers found, return empty design\n    if len(drivers) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build columns list with non-correlated features\n    columns = [fid for i, fid in enumerate(ids) if i in selected_ids]\n    \n    # Build products list with pairwise interactions between drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for j, d2 in enumerate(drivers[i+1:], i+1):\n            products.append((d1, d2))\n    \n    # Create loadings for a weighted score\n    loadings = {}\n    for i, fid in enumerate(ids):\n        if i in selected_ids:\n            # Weight by standardized effect size\n            loadings[fid] = effect_sizes[i] / (np.std(x[:,i]) + 1e-8)\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                  products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using effect size and significance\n    ids = feats.ids\n    types = feats.types\n    x = feats.x\n    y = feats.y\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    means_1 = np.mean(x[y==1], axis=0)\n    means_0 = np.mean(x[y==0], axis=0)\n    effect_sizes = means_1 - means_0\n    \n    # Welch's t-test for significance\n    t_stats = []\n    for i, fid in enumerate(ids):\n        group1 = x[y==1, i]\n        group0 = x[y==0, i]\n        if len(group1) > 1 and len(group0) > 1:\n            t, _ = stats.ttest_ind(group1, group0, equal_var=False)\n        else:\n            t = 0\n        t_stats.append(t)\n    \n    # Rank by absolute t-statistic (significance) then effect size\n    scores = [(abs(t), abs(es), i) for i, (t, es) in enumerate(zip(t_stats, effect_sizes))]\n    scores.sort(reverse=True)\n    \n    # Select top features, avoiding near-duplicates\n    selected_ids = set()\n    drivers = []\n    used_indices = set()\n    \n    # Remove near-duplicates based on correlation\n    corr_matrix = np.corrcoef(x.T)\n    correlated_pairs = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                correlated_pairs.add((min(i,j), max(i,j)))\n    \n    for _, _, idx in scores[:20]:  # Consider top 20 features\n        if idx in used_indices:\n            continue\n            \n        # Check if this feature is correlated with any already selected\n        is_correlated = False\n        for sel_idx in selected_ids:\n            if (min(idx, sel_idx), max(idx, sel_idx)) in correlated_pairs:\n                is_correlated = True\n                break\n                \n        if not is_correlated:\n            selected_ids.add(idx)\n            drivers.append(ids[idx])\n            used_indices.add(idx)\n            \n        if len(selected_ids) >= MAX_DRIVERS:\n            break\n    \n    # If no strong drivers found, return empty design\n    if len(drivers) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build columns list with non-correlated features\n    columns = [fid for i, fid in enumerate(ids) if i in selected_ids]\n    \n    # Build products list with pairwise interactions between drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for j, d2 in enumerate(drivers[i+1:], i+1):\n            products.append((d1, d2))\n    \n    # Create loadings for a weighted score\n    loadings = {}\n    for i, fid in enumerate(ids):\n        if i in selected_ids:\n            # Weight by standardized effect size\n            loadings[fid] = effect_sizes[i] / (np.std(x[:,i]) + 1e-8)\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                  products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8747,
+  "completion_tokens": 2238,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3012
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3146
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2866
+   }
+  ],
+  "wall_s": 25.8
+ }
+}

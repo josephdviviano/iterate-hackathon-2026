@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5cd48epi",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Look for features with strong associations to outcome\n    scores = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col], feats.x[feats.y==0, col])\n        scores.append((abs(t_stat), fid))\n    \n    scores.sort(reverse=True)\n    \n    # Get top features, but limit to MAX_DRIVERS\n    drivers = [fid for _, fid in scores[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation\n    keep_features = set()\n    used = set()\n    \n    # Simple approach: just take first few non-correlated ones\n    for fid in drivers:\n        if fid in used:\n            continue\n        keep_features.add(fid)\n        used.add(fid)\n        # Mark correlated features as used\n        for other_fid in feats.ids:\n            if other_fid != fid:\n                corr = np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(other_fid)])[0,1]\n                if abs(corr) >= 0.6:\n                    used.add(other_fid)\n        if len(keep_features) >= MAX_DRIVERS:\n            break\n    \n    # If no strong drivers found, return empty design\n    if not keep_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return design with selected drivers\n    return Design(\n        drivers=tuple(keep_features),\n        columns=tuple(keep_features),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Look for features with strong associations to outcome\n    scores = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col], feats.x[feats.y==0, col])\n        scores.append((abs(t_stat), fid))\n    \n    scores.sort(reverse=True)\n    \n    # Get top features, but limit to MAX_DRIVERS\n    drivers = [fid for _, fid in scores[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation\n    keep_features = set()\n    used = set()\n    \n    # Simple approach: just take first few non-correlated ones\n    for fid in drivers:\n        if fid in used:\n            continue\n        keep_features.add(fid)\n        used.add(fid)\n        # Mark correlated features as used\n        for other_fid in feats.ids:\n            if other_fid != fid:\n                corr = np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(other_fid)])[0,1]\n                if abs(corr) >= 0.6:\n                    used.add(other_fid)\n        if len(keep_features) >= MAX_DRIVERS:\n            break\n    \n    # If no strong drivers found, return empty design\n    if not keep_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return design with selected drivers\n    return Design(\n        drivers=tuple(keep_features),\n        columns=tuple(keep_features),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8340,
+  "completion_tokens": 1452,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3069
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1479
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1483
+   }
+  ],
+  "wall_s": 17.6
+ }
+}

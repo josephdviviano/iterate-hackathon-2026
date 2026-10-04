@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-3zpcreik",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Build adjacency matrix from correlations\n    n = len(feats.ids)\n    adj = np.zeros((n, n))\n    for fid1, fid2 in corr_pairs:\n        i, j = feats.column(fid1), feats.column(fid2)\n        adj[i,j] = adj[j,i] = 1\n    \n    # Cluster features using spectral clustering\n    if np.sum(adj) > 0:\n        clustering = SpectralClustering(n_clusters=1, affinity='precomputed', \n                                       random_state=0).fit(adj)\n        cluster_labels = clustering.labels_\n        module_features = [feats.ids[i] for i in range(n) if cluster_labels[i] == 0]\n    else:\n        # No strong correlations, use top features by t-statistic\n        t_stats = []\n        for i, fid in enumerate(feats.ids):\n            y0 = feats.x[feats.y==0, i]\n            y1 = feats.x[feats.y==1, i]\n            t_stat, _ = stats.ttest_ind(y0, y1)\n            t_stats.append(abs(t_stat))\n        top_indices = np.argsort(t_stats)[::-1][:5]\n        module_features = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates (keep only one from each pair)\n    unique_features = []\n    seen = set()\n    for fid in module_features:\n        if fid not in seen:\n            seen.add(fid)\n            unique_features.append(fid)\n    \n    # Limit to maximum drivers\n    unique_features = unique_features[:MAX_DRIVERS]\n    \n    # Compute weighted score based on effect sizes\n    weights = {}\n    for fid in unique_features:\n        i = feats.column(fid)\n        y0 = feats.x[feats.y==0, i]\n        y1 = feats.x[feats.y==1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1)\n        weights[fid] = t_stat\n    \n    # Normalize weights\n    w_sum = sum(abs(w) for w in weights.values())\n    if w_sum > 0:\n        for fid in weights:\n            weights[fid] /= w_sum\n    \n    return Design(\n        drivers=(unique_features[0],) if unique_features else (),\n        columns=tuple(unique_features),\n        products=(),\n        loadings=weights\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify highly correlated pairs\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Build adjacency matrix from correlations\n    n = len(feats.ids)\n    adj = np.zeros((n, n))\n    for fid1, fid2 in corr_pairs:\n        i, j = feats.column(fid1), feats.column(fid2)\n        adj[i,j] = adj[j,i] = 1\n    \n    # Cluster features using spectral clustering\n    if np.sum(adj) > 0:\n        clustering = SpectralClustering(n_clusters=1, affinity='precomputed', \n                                       random_state=0).fit(adj)\n        cluster_labels = clustering.labels_\n        module_features = [feats.ids[i] for i in range(n) if cluster_labels[i] == 0]\n    else:\n        # No strong correlations, use top features by t-statistic\n        t_stats = []\n        for i, fid in enumerate(feats.ids):\n            y0 = feats.x[feats.y==0, i]\n            y1 = feats.x[feats.y==1, i]\n            t_stat, _ = stats.ttest_ind(y0, y1)\n            t_stats.append(abs(t_stat))\n        top_indices = np.argsort(t_stats)[::-1][:5]\n        module_features = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates (keep only one from each pair)\n    unique_features = []\n    seen = set()\n    for fid in module_features:\n        if fid not in seen:\n            seen.add(fid)\n            unique_features.append(fid)\n    \n    # Limit to maximum drivers\n    unique_features = unique_features[:MAX_DRIVERS]\n    \n    # Compute weighted score based on effect sizes\n    weights = {}\n    for fid in unique_features:\n        i = feats.column(fid)\n        y0 = feats.x[feats.y==0, i]\n        y1 = feats.x[feats.y==1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1)\n        weights[fid] = t_stat\n    \n    # Normalize weights\n    w_sum = sum(abs(w) for w in weights.values())\n    if w_sum > 0:\n        for fid in weights:\n            weights[fid] /= w_sum\n    \n    return Design(\n        drivers=(unique_features[0],) if unique_features else (),\n        columns=tuple(unique_features),\n        products=(),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4871,
+  "completion_tokens": 1210,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2256
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2397
+   }
+  ],
+  "wall_s": 13.9
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-aoqy5jbw",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using Welch's t-test\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Calculate mean difference for each feature\n    diffs = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        diff = np.mean(y1) - np.mean(y0)\n        diffs.append((fid, abs(diff)))\n    \n    # Sort by absolute difference\n    diffs.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates for drivers\n    candidate_drivers = [fid for fid, _ in diffs[:5]]\n    \n    # Select best driver based on t-statistics\n    best_driver = None\n    best_t = 0\n    \n    for fid in candidate_drivers:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        t, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        if abs(t) > best_t:\n            best_t = abs(t)\n            best_driver = fid\n    \n    # Add driver if significant\n    if best_driver is not None and best_t > 3.0:\n        drivers = [best_driver]\n        # Add top features to columns\n        for fid, _ in diffs[:3]:\n            if fid != best_driver:\n                columns.append(fid)\n        # Add weighted loading for the best driver\n        loadings[best_driver] = 1.0\n    else:\n        # No clear driver, use top features\n        for fid, _ in diffs[:3]:\n            columns.append(fid)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using Welch's t-test\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Calculate mean difference for each feature\n    diffs = []\n    for fid in feats.ids:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        diff = np.mean(y1) - np.mean(y0)\n        diffs.append((fid, abs(diff)))\n    \n    # Sort by absolute difference\n    diffs.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates for drivers\n    candidate_drivers = [fid for fid, _ in diffs[:5]]\n    \n    # Select best driver based on t-statistics\n    best_driver = None\n    best_t = 0\n    \n    for fid in candidate_drivers:\n        idx = feats.column(fid)\n        y1 = feats.x[feats.y == 1, idx]\n        y0 = feats.x[feats.y == 0, idx]\n        t, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        if abs(t) > best_t:\n            best_t = abs(t)\n            best_driver = fid\n    \n    # Add driver if significant\n    if best_driver is not None and best_t > 3.0:\n        drivers = [best_driver]\n        # Add top features to columns\n        for fid, _ in diffs[:3]:\n            if fid != best_driver:\n                columns.append(fid)\n        # Add weighted loading for the best driver\n        loadings[best_driver] = 1.0\n    else:\n        # No clear driver, use top features\n        for fid, _ in diffs[:3]:\n            columns.append(fid)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5090,
+  "completion_tokens": 1205,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3022
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1681
+   }
+  ],
+  "wall_s": 14.0
+ }
+}

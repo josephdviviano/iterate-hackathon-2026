@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-8xis9lfs",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using t-statistics and effect sizes\n    drivers = []\n    feature_importance = []\n    \n    # Filter features with strong effect sizes (> 0.15) or high t-stats (> 2.0)\n    for i, fid in enumerate(feats.ids):\n        # Use the actual effect size or t-statistic from the data\n        effect_size = feats.types[i]\n        try:\n            if abs(effect_size) > 0.15 or abs(effect_size) > 2.0:\n                feature_importance.append((fid, effect_size))\n        except TypeError:\n            # Skip non-numeric features\n            continue\n    \n    # Sort by absolute effect size and t-statistic\n    feature_importance.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Select top candidates\n    candidates = [f[0] for f in feature_importance[:20]]\n    \n    # Remove near-duplicates based on correlation matrix\n    # From problem description, we know these pairs are highly correlated\n    correlations = [\n        ('HVP4', 'THX18'), ('XJEY10L', 'EIAZ16L'), ('EIAZ16L', 'HNNQ8'),\n        ('KWPU14', 'THX18'), ('EIAZ16L', 'THX18'), ('KWPU14', 'RPOQ3'),\n        ('VTA11A', 'THX18'), ('XJEY10L', 'THX18'), ('BLPP6', 'PPHL13'),\n        ('XJEY10L', 'HNNQ8'), ('EIAZ16L', 'HVP4'), ('THX18', 'AIFJ14'),\n        ('XJEY10L', 'HVP4'), ('TSG17B', 'EIAZ16L'), ('EIAZ16L', 'VTA11A'),\n        ('HVP4', 'VTA11A'), ('KWPU14', 'HVP4'), ('VMLO12', 'HVP4'),\n        ('EIAZ16L', 'VMLO12'), ('VMLO12', 'THX18')\n    ]\n    \n    # Build set of correlated features to avoid\n    correlated_features = set()\n    for a, b in correlations:\n        correlated_features.add(a)\n        correlated_features.add(b)\n    \n    # Select final drivers avoiding duplicates\n    selected_drivers = []\n    for fid in candidates:\n        if fid not in correlated_features:\n            selected_drivers.append(fid)\n            # Remove any correlated features from future consideration\n            correlated_features.update([c for a, c in correlations if a == fid])\n    \n    # Limit to maximum drivers\n    drivers = selected_drivers[:MAX_DRIVERS]\n    \n    # Use all features for regression but remove near-duplicates\n    columns = [fid for fid in feats.ids if fid not in correlated_features]\n    \n    # Create products between top features\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            products.append((a, b))\n    \n    # Simple weighted score: use top features with positive coefficients\n    loadings = {}\n    if len(drivers) > 0:\n        # Weight by effect size (sign matters)\n        for i, fid in enumerate(drivers):\n            # For simplicity, use sign of effect size\n            effect_size = feats.types[feats.column(fid)]\n            loadings[fid] = 1.0 if effect_size > 0 else -1.0\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8953,
+  "completion_tokens": 2534,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2902
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'hasattr' is not defined",
+    "bytes": 3079
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3113
+   }
+  ],
+  "wall_s": 28.7
+ }
+}

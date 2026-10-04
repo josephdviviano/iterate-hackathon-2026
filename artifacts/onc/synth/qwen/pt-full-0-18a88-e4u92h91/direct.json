@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-e4u92h91",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features for mechanism discovery\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(non_derived_ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        effect_sizes.append((effect_size, fid))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: abs(x[0]), reverse=True)\n    \n    # Select top candidates for drivers\n    drivers = [fid for _, fid in effect_sizes[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation > 0.6\n    non_derived_indices = [feats.column(fid) for fid in non_derived_ids]\n    corr_matrix = np.corrcoef(feats.x[:, non_derived_indices].T)\n    correlated_pairs = set()\n    for i in range(len(non_derived_ids)):\n        for j in range(i+1, len(non_derived_ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                fid1, fid2 = non_derived_ids[i], non_derived_ids[j]\n                correlated_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Keep only one from each correlated pair\n    selected_drivers = []\n    used = set()\n    for fid in drivers:\n        if fid in used:\n            continue\n        # Check if this feature is correlated with any already selected\n        is_correlated = False\n        for selected_fid in selected_drivers:\n            if (min(fid, selected_fid), max(fid, selected_fid)) in correlated_pairs:\n                is_correlated = True\n                break\n        if not is_correlated:\n            selected_drivers.append(fid)\n            used.add(fid)\n    \n    # Use only selected drivers for regression (columns)\n    columns = tuple(selected_drivers)\n    \n    # Check for interaction terms between top drivers\n    products = []\n    if len(selected_drivers) >= 2:\n        # Add interaction term between first two drivers\n        products = [(selected_drivers[0], selected_drivers[1])]\n    \n    # Weighted score: use standardized values of selected drivers\n    loadings = {}\n    for fid in selected_drivers:\n        idx = feats.column(fid)\n        loadings[fid] = np.std(feats.x[:, idx])\n    \n    return Design(\n        drivers=tuple(selected_drivers),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features for mechanism discovery\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(non_derived_ids):\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        effect_sizes.append((effect_size, fid))\n    \n    # Sort by absolute effect size\n    effect_sizes.sort(key=lambda x: abs(x[0]), reverse=True)\n    \n    # Select top candidates for drivers\n    drivers = [fid for _, fid in effect_sizes[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation > 0.6\n    non_derived_indices = [feats.column(fid) for fid in non_derived_ids]\n    corr_matrix = np.corrcoef(feats.x[:, non_derived_indices].T)\n    correlated_pairs = set()\n    for i in range(len(non_derived_ids)):\n        for j in range(i+1, len(non_derived_ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                fid1, fid2 = non_derived_ids[i], non_derived_ids[j]\n                correlated_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Keep only one from each correlated pair\n    selected_drivers = []\n    used = set()\n    for fid in drivers:\n        if fid in used:\n            continue\n        # Check if this feature is correlated with any already selected\n        is_correlated = False\n        for selected_fid in selected_drivers:\n            if (min(fid, selected_fid), max(fid, selected_fid)) in correlated_pairs:\n                is_correlated = True\n                break\n        if not is_correlated:\n            selected_drivers.append(fid)\n            used.add(fid)\n    \n    # Use only selected drivers for regression (columns)\n    columns = tuple(selected_drivers)\n    \n    # Check for interaction terms between top drivers\n    products = []\n    if len(selected_drivers) >= 2:\n        # Add interaction term between first two drivers\n        products = [(selected_drivers[0], selected_drivers[1])]\n    \n    # Weighted score: use standardized values of selected drivers\n    loadings = {}\n    for fid in selected_drivers:\n        idx = feats.column(fid)\n        loadings[fid] = np.std(feats.x[:, idx])\n    \n    return Design(\n        drivers=tuple(selected_drivers),\n        columns=columns,\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8628,
+  "completion_tokens": 1921,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2714
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2714
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2575
+   }
+  ],
+  "wall_s": 21.9
+ }
+}

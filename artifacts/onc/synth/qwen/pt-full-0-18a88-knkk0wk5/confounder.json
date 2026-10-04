@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-knkk0wk5",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using Welch's t-test\n    ids = feats.ids\n    x = feats.x\n    y = feats.y\n    \n    # Calculate effect sizes for each feature\n    effect_sizes = []\n    for i, fid in enumerate(ids):\n        group0 = x[y == 0, i]\n        group1 = x[y == 1, i]\n        \n        # Welch's t-test\n        if len(group0) > 1 and len(group1) > 1:\n            t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        else:\n            t_stat = 0\n            \n        effect_size = np.mean(group1) - np.mean(group0)\n        effect_sizes.append(abs(effect_size))\n    \n    # Sort by effect size and select top features\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top drivers (max MAX_DRIVERS)\n    drivers = []\n    used_features = set()\n    \n    for idx in sorted_indices:\n        fid = ids[idx]\n        if len(drivers) >= MAX_DRIVERS:\n            break\n        if fid not in used_features:\n            drivers.append(fid)\n            used_features.add(fid)\n    \n    # Build regression components\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Use all features except drivers for regression\n    for i, fid in enumerate(ids):\n        if fid not in used_features:\n            columns.append(fid)\n    \n    # Add top driver as weighted loading if exists\n    if drivers:\n        top_driver = drivers[0]\n        driver_idx = feats.column(top_driver)\n        # Simple weighting based on effect size\n        effect_size = np.mean(x[y == 1, driver_idx]) - np.mean(x[y == 0, driver_idx])\n        loadings[top_driver] = effect_size\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8896,
+  "completion_tokens": 1991,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3381
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3381
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1813
+   }
+  ],
+  "wall_s": 22.7
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-juqaovnk",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with significant association (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if p_val < 0.05:\n                sig_features.append((fid, t_stat, p_val))\n    \n    # Sort by effect size (absolute t-statistic)\n    sig_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Check for product terms among top features\n    top_features = [f[0] for f in sig_features[:10]]\n    \n    # Look for correlated pairs that might form product terms\n    products = []\n    seen_pairs = set()\n    \n    # Use correlation matrix to find strong correlations\n    corr_matrix = np.corrcoef(feats.x.T)\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            if abs(corr_matrix[i,j]) >= 0.6:\n                pair = tuple(sorted([fid1, fid2]))\n                if pair not in seen_pairs:\n                    seen_pairs.add(pair)\n                    # Check if both features are significant\n                    if any(f[0] == fid1 for f in sig_features) and any(f[0] == fid2 for f in sig_features):\n                        products.append((fid1, fid2))\n    \n    # Select top drivers based on effect sizes (at most MAX_DRIVERS)\n    drivers = tuple(f[0] for f in sig_features[:min(MAX_DRIVERS, len(sig_features), 4)] if f[0] in top_features)\n    \n    # For product terms, we'll include all top correlated pairs\n    products = tuple(p for p in products if p[0] in top_features and p[1] in top_features)\n    \n    # Include all significant features in columns\n    columns = tuple(f[0] for f in sig_features)\n    \n    # Weighted score: use top features' effect sizes as weights\n    loadings = {}\n    for fid, t_stat, _ in sig_features[:len(sig_features)//2]:\n        loadings[fid] = abs(t_stat)\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8078,
+  "completion_tokens": 1669,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2205
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2251
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2160
+   }
+  ],
+  "wall_s": 19.1
+ }
+}

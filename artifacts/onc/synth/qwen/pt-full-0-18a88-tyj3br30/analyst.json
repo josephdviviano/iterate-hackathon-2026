@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tyj3br30",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [\n        ('WEYO4', 'ACX18'), ('HALN2P', 'CSIA12'), ('EAKF5', 'ACX18'),\n        ('EAKF5', 'CSIA12'), ('HALN2P', 'EAKF5'), ('LEE2', 'UTR9A'),\n        ('OCGK19', 'FIJ14'), ('UTR9A', 'WEYO4'), ('FIJ14', 'SSU18L'),\n        ('EAKF5', 'WEYO4'), ('EUXF19P', 'RZKC11'), ('WEYO4', 'YQLM6'),\n        ('SYRQ3', 'HPBS1'), ('ACX18', 'YQLM6'), ('OCGK19', 'SSU18L'),\n        ('ZHRJ10', 'SYRQ3'), ('ACX18', 'BAA19B'), ('HNLI7', 'HPBS1'),\n        ('ARM10', 'VSV17P'), ('FIJ14', 'ACX18')\n    ]\n    \n    # Remove one from each near-duplicate pair\n    keep_ids = set(feats.ids)\n    for a, b in corr_pairs:\n        if a in keep_ids and b in keep_ids:\n            keep_ids.remove(b)  # Remove second in pair\n    \n    # Compute t-statistics for all features\n    t_stats = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col_idx]\n        y1 = feats.x[feats.y == 1, col_idx]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((fid, abs(t_stat)))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features ensuring we don't exceed MAX_DRIVERS\n    selected_ids = [fid for fid, _ in t_stats[:MAX_DRIVERS]]\n    \n    # Check if any features are significantly associated\n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return selected features\n    return Design(\n        drivers=tuple(selected_ids),\n        columns=tuple(selected_ids),\n        products=(),\n        loadings={fid: 1.0 for fid in selected_ids}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    corr_pairs = [\n        ('WEYO4', 'ACX18'), ('HALN2P', 'CSIA12'), ('EAKF5', 'ACX18'),\n        ('EAKF5', 'CSIA12'), ('HALN2P', 'EAKF5'), ('LEE2', 'UTR9A'),\n        ('OCGK19', 'FIJ14'), ('UTR9A', 'WEYO4'), ('FIJ14', 'SSU18L'),\n        ('EAKF5', 'WEYO4'), ('EUXF19P', 'RZKC11'), ('WEYO4', 'YQLM6'),\n        ('SYRQ3', 'HPBS1'), ('ACX18', 'YQLM6'), ('OCGK19', 'SSU18L'),\n        ('ZHRJ10', 'SYRQ3'), ('ACX18', 'BAA19B'), ('HNLI7', 'HPBS1'),\n        ('ARM10', 'VSV17P'), ('FIJ14', 'ACX18')\n    ]\n    \n    # Remove one from each near-duplicate pair\n    keep_ids = set(feats.ids)\n    for a, b in corr_pairs:\n        if a in keep_ids and b in keep_ids:\n            keep_ids.remove(b)  # Remove second in pair\n    \n    # Compute t-statistics for all features\n    t_stats = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col_idx]\n        y1 = feats.x[feats.y == 1, col_idx]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        t_stats.append((fid, abs(t_stat)))\n    \n    # Sort by absolute t-statistic\n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features ensuring we don't exceed MAX_DRIVERS\n    selected_ids = [fid for fid, _ in t_stats[:MAX_DRIVERS]]\n    \n    # Check if any features are significantly associated\n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return selected features\n    return Design(\n        drivers=tuple(selected_ids),\n        columns=tuple(selected_ids),\n        products=(),\n        loadings={fid: 1.0 for fid in selected_ids}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8163,
+  "completion_tokens": 1752,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1814
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1744
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1744
+   }
+  ],
+  "wall_s": 22.2
+ }
+}

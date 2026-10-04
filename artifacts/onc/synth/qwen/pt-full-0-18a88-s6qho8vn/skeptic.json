@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s6qho8vn",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import StratifiedKFold\nfrom sklearn.metrics import roc_auc_score\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Quick check for strong associations using Welch's t-test\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            if abs(t_stat) > 3.0:\n                sig_features.append((fid, abs(t_stat)))\n        else:\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            if abs(corr) > 0.1:\n                sig_features.append((fid, abs(corr)))\n\n    # Sort by strength\n    sig_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Quick check for near-duplicates using correlation matrix\n    unique_features = []\n    seen = set()\n    for fid, _ in sig_features:\n        if fid in seen:\n            continue\n            \n        # Check for correlated pairs\n        is_correlated = False\n        for fid2, _ in sig_features:\n            if fid == fid2 or fid2 in seen:\n                continue\n            idx1 = feats.column(fid)\n            idx2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0, 1]\n            if abs(corr) >= 0.6:\n                # Pick the one with stronger association to outcome\n                corr1 = np.corrcoef(feats.x[:, idx1], feats.y)[0, 1]\n                corr2 = np.corrcoef(feats.x[:, idx2], feats.y)[0, 1]\n                if abs(corr1) >= abs(corr2):\n                    seen.add(fid2)\n                else:\n                    seen.add(fid)\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            unique_features.append(fid)\n            seen.add(fid)\n    \n    # If no features remain after deduplication, no mechanism\n    if len(unique_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Quick CV check - just sample a few splits\n    X = feats.x[:, [feats.column(fid) for fid in unique_features]]\n    y = feats.y\n    \n    # Use very quick cross-validation (3 splits max)\n    skf = StratifiedKFold(n_splits=min(3, len(set(y))), shuffle=True, random_state=42)\n    scores = []\n    \n    try:\n        for train_idx, test_idx in skf.split(X, y):\n            X_train, X_test = X[train_idx], X[test_idx]\n            y_train, y_test = y[train_idx], y[test_idx]\n            \n            clf = LogisticRegression(random_state=42, max_iter=100)\n            clf.fit(X_train, y_train)\n            y_pred_proba = clf.predict_proba(X_test)[:, 1]\n            auc = roc_auc_score(y_test, y_pred_proba)\n            scores.append(auc)\n            \n            # Early stopping if we have enough samples\n            if len(scores) >= 3:\n                break\n    except:\n        # If anything fails, assume no mechanism\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # If average AUC is below threshold, no mechanism\n    if len(scores) == 0 or np.mean(scores) < 0.6:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Return best features\n    drivers = tuple(unique_features[:min(MAX_DRIVERS, len(unique_features))])\n    columns = tuple(unique_features)\n    products = ()\n    \n    # Simple weighting by correlation with outcome\n    loadings = {}\n    for fid in unique_features:\n        idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, idx], feats.y)[0, 1]\n        loadings[fid] = corr\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9873,
+  "completion_tokens": 2984,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 13s on all patients; it must run in under 10s",
+    "bytes": 4674
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3766
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3766
+   }
+  ],
+  "wall_s": 46.7
+ }
+}

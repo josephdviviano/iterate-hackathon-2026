@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nn9pdd6u",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Quick feature selection using Welch's t-test\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if len(feats.x[:, i].shape) == 1:\n            t_stat = abs(stats.ttest_ind(feats.x[feats.y==0, i], feats.x[feats.y==1, i], equal_var=False)[0])\n            t_stats.append((fid, t_stat))\n    \n    # Sort by t-statistic and take top features\n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in t_stats[:20]]  # Limit to top 20 for efficiency\n    \n    # Remove near-duplicates quickly\n    representative_features = set()\n    used_features = set()\n    \n    # Create correlation matrix for quick lookup\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for fid in top_features:\n        if fid in used_features:\n            continue\n            \n        col_idx = feats.column(fid)\n        # Find correlated features (|r| >= 0.6)\n        correlated = []\n        for other_fid in top_features:\n            if other_fid == fid or other_fid in used_features:\n                continue\n            other_col_idx = feats.column(other_fid)\n            corr_val = corr_matrix[col_idx, other_col_idx]\n            if abs(corr_val) >= 0.6:\n                correlated.append(other_fid)\n        \n        # Add the feature with highest t-statistic in the group\n        if correlated:\n            # Include the current feature and its strongest correlated partner\n            representative_features.add(fid)\n            # Mark correlated features as used\n            for cfid in correlated:\n                used_features.add(cfid)\n        else:\n            representative_features.add(fid)\n        used_features.add(fid)\n    \n    # If no features selected, return empty design\n    if not representative_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select final top features by t-statistic\n    final_features = []\n    for fid in representative_features:\n        col_idx = feats.column(fid)\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==0, col_idx], \n                                   feats.x[feats.y==1, col_idx], \n                                   equal_var=False)[0])\n        final_features.append((fid, t_stat))\n    \n    final_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select drivers (up to MAX_DRIVERS)\n    drivers = tuple(fid for fid, _ in final_features[:MAX_DRIVERS])\n    \n    # Build columns and products\n    columns = tuple(fid for fid, _ in final_features)\n    \n    # Look for interaction terms among top features (limited to prevent overfitting)\n    products = []\n    for i, fid1 in enumerate(columns[:10]):  # Limit to top 10 features\n        for j, fid2 in enumerate(columns[i+1:10], i+1):\n            # Check if features are uncorrelated\n            col1_idx = feats.column(fid1)\n            col2_idx = feats.column(fid2)\n            corr_val = corr_matrix[col1_idx, col2_idx]\n            if abs(corr_val) < 0.5:  # Only add interaction if not highly correlated\n                products.append((fid1, fid2))\n    \n    # Simple weighted score based on standardized values\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==0, col_idx], \n                                   feats.x[feats.y==1, col_idx], \n                                   equal_var=False)[0])\n        loadings[fid] = t_stat\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9210,
+  "completion_tokens": 2642,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 10s on all patients; it must run in under 10s",
+    "bytes": 4071
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3607
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3607
+   }
+  ],
+  "wall_s": 41.5
+ }
+}

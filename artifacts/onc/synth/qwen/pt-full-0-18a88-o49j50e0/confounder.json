@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-o49j50e0",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers (clinical/stratum features)\n    clinical_features = [fid for fid, t in zip(feats.ids, feats.types) if t == 'clinical']\n    if not clinical_features:\n        clinical_features = list(feats.ids)\n    \n    # Find strongest clinical driver by correlation with outcome\n    best_driver = None\n    best_corr = 0\n    \n    for fid in clinical_features:\n        col_idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, col_idx], feats.y.astype(float))[0, 1]\n        if abs(corr) > best_corr:\n            best_corr = abs(corr)\n            best_driver = fid\n    \n    # If no strong driver found, return empty design\n    if best_corr < 0.1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features based on correlation with outcome\n    selected_features = []\n    for fid in feats.ids:\n        if fid == best_driver:\n            continue\n        col_idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, col_idx], feats.y.astype(float))[0, 1]\n        if abs(corr) > 0.05:\n            selected_features.append(fid)\n    \n    # Remove near-duplicates\n    final_features = []\n    for fid in selected_features:\n        is_duplicate = False\n        for existing_fid in final_features:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(existing_fid)])[0, 1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            final_features.append(fid)\n    \n    # Limit to 3 features maximum\n    final_features = final_features[:3]\n    \n    # Create products for top features\n    products = []\n    if len(final_features) >= 2:\n        products.append((final_features[0], final_features[1]))\n    \n    # Build loadings from top features\n    loadings = {}\n    for i, fid in enumerate(final_features):\n        col_idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, col_idx], feats.y.astype(float))[0, 1]\n        loadings[fid] = corr\n    \n    return Design(\n        drivers=(best_driver,) if best_driver else (),\n        columns=tuple(final_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers (clinical/stratum features)\n    clinical_features = [fid for fid, t in zip(feats.ids, feats.types) if t == 'clinical']\n    if not clinical_features:\n        clinical_features = list(feats.ids)\n    \n    # Find strongest clinical driver by correlation with outcome\n    best_driver = None\n    best_corr = 0\n    \n    for fid in clinical_features:\n        col_idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, col_idx], feats.y.astype(float))[0, 1]\n        if abs(corr) > best_corr:\n            best_corr = abs(corr)\n            best_driver = fid\n    \n    # If no strong driver found, return empty design\n    if best_corr < 0.1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features based on correlation with outcome\n    selected_features = []\n    for fid in feats.ids:\n        if fid == best_driver:\n            continue\n        col_idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, col_idx], feats.y.astype(float))[0, 1]\n        if abs(corr) > 0.05:\n            selected_features.append(fid)\n    \n    # Remove near-duplicates\n    final_features = []\n    for fid in selected_features:\n        is_duplicate = False\n        for existing_fid in final_features:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.x[:, feats.column(existing_fid)])[0, 1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            final_features.append(fid)\n    \n    # Limit to 3 features maximum\n    final_features = final_features[:3]\n    \n    # Create products for top features\n    products = []\n    if len(final_features) >= 2:\n        products.append((final_features[0], final_features[1]))\n    \n    # Build loadings from top features\n    loadings = {}\n    for i, fid in enumerate(final_features):\n        col_idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, col_idx], feats.y.astype(float))[0, 1]\n        loadings[fid] = corr\n    \n    return Design(\n        drivers=(best_driver,) if best_driver else (),\n        columns=tuple(final_features),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8446,
+  "completion_tokens": 1899,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on a 60 percent training fold:\nValueError: Unknown label type: continuous. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.",
+    "bytes": 2818
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 2862
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2305
+   }
+  ],
+  "wall_s": 22.3
+ }
+}

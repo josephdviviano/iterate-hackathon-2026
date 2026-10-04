@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2oqy0kmt",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if we have a clinical driver by looking for strong associations with outcome\n    # and also checking for correlation with other features\n    feature_ids = feats.ids\n    feature_types = feats.types\n    X = feats.x\n    y = feats.y\n    \n    # Look for clinical features that might be driving others\n    clinical_features = [i for i, t in enumerate(feature_types) if t == 'clinical']\n    \n    # If we have clinical features, check if they're strongly associated with outcome\n    if clinical_features:\n        # Compute effect sizes for all features\n        effect_sizes = []\n        for i, fid in enumerate(feature_ids):\n            # Effect size: mean difference in outcome groups\n            mean_y1 = np.mean(X[y==1, i])\n            mean_y0 = np.mean(X[y==0, i])\n            effect_size = mean_y1 - mean_y0\n            effect_sizes.append(abs(effect_size))\n        \n        # Find top features by effect size\n        top_indices = np.argsort(effect_sizes)[::-1][:10]\n        \n        # Check if any clinical feature is among top 3\n        clinical_in_top = any(i in clinical_features for i in top_indices[:3])\n        \n        # If we have a clinical driver, use it to adjust for confounding\n        if clinical_in_top:\n            # Find the most significant clinical feature\n            clinical_effect_sizes = [(i, effect_sizes[i]) for i in clinical_features]\n            clinical_effect_sizes.sort(key=lambda x: abs(x[1]), reverse=True)\n            clinical_driver = feature_ids[clinical_effect_sizes[0][0]]\n            \n            # Return this as our driver\n            return Design(\n                drivers=(clinical_driver,),\n                columns=feature_ids,\n                products=(),\n                loadings={}\n            )\n    \n    # No clear clinical driver found, look for direct associations\n    # Compute effect sizes and p-values\n    effect_sizes = []\n    p_values = []\n    \n    for i, fid in enumerate(feature_ids):\n        mean_y1 = np.mean(X[y==1, i])\n        mean_y0 = np.mean(X[y==0, i])\n        effect_size = mean_y1 - mean_y0\n        effect_sizes.append(effect_size)\n        \n        # Welch's t-test\n        group1 = X[y==1, i]\n        group0 = X[y==0, i]\n        if len(group1) > 1 and len(group0) > 1:\n            t_stat, p_val = stats.ttest_ind(group1, group0, equal_var=False)\n            p_values.append(p_val)\n        else:\n            p_values.append(1.0)\n    \n    # Identify most promising features (p < 0.05, |effect_size| > 0.1)\n    candidates = []\n    for i, (fid, effect_size, p_val) in enumerate(zip(feature_ids, effect_sizes, p_values)):\n        if p_val < 0.05 and abs(effect_size) > 0.1:\n            candidates.append((i, fid, abs(effect_size)))\n    \n    # Sort by effect size\n    candidates.sort(key=lambda x: x[2], reverse=True)\n    \n    # If no candidates, return empty design\n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top drivers (max MAX_DRIVERS)\n    drivers = tuple(c[1] for c in candidates[:MAX_DRIVERS])\n    \n    # Include all features in regression\n    columns = feature_ids\n    \n    # Check for correlations above threshold\n    corr_threshold = 0.6\n    correlated_pairs = []\n    \n    # Only consider pairs where at least one is a driver\n    driver_indices = set([feats.column(fid) for fid in drivers if fid in feature_ids])\n    \n    for i in range(len(feature_ids)):\n        for j in range(i+1, len(feature_ids)):\n            if i in driver_indices or j in driver_indices:\n                corr = np.corrcoef(X[:, i], X[:, j])[0, 1]\n                if abs(corr) >= corr_threshold:\n                    correlated_pairs.append((feature_ids[i], feature_ids[j]))\n    \n    # For simplicity, include some interaction terms if there are strong correlations\n    products = tuple(correlated_pairs[:5]) if correlated_pairs else ()\n    \n    # Simple weighted score using top features\n    weights = {}\n    for i, (fid, effect_size, _) in enumerate(candidates[:5]):\n        # Ensure finite weights\n        if np.isfinite(effect_size):\n            weights[fid] = effect_size\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=products,\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9536,
+  "completion_tokens": 3063,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4369
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: loadings must map ids in feats.ids to finite weights",
+    "bytes": 4387
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: ufunc 'isfinite' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''",
+    "bytes": 4460
+   }
+  ],
+  "wall_s": 34.6
+ }
+}

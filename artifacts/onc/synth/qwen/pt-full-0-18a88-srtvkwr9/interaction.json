@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-srtvkwr9",
+ "seed": "interaction",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick check for strong univariate signals\n    strong_uni = []\n    for i, fid in enumerate(feats.ids):\n        mean1 = np.mean(feats.x[feats.y==1, i])\n        mean0 = np.mean(feats.x[feats.y==0, i])\n        if abs(mean1 - mean0) > 0.3:\n            strong_uni.append(fid)\n    \n    # Fast correlation check for top features\n    if len(strong_uni) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check correlations among top features\n    top_features = strong_uni[:10]  # Limit to speed up\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n    \n    # Find strong correlations\n    candidates = []\n    for i, fid1 in enumerate(top_features):\n        for j, fid2 in enumerate(top_features[i+1:], i+1):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                candidates.append((fid1, fid2))\n    \n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use first pair\n    fid1, fid2 = candidates[0]\n    \n    # Return design with product term\n    return Design(\n        drivers=(fid1, fid2),\n        columns=(fid1, fid2),\n        products=((fid1, fid2),),\n        loadings={fid1: 1.0, fid2: 1.0}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Quick check for strong univariate signals\n    strong_uni = []\n    for i, fid in enumerate(feats.ids):\n        mean1 = np.mean(feats.x[feats.y==1, i])\n        mean0 = np.mean(feats.x[feats.y==0, i])\n        if abs(mean1 - mean0) > 0.3:\n            strong_uni.append(fid)\n    \n    # Fast correlation check for top features\n    if len(strong_uni) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check correlations among top features\n    top_features = strong_uni[:10]  # Limit to speed up\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n    \n    # Find strong correlations\n    candidates = []\n    for i, fid1 in enumerate(top_features):\n        for j, fid2 in enumerate(top_features[i+1:], i+1):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                candidates.append((fid1, fid2))\n    \n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use first pair\n    fid1, fid2 = candidates[0]\n    \n    # Return design with product term\n    return Design(\n        drivers=(fid1, fid2),\n        columns=(fid1, fid2),\n        products=((fid1, fid2),),\n        loadings={fid1: 1.0, fid2: 1.0}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4775,
+  "completion_tokens": 808,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 16s on all patients; it must run in under 10s",
+    "bytes": 1542
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1312
+   }
+  ],
+  "wall_s": 25.7
+ }
+}

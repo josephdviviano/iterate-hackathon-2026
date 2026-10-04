@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9zwytf3z",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Simple approach: use top features by effect size\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'expression' or feats.types[i] == 'clinical':\n            # Effect size: difference in means between outcome groups\n            mean1 = np.mean(feats.x[feats.y==1, i])\n            mean0 = np.mean(feats.x[feats.y==0, i])\n            effect = abs(mean1 - mean0)\n            effects.append((fid, effect))\n    \n    # Sort by effect size and take top 5\n    effects.sort(key=lambda x: x[1], reverse=True)\n    drivers = [fid for fid, _ in effects[:MAX_DRIVERS]]\n    \n    # Use all features for columns\n    columns = list(feats.ids)\n    \n    # Only include products for strongly correlated pairs (|r| >= 0.7)\n    products = set()\n    X = feats.x\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            corr = np.corrcoef(X[:, i], X[:, j])[0, 1]\n            if abs(corr) >= 0.7:\n                products.add((fid1, fid2))\n    \n    # Simple loadings based on effect sizes\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        mean1 = np.mean(feats.x[feats.y==1, i])\n        mean0 = np.mean(feats.x[feats.y==0, i])\n        loadings[fid] = mean1 - mean0\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8546,
+  "completion_tokens": 1727,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2557
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2714
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1518
+   }
+  ],
+  "wall_s": 20.3
+ }
+}

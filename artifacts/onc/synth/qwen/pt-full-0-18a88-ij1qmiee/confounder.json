@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ij1qmiee",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    # Use Welch's t-test for each feature\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features for driver selection\n            \n        # Calculate mean difference in outcome groups\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            if abs(t_stat) > 1.5 and p_val < 0.1:\n                sig_features.append((fid, t_stat, p_val))\n    \n    # Sort by effect size (absolute t-statistic)\n    sig_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # If no significant features, return empty design\n    if not sig_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features as potential drivers\n    drivers = [fid for fid, _, _ in sig_features[:MAX_DRIVERS]]\n    \n    # Check for correlations among features to avoid near-duplicates\n    # Simple approach: keep first feature in each correlation group\n    kept_drivers = []\n    for fid in drivers:\n        # Check if this feature is correlated with already selected features\n        is_correlated = False\n        for kept_fid in kept_drivers:\n            col1_idx = feats.column(fid)\n            col2_idx = feats.column(kept_fid)\n            corr = np.corrcoef(feats.x[:, col1_idx], feats.x[:, col2_idx])[0, 1]\n            if abs(corr) >= 0.6:\n                is_correlated = True\n                break\n        \n        if not is_correlated:\n            kept_drivers.append(fid)\n            \n    # Select features for logistic regression (limit to 8)\n    columns = list(kept_drivers)\n    \n    # Add some additional features based on mutual information with outcome\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in feats.ids]], feats.y)\n    mi_dict = dict(zip(feats.ids, mi_scores))\n    \n    # Sort by MI score and add top non-correlated features\n    sorted_by_mi = sorted(feats.ids, key=lambda fid: mi_dict[fid], reverse=True)\n    for fid in sorted_by_mi:\n        if len(columns) >= 8:  # Limit total columns\n            break\n        if fid in columns:\n            continue\n        # Check correlation with existing columns\n        is_correlated = False\n        for col_fid in columns:\n            col1_idx = feats.column(fid)\n            col2_idx = feats.column(col_fid)\n            corr = np.corrcoef(feats.x[:, col1_idx], feats.x[:, col2_idx])[0, 1]\n            if abs(corr) >= 0.6:\n                is_correlated = True\n                break\n        if not is_correlated:\n            columns.append(fid)\n    \n    # Create products for top features (limit to 3 pairs)\n    products = []\n    for i, fid1 in enumerate(columns[:4]):  # Top 4 for products\n        for fid2 in columns[i+1:i+2]:  # Pair with next 1\n            products.append((fid1, fid2))\n    \n    # Create loadings for weighted score\n    # Weight by effect size\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col_idx]\n        y1 = feats.x[feats.y == 1, col_idx]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n            loadings[fid] = abs(t_stat)\n    \n    return Design(\n        drivers=tuple(kept_drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9233,
+  "completion_tokens": 2824,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3859
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3722
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3682
+   }
+  ],
+  "wall_s": 32.3
+ }
+}

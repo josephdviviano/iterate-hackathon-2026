@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9roaklhu",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out correlated pairs (keep only one from each pair)\n    correlated_pairs = {\n        ('XBI15', 'YCB3'), ('MHCW4', 'WCUT6'), ('EECP17B', 'HHQZ11L'),\n        ('SCCA3', 'HHQZ11L'), ('IGT11', 'VNZ3B'), ('EECP17B', 'SCCA3'),\n        ('LMYS16L', 'CRDU10L'), ('FGR16', 'WCUT6'), ('SHF4', 'YCB3'),\n        ('HHQZ11L', 'IGT11'), ('MHCW4', 'HHQZ11L'), ('XBI15', 'SHF4'),\n        ('EECP17B', 'IGT11'), ('PKD8B', 'HHQZ11L'), ('IZQ3', 'LMYS16L'),\n        ('SCCA3', 'IGT11'), ('SLRD9', 'HHQZ11L'), ('IZQ3', 'CRDU10L'),\n        ('PZUU9', 'HHQZ11L'), ('MHCW4', 'FGR16')\n    }\n    \n    # Build a mapping of which features to keep (remove second from each pair)\n    keep_features = set(feats.ids)\n    for a, b in correlated_pairs:\n        if a in keep_features and b in keep_features:\n            keep_features.remove(b)  # Remove the second feature\n    \n    # Select top features by t-statistic (absolute value)\n    t_stats = []\n    for fid in feats.ids:\n        if fid in keep_features:\n            col_idx = feats.column(fid)\n            y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n            y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n            t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n            t_stats.append((fid, abs(t_stat)))\n    \n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features for regression (at most MAX_DRIVERS)\n    selected_ids = [fid for fid, _ in t_stats[:MAX_DRIVERS]]\n    \n    # Check if we have any significant features\n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute pairwise correlations among selected features\n    selected_indices = [feats.column(fid) for fid in selected_ids]\n    selected_data = feats.x[:, selected_indices]\n    \n    # Identify potential interaction terms (high correlation pairs)\n    products = []\n    if len(selected_ids) > 1:\n        corr_matrix = np.corrcoef(selected_data.T)\n        for i in range(len(selected_ids)):\n            for j in range(i+1, len(selected_ids)):\n                if abs(corr_matrix[i,j]) > 0.6:\n                    products.append((selected_ids[i], selected_ids[j]))\n    \n    # Simple weighted score based on mean differences\n    loadings = {}\n    for fid in selected_ids:\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        loadings[fid] = y1_mean - y0_mean\n    \n    return Design(\n        drivers=tuple(selected_ids),\n        columns=tuple(selected_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out correlated pairs (keep only one from each pair)\n    correlated_pairs = {\n        ('XBI15', 'YCB3'), ('MHCW4', 'WCUT6'), ('EECP17B', 'HHQZ11L'),\n        ('SCCA3', 'HHQZ11L'), ('IGT11', 'VNZ3B'), ('EECP17B', 'SCCA3'),\n        ('LMYS16L', 'CRDU10L'), ('FGR16', 'WCUT6'), ('SHF4', 'YCB3'),\n        ('HHQZ11L', 'IGT11'), ('MHCW4', 'HHQZ11L'), ('XBI15', 'SHF4'),\n        ('EECP17B', 'IGT11'), ('PKD8B', 'HHQZ11L'), ('IZQ3', 'LMYS16L'),\n        ('SCCA3', 'IGT11'), ('SLRD9', 'HHQZ11L'), ('IZQ3', 'CRDU10L'),\n        ('PZUU9', 'HHQZ11L'), ('MHCW4', 'FGR16')\n    }\n    \n    # Build a mapping of which features to keep (remove second from each pair)\n    keep_features = set(feats.ids)\n    for a, b in correlated_pairs:\n        if a in keep_features and b in keep_features:\n            keep_features.remove(b)  # Remove the second feature\n    \n    # Select top features by t-statistic (absolute value)\n    t_stats = []\n    for fid in feats.ids:\n        if fid in keep_features:\n            col_idx = feats.column(fid)\n            y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n            y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n            t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n            t_stats.append((fid, abs(t_stat)))\n    \n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features for regression (at most MAX_DRIVERS)\n    selected_ids = [fid for fid, _ in t_stats[:MAX_DRIVERS]]\n    \n    # Check if we have any significant features\n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute pairwise correlations among selected features\n    selected_indices = [feats.column(fid) for fid in selected_ids]\n    selected_data = feats.x[:, selected_indices]\n    \n    # Identify potential interaction terms (high correlation pairs)\n    products = []\n    if len(selected_ids) > 1:\n        corr_matrix = np.corrcoef(selected_data.T)\n        for i in range(len(selected_ids)):\n            for j in range(i+1, len(selected_ids)):\n                if abs(corr_matrix[i,j]) > 0.6:\n                    products.append((selected_ids[i], selected_ids[j]))\n    \n    # Simple weighted score based on mean differences\n    loadings = {}\n    for fid in selected_ids:\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        loadings[fid] = y1_mean - y0_mean\n    \n    return Design(\n        drivers=tuple(selected_ids),\n        columns=tuple(selected_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8920,
+  "completion_tokens": 2471,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2738
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2810
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2810
+   }
+  ],
+  "wall_s": 28.0
+ }
+}

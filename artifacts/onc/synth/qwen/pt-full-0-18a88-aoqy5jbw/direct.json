@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-aoqy5jbw",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    y = feats.y\n    effect_sizes = []\n    \n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        mean_0 = np.mean(x[y == 0])\n        mean_1 = np.mean(x[y == 1])\n        effect_size = mean_1 - mean_0\n        effect_sizes.append(abs(effect_size))\n    \n    # Rank features by effect size\n    ranked_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top candidates, avoiding near-duplicates\n    selected = []\n    excluded = set()\n    \n    # Build correlation matrix for near-duplicate detection\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for i in range(min(5, len(feats.ids))):  # Check top 5 features\n        idx = ranked_indices[i]\n        fid = feats.ids[idx]\n        \n        # Skip if already excluded due to correlation\n        if idx in excluded:\n            continue\n            \n        # Check correlations with already selected features\n        is_duplicate = False\n        for selected_fid in selected:\n            j = feats.column(selected_fid)\n            if abs(corr_matrix[idx, j]) >= 0.6:\n                is_duplicate = True\n                break\n                \n        if not is_duplicate:\n            selected.append(fid)\n            \n        # Mark correlated features as excluded\n        for j in range(len(feats.ids)):\n            if abs(corr_matrix[idx, j]) >= 0.6 and i != j:\n                excluded.add(j)\n                \n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # For this specific world, use the top 2 non-duplicate features\n    drivers = tuple(selected[:MAX_DRIVERS])\n    \n    # Only include top 3 features to keep model small\n    columns = tuple([feats.ids[i] for i in ranked_indices[:3]])\n    \n    # No product terms needed for this case\n    products = ()\n    \n    # Weighted score based on effect sizes\n    loadings = dict(zip(feats.ids, effect_sizes))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    y = feats.y\n    effect_sizes = []\n    \n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        mean_0 = np.mean(x[y == 0])\n        mean_1 = np.mean(x[y == 1])\n        effect_size = mean_1 - mean_0\n        effect_sizes.append(abs(effect_size))\n    \n    # Rank features by effect size\n    ranked_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top candidates, avoiding near-duplicates\n    selected = []\n    excluded = set()\n    \n    # Build correlation matrix for near-duplicate detection\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    for i in range(min(5, len(feats.ids))):  # Check top 5 features\n        idx = ranked_indices[i]\n        fid = feats.ids[idx]\n        \n        # Skip if already excluded due to correlation\n        if idx in excluded:\n            continue\n            \n        # Check correlations with already selected features\n        is_duplicate = False\n        for selected_fid in selected:\n            j = feats.column(selected_fid)\n            if abs(corr_matrix[idx, j]) >= 0.6:\n                is_duplicate = True\n                break\n                \n        if not is_duplicate:\n            selected.append(fid)\n            \n        # Mark correlated features as excluded\n        for j in range(len(feats.ids)):\n            if abs(corr_matrix[idx, j]) >= 0.6 and i != j:\n                excluded.add(j)\n                \n        if len(selected) >= MAX_DRIVERS:\n            break\n    \n    # For this specific world, use the top 2 non-duplicate features\n    drivers = tuple(selected[:MAX_DRIVERS])\n    \n    # Only include top 3 features to keep model small\n    columns = tuple([feats.ids[i] for i in ranked_indices[:3]])\n    \n    # No product terms needed for this case\n    products = ()\n    \n    # Weighted score based on effect sizes\n    loadings = dict(zip(feats.ids, effect_sizes))\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8117,
+  "completion_tokens": 1526,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2274
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2209
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2087
+   }
+  ],
+  "wall_s": 17.8
+ }
+}

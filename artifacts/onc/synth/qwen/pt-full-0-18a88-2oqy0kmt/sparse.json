@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-2oqy0kmt",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics and mutual information\n    t_stats = []\n    mi_scores = []\n    \n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n            \n        # Calculate Welch's t-statistic\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        n0, n1 = len(group0), len(group1)\n        if n0 > 1 and n1 > 1:\n            var0, var1 = np.var(group0), np.var(group1)\n            se = np.sqrt(var0/n0 + var1/n1)\n            t_stat = (np.mean(group1) - np.mean(group0)) / se\n        else:\n            t_stat = 0\n            \n        t_stats.append(abs(t_stat))\n        \n        # Mutual information with outcome\n        mi = mutual_info_classif(feats.x[:, i:i+1], feats.y)[0]\n        mi_scores.append(mi)\n    \n    # Select top features based on combined criteria\n    scores = [t * mi for t, mi in zip(t_stats, mi_scores)]\n    top_indices = np.argsort(scores)[::-1][:MAX_DRIVERS]\n    \n    # Remove near-duplicates\n    selected_ids = []\n    for idx in top_indices:\n        fid = feats.ids[idx]\n        # Check correlation with already selected features\n        is_duplicate = False\n        for sel_fid in selected_ids:\n            col_a = feats.column(sel_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected_ids.append(fid)\n            \n    # If no strong drivers found, return empty design\n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For simplicity, use all selected features as columns\n    columns = tuple(selected_ids)\n    \n    # Simple interaction terms for top 2 features\n    products = ()\n    if len(selected_ids) >= 2:\n        products = ((selected_ids[0], selected_ids[1]),)\n        \n    # Weighted score using top feature\n    loadings = {selected_ids[0]: 1.0}\n    \n    return Design(\n        drivers=tuple(selected_ids[:MAX_DRIVERS]),\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics and mutual information\n    t_stats = []\n    mi_scores = []\n    \n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n            \n        # Calculate Welch's t-statistic\n        group0 = feats.x[feats.y == 0, i]\n        group1 = feats.x[feats.y == 1, i]\n        n0, n1 = len(group0), len(group1)\n        if n0 > 1 and n1 > 1:\n            var0, var1 = np.var(group0), np.var(group1)\n            se = np.sqrt(var0/n0 + var1/n1)\n            t_stat = (np.mean(group1) - np.mean(group0)) / se\n        else:\n            t_stat = 0\n            \n        t_stats.append(abs(t_stat))\n        \n        # Mutual information with outcome\n        mi = mutual_info_classif(feats.x[:, i:i+1], feats.y)[0]\n        mi_scores.append(mi)\n    \n    # Select top features based on combined criteria\n    scores = [t * mi for t, mi in zip(t_stats, mi_scores)]\n    top_indices = np.argsort(scores)[::-1][:MAX_DRIVERS]\n    \n    # Remove near-duplicates\n    selected_ids = []\n    for idx in top_indices:\n        fid = feats.ids[idx]\n        # Check correlation with already selected features\n        is_duplicate = False\n        for sel_fid in selected_ids:\n            col_a = feats.column(sel_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected_ids.append(fid)\n            \n    # If no strong drivers found, return empty design\n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # For simplicity, use all selected features as columns\n    columns = tuple(selected_ids)\n    \n    # Simple interaction terms for top 2 features\n    products = ()\n    if len(selected_ids) >= 2:\n        products = ((selected_ids[0], selected_ids[1]),)\n        \n    # Weighted score using top feature\n    loadings = {selected_ids[0]: 1.0}\n    \n    return Design(\n        drivers=tuple(selected_ids[:MAX_DRIVERS]),\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4877,
+  "completion_tokens": 1179,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: 5 drivers; at most 4",
+    "bytes": 2406
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2357
+   }
+  ],
+  "wall_s": 13.6
+ }
+}

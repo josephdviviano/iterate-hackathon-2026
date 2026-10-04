@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-tqr72yft",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using effect size and significance\n    effect_sizes = np.abs(feats.x.T @ (feats.y - feats.y.mean())) / np.sqrt(len(feats.y))\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top features by effect size\n    top_features = [feats.ids[i] for i in sorted_indices[:20]]\n    \n    # Cluster correlated features to find modules\n    if len(top_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]])\n    clustering = AgglomerativeClustering(n_clusters=min(2, len(top_features)), linkage='average')\n    clusters = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Find the most significant cluster\n    cluster_scores = []\n    for i in range(max(1, len(set(clusters)))):\n        cluster_features = [top_features[j] for j in range(len(top_features)) if clusters[j] == i]\n        if len(cluster_features) > 1:\n            # Compute weighted score for this cluster\n            scores = np.array([effect_sizes[feats.column(fid)] for fid in cluster_features])\n            weights = scores / scores.sum()\n            cluster_scores.append((cluster_features, weights))\n    \n    if not cluster_scores:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Choose the cluster with highest total effect\n    best_cluster, best_weights = max(cluster_scores, key=lambda x: sum(effect_sizes[feats.column(fid)] for fid in x[0]))\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    to_remove = set()\n    for i, f1 in enumerate(best_cluster):\n        for j, f2 in enumerate(best_cluster[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, feats.column(f1)], feats.x[:, feats.column(f2)])[0,1]) >= 0.6:\n                to_remove.add(f2)\n    \n    final_features = [f for f in best_cluster if f not in to_remove]\n    \n    # Build loadings dictionary\n    loadings = {fid: w for fid, w in zip(final_features, best_weights)}\n    \n    # Return design\n    return Design(\n        drivers=tuple(final_features[:MAX_DRIVERS]),\n        columns=tuple(final_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8101,
+  "completion_tokens": 1677,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2274
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2250
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2351
+   }
+  ],
+  "wall_s": 17.6
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nl63p644",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong candidates based on mean difference and t-statistic\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'derived':\n            mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            t_stat = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i], equal_var=False)[0]\n            if abs(mean_diff) > 0.4 and abs(t_stat) > 3.5:\n                strong_candidates.append((fid, abs(mean_diff), abs(t_stat)))\n    \n    # Sort by t-statistic descending\n    strong_candidates.sort(key=lambda x: x[2], reverse=True)\n    \n    # Remove near-duplicates (correlated features)\n    selected_fid_set = set()\n    drivers = []\n    for fid, _, _ in strong_candidates:\n        is_duplicate = False\n        for selected_fid in selected_fid_set:\n            col_a = feats.column(selected_fid)\n            col_b = feats.column(fid)\n            if abs(np.corrcoef(feats.x[:, col_a], feats.x[:, col_b])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected_fid_set.add(fid)\n            drivers.append(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # If no clear drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select all features with strong correlations to drivers\n    columns = set()\n    for fid in drivers:\n        columns.add(fid)\n        col_idx = feats.column(fid)\n        # Add correlated features\n        for other_fid in feats.ids:\n            if other_fid == fid:\n                continue\n            other_col_idx = feats.column(other_fid)\n            corr = np.corrcoef(feats.x[:, col_idx], feats.x[:, other_col_idx])[0,1]\n            if abs(corr) > 0.6:\n                columns.add(other_fid)\n    \n    # Create products of pairs among selected features\n    products = []\n    columns_list = list(columns)\n    for i in range(len(columns_list)):\n        for j in range(i+1, len(columns_list)):\n            products.append((columns_list[i], columns_list[j]))\n    \n    # Weighted score using mean difference as weights\n    loadings = {}\n    for fid in columns_list:\n        col_idx = feats.column(fid)\n        diff = np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx])\n        loadings[fid] = abs(diff)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns_list),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8636,
+  "completion_tokens": 1989,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2750
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2764
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2643
+   }
+  ],
+  "wall_s": 26.7
+ }
+}

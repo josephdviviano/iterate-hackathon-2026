@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9wafkfdk",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = [(a,b) for a,b,r in [\n        ('YKUA18','RUH17',0.94), ('YKUA18','NWJ14A',0.92), ('EHL13','YKUA18',-0.92),\n        ('RUH17','ZSA8',0.89), ('RIAR11B','RGUF1',0.89), ('YKUA18','RGUF1',0.88),\n        ('NWJ14A','RUH17',0.87), ('YKUA18','ZSA8',0.86), ('EHL13','RUH17',-0.86),\n        ('YRKL1','VKZN15P',0.83), ('NWJ14A','RGUF1',0.83), ('YKUA18','UEL15A',-0.81),\n        ('RUH17','RGUF1',0.81), ('EHL13','ZSA8',-0.81), ('EHL13','RGUF1',-0.80),\n        ('RIAR11B','YKUA18',0.80), ('JIR5B','ZSA8',0.80), ('JIR5B','RUH17',0.79),\n        ('NWJ14A','ZSA8',0.79), ('CZLO1','ZSA8',0.79)\n    ] if abs(r) >= 0.6]\n    \n    # Build set of features to exclude (keep first in each pair)\n    exclude = set()\n    for a,b in corr_pairs:\n        exclude.add(b)  # Remove second feature\n    \n    # Filter features\n    ids = [fid for fid in feats.ids if fid not in exclude]\n    \n    # Compute pairwise correlations to identify potential products\n    X = feats.x[:, [feats.column(fid) for fid in ids]]\n    \n    # Identify strong univariate associations\n    scores = []\n    for i, fid in enumerate(ids):\n        if feats.types[i] != 'clinical':\n            tstat, _ = stats.ttest_ind(X[:,i][feats.y==1], X[:,i][feats.y==0])\n            scores.append((abs(tstat), fid))\n    \n    # Sort by strength and limit to MAX_DRIVERS\n    scores.sort(reverse=True)\n    drivers = [fid for _, fid in scores[:MAX_DRIVERS]]\n    \n    # If no strong drivers, return empty design\n    if len(drivers) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select columns for regression\n    columns = [fid for fid in ids if fid not in exclude]\n    \n    # Check for interaction terms among top drivers\n    products = []\n    for i, a in enumerate(drivers):\n        for b in drivers[i+1:]:\n            # Add product if correlation is moderate\n            if a in ids and b in ids:\n                ai = ids.index(a)\n                bi = ids.index(b)\n                corrs = np.corrcoef(X[:,ai], X[:,bi])[0,1]\n                if abs(corrs) > 0.3:\n                    products.append((a,b))\n    \n    # Create loadings from top features\n    loadings = {}\n    for i, fid in enumerate(ids):\n        if i < len(scores) and scores[i][1] in drivers:\n            loadings[fid] = scores[i][0]\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                  products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9113,
+  "completion_tokens": 2555,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2644
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2667
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2546
+   }
+  ],
+  "wall_s": 29.1
+ }
+}

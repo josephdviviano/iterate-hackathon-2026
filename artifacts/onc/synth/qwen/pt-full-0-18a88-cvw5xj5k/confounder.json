@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-cvw5xj5k",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' and feats.stratum[0] == 'all':\n            continue  # Skip clinical variables that might be cohort variables\n        y1 = feats.x[feats.y==1, i]\n        y0 = feats.x[feats.y==0, i]\n        if len(y1) > 0 and len(y0) > 0:\n            tstat, pval = stats.ttest_ind(y1, y0, equal_var=False)\n            effect_size = np.mean(y1) - np.mean(y0)\n            effects.append((fid, effect_size, abs(tstat), pval))\n    \n    # Sort by effect size and statistical significance\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # If no strong associations found, return empty design\n    if not effects or max(abs(e[1]) for e in effects) < 0.1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Identify potential drivers (features with large effect sizes)\n    drivers = [e[0] for e in effects if abs(e[1]) > 0.2][:MAX_DRIVERS]\n    \n    # Ensure we don't exceed 4 drivers\n    if len(drivers) > 4:\n        drivers = drivers[:4]\n    \n    # Select columns for regression (only drivers)\n    columns = drivers[:]\n    \n    # Create products of drivers with themselves (for quadratic terms)\n    products = [(fid, fid) for fid in drivers]\n    \n    # Weighted score: simple sum of drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical' and feats.stratum[0] == 'all':\n            continue  # Skip clinical variables that might be cohort variables\n        y1 = feats.x[feats.y==1, i]\n        y0 = feats.x[feats.y==0, i]\n        if len(y1) > 0 and len(y0) > 0:\n            tstat, pval = stats.ttest_ind(y1, y0, equal_var=False)\n            effect_size = np.mean(y1) - np.mean(y0)\n            effects.append((fid, effect_size, abs(tstat), pval))\n    \n    # Sort by effect size and statistical significance\n    effects.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # If no strong associations found, return empty design\n    if not effects or max(abs(e[1]) for e in effects) < 0.1:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Identify potential drivers (features with large effect sizes)\n    drivers = [e[0] for e in effects if abs(e[1]) > 0.2][:MAX_DRIVERS]\n    \n    # Ensure we don't exceed 4 drivers\n    if len(drivers) > 4:\n        drivers = drivers[:4]\n    \n    # Select columns for regression (only drivers)\n    columns = drivers[:]\n    \n    # Create products of drivers with themselves (for quadratic terms)\n    products = [(fid, fid) for fid in drivers]\n    \n    # Weighted score: simple sum of drivers\n    loadings = {fid: 1.0 for fid in drivers}\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8350,
+  "completion_tokens": 1697,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2403
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2532
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1618
+   }
+  ],
+  "wall_s": 19.6
+ }
+}

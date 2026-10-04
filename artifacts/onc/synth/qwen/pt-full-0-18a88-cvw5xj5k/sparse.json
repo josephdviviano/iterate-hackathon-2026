@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-cvw5xj5k",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes and p-values\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y1, y0, equal_var=False)\n            effect_size = np.mean(y1) - np.mean(y0)\n        else:\n            # For other features, use correlation with outcome\n            effect_size = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            p_val = 1 - stats.norm.cdf(abs(effect_size) * np.sqrt(len(feats.y) - 2) / \n                                     np.sqrt(1 - effect_size**2))\n        \n        effects.append((fid, abs(effect_size), p_val))\n    \n    # Sort by effect size (descending)\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features\n    candidates = [fid for fid, _, _ in effects[:8]]\n    \n    # Select drivers using mutual information\n    drivers = []\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in candidates]], feats.y)\n    \n    # Get indices of top features by MI\n    top_indices = np.argsort(mi_scores)[::-1][:min(MAX_DRIVERS, len(candidates))]\n    \n    for idx in top_indices:\n        if mi_scores[idx] > 0.01:  # threshold for relevance\n            drivers.append(candidates[idx])\n    \n    # Build columns list (features to include in regression)\n    columns = list(set(candidates))\n    \n    # Build loadings (weights for linear combination)\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        # Use standardized coefficients from simple regression\n        cor = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n        loadings[fid] = cor\n    \n    # No products since model should be small\n    products = ()\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes and p-values\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y1, y0, equal_var=False)\n            effect_size = np.mean(y1) - np.mean(y0)\n        else:\n            # For other features, use correlation with outcome\n            effect_size = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            p_val = 1 - stats.norm.cdf(abs(effect_size) * np.sqrt(len(feats.y) - 2) / \n                                     np.sqrt(1 - effect_size**2))\n        \n        effects.append((fid, abs(effect_size), p_val))\n    \n    # Sort by effect size (descending)\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features\n    candidates = [fid for fid, _, _ in effects[:8]]\n    \n    # Select drivers using mutual information\n    drivers = []\n    mi_scores = mutual_info_classif(feats.x[:, [feats.column(fid) for fid in candidates]], feats.y)\n    \n    # Get indices of top features by MI\n    top_indices = np.argsort(mi_scores)[::-1][:min(MAX_DRIVERS, len(candidates))]\n    \n    for idx in top_indices:\n        if mi_scores[idx] > 0.01:  # threshold for relevance\n            drivers.append(candidates[idx])\n    \n    # Build columns list (features to include in regression)\n    columns = list(set(candidates))\n    \n    # Build loadings (weights for linear combination)\n    loadings = {}\n    for fid in columns:\n        col_idx = feats.column(fid)\n        # Use standardized coefficients from simple regression\n        cor = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n        loadings[fid] = cor\n    \n    # No products since model should be small\n    products = ()\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4987,
+  "completion_tokens": 1246,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2947
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2112
+   }
+  ],
+  "wall_s": 14.3
+ }
+}

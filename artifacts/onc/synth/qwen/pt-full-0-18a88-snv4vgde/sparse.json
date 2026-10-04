@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-snv4vgde",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using effect size and significance\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # Clinical features are more likely to be drivers\n            effects.append((fid, abs(feats.x[:, i].mean() * feats.y.mean())))\n        else:\n            # For other types, use t-statistic\n            t_stat = feats.x[:, i].mean() * feats.y.mean()\n            effects.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates\n    candidates = [fid for fid, _ in effects[:10]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    for fid in candidates:\n        is_duplicate = False\n        for kept_fid in keep:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                               feats.x[:, feats.column(kept_fid)])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep.append(fid)\n    \n    # Use only top 4 as drivers (fix: at most 4)\n    drivers = tuple(keep[:4])\n    \n    # Select features for regression\n    columns = tuple([fid for fid in feats.ids if \n                     any(fid == d for d in drivers) or \n                     abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1]) > 0.1])\n    \n    # Create interaction terms for strong drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            if abs(np.corrcoef(feats.x[:, feats.column(d1)], \n                               feats.x[:, feats.column(d2)])[0,1]) > 0.5:\n                products.append((d1, d2))\n    \n    # Create loadings for weighted score\n    loadings = {}\n    for fid in columns:\n        if fid in drivers:\n            loadings[fid] = 1.0\n        else:\n            # Weight by correlation with outcome\n            corr = np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1]\n            loadings[fid] = abs(corr)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using effect size and significance\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # Clinical features are more likely to be drivers\n            effects.append((fid, abs(feats.x[:, i].mean() * feats.y.mean())))\n        else:\n            # For other types, use t-statistic\n            t_stat = feats.x[:, i].mean() * feats.y.mean()\n            effects.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top candidates\n    candidates = [fid for fid, _ in effects[:10]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    for fid in candidates:\n        is_duplicate = False\n        for kept_fid in keep:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                               feats.x[:, feats.column(kept_fid)])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            keep.append(fid)\n    \n    # Use only top 4 as drivers (fix: at most 4)\n    drivers = tuple(keep[:4])\n    \n    # Select features for regression\n    columns = tuple([fid for fid in feats.ids if \n                     any(fid == d for d in drivers) or \n                     abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1]) > 0.1])\n    \n    # Create interaction terms for strong drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            if abs(np.corrcoef(feats.x[:, feats.column(d1)], \n                               feats.x[:, feats.column(d2)])[0,1]) > 0.5:\n                products.append((d1, d2))\n    \n    # Create loadings for weighted score\n    loadings = {}\n    for fid in columns:\n        if fid in drivers:\n            loadings[fid] = 1.0\n        else:\n            # Weight by correlation with outcome\n            corr = np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1]\n            loadings[fid] = abs(corr)\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4798,
+  "completion_tokens": 1119,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2302
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2309
+   }
+  ],
+  "wall_s": 13.7
+ }
+}

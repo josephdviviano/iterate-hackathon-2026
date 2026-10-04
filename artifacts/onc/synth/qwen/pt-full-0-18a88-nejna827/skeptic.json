@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nejna827",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    if len(feats.ids) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Identify strong univariate associations\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n        if p_val < 0.05:\n            mean_diff = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            strong_features.append((fid, mean_diff, abs(t_stat), p_val))\n    \n    # Sort by statistical significance\n    strong_features.sort(key=lambda x: x[2], reverse=True)\n    \n    # Remove near-duplicates\n    unique_features = set()\n    for fid, _, _, _ in strong_features:\n        keep = True\n        for dup_pair in correlated_pairs:\n            if fid in dup_pair:\n                # Keep only one from each pair\n                if any(f in unique_features for f in dup_pair):\n                    keep = False\n                    break\n                else:\n                    unique_features.add(fid)\n                    break\n        if keep:\n            unique_features.add(fid)\n    \n    # Try to find a mechanism using cross-validation within strata\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # If no strong features, return empty design\n    if not strong_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use top features as candidates\n    candidate_features = [f[0] for f in strong_features[:10]]\n    \n    # Test for interaction effects among top features\n    if len(candidate_features) > 1:\n        # Look for interactions between top features\n        for fid1 in candidate_features[:5]:\n            for fid2 in candidate_features[:5]:\n                if fid1 != fid2:\n                    col1 = feats.column(fid1)\n                    col2 = feats.column(fid2)\n                    prod = feats.x[:, col1] * feats.x[:, col2]\n                    \n                    # Test if product improves model\n                    X = np.column_stack([feats.x[:, feats.column(fid)] for fid in candidate_features[:5]])\n                    y = feats.y\n                    \n                    # Simple logistic regression test\n                    try:\n                        lr = LogisticRegression(fit_intercept=False, max_iter=1000)\n                        lr.fit(X, y)\n                        base_score = lr.score(X, y)\n                        \n                        X_with_prod = np.column_stack([X, prod])\n                        lr2 = LogisticRegression(fit_intercept=False, max_iter=1000)\n                        lr2.fit(X_with_prod, y)\n                        prod_score = lr2.score(X_with_prod, y)\n                        \n                        if prod_score > base_score + 0.01:  # Significant improvement\n                            products.append((fid1, fid2))\n                    except:\n                        pass\n    \n    # For simplicity, just use top few features\n    selected_features = candidate_features[:MAX_DRIVERS]\n    \n    # Check if we can build a reasonable model\n    if len(selected_features) > 0:\n        # Weighted score approach\n        for fid in selected_features:\n            col_idx = feats.column(fid)\n            # Simple correlation-based weighting\n            corr = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n            loadings[fid] = corr\n        \n        # Use all selected features as columns\n        columns = selected_features\n        \n        # Select top features as potential drivers\n        drivers = [fid for fid, _, _, _ in strong_features if fid in selected_features][:MAX_DRIVERS]\n    \n    # Final check: ensure no spurious correlations\n    if len(drivers) == 0 and len(columns) == 0:\n        # No evidence of mechanism\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9606,
+  "completion_tokens": 3087,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4645
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4571
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 4477
+   }
+  ],
+  "wall_s": 62.7
+ }
+}

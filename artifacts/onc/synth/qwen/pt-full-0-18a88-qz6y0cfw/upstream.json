@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qz6y0cfw",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong association to outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        # Use Welch's t-test as proxy for effect size\n        t_stat = feats.x[:, i].std() * (feats.x[feats.y==1, i].mean() - feats.x[feats.y==0, i].mean()) / (\n            feats.x[:, i].std()**2 / (feats.y.sum() - 1) + \n            feats.x[:, i].std()**2 / (len(feats.y) - feats.y.sum() - 1)\n        )\n        p_val = 2 * (1 - stats.t.cdf(abs(t_stat), len(feats.y) - 2))\n        if p_val < 0.05:\n            effects.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Identify potential drivers among top features\n    drivers = []\n    seen = set()\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    \n    # Group correlated features\n    clusters = []\n    used = set()\n    \n    for i, fid1 in enumerate(feats.ids):\n        if fid1 in used:\n            continue\n        cluster = [fid1]\n        used.add(fid1)\n        \n        for j, fid2 in enumerate(feats.ids):\n            if i != j and fid2 not in used and abs(corr_matrix[i,j]) >= 0.6:\n                cluster.append(fid2)\n                used.add(fid2)\n                \n        if len(cluster) > 1:\n            clusters.append(cluster)\n    \n    # For each cluster, select the one with highest effect size\n    for cluster in clusters:\n        best_fid = max(cluster, key=lambda fid: max([eff[1] for eff in effects if eff[0] == fid], default=0))\n        drivers.append(best_fid)\n    \n    # Add any remaining top features that aren't part of clusters\n    remaining_effects = [(fid, effect) for fid, effect in effects if fid not in [f for c in clusters for f in c]]\n    for fid, _ in remaining_effects[:MAX_DRIVERS - len(drivers)]:\n        if len(drivers) < MAX_DRIVERS:\n            drivers.append(fid)\n    \n    # Select columns for regression (include drivers and their correlates)\n    columns = set()\n    for fid in drivers:\n        columns.add(fid)\n        # Add correlated features to avoid multicollinearity issues\n        fid_idx = feats.column(fid)\n        for j, other_fid in enumerate(feats.ids):\n            if other_fid != fid and abs(corr_matrix[fid_idx, j]) >= 0.6:\n                columns.add(other_fid)\n    \n    # Create products for top correlations\n    products = set()\n    if len(drivers) >= 2:\n        # Look for pairs of drivers with high correlation\n        for i, d1 in enumerate(drivers):\n            for j, d2 in enumerate(drivers[i+1:], i+1):\n                idx1 = feats.column(d1)\n                idx2 = feats.column(d2)\n                if abs(corr_matrix[idx1, idx2]) >= 0.6:\n                    products.add((d1, d2))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if fid in columns:\n            # Weight based on effect size\n            effect_size = max([eff[1] for eff in effects if eff[0] == fid], default=0)\n            loadings[fid] = effect_size\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9465,
+  "completion_tokens": 2606,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3440
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3440
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 10 drivers; at most 4",
+    "bytes": 3454
+   }
+  ],
+  "wall_s": 33.4
+ }
+}

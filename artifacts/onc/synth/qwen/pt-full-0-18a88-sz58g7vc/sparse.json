@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-sz58g7vc",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        effect = np.abs(np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i]))\n        effect_sizes.append((fid, effect))\n    \n    # Sort by effect size and take top features\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in effect_sizes[:8]]\n    \n    # Remove near-duplicates based on correlation information\n    # Keep only one feature from each strongly correlated pair\n    filtered_features = []\n    excluded = set()\n    \n    # Known correlated pairs to avoid\n    correlated_pairs = [\n        ('JPPC7', 'QQUR11'), ('MBN13P', 'GPH16'), ('JRTT2', 'GPH16'),\n        ('QQUR11', 'TEV6P'), ('QQUR11', 'MBN13P'), ('FVT18', 'QQUR11'),\n        ('DTTH8B', 'JPPC7'), ('QYW18', 'QQUR11'), ('DTTH8B', 'QQUR11'),\n        ('OQW5', 'PLZ7'), ('JPPC7', 'TEV6P'), ('QYW18', 'MBN13P'),\n        ('WDIO11', 'JRTT2'), ('JPPC7', 'MBN13P'), ('MBN13P', 'TEV6P'),\n        ('ZFMV1', 'QYW18'), ('QYW18', 'TEV6P'), ('DGIC3', 'QQUR11'),\n        ('WDIO11', 'GPH16')\n    ]\n    \n    for fid in top_features:\n        # Check if this feature is part of a correlated pair\n        is_correlated = False\n        for pair in correlated_pairs:\n            if fid in pair:\n                # If we've already included the other member of the pair, skip this one\n                other_in_pair = next((f for f in pair if f != fid), None)\n                if other_in_pair in filtered_features:\n                    is_correlated = True\n                    break\n        \n        if not is_correlated:\n            filtered_features.append(fid)\n    \n    # Limit to maximum drivers\n    drivers = tuple(filtered_features[:MAX_DRIVERS])\n    \n    # Use all remaining features for the model\n    columns = tuple(filtered_features)\n    \n    # Create interaction terms only for top few features\n    products = []\n    if len(filtered_features) >= 2:\n        for i in range(min(2, len(filtered_features))):\n            for j in range(i+1, min(3, len(filtered_features))):\n                products.append((filtered_features[i], filtered_features[j]))\n    \n    # Weighted score using effect sizes\n    loadings = {}\n    for i, fid in enumerate(filtered_features):\n        col_idx = feats.column(fid)\n        effect = np.abs(np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx]))\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        effect = np.abs(np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i]))\n        effect_sizes.append((fid, effect))\n    \n    # Sort by effect size and take top features\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in effect_sizes[:8]]\n    \n    # Remove near-duplicates based on correlation information\n    # Keep only one feature from each strongly correlated pair\n    filtered_features = []\n    excluded = set()\n    \n    # Known correlated pairs to avoid\n    correlated_pairs = [\n        ('JPPC7', 'QQUR11'), ('MBN13P', 'GPH16'), ('JRTT2', 'GPH16'),\n        ('QQUR11', 'TEV6P'), ('QQUR11', 'MBN13P'), ('FVT18', 'QQUR11'),\n        ('DTTH8B', 'JPPC7'), ('QYW18', 'QQUR11'), ('DTTH8B', 'QQUR11'),\n        ('OQW5', 'PLZ7'), ('JPPC7', 'TEV6P'), ('QYW18', 'MBN13P'),\n        ('WDIO11', 'JRTT2'), ('JPPC7', 'MBN13P'), ('MBN13P', 'TEV6P'),\n        ('ZFMV1', 'QYW18'), ('QYW18', 'TEV6P'), ('DGIC3', 'QQUR11'),\n        ('WDIO11', 'GPH16')\n    ]\n    \n    for fid in top_features:\n        # Check if this feature is part of a correlated pair\n        is_correlated = False\n        for pair in correlated_pairs:\n            if fid in pair:\n                # If we've already included the other member of the pair, skip this one\n                other_in_pair = next((f for f in pair if f != fid), None)\n                if other_in_pair in filtered_features:\n                    is_correlated = True\n                    break\n        \n        if not is_correlated:\n            filtered_features.append(fid)\n    \n    # Limit to maximum drivers\n    drivers = tuple(filtered_features[:MAX_DRIVERS])\n    \n    # Use all remaining features for the model\n    columns = tuple(filtered_features)\n    \n    # Create interaction terms only for top few features\n    products = []\n    if len(filtered_features) >= 2:\n        for i in range(min(2, len(filtered_features))):\n            for j in range(i+1, min(3, len(filtered_features))):\n                products.append((filtered_features[i], filtered_features[j]))\n    \n    # Weighted score using effect sizes\n    loadings = {}\n    for i, fid in enumerate(filtered_features):\n        col_idx = feats.column(fid)\n        effect = np.abs(np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx]))\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8765,
+  "completion_tokens": 2304,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 2608
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2899
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2622
+   }
+  ],
+  "wall_s": 26.4
+ }
+}

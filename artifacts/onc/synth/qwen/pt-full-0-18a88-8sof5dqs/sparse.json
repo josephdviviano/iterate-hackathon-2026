@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-8sof5dqs",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Compute correlations and identify near-duplicates\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Build filtered feature set\n    keep_ids = [fid for fid in ids if fid not in to_remove]\n    if not keep_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    keep_indices = [feats.column(fid) for fid in keep_ids]\n    x_filtered = x[:, keep_indices]\n    \n    # Select features using mutual information\n    mi_scores = mutual_info_classif(x_filtered, y)\n    sorted_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    selected_ids = [keep_ids[i] for i in sorted_indices if mi_scores[i] > 0]\n    \n    # For the final model, include all selected features\n    columns = tuple(selected_ids)\n    \n    # Simple weighted score: sum of selected features\n    weights = {fid: 1.0 for fid in selected_ids}\n    \n    # Return design with drivers, columns, products, and loadings\n    return Design(\n        drivers=tuple(selected_ids[:1]),  # Most important feature as driver\n        columns=columns,\n        products=(),\n        loadings=weights\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Compute correlations and identify near-duplicates\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(ids[j])\n    \n    # Build filtered feature set\n    keep_ids = [fid for fid in ids if fid not in to_remove]\n    if not keep_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    keep_indices = [feats.column(fid) for fid in keep_ids]\n    x_filtered = x[:, keep_indices]\n    \n    # Select features using mutual information\n    mi_scores = mutual_info_classif(x_filtered, y)\n    sorted_indices = np.argsort(mi_scores)[::-1][:MAX_DRIVERS]\n    selected_ids = [keep_ids[i] for i in sorted_indices if mi_scores[i] > 0]\n    \n    # For the final model, include all selected features\n    columns = tuple(selected_ids)\n    \n    # Simple weighted score: sum of selected features\n    weights = {fid: 1.0 for fid in selected_ids}\n    \n    # Return design with drivers, columns, products, and loadings\n    return Design(\n        drivers=tuple(selected_ids[:1]),  # Most important feature as driver\n        columns=columns,\n        products=(),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2061,
+  "completion_tokens": 389,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1581
+   }
+  ],
+  "wall_s": 4.4
+ }
+}

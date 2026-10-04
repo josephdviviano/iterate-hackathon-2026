@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s3rnpv6e",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ != 'derived']\n    \n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for fid in non_derived_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_sizes.append(abs(mean_y1 - mean_y0))\n    \n    # Select top features by effect size\n    top_indices = np.argsort(effect_sizes)[::-1][:MAX_DRIVERS]\n    drivers = tuple(non_derived_ids[i] for i in top_indices if effect_sizes[i] > 0)\n    \n    # Ensure we don't exceed MAX_DRIVERS\n    if len(drivers) > MAX_DRIVERS:\n        drivers = drivers[:MAX_DRIVERS]\n    \n    # For regression, use all features with significant t-test or effect size\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Add drivers to columns\n    columns.extend(drivers)\n    \n    # Add other strong features based on t-statistics\n    for i, fid in enumerate(feats.ids):\n        if fid not in columns:\n            try:\n                col_idx = feats.column(fid)\n                x = feats.x[:, col_idx]\n                y = feats.y\n                t_stat, _ = stats.ttest_ind(x[y == 1], x[y == 0], equal_var=False)\n                if abs(t_stat) > 2.0 or effect_sizes[non_derived_ids.index(fid)] > 0.2:\n                    columns.append(fid)\n            except (ValueError, IndexError):\n                # Skip if feature not found or index error\n                continue\n    \n    # Add interaction terms between top drivers\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            products.append((d1, d2))\n    \n    # Add weighted loading for top features\n    for fid in columns:\n        try:\n            col_idx = feats.column(fid)\n            x = feats.x[:, col_idx]\n            y = feats.y\n            # Weight by correlation with outcome\n            corr = np.corrcoef(x, y)[0, 1]\n            loadings[fid] = abs(corr)\n        except:\n            continue\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8114,
+  "completion_tokens": 1669,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: 'CQE12' is not in list",
+    "bytes": 2093
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2327
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2458
+   }
+  ],
+  "wall_s": 22.0
+ }
+}

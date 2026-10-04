@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-h9h3wos4",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Look for clinical/cohort variables that might drive the outcome\n    drivers = []\n    \n    # Check for potential driver variables\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('clinical', 'cohort'):\n            # Calculate effect size (mean difference in outcome groups)\n            y1_mean = np.mean(feats.x[feats.y == 1, i])\n            y0_mean = np.mean(feats.x[feats.y == 0, i])\n            effect_size = abs(y1_mean - y0_mean)\n            # Use Welch's t-test p-value for significance\n            t_stat, p_val = stats.ttest_ind(\n                feats.x[feats.y == 1, i], \n                feats.x[feats.y == 0, i], \n                equal_var=False\n            )\n            \n            # Check if this could be a driver\n            if p_val < 0.05 and effect_size > 0.2:\n                drivers.append(fid)\n    \n    # If no clear drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to just the top driver\n    drivers = drivers[:1]\n    \n    # Simple approach: use top 5 features by effect size\n    columns = []\n    effect_sizes = []\n    \n    for i, fid in enumerate(feats.ids):\n        y1_mean = np.mean(feats.x[feats.y == 1, i])\n        y0_mean = np.mean(feats.x[feats.y == 0, i])\n        effect_size = abs(y1_mean - y0_mean)\n        effect_sizes.append((fid, effect_size))\n    \n    # Sort by effect size and take top 5\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    columns = [fid for fid, _ in effect_sizes[:5]]\n    \n    # No products for simplicity\n    products = ()\n    \n    # Simple loading: assign equal weights to top features\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Look for clinical/cohort variables that might drive the outcome\n    drivers = []\n    \n    # Check for potential driver variables\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('clinical', 'cohort'):\n            # Calculate effect size (mean difference in outcome groups)\n            y1_mean = np.mean(feats.x[feats.y == 1, i])\n            y0_mean = np.mean(feats.x[feats.y == 0, i])\n            effect_size = abs(y1_mean - y0_mean)\n            # Use Welch's t-test p-value for significance\n            t_stat, p_val = stats.ttest_ind(\n                feats.x[feats.y == 1, i], \n                feats.x[feats.y == 0, i], \n                equal_var=False\n            )\n            \n            # Check if this could be a driver\n            if p_val < 0.05 and effect_size > 0.2:\n                drivers.append(fid)\n    \n    # If no clear drivers, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to just the top driver\n    drivers = drivers[:1]\n    \n    # Simple approach: use top 5 features by effect size\n    columns = []\n    effect_sizes = []\n    \n    for i, fid in enumerate(feats.ids):\n        y1_mean = np.mean(feats.x[feats.y == 1, i])\n        y0_mean = np.mean(feats.x[feats.y == 0, i])\n        effect_size = abs(y1_mean - y0_mean)\n        effect_sizes.append((fid, effect_size))\n    \n    # Sort by effect size and take top 5\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    columns = [fid for fid, _ in effect_sizes[:5]]\n    \n    # No products for simplicity\n    products = ()\n    \n    # Simple loading: assign equal weights to top features\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8717,
+  "completion_tokens": 1959,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2845
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2951
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1940
+   }
+  ],
+  "wall_s": 22.3
+ }
+}

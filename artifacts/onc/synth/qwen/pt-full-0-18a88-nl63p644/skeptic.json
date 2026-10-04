@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nl63p644",
+ "seed": "skeptic",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        x = feats.x[:, i]\n        y = feats.y\n        # Calculate effect size (mean difference)\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group1 = x[y == 1]\n        group0 = x[y == 0]\n        if len(group1) > 1 and len(group0) > 1:\n            t_stat, p_val = stats.ttest_ind(group1, group0, equal_var=False)\n            if p_val < 0.05 and abs(effect_size) > 0.1:\n                effects.append((abs(effect_size), fid, p_val, t_stat))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    \n    # Check for near-duplicates using correlation\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Remove near-duplicates, keeping the one with stronger effect\n    selected_ids = set()\n    for effect_size, fid, p_val, t_stat in effects:\n        skip = False\n        for dup_fid in selected_ids:\n            if (fid, dup_fid) in correlations or (dup_fid, fid) in correlations:\n                skip = True\n                break\n        if not skip:\n            selected_ids.add(fid)\n    \n    # Limit to MAX_DRIVERS\n    top_features = list(selected_ids)[:MAX_DRIVERS]\n    \n    # If no strong associations, return empty design\n    if len(top_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Simple approach: Use top features directly\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(top_features),\n        products=(),\n        loadings={fid: 1.0 for fid in top_features}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        x = feats.x[:, i]\n        y = feats.y\n        # Calculate effect size (mean difference)\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group1 = x[y == 1]\n        group0 = x[y == 0]\n        if len(group1) > 1 and len(group0) > 1:\n            t_stat, p_val = stats.ttest_ind(group1, group0, equal_var=False)\n            if p_val < 0.05 and abs(effect_size) > 0.1:\n                effects.append((abs(effect_size), fid, p_val, t_stat))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    \n    # Check for near-duplicates using correlation\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Remove near-duplicates, keeping the one with stronger effect\n    selected_ids = set()\n    for effect_size, fid, p_val, t_stat in effects:\n        skip = False\n        for dup_fid in selected_ids:\n            if (fid, dup_fid) in correlations or (dup_fid, fid) in correlations:\n                skip = True\n                break\n        if not skip:\n            selected_ids.add(fid)\n    \n    # Limit to MAX_DRIVERS\n    top_features = list(selected_ids)[:MAX_DRIVERS]\n    \n    # If no strong associations, return empty design\n    if len(top_features) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Simple approach: Use top features directly\n    return Design(\n        drivers=tuple(top_features),\n        columns=tuple(top_features),\n        products=(),\n        loadings={fid: 1.0 for fid in top_features}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8388,
+  "completion_tokens": 1683,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2374
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2166
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2166
+   }
+  ],
+  "wall_s": 36.2
+ }
+}

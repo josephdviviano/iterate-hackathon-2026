@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-rtx1yvih",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Quick correlation-based module detection without clustering\n    # Use top features by effect size as starting point\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic\n        effect_sizes.append((abs(t_stat), fid))\n    \n    # Sort by effect size and take top 20\n    effect_sizes.sort(reverse=True)\n    top_features = [fid for _, fid in effect_sizes[:20]]\n    \n    # Build correlation matrix for top features only\n    top_indices = [feats.column(fid) for fid in top_features]\n    x_top = feats.x[:, top_indices]\n    \n    # Find highly correlated pairs among top features\n    corr_matrix = np.corrcoef(x_top.T)\n    corr_pairs = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                corr_pairs.append((top_features[i], top_features[j]))\n    \n    # Build connected components to find modules\n    adj = {fid: set() for fid in top_features}\n    for a, b in corr_pairs:\n        adj[a].add(b)\n        adj[b].add(a)\n    \n    # Simple greedy approach: start with strongest feature\n    visited = set()\n    module_features = []\n    \n    # Start with highest effect size feature\n    if top_features:\n        start_fid = effect_sizes[0][1]\n        queue = [start_fid]\n        visited.add(start_fid)\n        \n        while queue:\n            current = queue.pop(0)\n            module_features.append(current)\n            \n            # Add neighbors that haven't been visited\n            for neighbor in adj[current]:\n                if neighbor not in visited:\n                    visited.add(neighbor)\n                    queue.append(neighbor)\n    \n    # If no meaningful module found, return empty design\n    if len(module_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score based on t-statistics\n    loadings = {}\n    for fid in module_features:\n        i = feats.column(fid)\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic\n        loadings[fid] = abs(t_stat)\n    \n    # Normalize loadings\n    total = sum(loadings.values())\n    if total > 0:\n        loadings = {k: v/total for k, v in loadings.items()}\n    \n    # Return design with module features\n    return Design(\n        drivers=tuple(module_features[:MAX_DRIVERS]),\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8246,
+  "completion_tokens": 1752,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design took 10s on all patients; it must run in under 10s",
+    "bytes": 1969
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2603
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2603
+   }
+  ],
+  "wall_s": 31.6
+ }
+}

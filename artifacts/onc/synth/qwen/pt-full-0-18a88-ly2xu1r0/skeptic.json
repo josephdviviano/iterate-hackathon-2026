@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ly2xu1r0",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    # using Welch's t-test for each feature\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        x = feats.x[:, i]\n        y = feats.y\n        # Split by outcome\n        x0 = x[y == 0]\n        x1 = x[y == 1]\n        if len(x0) > 0 and len(x1) > 0:\n            tstat, pval = stats.ttest_ind(x0, x1, equal_var=False)\n            if pval < 0.05:\n                # Simple AUC approximation - just use correlation with outcome\n                auc = abs(np.corrcoef(x, y)[0, 1])\n                if auc > 0.05:  # Threshold for inclusion\n                    sig_features.append((fid, abs(tstat), auc))\n    \n    # Sort by t-statistic magnitude\n    sig_features.sort(key=lambda x: x[1], reverse=True)\n    \n    # Remove near-duplicates (correlated features)\n    keep_features = []\n    for fid, _, _ in sig_features:\n        is_duplicate = False\n        for kept_fid, _, _ in keep_features:\n            if feats.column(kept_fid) != -1 and feats.column(fid) != -1:\n                corr = np.corrcoef(feats.x[:, feats.column(kept_fid)], \n                                   feats.x[:, feats.column(fid)])[0, 1]\n                if abs(corr) >= 0.6:\n                    is_duplicate = True\n                    break\n        if not is_duplicate:\n            keep_features.append((fid, _, _))\n    \n    # If no significant features, return empty design\n    if not keep_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use all significant features for weighted score\n    feature_ids = [f[0] for f in keep_features]\n    \n    # Create weighted score using t-statistics\n    weights = {}\n    for i, fid in enumerate(feature_ids):\n        # Use t-statistic as weight\n        x = feats.x[:, feats.column(fid)]\n        y = feats.y\n        x0 = x[y == 0]\n        x1 = x[y == 1]\n        if len(x0) > 0 and len(x1) > 0:\n            tstat, _ = stats.ttest_ind(x0, x1, equal_var=False)\n            weights[fid] = abs(tstat)\n    \n    # Select top features for drivers (based on weights)\n    sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)\n    top_drivers = [fid for fid, _ in sorted_weights[:min(MAX_DRIVERS, len(sorted_weights))]]\n    \n    # Return the top drivers and their weights for a weighted score\n    return Design(\n        drivers=tuple(top_drivers),\n        columns=tuple(feature_ids),\n        products=(),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8757,
+  "completion_tokens": 2107,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3151
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'roc_auc_score' is not defined",
+    "bytes": 2629
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2605
+   }
+  ],
+  "wall_s": 23.8
+ }
+}

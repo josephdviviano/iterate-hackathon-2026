@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nrlvd3gu",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong features (p < 0.01) based on t-test\n    strong_indices = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'expression':\n            t_stat, p_val = stats.ttest_ind(feats.x[:, i][feats.y==1], feats.x[:, i][feats.y==0])\n            if p_val < 0.01:\n                strong_indices.append(i)\n    \n    # If no strong features, return empty design\n    if not strong_indices:\n        return Design(drivers=(), columns=feats.ids, products=(), loadings={fid: 1.0 for fid in feats.ids})\n    \n    # Compute correlation matrix for strong features\n    X_strong = feats.x[:, strong_indices]\n    corr_matrix = np.corrcoef(X_strong.T)\n    \n    # Cluster correlated features using hierarchical clustering\n    clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=0.6, linkage='average')\n    clusters = clustering.fit_predict(corr_matrix)\n    \n    # Select representative features from each cluster\n    selected_features = []\n    for c in set(clusters):\n        cluster_indices = [strong_indices[i] for i in range(len(strong_indices)) if clusters[i] == c]\n        cluster_fids = [feats.ids[i] for i in cluster_indices]\n        # Choose the feature with highest absolute t-statistic as representative\n        best_fid = max(cluster_fids, key=lambda fid: abs(stats.ttest_ind(feats.x[:, feats.column(fid)], feats.y).statistic))\n        selected_features.append(best_fid)\n    \n    # Sort by effect size\n    selected_features.sort(key=lambda fid: abs(stats.ttest_ind(feats.x[:, feats.column(fid)], feats.y).statistic), reverse=True)\n    \n    # Return top features as drivers\n    drivers = tuple(selected_features[:MAX_DRIVERS])\n    columns = tuple(feats.ids)\n    products = ()\n    loadings = {fid: 1.0 for fid in feats.ids}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7904,
+  "completion_tokens": 1359,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 1601
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1992
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1992
+   }
+  ],
+  "wall_s": 16.9
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-00h3eroj",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    keep = []\n    used = set()\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    n = len(ids)\n    \n    for i in range(n):\n        if i in used:\n            continue\n        keep.append(i)\n        used.add(i)\n        \n        # Find correlated features to exclude\n        for j in range(i+1, n):\n            if j in used:\n                continue\n            if abs(corr_matrix[i,j]) >= 0.6:\n                used.add(j)\n    \n    kept_ids = [ids[i] for i in keep]\n    kept_x = feats.x[:, keep]\n    \n    # Compute t-statistics for all kept features\n    t_stats = []\n    for i, fid in enumerate(kept_ids):\n        x1 = kept_x[feats.y == 1, i]\n        x0 = kept_x[feats.y == 0, i]\n        if len(x1) > 1 and len(x0) > 1:\n            t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        else:\n            t_stat = 0\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic magnitude\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [kept_ids[i] for i in sorted_indices[:min(MAX_DRIVERS, len(kept_ids))]]\n    \n    # Check for interaction terms among top features\n    products = []\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            a, b = top_features[i], top_features[j]\n            products.append((a, b))\n    \n    # Create drivers and columns\n    drivers = tuple(top_features)\n    columns = tuple(kept_ids)\n    products = tuple(products[:len(products)//2]) if len(products) > 0 else ()\n    \n    # Weighted score: use t-statistics as loadings\n    loadings = dict(zip(kept_ids, t_stats))\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7961,
+  "completion_tokens": 1537,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2002
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1915
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1915
+   }
+  ],
+  "wall_s": 18.0
+ }
+}

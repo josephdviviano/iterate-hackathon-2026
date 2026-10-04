@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-aac294a0",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Keep only unique features\n    keep = [i for i in range(len(ids)) if i not in to_remove]\n    ids_keep = [ids[i] for i in keep]\n    x_keep = x[:, keep]\n    \n    # Compute effect sizes (mean difference in outcome groups)\n    means_0 = np.mean(x_keep[y==0], axis=0)\n    means_1 = np.mean(x_keep[y==1], axis=0)\n    effect_sizes = np.abs(means_1 - means_0)\n    \n    # Sort by effect size\n    sorted_idx = np.argsort(effect_sizes)[::-1]\n    \n    # Select top features as potential drivers\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Take top 4 features as drivers (or fewer if less available)\n    num_drivers = min(MAX_DRIVERS, len(sorted_idx))\n    for i in range(num_drivers):\n        fid = ids_keep[sorted_idx[i]]\n        drivers.append(fid)\n        columns.append(fid)\n        loadings[fid] = effect_sizes[sorted_idx[i]]\n        \n    # Add interaction terms between top two drivers if they exist\n    if len(drivers) >= 2:\n        a, b = drivers[0], drivers[1]\n        products.append((a,b))\n        columns.append(a)\n        columns.append(b)\n        \n    # Remove duplicates from columns\n    columns = list(set(columns))\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter out near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Keep only unique features\n    keep = [i for i in range(len(ids)) if i not in to_remove]\n    ids_keep = [ids[i] for i in keep]\n    x_keep = x[:, keep]\n    \n    # Compute effect sizes (mean difference in outcome groups)\n    means_0 = np.mean(x_keep[y==0], axis=0)\n    means_1 = np.mean(x_keep[y==1], axis=0)\n    effect_sizes = np.abs(means_1 - means_0)\n    \n    # Sort by effect size\n    sorted_idx = np.argsort(effect_sizes)[::-1]\n    \n    # Select top features as potential drivers\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Take top 4 features as drivers (or fewer if less available)\n    num_drivers = min(MAX_DRIVERS, len(sorted_idx))\n    for i in range(num_drivers):\n        fid = ids_keep[sorted_idx[i]]\n        drivers.append(fid)\n        columns.append(fid)\n        loadings[fid] = effect_sizes[sorted_idx[i]]\n        \n    # Add interaction terms between top two drivers if they exist\n    if len(drivers) >= 2:\n        a, b = drivers[0], drivers[1]\n        products.append((a,b))\n        columns.append(a)\n        columns.append(b)\n        \n    # Remove duplicates from columns\n    columns = list(set(columns))\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7860,
+  "completion_tokens": 1425,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1830
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1889
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1889
+   }
+  ],
+  "wall_s": 16.6
+ }
+}

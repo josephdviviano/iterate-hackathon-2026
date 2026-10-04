@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ds04yo44",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter for significant features (p < 0.05, |t| > 2)\n    sig_idx = [i for i, fid in enumerate(feats.ids) \n               if abs(stats.ttest_ind(feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0])[0]) > 2]\n    \n    if not sig_idx:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Cluster correlated features (|r| >= 0.6)\n    corr_pairs = [(i,j) for i in sig_idx for j in sig_idx if i<j \n                  if abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]) >= 0.6]\n    \n    if not corr_pairs:\n        # No strong correlations, pick top features by t-statistic\n        t_stats = [stats.ttest_ind(feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0])[0] \n                   for i in sig_idx]\n        top_features = [feats.ids[i] for i in sorted(sig_idx, key=lambda i: abs(t_stats[i]), reverse=True)]\n        return Design(\n            drivers=(top_features[0],) if top_features else (),\n            columns=top_features[:10],\n            products=(),\n            loadings={top_features[0]: 1.0} if top_features else {}\n        )\n    \n    # Form clusters using hierarchical clustering\n    all_features = list(set([f for pair in corr_pairs for f in pair]))\n    if len(all_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build similarity matrix from correlations\n    n = len(all_features)\n    sim_matrix = np.zeros((n, n))\n    for i, j in corr_pairs:\n        try:\n            idx_i = all_features.index(i)\n            idx_j = all_features.index(j)\n            sim_matrix[idx_i, idx_j] = sim_matrix[idx_j, idx_i] = abs(np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1])\n        except ValueError:\n            continue\n    \n    # Cluster features based on similarity\n    clustering = AgglomerativeClustering(n_clusters=1, linkage='average')\n    try:\n        cluster_labels = clustering.fit_predict(1 - sim_matrix)  # Convert to distance\n    except:\n        # Fallback to single cluster\n        cluster_labels = np.zeros(n)\n    \n    # Get the main cluster\n    main_cluster = [all_features[i] for i in range(n) if cluster_labels[i] == 0]\n    \n    if not main_cluster:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score from cluster members\n    weights = np.array([abs(stats.ttest_ind(feats.x[:,feats.column(fid)][feats.y==1], \n                                          feats.x[:,feats.column(fid)][feats.y==0])[0]) \n                       for fid in main_cluster])\n    weights = weights / np.sum(weights) if np.sum(weights) > 0 else np.ones(len(weights)) / len(weights)\n    \n    loadings = dict(zip(main_cluster, weights))\n    \n    # Select top drivers by effect size\n    drivers = tuple(sorted(main_cluster, key=lambda fid: abs(stats.ttest_ind(feats.x[:,feats.column(fid)][feats.y==1], \n                                                                           feats.x[:,feats.column(fid)][feats.y==0])[0]), \n                          reverse=True)[:MAX_DRIVERS])\n    \n    # Include interaction terms between top features\n    products = tuple([(a,b) for i, a in enumerate(drivers) for b in drivers[i+1:] \n                      if abs(np.corrcoef(feats.x[:,feats.column(a)], feats.x[:,feats.column(b)])[0,1]) >= 0.6])\n    \n    return Design(\n        drivers=drivers,\n        columns=main_cluster,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9315,
+  "completion_tokens": 2642,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 3416
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: tuple.index(x): x not in tuple",
+    "bytes": 3392
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nValueError: tuple.index(x): x not in tuple",
+    "bytes": 3517
+   }
+  ],
+  "wall_s": 30.1
+ }
+}

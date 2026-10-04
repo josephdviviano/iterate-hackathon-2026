@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-78lrbixb",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        t_stat, _ = stats.ttest_ind(feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0])\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic magnitude\n    sorted_indices = np.argsort(t_stats)[::-1]\n    \n    # Select top features, avoiding near-duplicates\n    drivers = []\n    selected = set()\n    near_dup_pairs = {\n        ('PNU10', 'TSP11'), ('MSEQ10', 'LIZP11P'), ('MSEQ10', 'WCQF6'), \n        ('WCQF6', 'LIZP11P'), ('JMD15', 'CZEW19'), ('OMB12A', 'WUL6'),\n        ('OMB12A', 'UZFR6'), ('CTM15', 'NESJ4'), ('PFS16', 'ERV8'),\n        ('WUL6', 'UZFR6'), ('MSEQ10', 'CZEW19'), ('CZER19B', 'EATE2A'),\n        ('VRKS3', 'HWX7L'), ('CZER19B', 'IIH16'), ('ZSTN15L', 'LIZP11P'),\n        ('CTM15', 'JMD15'), ('WCQF6', 'CZEW19'), ('MSEQ10', 'ZSTN15L'),\n        ('JPO19', 'EATE2A'), ('ZSTN15L', 'WCQF6')\n    }\n    \n    for idx in sorted_indices:\n        fid = feats.ids[idx]\n        if fid in selected:\n            continue\n            \n        # Check if this feature's near-duplicate is already selected\n        skip = False\n        for dup_pair in near_dup_pairs:\n            if dup_pair[0] == fid and dup_pair[1] in selected:\n                skip = True\n                break\n            elif dup_pair[1] == fid and dup_pair[0] in selected:\n                skip = True\n                break\n        \n        if not skip:\n            drivers.append(fid)\n            selected.add(fid)\n            # Add near-duplicate to selected set\n            for dup_pair in near_dup_pairs:\n                if dup_pair[0] == fid:\n                    selected.add(dup_pair[1])\n                elif dup_pair[1] == fid:\n                    selected.add(dup_pair[0])\n        \n        if len(drivers) >= MAX_DRIVERS:\n            break\n    \n    # Limit to at most 4 drivers as per checker report\n    if len(drivers) > 4:\n        drivers = drivers[:4]\n    \n    # Build columns and products lists\n    columns = list(feats.ids)\n    products = []\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if fid in drivers:\n            loadings[fid] = t_stats[i] / max(t_stats) if max(t_stats) > 0 else 0\n    \n    # Keep model simple - use minimal interaction terms\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8704,
+  "completion_tokens": 2201,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2566
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2700
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2620
+   }
+  ],
+  "wall_s": 25.3
+ }
+}

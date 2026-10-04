@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-aohkwi5n",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression and copy number features\n    expr_ids = [fid for fid, t in zip(feats.ids, feats.types) if t in ('expression', 'copy_number')]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        (a, b) for a, b in [\n            ('LBV14', 'BRF16'), ('FWIC14', 'DNM11'), ('NXUR3', 'DLW17'), \n            ('RQV6', 'LBV14'), ('WUY9', 'BRF16'), ('FWIC14', 'DXJE5'), \n            ('DXJE5', 'DNM11'), ('LBV14', 'NHR5'), ('CWWV6B', 'LBV14'), \n            ('WUY9', 'LBV14'), ('EOEY11', 'SOKH19'), ('LBV14', 'KBJO11'), \n            ('MCZ2A', 'RFIQ18'), ('BRF16', 'NHR5'), ('RQV6', 'NHR5'), \n            ('CWWV6B', 'BRF16'), ('KHP6', 'IMJ11'), ('CWWV6B', 'CMGZ19A'), \n            ('WUY9', 'DNM11'), ('RQV6', 'BRF16')\n        ] if a in feats.ids and b in feats.ids\n    ]\n    \n    # Keep one feature from each correlated pair\n    keep_ids = set(expr_ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer higher mean_y1-mean_y0 difference\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            mean_diff_a = np.mean(feats.x[feats.y==1, idx_a]) - np.mean(feats.x[feats.y==0, idx_a])\n            mean_diff_b = np.mean(feats.x[feats.y==1, idx_b]) - np.mean(feats.x[feats.y==0, idx_b])\n            if abs(mean_diff_a) < abs(mean_diff_b):\n                keep_ids.remove(a)\n            else:\n                keep_ids.remove(b)\n    \n    # Cluster remaining features by correlation\n    if len(keep_ids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n        \n    keep_ids_list = sorted(list(keep_ids))\n    X = feats.x[:, [feats.column(fid) for fid in keep_ids_list]]\n    \n    # Compute correlation matrix\n    corr_matrix = np.corrcoef(X.T)\n    # Use negative correlation for clustering\n    similarity = 1 - np.abs(corr_matrix)\n    \n    # Hierarchical clustering\n    clusterer = AgglomerativeClustering(n_clusters=2, linkage='average')\n    clusters = clusterer.fit_predict(similarity)\n    \n    # Select best cluster based on mean_y difference\n    best_cluster = 0\n    if np.sum(clusters == 1) > 0:\n        mean_diff_0 = np.mean(feats.x[feats.y==1, :][:, clusters==0].mean(axis=1)) - \\\n                     np.mean(feats.x[feats.y==0, :][:, clusters==0].mean(axis=1))\n        mean_diff_1 = np.mean(feats.x[feats.y==1, :][:, clusters==1].mean(axis=1)) - \\\n                     np.mean(feats.x[feats.y==0, :][:, clusters==1].mean(axis=1))\n        best_cluster = 1 if abs(mean_diff_1) > abs(mean_diff_0) else 0\n    \n    # Select features in best cluster\n    selected_ids = [fid for i, fid in enumerate(keep_ids_list) if clusters[i] == best_cluster]\n    \n    if not selected_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score using mean differences\n    loadings = {}\n    for fid in selected_ids:\n        idx = feats.column(fid)\n        mean_diff = np.mean(feats.x[feats.y==1, idx]) - np.mean(feats.x[feats.y==0, idx])\n        loadings[fid] = mean_diff\n    \n    # Normalize loadings\n    norm = np.sqrt(sum(v**2 for v in loadings.values()))\n    if norm > 0:\n        for k in loadings:\n            loadings[k] /= norm\n    \n    # Drivers are top features by mean difference\n    drivers = tuple(sorted(selected_ids, key=lambda x: abs(loadings[x]), reverse=True)[:MAX_DRIVERS])\n    \n    # Columns include all selected features\n    columns = tuple(selected_ids)\n    \n    # No products for this simple model\n    products = ()\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 10110,
+  "completion_tokens": 3383,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 3826
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: boolean index did not match indexed array along axis 1; size of axis is 50 but size of corresponding boolean axis is 30",
+    "bytes": 3802
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: boolean index did not match indexed array along axis 1; size of axis is 50 but size of corresponding boolean axis is 30",
+    "bytes": 3747
+   }
+  ],
+  "wall_s": 38.2
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-h9h3wos4",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    # using Welch's t-test\n    p_values = []\n    feature_ids = feats.ids\n    \n    for i, fid in enumerate(feature_ids):\n        col = feats.column(fid)\n        x = feats.x[:, col]\n        y = feats.y\n        \n        # Welch's t-test\n        t_stat, p_val = stats.ttest_ind(x[y == 0], x[y == 1], equal_var=False)\n        p_values.append(p_val)\n    \n    # If all p-values > 0.05, no mechanism\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find top features by p-value (most significant)\n    sorted_indices = np.argsort(p_values)\n    top_features = [feature_ids[i] for i in sorted_indices[:10]]\n    \n    # Check for correlations among top features to remove near-duplicates\n    corr_threshold = 0.6\n    correlated_pairs = set()\n    \n    # Build correlation matrix\n    col_indices = [feats.column(fid) for fid in top_features]\n    corr_matrix = np.corrcoef(feats.x[:, col_indices].T)\n    \n    # Identify correlated pairs\n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            if abs(corr_matrix[i, j]) >= corr_threshold:\n                fid1, fid2 = top_features[i], top_features[j]\n                # Keep the one with better p-value\n                idx1 = feature_ids.index(fid1)\n                idx2 = feature_ids.index(fid2)\n                if p_values[idx1] < p_values[idx2]:\n                    correlated_pairs.add((fid1, fid2))\n                else:\n                    correlated_pairs.add((fid2, fid1))\n    \n    # Remove correlated features (keep only one from each pair)\n    selected_features = set(top_features)\n    for fid1, fid2 in correlated_pairs:\n        if fid1 in selected_features and fid2 in selected_features:\n            # Remove the one with higher p-value\n            idx1 = feature_ids.index(fid1)\n            idx2 = feature_ids.index(fid2)\n            if p_values[idx1] > p_values[idx2]:\n                selected_features.remove(fid1)\n            else:\n                selected_features.remove(fid2)\n    \n    # For stratified analysis, check consistency across strata\n    strata = list(set(feats.stratum))\n    if len(strata) > 1:\n        strata_pvals = defaultdict(list)\n        for s in strata:\n            mask = [i for i, label in enumerate(feats.stratum) if label == s]\n            s_x = feats.x[mask]\n            s_y = feats.y[mask]\n            \n            for i, fid in enumerate(feature_ids):\n                col = feats.column(fid)\n                x = s_x[:, col]\n                t_stat, p_val = stats.ttest_ind(x[s_y == 0], x[s_y == 1], equal_var=False)\n                strata_pvals[fid].append(p_val)\n        \n        # Filter features that show consistent significance across strata\n        filtered_features = []\n        for fid in selected_features:\n            pvals = strata_pvals[fid]\n            if all(p < 0.05 for p in pvals):\n                filtered_features.append(fid)\n        selected_features = set(filtered_features)\n    \n    # Final selection: use top features that pass both tests\n    final_features = list(selected_features)[:MAX_DRIVERS]\n    \n    # Return empty design if no strong signal\n    if not final_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use top features for regression\n    columns = tuple(final_features)\n    \n    # Try adding interaction terms for top 2 features\n    products = ()\n    if len(final_features) >= 2:\n        products = ((final_features[0], final_features[1]),)\n    \n    # Create a weighted score from top features\n    loadings = {}\n    for i, fid in enumerate(final_features):\n        loadings[fid] = 1.0 / len(final_features)  # Equal weights\n    \n    # Select drivers based on statistical significance\n    drivers = tuple(final_features)\n    \n    # Ensure we don't exceed MAX_DRIVERS\n    if len(drivers) > MAX_DRIVERS:\n        drivers = drivers[:MAX_DRIVERS]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9535,
+  "completion_tokens": 2961,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nAttributeError: 'numpy.ndarray' object has no attribute 'index'",
+    "bytes": 4201
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4207
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4194
+   }
+  ],
+  "wall_s": 33.3
+ }
+}

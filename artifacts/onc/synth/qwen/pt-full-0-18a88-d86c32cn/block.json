@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-d86c32cn",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics\n    t_stats = np.array([abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                           feats.x[feats.y==0, feats.column(fid)])[0]) \n                       for fid in feats.ids])\n    \n    # Select top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:20]\n    top_ids = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('IXTU9', 'NEDZ18'), ('BKMF9', 'DGX5B'), ('NDL15', 'RSS12'), \n        ('NDL15', 'VOOB1P'), ('BKMF9', 'NDL15'), ('ADU4', 'TMQN5'),\n        ('NDL15', 'IIIG17B'), ('ADU4', 'FJZ17'), ('DYV9', 'OTC8'),\n        ('NDL15', 'GIWM4'), ('RQE4P', 'DDHC16'), ('PBU6L', 'NDL15'),\n        ('RSS12', 'VOOB1P'), ('NDL15', 'VNFB8P'), ('RSS12', 'VNFB8P'),\n        ('VOOB1P', 'XOU17P'), ('GDW18', 'BLQ4'), ('RSS12', 'IIIG17B'),\n        ('ERV12', 'XOU17P'), ('PBU6L', 'RSS12')\n    ]\n    \n    # Build set of unique features to consider\n    candidates = set(top_ids)\n    for a, b in correlated_pairs:\n        if a in candidates and b in candidates:\n            candidates.remove(b)  # Keep only one from each pair\n    \n    # Check if we have enough candidates\n    if len(candidates) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create a correlation matrix among candidates\n    candidate_indices = [feats.column(fid) for fid in candidates]\n    X_subset = feats.x[:, candidate_indices]\n    \n    # Compute pairwise correlations\n    corr_matrix = np.corrcoef(X_subset.T)\n    \n    # Use spectral clustering to find modules\n    try:\n        # Cluster based on correlation matrix\n        clustering = SpectralClustering(n_clusters=1, affinity='precomputed', \n                                       random_state=0).fit(1 - np.abs(corr_matrix))\n        cluster_labels = clustering.labels_\n        \n        # Get the largest cluster (or just use all if no clear clustering)\n        module_indices = np.where(cluster_labels == cluster_labels[0])[0]\n        module_features = [list(candidates)[i] for i in module_indices]\n        \n        # If module size is too small, fallback to top features\n        if len(module_features) < 2:\n            module_features = list(candidates)[:5]\n            \n    except:\n        # Fallback to top features if clustering fails\n        module_features = list(candidates)[:5]\n    \n    # Build loadings from module features\n    loadings = {}\n    for fid in module_features:\n        idx = feats.column(fid)\n        # Weight by standardized effect size\n        effect_size = np.mean(feats.x[feats.y==1, idx]) - np.mean(feats.x[feats.y==0, idx])\n        loadings[fid] = effect_size\n        \n    # Normalize loadings\n    total_weight = sum(abs(w) for w in loadings.values())\n    if total_weight > 0:\n        for fid in loadings:\n            loadings[fid] /= total_weight\n    \n    # Select top features as drivers (most significant ones)\n    driver_scores = [(fid, abs(loadings.get(fid, 0))) for fid in module_features]\n    driver_scores.sort(key=lambda x: x[1], reverse=True)\n    drivers = tuple(fid for fid, _ in driver_scores[:MAX_DRIVERS])\n    \n    # Return design\n    return Design(\n        drivers=drivers,\n        columns=tuple(module_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9409,
+  "completion_tokens": 2890,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3543
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3682
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3488
+   }
+  ],
+  "wall_s": 33.0
+ }
+}

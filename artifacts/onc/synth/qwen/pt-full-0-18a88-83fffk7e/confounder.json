@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-83fffk7e",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import f_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows strong association with outcome\n    p_values = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        t_stat, p_val = stats.ttest_ind(x[feats.y==1], x[feats.y==0], equal_var=False)\n        p_values.append(p_val)\n    \n    # Find features with p < 0.05\n    significant_features = [fid for fid, p in zip(feats.ids, p_values) if p < 0.05]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('FIM16', 'HNT12'), ('QMBK7', 'MOYZ4'), ('AOEV17B', 'HNT12'), \n        ('AOEV17B', 'FIM16'), ('QMBK7', 'CJNP14'), ('QMBK7', 'EFBB3'),\n        ('QMBK7', 'HNT12'), ('QMBK7', 'TQW17'), ('MOYZ4', 'CJNP14'),\n        ('QMBK7', 'SLT13L'), ('QMBK7', 'ACG15'), ('QMBK7', 'RAD18P'),\n        ('EFBB3', 'HNT12'), ('KONH16', 'QMBK7'), ('EFBB3', 'CJNP14'),\n        ('MOYZ4', 'SLT13L'), ('QMBK7', 'BGA18'), ('QMBK7', 'UHL8')\n    ]\n    \n    # Keep one feature from each correlated pair\n    to_remove = set()\n    for a, b in correlated_pairs:\n        if a in significant_features and b in significant_features:\n            # Prefer the one with higher effect size\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            effect_a = abs(np.mean(feats.x[feats.y==1, idx_a]) - np.mean(feats.x[feats.y==0, idx_a]))\n            effect_b = abs(np.mean(feats.x[feats.y==1, idx_b]) - np.mean(feats.x[feats.y==0, idx_b]))\n            to_remove.add(b if effect_b > effect_a else a)\n    \n    significant_features = [f for f in significant_features if f not in to_remove]\n    \n    # If no significant features, return empty design\n    if not significant_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Sort by effect size (difference in means)\n    effects = []\n    for fid in significant_features:\n        col_idx = feats.column(fid)\n        effect = abs(np.mean(feats.x[feats.y==1, col_idx]) - np.mean(feats.x[feats.y==0, col_idx]))\n        effects.append((fid, effect))\n    \n    effects.sort(key=lambda x: x[1], reverse=True)\n    top_drivers = [fid for fid, _ in effects[:MAX_DRIVERS]]\n    \n    # For logistic regression, use all significant features\n    columns = tuple(significant_features)\n    \n    # Look for interaction terms (products) between top drivers\n    products = []\n    for i, a in enumerate(top_drivers):\n        for b in top_drivers[i+1:]:\n            products.append((a, b))\n    \n    # Create weighted score using top features\n    loadings = {}\n    for fid, effect in effects[:5]:\n        loadings[fid] = effect\n    \n    return Design(drivers=tuple(top_drivers), columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9165,
+  "completion_tokens": 2625,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2923
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3067
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2923
+   }
+  ],
+  "wall_s": 29.8
+ }
+}

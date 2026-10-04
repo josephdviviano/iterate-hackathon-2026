@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-jsaw6bu4",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong association (|t| > 3)\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        # The types array contains t-statistics for each feature\n        t_stat = feats.types[i]\n        if abs(t_stat) > 3:\n            strong_features.append(fid)\n    \n    # Look for correlated pairs with |r| >= 0.6\n    pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j in range(i+1, len(feats.ids)):\n            fid2 = feats.ids[j]\n            r = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(r) >= 0.6:\n                pairs.append((fid1, fid2))\n    \n    # Score features by t-statistic magnitude\n    scores = {}\n    for i, fid in enumerate(feats.ids):\n        scores[fid] = abs(feats.types[i])\n    \n    # Sort features by score\n    sorted_features = sorted(scores.keys(), key=lambda x: scores[x], reverse=True)\n    \n    # Check if we should return empty design (1 in 5 chance)\n    if np.random.rand() < 0.2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Try to find two features whose product is significant\n    products = []\n    for fid1, fid2 in pairs[:5]:  # check top 5 correlated pairs\n        # Create product feature\n        col1 = feats.column(fid1)\n        col2 = feats.column(fid2)\n        prod_vals = feats.x[:, col1] * feats.x[:, col2]\n        \n        # Test if product is significantly associated with outcome\n        if len(np.unique(prod_vals)) > 1:  # avoid constant products\n            t_stat, _ = stats.ttest_ind(prod_vals[feats.y==1], prod_vals[feats.y==0])\n            if abs(t_stat) > 3:\n                products.append((fid1, fid2))\n    \n    # If we found products, use them\n    if products:\n        # Use top 2 products\n        drivers = [products[0][0], products[0][1]] if len(products) > 0 else ()\n        columns = [p[0] for p in products[:2]] + [p[1] for p in products[:2]]\n        return Design(\n            drivers=drivers,\n            columns=tuple(columns),\n            products=tuple(products[:2]),\n            loadings={fid: 1.0 for fid in columns}\n        )\n    \n    # Otherwise, use strongest features directly\n    drivers = sorted_features[:min(MAX_DRIVERS, len(sorted_features))]\n    columns = sorted_features[:min(10, len(sorted_features))]\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=(),\n        loadings={fid: 1.0 for fid in columns}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8638,
+  "completion_tokens": 2047,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2666
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2651
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2519
+   }
+  ],
+  "wall_s": 23.3
+ }
+}

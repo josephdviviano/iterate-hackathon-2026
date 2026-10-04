@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-azb7n5eo",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference) for all features\n    effect_sizes = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y==0, col]\n        y1 = feats.x[feats.y==1, col]\n        effect_size = abs(np.mean(y1) - np.mean(y0))\n        effect_sizes.append(effect_size)\n    \n    # Sort features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top features by t-test to avoid near-duplicates\n    selected_ids = []\n    tstats = []\n    \n    for idx in sorted_indices:\n        fid = feats.ids[idx]\n        col = feats.column(fid)\n        y0 = feats.x[feats.y==0, col]\n        y1 = feats.x[feats.y==1, col]\n        tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        tstats.append(abs(tstat))\n        \n        # Check for near-duplicates (correlation >= 0.6)\n        is_duplicate = False\n        for selected_fid in selected_ids:\n            selected_col = feats.column(selected_fid)\n            corr = abs(np.corrcoef(feats.x[:, col], feats.x[:, selected_col])[0, 1])\n            if corr >= 0.6:\n                is_duplicate = True\n                break\n        \n        if not is_duplicate:\n            selected_ids.append(fid)\n            if len(selected_ids) >= MAX_DRIVERS:\n                break\n    \n    # Use top features as drivers\n    drivers = tuple(selected_ids)\n    \n    # For columns, use only the drivers (keep model small)\n    columns = list(drivers)\n    \n    # Products: only include interactions between top drivers\n    products = []\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    # Loadings: simple effect sizes for drivers only\n    loadings = {}\n    for i, fid in enumerate(columns):\n        loadings[fid] = effect_sizes[feats.column(fid)]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference) for all features\n    effect_sizes = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y==0, col]\n        y1 = feats.x[feats.y==1, col]\n        effect_size = abs(np.mean(y1) - np.mean(y0))\n        effect_sizes.append(effect_size)\n    \n    # Sort features by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top features by t-test to avoid near-duplicates\n    selected_ids = []\n    tstats = []\n    \n    for idx in sorted_indices:\n        fid = feats.ids[idx]\n        col = feats.column(fid)\n        y0 = feats.x[feats.y==0, col]\n        y1 = feats.x[feats.y==1, col]\n        tstat, _ = stats.ttest_ind(y1, y0, equal_var=False)\n        tstats.append(abs(tstat))\n        \n        # Check for near-duplicates (correlation >= 0.6)\n        is_duplicate = False\n        for selected_fid in selected_ids:\n            selected_col = feats.column(selected_fid)\n            corr = abs(np.corrcoef(feats.x[:, col], feats.x[:, selected_col])[0, 1])\n            if corr >= 0.6:\n                is_duplicate = True\n                break\n        \n        if not is_duplicate:\n            selected_ids.append(fid)\n            if len(selected_ids) >= MAX_DRIVERS:\n                break\n    \n    # Use top features as drivers\n    drivers = tuple(selected_ids)\n    \n    # For columns, use only the drivers (keep model small)\n    columns = list(drivers)\n    \n    # Products: only include interactions between top drivers\n    products = []\n    if len(drivers) >= 2:\n        products = [(drivers[0], drivers[1])]\n    \n    # Loadings: simple effect sizes for drivers only\n    loadings = {}\n    for i, fid in enumerate(columns):\n        loadings[fid] = effect_sizes[feats.column(fid)]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8469,
+  "completion_tokens": 1582,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2289
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2043
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1952
+   }
+  ],
+  "wall_s": 18.1
+ }
+}

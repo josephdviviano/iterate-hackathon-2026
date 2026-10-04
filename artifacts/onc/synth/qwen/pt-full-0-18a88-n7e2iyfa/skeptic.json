@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-n7e2iyfa",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import StratifiedKFold\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue  # Skip derived features\n        x = feats.x[:, i]\n        y = feats.y\n        # Welch's t-test for mean difference\n        mean1 = np.mean(x[y==1])\n        mean0 = np.mean(x[y==0])\n        diff = mean1 - mean0\n        t_stat, p_val = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        auc = roc_auc_score(y, x) if len(np.unique(y)) > 1 else 0.5\n        effects.append((fid, diff, abs(t_stat), p_val, auc))\n    \n    # Sort by effect size and statistical significance\n    effects.sort(key=lambda x: (-abs(x[1]), -x[2]))\n    \n    # Check for correlation among top features to avoid near-duplicates\n    top_fids = [f[0] for f in effects[:10]]\n    correlations = {}\n    for i, f1 in enumerate(top_fids):\n        for j, f2 in enumerate(top_fids[i+1:], i+1):\n            col1 = feats.column(f1)\n            col2 = feats.column(f2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0,1]\n            if abs(corr) >= 0.6:\n                correlations[(f1, f2)] = corr\n    \n    # If no strong associations found, return empty design\n    if not effects or max(abs(e[1]) for e in effects) < 0.5:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features based on effect sizes, avoiding near-duplicates\n    selected = []\n    used_fids = set()\n    \n    for f in effects:\n        fid = f[0]\n        # Check if this feature is correlated with any already selected\n        is_duplicate = False\n        for selected_fid in selected:\n            if (selected_fid, fid) in correlations or (fid, selected_fid) in correlations:\n                is_duplicate = True\n                break\n        \n        if not is_duplicate and fid not in used_fids:\n            selected.append(fid)\n            used_fids.add(fid)\n            if len(selected) >= MAX_DRIVERS:\n                break\n    \n    # Check for stratum consistency\n    strata_consistent = True\n    if len(set(feats.stratum)) > 1:\n        strata = list(set(feats.stratum))\n        for s in strata:\n            mask = np.array([s_ == s for s_ in feats.stratum])\n            s_x = feats.x[mask]\n            s_y = feats.y[mask]\n            if len(s_y) < 10:\n                continue  # Too few samples\n            for fid in selected:\n                col = feats.column(fid)\n                x = s_x[:, col]\n                try:\n                    t_stat, p_val = stats.ttest_ind(x[s_y==1], x[s_y==0], equal_var=False)\n                    if p_val > 0.05:\n                        strata_consistent = False\n                        break\n                except:\n                    strata_consistent = False\n                    break\n            if not strata_consistent:\n                break\n    \n    # Final decision\n    if strata_consistent and selected:\n        drivers = tuple(selected[:MAX_DRIVERS])\n    else:\n        drivers = ()\n    \n    # Build regression components\n    columns = tuple(selected[:MAX_DRIVERS])\n    products = ()\n    loadings = {fid: 1.0 for fid in columns}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n\n# Helper function for AUC calculation\ndef roc_auc_score(y_true, y_score):\n    try:\n        from sklearn.metrics import roc_auc_score as sk_auc\n        return sk_auc(y_true, y_score)\n    except ImportError:\n        # Simple approximation if sklearn not available\n        return 0.5\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9564,
+  "completion_tokens": 2806,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 3602
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3849
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3767
+   }
+  ],
+  "wall_s": 32.2
+ }
+}

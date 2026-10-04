@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-god9cd09",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates using t-statistics\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        # The types array contains the t-statistics for each feature\n        t_stat = feats.types[i]\n        if abs(t_stat) > 3.0:\n            strong_candidates.append((fid, t_stat))\n    \n    # Sort by absolute t-statistic\n    strong_candidates.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Remove near-duplicates based on correlation\n    keep = set()\n    corr_matrix = np.corrcoef(feats.x.T)\n    for i, (fid1, _) in enumerate(strong_candidates):\n        if fid1 in keep:\n            continue\n        keep.add(fid1)\n        for j, (fid2, _) in enumerate(strong_candidates[i+1:], i+1):\n            if abs(corr_matrix[feats.column(fid1), feats.column(fid2)]) >= 0.6 and fid2 in keep:\n                # Keep the one with higher t-stat\n                if abs(strong_candidates[i][1]) > abs(strong_candidates[j][1]):\n                    keep.remove(fid2)\n                else:\n                    keep.remove(fid1)\n                    break\n    \n    # Select top candidates as drivers\n    drivers = tuple([fid for fid, _ in strong_candidates if fid in keep][:MAX_DRIVERS])\n    \n    # For columns, use all features with strong associations\n    columns = []\n    for i, fid in enumerate(feats.ids):\n        t_stat = feats.types[i]\n        if abs(t_stat) > 2.0:\n            columns.append(fid)\n    \n    # Remove near-duplicates from columns\n    col_set = set(columns)\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            if abs(corr_matrix[feats.column(fid1), feats.column(fid2)]) >= 0.6:\n                if abs(feats.types[feats.column(fid1)]) >= abs(feats.types[feats.column(fid2)]):\n                    col_set.discard(fid2)\n                else:\n                    col_set.discard(fid1)\n                    break\n    \n    columns = tuple(col_set)\n    \n    # Create products for highly correlated pairs\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            if abs(corr_matrix[feats.column(fid1), feats.column(fid2)]) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Create loadings for weighted score\n    loadings = {}\n    for fid in columns:\n        loadings[fid] = feats.types[feats.column(fid)]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8455,
+  "completion_tokens": 1946,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2771
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2619
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 2621
+   }
+  ],
+  "wall_s": 22.4
+ }
+}

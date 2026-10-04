@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-azb7n5eo",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import f_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check for clinical variables that might be drivers\n    clinical_vars = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'clinical']\n    \n    # If we have clinical variables, check their association with outcome\n    if clinical_vars:\n        best_clinical = None\n        best_p = 1.0\n        \n        for fid in clinical_vars:\n            col_idx = feats.column(fid)\n            x = feats.x[:, col_idx]\n            _, p = stats.ttest_ind(x[feats.y==1], x[feats.y==0])\n            if p < best_p:\n                best_p = p\n                best_clinical = fid\n                \n        # If clinical variable is significantly associated with outcome, use it\n        if best_p < 0.05:\n            return Design(\n                drivers=(best_clinical,),\n                columns=feats.ids,\n                products=(),\n                loadings={}\n            )\n    \n    # No strong clinical driver found, proceed with feature selection\n    # Use ANOVA F-scores to rank features by association with outcome\n    f_scores, p_values = f_classif(feats.x, feats.y)\n    ranked_indices = np.argsort(f_scores)[::-1]\n    \n    # Select top features with p-value < 0.05\n    selected_features = []\n    for idx in ranked_indices:\n        if p_values[idx] < 0.05:\n            selected_features.append(feats.ids[idx])\n        if len(selected_features) >= 5:  # Limit to avoid overfitting\n            break\n    \n    # Check for strong correlations between features\n    corr_matrix = np.corrcoef(feats.x.T)\n    correlated_pairs = set()\n    \n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                fid_i = feats.ids[i]\n                fid_j = feats.ids[j]\n                correlated_pairs.add((min(fid_i, fid_j), max(fid_i, fid_j)))\n    \n    # Remove near-duplicates\n    unique_features = set(selected_features)\n    for pair in correlated_pairs:\n        if pair[0] in unique_features and pair[1] in unique_features:\n            # Keep the more significant one based on F-score\n            idx1 = feats.column(pair[0])\n            idx2 = feats.column(pair[1])\n            if f_scores[idx1] < f_scores[idx2]:\n                unique_features.remove(pair[0])\n            else:\n                unique_features.remove(pair[1])\n    \n    # Select final features for model\n    final_columns = tuple(sorted(list(unique_features)))\n    \n    # Try to identify interaction terms (products) between top features\n    products = []\n    top_features = sorted(list(unique_features), key=lambda x: f_scores[feats.column(x)], reverse=True)\n    top_features = top_features[:3]  # Limit to top 3\n    \n    # Add products of highly correlated features\n    for a, b in correlated_pairs:\n        if a in top_features and b in top_features:\n            products.append((a, b))\n    \n    # Limit total terms to prevent overfitting\n    total_terms = len(final_columns) + len(products)\n    if total_terms > 12:\n        # Reduce products if needed\n        if len(products) > 0:\n            products = products[:12 - len(final_columns)]\n        else:\n            # Reduce columns if necessary\n            final_columns = final_columns[:12 - len(products)]\n    \n    # Simple scoring approach using weighted sum of top features\n    weights = {}\n    top_features_for_weights = sorted(list(unique_features), key=lambda x: f_scores[feats.column(x)], reverse=True)\n    top_features_for_weights = top_features_for_weights[:2]  # Top 2 features\n    \n    for fid in top_features_for_weights:\n        idx = feats.column(fid)\n        weights[fid] = f_scores[idx]\n    \n    # Return design with top features\n    drivers = tuple([fid for fid in top_features if f_scores[feats.column(fid)] > np.percentile(f_scores, 90)])\n    if not drivers:\n        drivers = ()\n        \n    return Design(\n        drivers=drivers,\n        columns=final_columns,\n        products=tuple(products),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9432,
+  "completion_tokens": 2739,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3703
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 4096
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 4069
+   }
+  ],
+  "wall_s": 30.9
+ }
+}

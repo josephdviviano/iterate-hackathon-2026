@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-g73nces5",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong features (p < 0.01)\n    strong = []\n    for i in range(len(feats.ids)):\n        if len(feats.x[:,i]) > 2:\n            t_stat, p_val = stats.ttest_ind(feats.x[:,i][feats.y==1], feats.x[:,i][feats.y==0])\n            if p_val < 0.01:\n                strong.append(i)\n    \n    # Remove near-duplicates (correlation > 0.6)\n    if len(strong) <= 1:\n        to_remove = set()\n    else:\n        corr = np.corrcoef(feats.x[:, strong].T)\n        to_remove = set()\n        for i in range(len(strong)):\n            for j in range(i+1, len(strong)):\n                if abs(corr[i,j]) > 0.6:\n                    to_remove.add(j)\n    strong = [s for i, s in enumerate(strong) if i not in to_remove]\n    \n    # If we have too many strong features, just take the top ones by effect size\n    if len(strong) > MAX_DRIVERS:\n        effect_sizes = [abs(np.mean(feats.x[:,f][feats.y==1]) - np.mean(feats.x[:,f][feats.y==0])) for f in strong]\n        strong = [strong[i] for i in np.argsort(effect_sizes)[::-1][:MAX_DRIVERS]]\n    \n    # Select drivers as top strong features\n    drivers = [feats.ids[f] for f in strong[:MAX_DRIVERS]]\n    \n    # Build products from pairs of strong features (limit to 5 pairs max)\n    products = []\n    if len(strong) > 1:\n        corr = np.corrcoef(feats.x[:, strong].T)\n        pairs = []\n        for i in range(len(strong)):\n            for j in range(i+1, len(strong)):\n                if abs(corr[i,j]) > 0.6:\n                    pairs.append((i, j))\n        # Take top 5 correlated pairs by correlation strength\n        pairs.sort(key=lambda x: abs(corr[x[0],x[1]]), reverse=True)\n        for i, j in pairs[:5]:\n            products.append((feats.ids[strong[i]], feats.ids[strong[j]]))\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=feats.ids,\n        products=tuple(products),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8285,
+  "completion_tokens": 1659,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 2002
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2192
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1998
+   }
+  ],
+  "wall_s": 19.0
+ }
+}

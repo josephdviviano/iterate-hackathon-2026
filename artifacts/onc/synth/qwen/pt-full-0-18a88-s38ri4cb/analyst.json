@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-s38ri4cb",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong univariate predictors\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        x = feats.x[:, i]\n        y = feats.y\n        effect = abs(np.mean(x[y==1]) - np.mean(x[y==0]))\n        t_stat, _ = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        effects.append((effect, abs(t_stat), fid))\n    \n    effects.sort(reverse=True)\n    candidates = [fid for _, _, fid in effects[:20]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    for fid in candidates:\n        x = feats.x[:, feats.column(fid)]\n        correlated = False\n        for kept_fid in keep:\n            y = feats.x[:, feats.column(kept_fid)]\n            corr = np.corrcoef(x, y)[0,1]\n            if abs(corr) >= 0.6:\n                correlated = True\n                break\n        if not correlated:\n            keep.append(fid)\n    \n    # Select top features by effect size (at most MAX_DRIVERS)\n    drivers = keep[:MAX_DRIVERS]\n    \n    # For logistic regression, include all drivers plus potential interactions\n    columns = drivers.copy()\n    products = []\n    \n    # Add some interaction terms between top features\n    for i in range(min(len(drivers), 3)):\n        for j in range(i+1, min(len(drivers), 3)):\n            products.append((drivers[i], drivers[j]))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(drivers):\n        loadings[fid] = effects[i][0]  # effect size as weight\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                  products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify strong univariate predictors\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'derived':\n            continue\n        x = feats.x[:, i]\n        y = feats.y\n        effect = abs(np.mean(x[y==1]) - np.mean(x[y==0]))\n        t_stat, _ = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        effects.append((effect, abs(t_stat), fid))\n    \n    effects.sort(reverse=True)\n    candidates = [fid for _, _, fid in effects[:20]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    for fid in candidates:\n        x = feats.x[:, feats.column(fid)]\n        correlated = False\n        for kept_fid in keep:\n            y = feats.x[:, feats.column(kept_fid)]\n            corr = np.corrcoef(x, y)[0,1]\n            if abs(corr) >= 0.6:\n                correlated = True\n                break\n        if not correlated:\n            keep.append(fid)\n    \n    # Select top features by effect size (at most MAX_DRIVERS)\n    drivers = keep[:MAX_DRIVERS]\n    \n    # For logistic regression, include all drivers plus potential interactions\n    columns = drivers.copy()\n    products = []\n    \n    # Add some interaction terms between top features\n    for i in range(min(len(drivers), 3)):\n        for j in range(i+1, min(len(drivers), 3)):\n            products.append((drivers[i], drivers[j]))\n    \n    # Simple weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(drivers):\n        loadings[fid] = effects[i][0]  # effect size as weight\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                  products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7885,
+  "completion_tokens": 1289,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1819
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1734
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1734
+   }
+  ],
+  "wall_s": 18.5
+ }
+}

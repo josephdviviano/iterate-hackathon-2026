@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-lz75bizb",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'clinical':  # Skip clinical for this analysis\n            y1 = feats.x[feats.y == 1, i].mean()\n            y0 = feats.x[feats.y == 0, i].mean()\n            effect_size = abs(y1 - y0)\n            effect_sizes.append((i, effect_size, fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features\n    top_features = effect_sizes[:10] if len(effect_sizes) > 10 else effect_sizes\n    \n    if len(top_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Get indices and feature IDs\n    top_indices = [f[0] for f in top_features]\n    top_fids = [f[2] for f in top_features]\n    \n    # Check for near-duplicates (correlation >= 0.6)\n    corr_matrix = np.corrcoef(feats.x[:, top_indices].T)\n    np.fill_diagonal(corr_matrix, 0)\n    \n    # Remove highly correlated features (keep one from each pair)\n    to_remove = set()\n    for i in range(len(top_indices)):\n        for j in range(i+1, len(top_indices)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Final feature set after removing duplicates\n    final_features = [top_fids[i] for i in range(len(top_fids)) if i not in to_remove]\n    \n    if len(final_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select the strongest feature as driver\n    strongest_fid = top_fids[0] if top_fids[0] in final_features else final_features[0]\n    \n    # Create weighted score from remaining features\n    weights = np.ones(len(final_features)) / len(final_features)\n    \n    return Design(\n        drivers=(strongest_fid,),\n        columns=tuple(final_features),\n        products=(),\n        loadings=dict(zip(final_features, weights))\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import SpectralClustering\nfrom sklearn.metrics.pairwise import cosine_similarity\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Calculate effect sizes for all features\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] != 'clinical':  # Skip clinical for this analysis\n            y1 = feats.x[feats.y == 1, i].mean()\n            y0 = feats.x[feats.y == 0, i].mean()\n            effect_size = abs(y1 - y0)\n            effect_sizes.append((i, effect_size, fid))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features\n    top_features = effect_sizes[:10] if len(effect_sizes) > 10 else effect_sizes\n    \n    if len(top_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Get indices and feature IDs\n    top_indices = [f[0] for f in top_features]\n    top_fids = [f[2] for f in top_features]\n    \n    # Check for near-duplicates (correlation >= 0.6)\n    corr_matrix = np.corrcoef(feats.x[:, top_indices].T)\n    np.fill_diagonal(corr_matrix, 0)\n    \n    # Remove highly correlated features (keep one from each pair)\n    to_remove = set()\n    for i in range(len(top_indices)):\n        for j in range(i+1, len(top_indices)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Final feature set after removing duplicates\n    final_features = [top_fids[i] for i in range(len(top_fids)) if i not in to_remove]\n    \n    if len(final_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select the strongest feature as driver\n    strongest_fid = top_fids[0] if top_fids[0] in final_features else final_features[0]\n    \n    # Create weighted score from remaining features\n    weights = np.ones(len(final_features)) / len(final_features)\n    \n    return Design(\n        drivers=(strongest_fid,),\n        columns=tuple(final_features),\n        products=(),\n        loadings=dict(zip(final_features, weights))\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4835,
+  "completion_tokens": 1011,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 2083
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2090
+   }
+  ],
+  "wall_s": 11.5
+ }
+}

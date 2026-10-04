@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-1jgo1des",
+ "seed": "block",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Find features with strong association (|t| > 5)\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for this analysis\n        x1 = feats.x[feats.y == 1, i]\n        x0 = feats.x[feats.y == 0, i]\n        t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Select top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:10]\n    top_fids = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates based on correlation\n    keep_fids = []\n    for fid in top_fids:\n        if not keep_fids:\n            keep_fids.append(fid)\n        else:\n            # Check correlation with existing kept features\n            is_duplicate = False\n            for kept_fid in keep_fids:\n                col1 = feats.column(kept_fid)\n                col2 = feats.column(fid)\n                corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n                if abs(corr) > 0.6:\n                    is_duplicate = True\n                    break\n            if not is_duplicate:\n                keep_fids.append(fid)\n    \n    # If no strong features found, return empty design\n    if len(keep_fids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score using mean differences\n    loadings = {}\n    for fid in keep_fids:\n        col = feats.column(fid)\n        x1 = feats.x[feats.y == 1, col]\n        x0 = feats.x[feats.y == 0, col]\n        mean_diff = np.mean(x1) - np.mean(x0)\n        loadings[fid] = mean_diff\n    \n    # Normalize loadings\n    total = sum(abs(w) for w in loadings.values())\n    if total > 0:\n        for fid in loadings:\n            loadings[fid] /= total\n    \n    # Return module with strongest features as drivers\n    sorted_by_loading = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)\n    drivers = tuple(f[0] for f in sorted_by_loading[:MAX_DRIVERS])\n    columns = tuple(keep_fids)\n    products = ()\n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Find features with strong association (|t| > 5)\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for this analysis\n        x1 = feats.x[feats.y == 1, i]\n        x0 = feats.x[feats.y == 0, i]\n        t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Select top features by t-statistic\n    top_indices = np.argsort(t_stats)[::-1][:10]\n    top_fids = [feats.ids[i] for i in top_indices]\n    \n    # Remove near-duplicates based on correlation\n    keep_fids = []\n    for fid in top_fids:\n        if not keep_fids:\n            keep_fids.append(fid)\n        else:\n            # Check correlation with existing kept features\n            is_duplicate = False\n            for kept_fid in keep_fids:\n                col1 = feats.column(kept_fid)\n                col2 = feats.column(fid)\n                corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n                if abs(corr) > 0.6:\n                    is_duplicate = True\n                    break\n            if not is_duplicate:\n                keep_fids.append(fid)\n    \n    # If no strong features found, return empty design\n    if len(keep_fids) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score using mean differences\n    loadings = {}\n    for fid in keep_fids:\n        col = feats.column(fid)\n        x1 = feats.x[feats.y == 1, col]\n        x0 = feats.x[feats.y == 0, col]\n        mean_diff = np.mean(x1) - np.mean(x0)\n        loadings[fid] = mean_diff\n    \n    # Normalize loadings\n    total = sum(abs(w) for w in loadings.values())\n    if total > 0:\n        for fid in loadings:\n            loadings[fid] /= total\n    \n    # Return module with strongest features as drivers\n    sorted_by_loading = sorted(loadings.items(), key=lambda x: abs(x[1]), reverse=True)\n    drivers = tuple(f[0] for f in sorted_by_loading[:MAX_DRIVERS])\n    columns = tuple(keep_fids)\n    products = ()\n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5194,
+  "completion_tokens": 1380,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3133
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2279
+   }
+  ],
+  "wall_s": 15.8
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-hkyjoxjv",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers based on mean difference and significance\n    drivers = []\n    for i, fid in enumerate(feats.ids):\n        # Simple correlation threshold based on mean differences\n        mean_diff = abs(feats.x[:, i].mean() * feats.y.mean())\n        if mean_diff > 0.05:  # Threshold for considering as potential driver\n            drivers.append(fid)\n    \n    # Remove near-duplicates (correlated features)\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.add((fid1, fid2))\n    \n    # Keep only one feature from each correlated pair\n    to_remove = set()\n    for a, b in correlated_pairs:\n        if a in drivers and b in drivers:\n            # Prefer the one with higher effect size\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            effect_a = abs(feats.x[:, idx_a].mean() * feats.y.mean())\n            effect_b = abs(feats.x[:, idx_b].mean() * feats.y.mean())\n            to_remove.add(a if effect_a > effect_b else b)\n    \n    drivers = [d for d in drivers if d not in to_remove]\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to MAX_DRIVERS\n    drivers = drivers[:MAX_DRIVERS]\n    \n    # Select features for regression\n    selected_features = drivers\n    \n    # Create interaction terms for top features\n    products = []\n    for i, f1 in enumerate(selected_features):\n        for f2 in selected_features[i+1:]:\n            products.append((f1, f2))\n    \n    # Weighted score: use standardized coefficients from simple regression\n    X = feats.x[:, [feats.column(f) for f in selected_features]]\n    model = LogisticRegression(penalty='l1', solver='liblinear', C=0.1)\n    model.fit(X, feats.y)\n    \n    # Use absolute coefficients as weights\n    weights = dict(zip(selected_features, np.abs(model.coef_[0])))\n    \n    return Design(\n        drivers=tuple(selected_features),\n        columns=tuple(selected_features),\n        products=tuple(products),\n        loadings=weights\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers based on mean difference and significance\n    drivers = []\n    for i, fid in enumerate(feats.ids):\n        # Simple correlation threshold based on mean differences\n        mean_diff = abs(feats.x[:, i].mean() * feats.y.mean())\n        if mean_diff > 0.05:  # Threshold for considering as potential driver\n            drivers.append(fid)\n    \n    # Remove near-duplicates (correlated features)\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.add((fid1, fid2))\n    \n    # Keep only one feature from each correlated pair\n    to_remove = set()\n    for a, b in correlated_pairs:\n        if a in drivers and b in drivers:\n            # Prefer the one with higher effect size\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            effect_a = abs(feats.x[:, idx_a].mean() * feats.y.mean())\n            effect_b = abs(feats.x[:, idx_b].mean() * feats.y.mean())\n            to_remove.add(a if effect_a > effect_b else b)\n    \n    drivers = [d for d in drivers if d not in to_remove]\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to MAX_DRIVERS\n    drivers = drivers[:MAX_DRIVERS]\n    \n    # Select features for regression\n    selected_features = drivers\n    \n    # Create interaction terms for top features\n    products = []\n    for i, f1 in enumerate(selected_features):\n        for f2 in selected_features[i+1:]:\n            products.append((f1, f2))\n    \n    # Weighted score: use standardized coefficients from simple regression\n    X = feats.x[:, [feats.column(f) for f in selected_features]]\n    model = LogisticRegression(penalty='l1', solver='liblinear', C=0.1)\n    model.fit(X, feats.y)\n    \n    # Use absolute coefficients as weights\n    weights = dict(zip(selected_features, np.abs(model.coef_[0])))\n    \n    return Design(\n        drivers=tuple(selected_features),\n        columns=tuple(selected_features),\n        products=tuple(products),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4856,
+  "completion_tokens": 1142,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on a 60 percent training fold: 5 drivers; at most 4",
+    "bytes": 2358
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2437
+   }
+  ],
+  "wall_s": 13.2
+ }
+}

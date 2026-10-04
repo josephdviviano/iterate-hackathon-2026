@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-g73nces5",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Filter out near-duplicates\n    filtered_ids = [ids[i] for i in range(len(ids)) if i not in to_remove]\n    filtered_x = x[:, [feats.column(fid) for fid in filtered_ids]]\n    \n    # Select top features by t-test statistic\n    t_stats = []\n    for i, fid in enumerate(filtered_ids):\n        x1 = filtered_x[y==1, i]\n        x0 = filtered_x[y==0, i]\n        t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic and take top features\n    sorted_indices = np.argsort(t_stats)[::-1][:10]\n    top_features = [filtered_ids[i] for i in sorted_indices]\n    \n    # Check for interaction terms\n    products = []\n    for i in range(min(5, len(top_features))):  # Limit interactions to avoid index issues\n        for j in range(i+1, min(5, len(top_features))):\n            fid1, fid2 = top_features[i], top_features[j]\n            # Check if their product would be useful\n            try:\n                prod_col = np.multiply(filtered_x[:, feats.column(fid1)], \n                                     filtered_x[:, feats.column(fid2)])\n                t_stat, _ = stats.ttest_ind(prod_col[y==1], prod_col[y==0], equal_var=False)\n                if abs(t_stat) > 2.0:\n                    products.append((fid1, fid2))\n            except:\n                continue\n    \n    # Simple logistic regression to get weights\n    if len(top_features) > 0:\n        lr = LogisticRegression(penalty='l1', solver='liblinear')\n        lr.fit(filtered_x[:, [feats.column(fid) for fid in top_features]], y)\n        \n        # Get feature importance from coefficients\n        weights = dict(zip(top_features, lr.coef_[0]))\n    else:\n        weights = {}\n    \n    # Return top features as drivers\n    drivers = tuple(sorted(weights.keys(), key=lambda k: abs(weights.get(k, 0)), reverse=True)[:MAX_DRIVERS])\n    \n    return Design(\n        drivers=drivers,\n        columns=tuple(top_features),\n        products=tuple(products[:3]),\n        loadings=weights\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8423,
+  "completion_tokens": 1821,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 25 is out of bounds for axis 1 with size 24",
+    "bytes": 2392
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 25 is out of bounds for axis 1 with size 24",
+    "bytes": 2562
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: index 25 is out of bounds for axis 1 with size 24",
+    "bytes": 2485
+   }
+  ],
+  "wall_s": 20.8
+ }
+}

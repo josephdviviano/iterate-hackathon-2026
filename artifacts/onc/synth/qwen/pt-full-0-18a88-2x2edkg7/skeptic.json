@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-2x2edkg7",
+ "seed": "skeptic",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    p_values = []\n    effects = []\n    \n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            effect_size = np.mean(y1) - np.mean(y0)\n        else:\n            # For other features, use correlation\n            effect_size = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            p_val = 1 - stats.norm.cdf(abs(effect_size) * np.sqrt(len(feats.y) - 2) / \n                                     np.sqrt(1 - effect_size**2))\n        \n        p_values.append(p_val)\n        effects.append(abs(effect_size))\n    \n    # Find features with p < 0.05 (or weakly significant p < 0.1)\n    significant_features = [i for i, p in enumerate(p_values) if p < 0.1]\n    \n    if not significant_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for near-duplicates (correlation > 0.6)\n    correlated_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.add((min(i,j), max(i,j)))\n    \n    # Remove duplicates, keeping only one from each pair\n    feature_set = set()\n    for i in significant_features:\n        # Check if this feature is correlated with any already selected\n        skip = False\n        for j in list(feature_set):\n            if (min(i,j), max(i,j)) in correlated_pairs:\n                skip = True\n                break\n        if not skip:\n            feature_set.add(i)\n    \n    if not feature_set:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features based on effect size\n    sorted_features = sorted(list(feature_set), key=lambda i: effects[i], reverse=True)\n    top_features = sorted_features[:min(MAX_DRIVERS, len(sorted_features))]\n    \n    # Return design with top features as drivers and all significant as columns\n    drivers = tuple([feats.ids[i] for i in top_features])\n    columns = tuple([feats.ids[i] for i in sorted(list(feature_set))])\n    \n    # No products for simplicity\n    products = ()\n    \n    # Loadings based on standardized coefficients\n    loadings = {}\n    if len(columns) > 0:\n        # Use simple linear combination of standardized features\n        for i, fid in enumerate(columns):\n            col_idx = feats.column(fid)\n            # Simple loading based on effect size\n            loadings[fid] = effects[col_idx]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    p_values = []\n    effects = []\n    \n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            t_stat, p_val = stats.ttest_ind(y0, y1, equal_var=False)\n            effect_size = np.mean(y1) - np.mean(y0)\n        else:\n            # For other features, use correlation\n            effect_size = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            p_val = 1 - stats.norm.cdf(abs(effect_size) * np.sqrt(len(feats.y) - 2) / \n                                     np.sqrt(1 - effect_size**2))\n        \n        p_values.append(p_val)\n        effects.append(abs(effect_size))\n    \n    # Find features with p < 0.05 (or weakly significant p < 0.1)\n    significant_features = [i for i, p in enumerate(p_values) if p < 0.1]\n    \n    if not significant_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for near-duplicates (correlation > 0.6)\n    correlated_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlated_pairs.add((min(i,j), max(i,j)))\n    \n    # Remove duplicates, keeping only one from each pair\n    feature_set = set()\n    for i in significant_features:\n        # Check if this feature is correlated with any already selected\n        skip = False\n        for j in list(feature_set):\n            if (min(i,j), max(i,j)) in correlated_pairs:\n                skip = True\n                break\n        if not skip:\n            feature_set.add(i)\n    \n    if not feature_set:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features based on effect size\n    sorted_features = sorted(list(feature_set), key=lambda i: effects[i], reverse=True)\n    top_features = sorted_features[:min(MAX_DRIVERS, len(sorted_features))]\n    \n    # Return design with top features as drivers and all significant as columns\n    drivers = tuple([feats.ids[i] for i in top_features])\n    columns = tuple([feats.ids[i] for i in sorted(list(feature_set))])\n    \n    # No products for simplicity\n    products = ()\n    \n    # Loadings based on standardized coefficients\n    loadings = {}\n    if len(columns) > 0:\n        # Use simple linear combination of standardized features\n        for i, fid in enumerate(columns):\n            col_idx = feats.column(fid)\n            # Simple loading based on effect size\n            loadings[fid] = effects[col_idx]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9187,
+  "completion_tokens": 2465,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4147
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2990
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2990
+   }
+  ],
+  "wall_s": 28.1
+ }
+}

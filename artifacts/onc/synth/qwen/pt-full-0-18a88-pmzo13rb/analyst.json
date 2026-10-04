@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-pmzo13rb",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\nfrom sklearn.linear_model import LogisticRegression\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression and clinical features only\n    expr_clin_ids = [fid for fid, typ in zip(feats.ids, feats.types) if typ in ('expression', 'clinical')]\n    \n    # Calculate effect sizes and p-values for all features\n    effects = []\n    for fid in expr_clin_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        \n        # Effect size: difference in means between groups\n        mean_y1 = np.mean(x[y == 1])\n        mean_y0 = np.mean(x[y == 0])\n        effect_size = mean_y1 - mean_y0\n        \n        # Welch's t-test\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        t_stat, p_val = stats.ttest_ind(group0, group1, equal_var=False)\n        \n        effects.append((fid, effect_size, abs(t_stat), p_val))\n    \n    # Sort by effect size (absolute) and p-value\n    effects.sort(key=lambda x: (-abs(x[1]), x[3]))\n    \n    # Remove near-duplicates (correlated features)\n    correlated_pairs = set()\n    for a, b, r in [(a, b, r) for a, b, r in [\n        (\"JMP13\", \"UCZK18P\", 0.91), (\"NUPL12\", \"UCZK18P\", -0.90), (\"UCZK18P\", \"YDWW2P\", -0.89),\n        (\"RWS18B\", \"UCZK18P\", 0.88), (\"EWS12P\", \"NUPL12\", 0.87), (\"YYB16\", \"RWS18B\", -0.83),\n        (\"YYB16\", \"UCZK18P\", -0.82), (\"JMP13\", \"NUPL12\", -0.81), (\"NUPL12\", \"YDWW2P\", 0.81),\n        (\"RWS18B\", \"NUPL12\", -0.80), (\"UCZK18P\", \"YHA15\", -0.80), (\"SYA1\", \"IRI7\", 0.80),\n        (\"UCZK18P\", \"WCWI4P\", -0.79), (\"JMP13\", \"YDWW2P\", -0.79), (\"JMP13\", \"RWS18B\", 0.79),\n        (\"BTF13L\", \"UCZK18P\", -0.79), (\"UCZK18P\", \"IRI7\", 0.78), (\"AGMM3\", \"ZFZ18\", 0.78),\n        (\"AGMM3\", \"JZT12\", 0.77), (\"JMP13\", \"VOO6\", 0.77)\n    ] if abs(r) >= 0.6]:\n        correlated_pairs.add((a, b))\n    \n    # Build a graph of correlations to identify clusters\n    adj_list = defaultdict(set)\n    for a, b in correlated_pairs:\n        adj_list[a].add(b)\n        adj_list[b].add(a)\n    \n    # Remove duplicates by keeping highest-effect feature in each cluster\n    seen = set()\n    unique_features = []\n    for fid, _, _, _ in effects:\n        if fid in seen:\n            continue\n        # Check if this feature is part of any correlation cluster\n        cluster = set([fid])\n        stack = [fid]\n        while stack:\n            current = stack.pop()\n            for neighbor in adj_list[current]:\n                if neighbor not in cluster:\n                    cluster.add(neighbor)\n                    stack.append(neighbor)\n        # Add the best feature from this cluster\n        cluster_features = [f for f in cluster if f in expr_clin_ids]\n        max_effect = -float('inf')\n        best_fid = None\n        for f in cluster_features:\n            for fid_e, effect, _, _ in effects:\n                if fid_e == f and effect > max_effect:\n                    max_effect = effect\n                    best_fid = f\n        if best_fid:\n            unique_features.append(best_fid)\n        seen.update(cluster)\n    \n    # Select top candidates for drivers\n    top_candidates = [fid for fid, _, _, _ in effects[:10]]\n    selected_drivers = []\n    for fid in top_candidates:\n        if fid in unique_features:\n            selected_drivers.append(fid)\n        if len(selected_drivers) >= MAX_DRIVERS:\n            break\n    \n    # Limit to at most 4 drivers\n    selected_drivers = selected_drivers[:4]\n    \n    # For products, look for significant interactions among top features\n    products = []\n    top_feature_indices = [feats.column(fid) for fid in selected_drivers if fid in feats.ids]\n    \n    # Simple approach: check pairwise products of top features\n    for i in range(len(top_feature_indices)):\n        for j in range(i+1, len(top_feature_indices)):\n            idx1, idx2 = top_feature_indices[i], top_feature_indices[j]\n            prod_col = feats.x[:, idx1] * feats.x[:, idx2]\n            auc = roc_auc_score(feats.y, prod_col)\n            if auc > 0.55:  # Only include strong products\n                products.append((selected_drivers[i], selected_drivers[j]))\n    \n    # Loadings: use standardized coefficients from a simple regression\n    if selected_drivers:\n        cols = [feats.column(fid) for fid in selected_drivers if fid in feats.ids]\n        X = feats.x[:, cols]\n        model = LogisticRegression(penalty='l1', solver='liblinear')\n        model.fit(X, feats.y)\n        loadings = dict(zip(selected_drivers, model.coef_[0]))\n    else:\n        loadings = {}\n    \n    return Design(\n        drivers=tuple(selected_drivers),\n        columns=tuple(expr_clin_ids),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 10426,
+  "completion_tokens": 4034,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 4542
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4668
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 4750
+   }
+  ],
+  "wall_s": 42.7
+ }
+}

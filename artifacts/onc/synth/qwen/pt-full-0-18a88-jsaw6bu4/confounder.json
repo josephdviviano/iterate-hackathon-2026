@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-jsaw6bu4",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import f_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers (clinical/stratum variables)\n    drivers = []\n    for i, (fid, ftype) in enumerate(zip(feats.ids, feats.types)):\n        if ftype == 'clinical' or ftype == 'cohort':\n            tstat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if abs(tstat) > 2.0:\n                drivers.append(fid)\n    \n    # If no drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use first driver to adjust for confounding\n    driver = drivers[0]\n    driver_idx = feats.column(driver)\n    \n    # Select top features based on association with outcome\n    f_scores, p_values = f_classif(feats.x, feats.y)\n    top_features = [feats.ids[i] for i in range(len(feats.ids)) \n                    if p_values[i] < 0.05 and feats.ids[i] != driver]\n    \n    # Take top 3 features to keep model small\n    top_features = top_features[:3]\n    \n    # Create products between top features\n    products = []\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            products.append((a, b))\n    \n    # Return design with top features and their products\n    return Design(\n        drivers=tuple([driver] if drivers else ()),\n        columns=tuple(top_features),\n        products=tuple(products),\n        loadings={fid: 1.0 for fid in top_features}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import f_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers (clinical/stratum variables)\n    drivers = []\n    for i, (fid, ftype) in enumerate(zip(feats.ids, feats.types)):\n        if ftype == 'clinical' or ftype == 'cohort':\n            tstat, _ = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])\n            if abs(tstat) > 2.0:\n                drivers.append(fid)\n    \n    # If no drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Use first driver to adjust for confounding\n    driver = drivers[0]\n    driver_idx = feats.column(driver)\n    \n    # Select top features based on association with outcome\n    f_scores, p_values = f_classif(feats.x, feats.y)\n    top_features = [feats.ids[i] for i in range(len(feats.ids)) \n                    if p_values[i] < 0.05 and feats.ids[i] != driver]\n    \n    # Take top 3 features to keep model small\n    top_features = top_features[:3]\n    \n    # Create products between top features\n    products = []\n    for i, a in enumerate(top_features):\n        for b in top_features[i+1:]:\n            products.append((a, b))\n    \n    # Return design with top features and their products\n    return Design(\n        drivers=tuple([driver] if drivers else ()),\n        columns=tuple(top_features),\n        products=tuple(products),\n        loadings={fid: 1.0 for fid in top_features}\n    )\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5144,
+  "completion_tokens": 1199,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2740
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1525
+   }
+  ],
+  "wall_s": 13.7
+ }
+}

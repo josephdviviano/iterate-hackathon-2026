@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-kcwiscf6",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom collections import defaultdict\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    p_values = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, col], feats.x[feats.y==0, col])\n        p_values.append(p_val)\n    \n    # If all p-values are high, return empty design\n    if all(p > 0.1 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find features with p < 0.05\n    significant_features = [fid for fid, p in zip(feats.ids, p_values) if p < 0.05]\n    \n    # Remove near-duplicates (correlated with |r| >= 0.6)\n    correlated_pairs = set()\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0,1]) >= 0.6:\n                correlated_pairs.add((fid1, fid2))\n    \n    # Build a graph to find connected components\n    adj = defaultdict(set)\n    for a, b in correlated_pairs:\n        adj[a].add(b)\n        adj[b].add(a)\n    \n    # Group correlated features together\n    visited = set()\n    clusters = []\n    for fid in feats.ids:\n        if fid not in visited:\n            cluster = set()\n            stack = [fid]\n            while stack:\n                f = stack.pop()\n                if f not in visited:\n                    visited.add(f)\n                    cluster.add(f)\n                    for neighbor in adj[f]:\n                        if neighbor not in visited:\n                            stack.append(neighbor)\n            clusters.append(cluster)\n    \n    # For each cluster, select the one with highest effect size\n    selected_features = set()\n    for cluster in clusters:\n        # Select the feature with highest absolute t-statistic\n        best_fid = max(cluster, key=lambda fid: abs(stats.ttest_ind(\n            feats.x[feats.y==1, feats.column(fid)], \n            feats.x[feats.y==0, feats.column(fid)])[0]))\n        selected_features.add(best_fid)\n    \n    # Also add all significant features that aren't part of any cluster\n    for fid in significant_features:\n        if fid not in selected_features:\n            selected_features.add(fid)\n    \n    # Use just the top 4 features by effect size as drivers\n    top_features = sorted(selected_features, key=lambda fid: abs(stats.ttest_ind(\n        feats.x[feats.y==1, feats.column(fid)], \n        feats.x[feats.y==0, feats.column(fid)])[0]), reverse=True)[:MAX_DRIVERS]\n    \n    if top_features:\n        drivers = tuple(top_features)\n        columns = tuple(selected_features)\n        products = ()\n        loadings = {fid: 1.0 for fid in top_features}\n        return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n    else:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8938,
+  "completion_tokens": 2405,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3643
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3643
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2967
+   }
+  ],
+  "wall_s": 27.4
+ }
+}

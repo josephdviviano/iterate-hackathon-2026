@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-i1fcinoo",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    # Use Welch's t-test to assess difference in means between outcome groups\n    significant_features = []\n    \n    for i, fid in enumerate(feats.ids):\n        # Split data by outcome\n        x0 = feats.x[feats.y == 0, i]\n        x1 = feats.x[feats.y == 1, i]\n        \n        # Welch's t-test\n        if len(x0) > 1 and len(x1) > 1:\n            t_stat, p_val = stats.ttest_ind(x0, x1, equal_var=False)\n            if abs(t_stat) > 3.0 and p_val < 0.01:\n                mean_diff = np.mean(x1) - np.mean(x0)\n                significant_features.append((fid, mean_diff, abs(t_stat), p_val))\n    \n    # Sort by t-statistic magnitude (strongest first)\n    significant_features.sort(key=lambda x: -x[2])\n    \n    # Check for near-duplicates using correlation matrix\n    corr_matrix = np.corrcoef(feats.x.T)\n    near_duplicates = set()\n    \n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            if abs(corr_matrix[i, j]) >= 0.6:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                # Keep the one with stronger association\n                if (fid1, fid2) not in near_duplicates and (fid2, fid1) not in near_duplicates:\n                    near_duplicates.add((fid1, fid2))\n    \n    # Remove near-duplicates (keep the first one in sorted list)\n    filtered_features = []\n    used_fids = set()\n    \n    for fid, mean_diff, t_stat, p_val in significant_features:\n        skip = False\n        for dup_fid1, dup_fid2 in near_duplicates:\n            if fid in [dup_fid1, dup_fid2]:\n                if dup_fid1 in used_fids or dup_fid2 in used_fids:\n                    skip = True\n                    break\n                else:\n                    used_fids.add(fid)\n                    filtered_features.append((fid, mean_diff, t_stat, p_val))\n                    used_fids.add(dup_fid1)\n                    used_fids.add(dup_fid2)\n                    break\n        \n        if not skip and fid not in used_fids:\n            used_fids.add(fid)\n            filtered_features.append((fid, mean_diff, t_stat, p_val))\n    \n    # Test for interaction effects\n    products = []\n    if len(filtered_features) >= 2:\n        # Try all pairs of significant features\n        for i in range(min(3, len(filtered_features))):\n            for j in range(i+1, min(5, len(filtered_features))):\n                f1, _, _, _ = filtered_features[i]\n                f2, _, _, _ = filtered_features[j]\n                products.append((f1, f2))\n    \n    # Check stratum consistency (simple check)\n    stratum_consistent = True\n    if len(set(feats.stratum)) > 1:\n        stratum_consistent = False  # Simplified approach\n    \n    # Return appropriate design based on evidence\n    if not filtered_features or not stratum_consistent:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select top features for model - limit to MAX_DRIVERS\n    drivers = tuple(f[0] for f in filtered_features[:min(MAX_DRIVERS, len(filtered_features))])\n    columns = tuple(f[0] for f in filtered_features[:10])  # Top 10 for regression\n    loadings = dict(zip(columns, np.ones(len(columns))))\n    \n    # Ensure we don't exceed MAX_DRIVERS\n    if len(drivers) > MAX_DRIVERS:\n        drivers = drivers[:MAX_DRIVERS]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9264,
+  "completion_tokens": 2644,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3562
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3714
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3496
+   }
+  ],
+  "wall_s": 29.9
+ }
+}

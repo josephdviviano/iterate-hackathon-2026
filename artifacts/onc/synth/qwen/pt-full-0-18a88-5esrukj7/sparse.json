@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5esrukj7",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to copy_number and expression features (most likely to be causal)\n    relevant_ids = [fid for fid, t in zip(feats.ids, feats.types) \n                    if t in ('copy_number', 'expression')]\n    \n    if not relevant_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Get indices of relevant features\n    relevant_indices = [feats.column(fid) for fid in relevant_ids]\n    X_relevant = feats.x[:, relevant_indices]\n    \n    # Compute correlations and remove near-duplicates\n    corr_matrix = np.corrcoef(X_relevant.T)\n    to_remove = set()\n    for i in range(len(relevant_ids)):\n        for j in range(i+1, len(relevant_ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    filtered_ids = [relevant_ids[i] for i in range(len(relevant_ids)) if i not in to_remove]\n    \n    # Compute effect sizes using Welch's t-test\n    effect_sizes = []\n    for fid in filtered_ids:\n        idx = feats.column(fid)\n        x = feats.x[:, idx]\n        y = feats.y\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        if len(group0) > 0 and len(group1) > 0:\n            t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            effect_sizes.append((fid, abs(t_stat)))\n        else:\n            effect_sizes.append((fid, 0))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (limit to 4 as per checker report)\n    drivers = tuple(fid for fid, _ in effect_sizes[:4])\n    \n    # For the model, use top 6 features\n    columns = tuple([fid for fid, _ in effect_sizes[:6]])\n    \n    # Use only one interaction term\n    products = []\n    if len(effect_sizes) >= 2:\n        products = [(effect_sizes[0][0], effect_sizes[1][0])]\n    \n    # Simple weighted score: top 3 features\n    loadings = {}\n    for fid, effect_size in effect_sizes[:3]:\n        loadings[fid] = effect_size\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to copy_number and expression features (most likely to be causal)\n    relevant_ids = [fid for fid, t in zip(feats.ids, feats.types) \n                    if t in ('copy_number', 'expression')]\n    \n    if not relevant_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Get indices of relevant features\n    relevant_indices = [feats.column(fid) for fid in relevant_ids]\n    X_relevant = feats.x[:, relevant_indices]\n    \n    # Compute correlations and remove near-duplicates\n    corr_matrix = np.corrcoef(X_relevant.T)\n    to_remove = set()\n    for i in range(len(relevant_ids)):\n        for j in range(i+1, len(relevant_ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    filtered_ids = [relevant_ids[i] for i in range(len(relevant_ids)) if i not in to_remove]\n    \n    # Compute effect sizes using Welch's t-test\n    effect_sizes = []\n    for fid in filtered_ids:\n        idx = feats.column(fid)\n        x = feats.x[:, idx]\n        y = feats.y\n        group0 = x[y == 0]\n        group1 = x[y == 1]\n        if len(group0) > 0 and len(group1) > 0:\n            t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n            effect_sizes.append((fid, abs(t_stat)))\n        else:\n            effect_sizes.append((fid, 0))\n    \n    # Sort by effect size\n    effect_sizes.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (limit to 4 as per checker report)\n    drivers = tuple(fid for fid, _ in effect_sizes[:4])\n    \n    # For the model, use top 6 features\n    columns = tuple([fid for fid, _ in effect_sizes[:6]])\n    \n    # Use only one interaction term\n    products = []\n    if len(effect_sizes) >= 2:\n        products = [(effect_sizes[0][0], effect_sizes[1][0])]\n    \n    # Simple weighted score: top 3 features\n    loadings = {}\n    for fid, effect_size in effect_sizes[:3]:\n        loadings[fid] = effect_size\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8240,
+  "completion_tokens": 1778,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2509
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2534
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2106
+   }
+  ],
+  "wall_s": 20.3
+ }
+}

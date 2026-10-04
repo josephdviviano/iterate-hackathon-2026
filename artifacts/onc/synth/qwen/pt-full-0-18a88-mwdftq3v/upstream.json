@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-mwdftq3v",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Find features with significant association (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('copy_number', 'expression'):\n            # Use Welch's t-test approach\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            if len(y0) > 0 and len(y1) > 0:\n                t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                p_val = 2 * (1 - stats.t.cdf(abs(t_stat), len(y0) + len(y1) - 2))\n                if p_val < 0.05:\n                    sig_features.append((fid, t_stat))\n    \n    # Sort by effect size\n    sig_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Remove near-duplicates (correlated with |r| >= 0.6)\n    keep = []\n    excluded = set()\n    for i, (fid1, _) in enumerate(sig_features):\n        if fid1 in excluded:\n            continue\n        keep.append(fid1)\n        # Check correlations\n        for j, (fid2, _) in enumerate(sig_features[i+1:], i+1):\n            if fid2 in excluded:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0, 1]\n            if abs(corr) >= 0.6:\n                excluded.add(fid2)\n    \n    # Use top features as potential drivers (at most MAX_DRIVERS)\n    drivers = tuple(fid for fid in keep[:MAX_DRIVERS])\n    \n    # For logistic regression, use all significant features that aren't drivers\n    columns = tuple(fid for fid in keep if fid not in drivers)\n    \n    # Look for interaction terms between drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            products.append((d1, d2))\n    \n    # Create weighted score from top features\n    loadings = {}\n    for i, fid in enumerate(keep[:5]):\n        # Weight by effect size\n        effect = feats.x[:, feats.column(fid)].T @ feats.y\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Find features with significant association (p < 0.05)\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('copy_number', 'expression'):\n            # Use Welch's t-test approach\n            y0 = feats.x[feats.y == 0, i]\n            y1 = feats.x[feats.y == 1, i]\n            if len(y0) > 0 and len(y1) > 0:\n                t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                p_val = 2 * (1 - stats.t.cdf(abs(t_stat), len(y0) + len(y1) - 2))\n                if p_val < 0.05:\n                    sig_features.append((fid, t_stat))\n    \n    # Sort by effect size\n    sig_features.sort(key=lambda x: abs(x[1]), reverse=True)\n    \n    # Remove near-duplicates (correlated with |r| >= 0.6)\n    keep = []\n    excluded = set()\n    for i, (fid1, _) in enumerate(sig_features):\n        if fid1 in excluded:\n            continue\n        keep.append(fid1)\n        # Check correlations\n        for j, (fid2, _) in enumerate(sig_features[i+1:], i+1):\n            if fid2 in excluded:\n                continue\n            corr = np.corrcoef(feats.x[:, feats.column(fid1)], feats.x[:, feats.column(fid2)])[0, 1]\n            if abs(corr) >= 0.6:\n                excluded.add(fid2)\n    \n    # Use top features as potential drivers (at most MAX_DRIVERS)\n    drivers = tuple(fid for fid in keep[:MAX_DRIVERS])\n    \n    # For logistic regression, use all significant features that aren't drivers\n    columns = tuple(fid for fid in keep if fid not in drivers)\n    \n    # Look for interaction terms between drivers\n    products = []\n    for i, d1 in enumerate(drivers):\n        for d2 in drivers[i+1:]:\n            products.append((d1, d2))\n    \n    # Create weighted score from top features\n    loadings = {}\n    for i, fid in enumerate(keep[:5]):\n        # Weight by effect size\n        effect = feats.x[:, feats.column(fid)].T @ feats.y\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7858,
+  "completion_tokens": 1507,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1851
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 1893
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2085
+   }
+  ],
+  "wall_s": 17.3
+ }
+}

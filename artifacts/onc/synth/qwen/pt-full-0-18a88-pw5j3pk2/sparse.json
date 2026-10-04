@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-pw5j3pk2",
+ "seed": "sparse",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    corr_pairs = [\n        ('LZHH5L', 'HZJ7P'), ('HZJ7P', 'KPM7P'), ('HZJ7P', 'HQSA11'), \n        ('KPM7P', 'CBQ17'), ('LZHH5L', 'KPM7P'), ('OCFT9', 'HZJ7P'),\n        ('ZDJ16B', 'HZJ7P'), ('LZHH5L', 'HQSA11'), ('BVCZ8', 'ISJ18'),\n        ('YLEI1', 'HZJ7P'), ('NOTF17', 'CBQ17'), ('HZJ7P', 'ISJ18'),\n        ('KPM7P', 'HQSA11'), ('HJCF2A', 'RAJ15'), ('HZJ7P', 'RAJ15'),\n        ('BVCZ8', 'XZG10P'), ('ISJ18', 'HQSA11'), ('BVCZ8', 'HQSA11'),\n        ('HZJ7P', 'LBP10A'), ('XZG10P', 'ISJ18')\n    ]\n    \n    # Build set of duplicate groups\n    dup_groups = []\n    used = set()\n    for a, b in corr_pairs:\n        if a in used or b in used:\n            continue\n        # Check if both features exist in our dataset\n        if a in ids and b in ids:\n            dup_groups.append((a, b))\n            used.add(a)\n            used.add(b)\n    \n    # Select representative from each group (highest mean_y1-mean_y0)\n    selected_ids = [id for id in ids if id not in used]\n    for group in dup_groups:\n        # Choose the one with higher effect size\n        best_id = max(group, key=lambda x: abs(np.mean(feats.x[feats.y==1, feats.column(x)]) - \n                                               np.mean(feats.x[feats.y==0, feats.column(x)])))\n        selected_ids.append(best_id)\n    \n    # Filter to only available features\n    selected_ids = [id for id in selected_ids if id in ids]\n    \n    # Compute effect sizes for selected features\n    effects = []\n    for i, fid in enumerate(selected_ids):\n        col = feats.column(fid)\n        effect = np.mean(feats.x[feats.y==1, col]) - np.mean(feats.x[feats.y==0, col])\n        effects.append((abs(effect), fid, i))\n    \n    # Sort by effect size (descending)\n    effects.sort(reverse=True)\n    \n    # Select top features for drivers (at most MAX_DRIVERS)\n    drivers = tuple([fid for _, fid, _ in effects[:MAX_DRIVERS]])\n    \n    # For logistic regression, select all features with significant t-test\n    columns = []\n    for i, fid in enumerate(selected_ids):\n        col = feats.column(fid)\n        t_stat, p_val = stats.ttest_ind(feats.x[feats.y==1, col], feats.x[feats.y==0, col])\n        if p_val < 0.05:  # Significance threshold\n            columns.append(fid)\n    \n    # Check for potential interactions (product terms)\n    products = []\n    # Simple approach: check some high-effect combinations\n    if len(columns) >= 2:\n        # Take top 3 columns for interaction checking\n        top_cols = columns[:3]\n        for i in range(len(top_cols)):\n            for j in range(i+1, len(top_cols)):\n                products.append((top_cols[i], top_cols[j]))\n    \n    # Loadings: assign weights based on effect size\n    loadings = {}\n    for _, fid, idx in effects:\n        col = feats.column(fid)\n        effect = np.mean(feats.x[feats.y==1, col]) - np.mean(feats.x[feats.y==0, col])\n        loadings[fid] = effect\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9285,
+  "completion_tokens": 2823,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3289
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3311
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3122
+   }
+  ],
+  "wall_s": 37.4
+ }
+}

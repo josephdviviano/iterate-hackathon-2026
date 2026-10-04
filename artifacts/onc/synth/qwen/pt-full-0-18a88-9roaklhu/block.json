@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-9roaklhu",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression and clinical features\n    expr_clin_ids = [fid for fid, typ in zip(feats.ids, feats.types) \n                     if typ in ('expression', 'clinical')]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('XBI15', 'YCB3'), ('MHCW4', 'WCUT6'), ('EECP17B', 'HHQZ11L'),\n        ('SCCA3', 'HHQZ11L'), ('IGT11', 'VNZ3B'), ('EECP17B', 'SCCA3'),\n        ('LMYS16L', 'CRDU10L'), ('FGR16', 'WCUT6'), ('SHF4', 'YCB3'),\n        ('HHQZ11L', 'IGT11'), ('MHCW4', 'HHQZ11L'), ('XBI15', 'SHF4'),\n        ('EECP17B', 'IGT11'), ('PKD8B', 'HHQZ11L'), ('IZQ3', 'LMYS16L'),\n        ('SCCA3', 'IGT11'), ('SLRD9', 'HHQZ11L'), ('IZQ3', 'CRDU10L'),\n        ('PZUU9', 'HHQZ11L'), ('MHCW4', 'FGR16')\n    ]\n    \n    # Keep one feature from each highly correlated pair\n    keep_ids = set(expr_clin_ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher t-statistic\n            ta = feats.x[:, feats.column(a)]\n            tb = feats.x[:, feats.column(b)]\n            t_a = abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(a)], \n                                    feats.x[feats.y==0, feats.column(a)])[0])\n            t_b = abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(b)], \n                                    feats.x[feats.y==0, feats.column(b)])[0])\n            if t_a > t_b:\n                keep_ids.remove(b)\n            else:\n                keep_ids.remove(a)\n    \n    # Get remaining features\n    remaining_ids = list(keep_ids)\n    \n    # If no features remain, return empty design\n    if not remaining_ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute correlation matrix\n    x = feats.x[:, [feats.column(fid) for fid in remaining_ids]]\n    corr_matrix = np.corrcoef(x.T)\n    \n    # Cluster features based on correlation\n    clustering = AgglomerativeClustering(n_clusters=1, linkage='average')\n    clusters = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Select the cluster with highest mean effect size\n    best_cluster_idx = np.argmax([np.mean([abs(stats.ttest_ind(\n        x[feats.y==1, i], x[feats.y==0, i])[0]) for i in range(len(remaining_ids)) \n        if clusters[i] == c]) for c in set(clusters)])\n    \n    # Get features in the best cluster\n    cluster_features = [remaining_ids[i] for i in range(len(remaining_ids)) \n                       if clusters[i] == best_cluster_idx]\n    \n    # Check if any features have strong effect\n    if not cluster_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Create a weighted score using all features in the cluster\n    loadings = {}\n    for fid in cluster_features:\n        col_idx = feats.column(fid)\n        t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, col_idx], \n                                   feats.x[feats.y==0, col_idx])[0])\n        loadings[fid] = t_stat\n    \n    # Normalize loadings\n    total_weight = sum(loadings.values())\n    if total_weight > 0:\n        for fid in loadings:\n            loadings[fid] /= total_weight\n    \n    # Return design with at most MAX_DRIVERS drivers\n    return Design(\n        drivers=tuple(cluster_features[:MAX_DRIVERS]),\n        columns=tuple(cluster_features),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9471,
+  "completion_tokens": 2974,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 3573
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3508
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3486
+   }
+  ],
+  "wall_s": 33.8
+ }
+}

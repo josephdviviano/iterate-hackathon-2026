@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qkmfxgu4",
+ "seed": "analyst",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\nfrom sklearn.preprocessing import StandardScaler\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to expression and clinical features\n    expr_clin_ids = [fid for fid, typ in zip(feats.ids, feats.types) \n                     if typ in ('expression', 'clinical')]\n    \n    # Select top features by t-statistic (absolute value)\n    t_stats = []\n    for fid in expr_clin_ids:\n        col_idx = feats.column(fid)\n        y0_mean = np.mean(feats.x[feats.y == 0, col_idx])\n        y1_mean = np.mean(feats.x[feats.y == 1, col_idx])\n        t_stat = (y1_mean - y0_mean) / (np.std(feats.x[:, col_idx]) + 1e-8)\n        t_stats.append(abs(t_stat))\n    \n    # Sort by t-statistic and select top features\n    sorted_indices = np.argsort(t_stats)[::-1]\n    top_features = [expr_clin_ids[i] for i in sorted_indices[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation\n    selected_features = []\n    for fid in top_features:\n        is_duplicate = False\n        for selected_fid in selected_features:\n            if abs(np.corrcoef(feats.x[:, feats.column(fid)], \n                              feats.x[:, feats.column(selected_fid)])[0,1]) > 0.6:\n                is_duplicate = True\n                break\n        if not is_duplicate:\n            selected_features.append(fid)\n    \n    # Limit to at most 4 drivers\n    selected_features = selected_features[:4]\n    \n    # Use all expression/clinical features as columns\n    columns = expr_clin_ids\n    \n    # Add interaction terms for top features (limit to 4 interactions max)\n    products = []\n    count = 0\n    for i, fid1 in enumerate(selected_features):\n        for fid2 in selected_features[i+1:]:\n            if count >= 4:  # Limit interactions\n                break\n            products.append((fid1, fid2))\n            count += 1\n        if count >= 4:\n            break\n    \n    # Weighted score: use standardized values of top features\n    loadings = {}\n    for fid in selected_features:\n        loadings[fid] = 1.0\n    \n    return Design(\n        drivers=tuple(selected_features),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 7871,
+  "completion_tokens": 1533,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2040
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2065
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2244
+   }
+  ],
+  "wall_s": 18.3
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-dxzw9h94",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.preprocessing import StandardScaler\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check if any feature shows significant association with outcome\n    p_values = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        x = feats.x[:, col]\n        t_stat, p_val = stats.ttest_ind(x[feats.y==1], x[feats.y==0])\n        p_values.append(p_val)\n    \n    # If no feature is significantly associated, return empty design\n    if all(p > 0.05 for p in p_values):\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Find features with p < 0.05\n    significant_features = [fid for i, fid in enumerate(feats.ids) if p_values[i] < 0.05]\n    \n    # Check for correlation between features to avoid near-duplicates\n    correlations = {}\n    for i, fid1 in enumerate(significant_features):\n        for j, fid2 in enumerate(significant_features[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            corr = np.corrcoef(feats.x[:, col1], feats.x[:, col2])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Remove one of each correlated pair (keep the one with higher effect size)\n    to_remove = set()\n    for (fid1, fid2), corr in correlations.items():\n        # Use mean_y1 - mean_y0 as proxy for effect size\n        col1 = feats.column(fid1)\n        col2 = feats.column(fid2)\n        mean_diff1 = np.mean(feats.x[feats.y==1, col1]) - np.mean(feats.x[feats.y==0, col1])\n        mean_diff2 = np.mean(feats.x[feats.y==1, col2]) - np.mean(feats.x[feats.y==0, col2])\n        if abs(mean_diff1) < abs(mean_diff2):\n            to_remove.add(fid1)\n        else:\n            to_remove.add(fid2)\n    \n    selected_features = [fid for fid in significant_features if fid not in to_remove][:MAX_DRIVERS]\n    \n    # If no features left after filtering, return empty design\n    if not selected_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check stratum consistency by fitting logistic regression within each stratum\n    strata_consistent = True\n    if len(set(feats.stratum)) > 1:\n        # Fit model separately in each stratum and check if coefficients are consistent\n        stratum_models = defaultdict(list)\n        for stratum in set(feats.stratum):\n            mask = np.array(feats.stratum) == stratum\n            X_stratum = feats.x[mask][:, [feats.column(fid) for fid in selected_features]]\n            y_stratum = feats.y[mask]\n            \n            # Standardize and fit logistic regression\n            scaler = StandardScaler()\n            X_stratum = scaler.fit_transform(X_stratum)\n            lr = LogisticRegression(fit_intercept=True, max_iter=1000)\n            lr.fit(X_stratum, y_stratum)\n            stratum_models[stratum] = lr.coef_[0]\n        \n        # Check if coefficients are similar across strata\n        base_coef = list(stratum_models.values())[0]\n        for coef in stratum_models.values():\n            if np.linalg.norm(np.array(coef) - np.array(base_coef)) > 0.5:\n                strata_consistent = False\n                break\n    \n    # Return design based on whether strata are consistent\n    if not strata_consistent:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build final design\n    drivers = tuple(selected_features)\n    columns = tuple(selected_features)\n    \n    # Add interaction terms for top 3 features (if enough features)\n    products = ()\n    if len(selected_features) >= 2:\n        # Ensure products are valid feature IDs from feats.ids\n        products = tuple((selected_features[0], selected_features[1]))\n        if len(selected_features) >= 3:\n            products += ((selected_features[0], selected_features[2]),)\n    \n    # Simple weighted score using top feature\n    loadings = {selected_features[0]: 1.0}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9377,
+  "completion_tokens": 3001,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: products must be pairs of ids in feats.ids",
+    "bytes": 4086
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: products must be pairs of ids in feats.ids",
+    "bytes": 4097
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: products must be pairs of ids in feats.ids",
+    "bytes": 4097
+   }
+  ],
+  "wall_s": 34.0
+ }
+}

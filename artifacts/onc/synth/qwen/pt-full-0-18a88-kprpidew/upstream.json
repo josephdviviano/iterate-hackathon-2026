@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-kprpidew",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong association (p < 0.01)\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        t_stat = feats.x[:, i].T @ feats.y / np.sqrt(np.var(feats.x[:, i]) * np.mean(feats.y) * (1 - np.mean(feats.y)))\n        p_val = 2 * (1 - stats.t.cdf(abs(t_stat), feats.n - 1))\n        if p_val < 0.01:\n            strong_features.append((fid, p_val))\n    \n    # Sort by p-value\n    strong_features.sort(key=lambda x: x[1])\n    \n    # Select top 3 features as drivers (smaller model)\n    drivers = tuple(fid for fid, _ in strong_features[:3])\n    \n    # Handle correlated features by keeping only parents\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Remove near-duplicates (keep the one with better p-value)\n    to_remove = set()\n    for (fid1, fid2), corr in correlations.items():\n        if fid1 in to_remove or fid2 in to_remove:\n            continue\n        # Check which feature is more associated with outcome\n        idx1 = feats.column(fid1)\n        idx2 = feats.column(fid2)\n        t1 = feats.x[:, idx1].T @ feats.y / np.sqrt(np.var(feats.x[:, idx1]) * np.mean(feats.y) * (1 - np.mean(feats.y)))\n        t2 = feats.x[:, idx2].T @ feats.y / np.sqrt(np.var(feats.x[:, idx2]) * np.mean(feats.y) * (1 - np.mean(feats.y)))\n        if abs(t1) > abs(t2):\n            to_remove.add(fid2)\n        else:\n            to_remove.add(fid1)\n    \n    # Build columns list (limit to 5 features total)\n    columns = [fid for fid in feats.ids if fid not in to_remove and fid not in drivers][:5]\n    \n    # Add interaction terms for top 2 features only\n    products = []\n    for i, fid1 in enumerate(columns[:2]):\n        for j, fid2 in enumerate(columns[:2]):\n            if i < j:\n                products.append((fid1, fid2))\n    \n    # Create loadings dict using standardized values\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        # Use correlation with outcome as weight\n        cor = np.corrcoef(feats.x[:, idx], feats.y)[0, 1]\n        loadings[fid] = cor\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong association (p < 0.01)\n    strong_features = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for now\n        t_stat = feats.x[:, i].T @ feats.y / np.sqrt(np.var(feats.x[:, i]) * np.mean(feats.y) * (1 - np.mean(feats.y)))\n        p_val = 2 * (1 - stats.t.cdf(abs(t_stat), feats.n - 1))\n        if p_val < 0.01:\n            strong_features.append((fid, p_val))\n    \n    # Sort by p-value\n    strong_features.sort(key=lambda x: x[1])\n    \n    # Select top 3 features as drivers (smaller model)\n    drivers = tuple(fid for fid, _ in strong_features[:3])\n    \n    # Handle correlated features by keeping only parents\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids):\n            if i >= j:\n                continue\n            corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n            if abs(corr) >= 0.6:\n                correlations[(fid1, fid2)] = corr\n    \n    # Remove near-duplicates (keep the one with better p-value)\n    to_remove = set()\n    for (fid1, fid2), corr in correlations.items():\n        if fid1 in to_remove or fid2 in to_remove:\n            continue\n        # Check which feature is more associated with outcome\n        idx1 = feats.column(fid1)\n        idx2 = feats.column(fid2)\n        t1 = feats.x[:, idx1].T @ feats.y / np.sqrt(np.var(feats.x[:, idx1]) * np.mean(feats.y) * (1 - np.mean(feats.y)))\n        t2 = feats.x[:, idx2].T @ feats.y / np.sqrt(np.var(feats.x[:, idx2]) * np.mean(feats.y) * (1 - np.mean(feats.y)))\n        if abs(t1) > abs(t2):\n            to_remove.add(fid2)\n        else:\n            to_remove.add(fid1)\n    \n    # Build columns list (limit to 5 features total)\n    columns = [fid for fid in feats.ids if fid not in to_remove and fid not in drivers][:5]\n    \n    # Add interaction terms for top 2 features only\n    products = []\n    for i, fid1 in enumerate(columns[:2]):\n        for j, fid2 in enumerate(columns[:2]):\n            if i < j:\n                products.append((fid1, fid2))\n    \n    # Create loadings dict using standardized values\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        # Use correlation with outcome as weight\n        cor = np.corrcoef(feats.x[:, idx], feats.y)[0, 1]\n        loadings[fid] = cor\n    \n    return Design(\n        drivers=drivers,\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8571,
+  "completion_tokens": 2100,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2696
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2615
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2593
+   }
+  ],
+  "wall_s": 24.0
+ }
+}

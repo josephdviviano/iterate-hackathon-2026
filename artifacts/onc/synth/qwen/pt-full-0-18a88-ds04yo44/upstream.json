@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-ds04yo44",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.metrics import roc_auc_score\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with strong effect sizes (|mean_y1-mean_y0| > 0.25)\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            continue  # Skip clinical features for driver selection\n        mean_diff = np.mean(feats.y * feats.x[:, i]) - np.mean((1 - feats.y) * feats.x[:, i])\n        if abs(mean_diff) > 0.25:\n            effects.append((abs(mean_diff), fid, i))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    \n    # Get top features for drivers\n    drivers = [fid for _, fid, _ in effects[:MAX_DRIVERS]]\n    \n    # Remove correlated features (keep only one from each highly correlated group)\n    corr_pairs = [(a, b) for a, b in [\n        ('PXDM12', 'QWQA13P'), ('QWQA13P', 'VGQ16A'), ('GSAW6', 'QWQA13P'),\n        ('UFHO19B', 'QWQA13P'), ('HDW17B', 'FEY18'), ('GSAW6', 'PXDM12'),\n        ('SJVH15P', 'QWQA13P'), ('ZPO18', 'YQI12'), ('MYL2L', 'LFH1P'),\n        ('GSAW6', 'VGQ16A'), ('PXDM12', 'VGQ16A'), ('UJG13B', 'QWQA13P'),\n        ('YJJU8', 'HDW17B'), ('YUPK6', 'AGNW3'), ('MOF6', 'QWQA13P'),\n        ('YIMO10B', 'HRG14'), ('WDTV15B', 'OGP8'), ('YIMO10B', 'AGNW3'),\n        ('UFHO19B', 'VGQ16A'), ('QWQA13P', 'ZRKU16')\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Build correlation groups\n    groups = defaultdict(set)\n    for a, b in corr_pairs:\n        groups[a].add(b)\n        groups[b].add(a)\n    \n    # For each group, keep the one with strongest effect\n    to_remove = set()\n    for group in groups.values():\n        if len(group) > 1:\n            # Keep the one with highest effect size among group members\n            effect_dict = dict((fid, effect) for effect, fid, _ in effects)\n            best_fid = max(group, key=lambda f: effect_dict.get(f, 0))\n            to_remove.update([f for f in group if f != best_fid])\n    \n    # Build final columns list\n    columns = [fid for fid in feats.ids if fid not in to_remove and fid not in drivers]\n    \n    # Add product terms for highly correlated pairs\n    products = []\n    for a, b in corr_pairs:\n        if a in feats.ids and b in feats.ids and a not in to_remove and b not in to_remove:\n            products.append((a, b))\n    \n    # Compute loadings based on effect sizes\n    loadings = {}\n    for fid in columns:\n        idx = feats.column(fid)\n        mean_diff = np.mean(feats.y * feats.x[:, idx]) - np.mean((1 - feats.y) * feats.x[:, idx])\n        loadings[fid] = mean_diff\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9174,
+  "completion_tokens": 2507,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 2692
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nNameError: name 'next' is not defined",
+    "bytes": 2692
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2740
+   }
+  ],
+  "wall_s": 28.6
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-fnvhzj6b",
+ "seed": "block",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Identify potential drivers using t-statistics and correlation clustering\n    t_stats = np.array([stats.ttest_ind(feats.x[feats.y==1, feats.column(fid)], \n                                       feats.x[feats.y==0, feats.column(fid)], \n                                       equal_var=False)[0] \n                       for fid in feats.ids])\n    \n    # Select top features by absolute t-statistic\n    top_indices = np.argsort(np.abs(t_stats))[::-1][:20]\n    top_features = [feats.ids[i] for i in top_indices]\n    \n    # Cluster correlated features\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in top_features]].T)\n    np.fill_diagonal(corr_matrix, 0)\n    \n    # Use hierarchical clustering to find modules\n    clustering = AgglomerativeClustering(n_clusters=2, linkage='ward')\n    cluster_labels = clustering.fit_predict(1 - np.abs(corr_matrix))\n    \n    # Find the most correlated cluster\n    cluster_sizes = np.bincount(cluster_labels)\n    main_cluster = np.argmax(cluster_sizes)\n    \n    # Get features in the main cluster\n    module_features = [top_features[i] for i in range(len(top_features)) \n                      if cluster_labels[i] == main_cluster]\n    \n    # Remove near-duplicates (correlated with r > 0.6)\n    to_remove = set()\n    for i in range(len(module_features)):\n        for j in range(i+1, len(module_features)):\n            fid1, fid2 = module_features[i], module_features[j]\n            if abs(np.corrcoef(feats.x[:, feats.column(fid1)], \n                              feats.x[:, feats.column(fid2)])[0,1]) > 0.6:\n                to_remove.add(fid2)\n    \n    final_features = [fid for fid in module_features if fid not in to_remove]\n    \n    # If no clear module, return empty design\n    if len(final_features) < 2:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Compute weighted score based on standardized values\n    weights = np.array([t_stats[feats.column(fid)] for fid in final_features])\n    weights = np.abs(weights) / np.sum(np.abs(weights))  # normalize\n    \n    # Return design with module features and their loadings\n    return Design(\n        drivers=tuple(final_features[:MAX_DRIVERS]),\n        columns=tuple(final_features),\n        products=(),\n        loadings=dict(zip(final_features, weights))\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8227,
+  "completion_tokens": 1726,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2557
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on a 60 percent training fold: 5 drivers; at most 4",
+    "bytes": 2492
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on a 60 percent training fold: more than 12 design terms; keep the model small",
+    "bytes": 2437
+   }
+  ],
+  "wall_s": 19.9
+ }
+}

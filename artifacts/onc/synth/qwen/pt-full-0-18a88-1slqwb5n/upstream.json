@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-1slqwb5n",
+ "seed": "upstream",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on mean difference and t-statistic\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if abs(feats.x[:, i].mean() * feats.y.mean()) > 0.1 and abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])[0]) > 2:\n            strong_candidates.append(fid)\n    \n    # Find correlated pairs (|r| >= 0.6)\n    corr_pairs = []\n    for i, a in enumerate(feats.ids):\n        for j, b in enumerate(feats.ids):\n            if i < j:\n                corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n                if abs(corr) >= 0.6:\n                    corr_pairs.append((a, b))\n    \n    # Remove duplicates and near-duplicates\n    unique_pairs = set()\n    for a, b in corr_pairs:\n        if (a, b) not in unique_pairs and (b, a) not in unique_pairs:\n            unique_pairs.add((a, b))\n    \n    # Build clusters\n    all_features = list(feats.ids)\n    clusters = []\n    used = set()\n    \n    for a, b in unique_pairs:\n        if a not in used and b not in used:\n            clusters.append([a, b])\n            used.add(a)\n            used.add(b)\n    \n    # Add unclustered features to their own clusters\n    for fid in all_features:\n        if fid not in used:\n            clusters.append([fid])\n    \n    # Select representative from each cluster (strongest candidate)\n    representatives = []\n    for cluster in clusters:\n        if len(cluster) == 1:\n            representatives.append(cluster[0])\n        else:\n            # Choose the one with highest absolute t-statistic\n            best_fid = max(cluster, key=lambda f: abs(stats.ttest_ind(feats.x[feats.y==1, feats.column(f)], feats.x[feats.y==0, feats.column(f)])[0]))\n            representatives.append(best_fid)\n    \n    # Return top candidates as drivers (limit to 4 as per error message)\n    drivers = tuple(representatives[:4])\n    \n    # All features that could be useful\n    columns = tuple(feats.ids)\n    \n    # No products needed\n    products = ()\n    \n    # Loadings based on t-statistics\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        t_stat = stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i])[0]\n        loadings[fid] = t_stat\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8291,
+  "completion_tokens": 1837,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 2340
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2350
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2374
+   }
+  ],
+  "wall_s": 21.2
+ }
+}

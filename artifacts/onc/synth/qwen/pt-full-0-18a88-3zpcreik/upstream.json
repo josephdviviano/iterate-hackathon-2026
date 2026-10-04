@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-3zpcreik",
+ "seed": "upstream",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on mean difference and t-statistic\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if abs(feats.x[:, i].mean() * 2 - 1) > 0.1 and abs(stats.ttest_ind(feats.x[feats.y==0, i], feats.x[feats.y==1, i])[0]) > 2.5:\n            strong_candidates.append(fid)\n    \n    # Cluster correlated features\n    corr_pairs = [(a, b) for a, b in [\n        (\"FJDC1\", \"YIFW13\"), (\"CNZK2\", \"BHR10\"), (\"YIFW13\", \"YBE10\"),\n        (\"JOEN12\", \"YIFW13\"), (\"RMJB3\", \"YIFW13\"), (\"FJDC1\", \"IAX6\"),\n        (\"JOEN12\", \"RMJB3\"), (\"IAX6\", \"YIFW13\"), (\"YIFW13\", \"QLP12L\"),\n        (\"YIFW13\", \"YTMC4L\"), (\"JOEN12\", \"SZB15L\"), (\"FJDC1\", \"YBE10\"),\n        (\"FJDC1\", \"YTMC4L\"), (\"YIFW13\", \"KLAJ17\"), (\"FJDC1\", \"KLAJ17\"),\n        (\"UHFH19\", \"YBE10\"), (\"THZS1\", \"YBE10\"), (\"FJDC1\", \"RMJB3\"),\n        (\"YIFW13\", \"SZB15L\"), (\"RMJB3\", \"YBE10\")\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Create feature matrix for clustering\n    feature_indices = [feats.column(fid) for fid in strong_candidates]\n    X_cluster = feats.x[:, feature_indices]\n    \n    # Cluster features based on correlation\n    if len(strong_candidates) > 1:\n        # Compute correlation matrix\n        corr_mat = np.corrcoef(X_cluster.T)\n        # Use Agglomerative Clustering to group highly correlated features\n        clustering = AgglomerativeClustering(n_clusters=max(1, len(strong_candidates)//2),\n                                             linkage='average')\n        clusters = clustering.fit_predict(1 - np.abs(corr_mat))  # Convert to distance\n        \n        # Select representative from each cluster (highest mean difference)\n        drivers = []\n        seen = set()\n        for i, cluster_id in enumerate(clusters):\n            if cluster_id not in seen:\n                drivers.append(strong_candidates[i])\n                seen.add(cluster_id)\n    else:\n        drivers = strong_candidates[:MAX_DRIVERS]\n    \n    # Remove near-duplicates\n    unique_drivers = []\n    for d in drivers:\n        if all(np.abs(np.corrcoef(feats.x[:, feats.column(d)], feats.x[:, feats.column(other)])[0,1]) < 0.6 \n               for other in unique_drivers):\n            unique_drivers.append(d)\n    \n    # Build regression components\n    columns = tuple(unique_drivers)\n    products = tuple((a, b) for a, b in corr_pairs if a in columns and b in columns)\n    \n    # Weighted score using top features\n    loadings = {fid: float(np.abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1])) \n                for fid in columns}\n    \n    return Design(\n        drivers=tuple(unique_drivers[:MAX_DRIVERS]),\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.cluster import AgglomerativeClustering\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify strong candidates based on mean difference and t-statistic\n    strong_candidates = []\n    for i, fid in enumerate(feats.ids):\n        if abs(feats.x[:, i].mean() * 2 - 1) > 0.1 and abs(stats.ttest_ind(feats.x[feats.y==0, i], feats.x[feats.y==1, i])[0]) > 2.5:\n            strong_candidates.append(fid)\n    \n    # Cluster correlated features\n    corr_pairs = [(a, b) for a, b in [\n        (\"FJDC1\", \"YIFW13\"), (\"CNZK2\", \"BHR10\"), (\"YIFW13\", \"YBE10\"),\n        (\"JOEN12\", \"YIFW13\"), (\"RMJB3\", \"YIFW13\"), (\"FJDC1\", \"IAX6\"),\n        (\"JOEN12\", \"RMJB3\"), (\"IAX6\", \"YIFW13\"), (\"YIFW13\", \"QLP12L\"),\n        (\"YIFW13\", \"YTMC4L\"), (\"JOEN12\", \"SZB15L\"), (\"FJDC1\", \"YBE10\"),\n        (\"FJDC1\", \"YTMC4L\"), (\"YIFW13\", \"KLAJ17\"), (\"FJDC1\", \"KLAJ17\"),\n        (\"UHFH19\", \"YBE10\"), (\"THZS1\", \"YBE10\"), (\"FJDC1\", \"RMJB3\"),\n        (\"YIFW13\", \"SZB15L\"), (\"RMJB3\", \"YBE10\")\n    ] if a in feats.ids and b in feats.ids]\n    \n    # Create feature matrix for clustering\n    feature_indices = [feats.column(fid) for fid in strong_candidates]\n    X_cluster = feats.x[:, feature_indices]\n    \n    # Cluster features based on correlation\n    if len(strong_candidates) > 1:\n        # Compute correlation matrix\n        corr_mat = np.corrcoef(X_cluster.T)\n        # Use Agglomerative Clustering to group highly correlated features\n        clustering = AgglomerativeClustering(n_clusters=max(1, len(strong_candidates)//2),\n                                             linkage='average')\n        clusters = clustering.fit_predict(1 - np.abs(corr_mat))  # Convert to distance\n        \n        # Select representative from each cluster (highest mean difference)\n        drivers = []\n        seen = set()\n        for i, cluster_id in enumerate(clusters):\n            if cluster_id not in seen:\n                drivers.append(strong_candidates[i])\n                seen.add(cluster_id)\n    else:\n        drivers = strong_candidates[:MAX_DRIVERS]\n    \n    # Remove near-duplicates\n    unique_drivers = []\n    for d in drivers:\n        if all(np.abs(np.corrcoef(feats.x[:, feats.column(d)], feats.x[:, feats.column(other)])[0,1]) < 0.6 \n               for other in unique_drivers):\n            unique_drivers.append(d)\n    \n    # Build regression components\n    columns = tuple(unique_drivers)\n    products = tuple((a, b) for a, b in corr_pairs if a in columns and b in columns)\n    \n    # Weighted score using top features\n    loadings = {fid: float(np.abs(np.corrcoef(feats.x[:, feats.column(fid)], feats.y)[0,1])) \n                for fid in columns}\n    \n    return Design(\n        drivers=tuple(unique_drivers[:MAX_DRIVERS]),\n        columns=columns,\n        products=products,\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9038,
+  "completion_tokens": 2474,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "ImportError: cannot import name 'correlation_matrix' from 'sklearn.metrics.pairwise' (.venv/lib/python3.12/site-packages/sklearn/metrics/pairwise.py)",
+    "bytes": 2948
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: AgglomerativeClustering.__init__() got an unexpected keyword argument 'affinity'",
+    "bytes": 2892
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2822
+   }
+  ],
+  "wall_s": 28.1
+ }
+}

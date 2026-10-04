@@ -1,0 +1,21 @@
+{
+ "world_id": "pt-full-0-18a88-c6utoej4",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using correlation with outcome\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Check for strong correlations with outcome\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'copy_number', 'clinical'):\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            if abs(corr) > 0.1:\n                columns.append(fid)\n                loadings[fid] = corr\n    \n    # If no strong correlations, return empty design\n    if not columns:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Remove near-duplicates based on correlation matrix\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in columns]])\n    to_remove = set()\n    for i in range(len(columns)):\n        for j in range(i+1, len(columns)):\n            if abs(corr_matrix[i, j]) > 0.6:\n                to_remove.add(columns[j])\n    \n    columns = [fid for fid in columns if fid not in to_remove]\n    \n    # Select top features by correlation strength\n    sorted_features = sorted(columns, key=lambda f: abs(loadings[f]), reverse=True)\n    drivers = sorted_features[:MAX_DRIVERS]\n    \n    # Add interaction terms between top drivers\n    for i in range(min(2, len(drivers))):\n        for j in range(i+1, min(3, len(drivers))):\n            products.append((drivers[i], drivers[j]))\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers using correlation with outcome\n    drivers = []\n    columns = []\n    products = []\n    loadings = {}\n    \n    # Check for strong correlations with outcome\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] in ('expression', 'copy_number', 'clinical'):\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            if abs(corr) > 0.1:\n                columns.append(fid)\n                loadings[fid] = corr\n    \n    # If no strong correlations, return empty design\n    if not columns:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Remove near-duplicates based on correlation matrix\n    corr_matrix = np.corrcoef(feats.x[:, [feats.column(fid) for fid in columns]])\n    to_remove = set()\n    for i in range(len(columns)):\n        for j in range(i+1, len(columns)):\n            if abs(corr_matrix[i, j]) > 0.6:\n                to_remove.add(columns[j])\n    \n    columns = [fid for fid in columns if fid not in to_remove]\n    \n    # Select top features by correlation strength\n    sorted_features = sorted(columns, key=lambda f: abs(loadings[f]), reverse=True)\n    drivers = sorted_features[:MAX_DRIVERS]\n    \n    # Add interaction terms between top drivers\n    for i in range(min(2, len(drivers))):\n        for j in range(i+1, min(3, len(drivers))):\n            products.append((drivers[i], drivers[j]))\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 1,
+  "prompt_tokens": 2201,
+  "completion_tokens": 412,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": true,
+    "report": "",
+    "bytes": 1739
+   }
+  ],
+  "wall_s": 4.8
+ }
+}

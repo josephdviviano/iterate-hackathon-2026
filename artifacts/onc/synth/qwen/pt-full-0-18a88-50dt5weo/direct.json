@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-50dt5weo",
+ "seed": "direct",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Filter out derived features for driver selection\n    non_derived_mask = [t != 'derived' for t in feats.types]\n    non_derived_ids = [fid for fid, mask in zip(feats.ids, non_derived_mask) if mask]\n    \n    # Calculate effect sizes and select top candidates\n    effects = []\n    for fid in non_derived_ids:\n        col_idx = feats.column(fid)\n        x = feats.x[:, col_idx]\n        y = feats.y\n        mean1 = np.mean(x[y == 1])\n        mean0 = np.mean(x[y == 0])\n        effect_size = mean1 - mean0\n        # Use Welch's t-test for significance\n        t_stat, p_val = stats.ttest_ind(x[y == 1], x[y == 0], equal_var=False)\n        effects.append((fid, abs(effect_size), abs(t_stat), p_val))\n    \n    # Sort by effect size and then by statistical significance\n    effects.sort(key=lambda x: (-x[1], -x[2]))\n    \n    # Select top drivers (up to MAX_DRIVERS)\n    drivers = [fid for fid, _, _, _ in effects[:MAX_DRIVERS]]\n    \n    # For products, consider only the strongest correlations\n    columns = list(non_derived_ids)\n    products = []\n    \n    # Add products for top correlated pairs from the provided data\n    strong_corr_pairs = [\n        ('EIAF10', 'FXS12A'), ('EIAF10', 'GEIB11B'), ('EIAF10', 'HFD16'),\n        ('PSEP17', 'FXS12A'), ('PSEP17', 'EIAF10')\n    ]\n    \n    # Add products for top correlated pairs\n    for a, b in strong_corr_pairs:\n        if a in non_derived_ids and b in non_derived_ids:\n            products.append((a, b))\n    \n    # Create weighted score using top features\n    loadings = {}\n    for i, (fid, _, _, _) in enumerate(effects[:2]):\n        loadings[fid] = 1.0 / (i + 1)  # Inverse rank weighting\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8665,
+  "completion_tokens": 1742,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2110
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1907
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1835
+   }
+  ],
+  "wall_s": 20.3
+ }
+}

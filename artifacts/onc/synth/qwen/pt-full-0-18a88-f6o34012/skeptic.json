@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-f6o34012",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Check for association with outcome\n    pvals = []\n    for fid in feats.ids:\n        col = feats.column(fid)\n        x = feats.x[:, col]\n        y = feats.y\n        tstat, pval = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        pvals.append(pval)\n    \n    # Find significant features (p < 0.05)\n    sig_features = [fid for fid, p in zip(feats.ids, pvals) if p < 0.05]\n    \n    # If no significant features, return empty design\n    if not sig_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for correlation among significant features\n    corr_pairs = []\n    for i, fid1 in enumerate(sig_features):\n        for j, fid2 in enumerate(sig_features[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            r, _ = stats.pearsonr(feats.x[:, col1], feats.x[:, col2])\n            if abs(r) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Remove near-duplicates (keep one from each pair)\n    to_remove = set()\n    for a, b in corr_pairs:\n        to_remove.add(b)  # remove second in pair\n    \n    unique_features = [f for f in sig_features if f not in to_remove]\n    \n    # Check strata consistency\n    stratum_pvals = []\n    for fid in unique_features:\n        col = feats.column(fid)\n        x = feats.x[:, col]\n        pval = 1.0\n        # Test across strata\n        for stratum in set(feats.stratum):\n            mask = np.array([s == stratum for s in feats.stratum])\n            if np.sum(mask) > 1:\n                x_stratum = x[mask]\n                y_stratum = y[mask]\n                if len(np.unique(y_stratum)) > 1:\n                    tstat, p = stats.ttest_ind(x_stratum[y_stratum==1], x_stratum[y_stratum==0], equal_var=False)\n                    pval = min(pval, p)\n        stratum_pvals.append(pval)\n    \n    # Only keep features with consistent effect across strata\n    final_features = [fid for fid, p in zip(unique_features, stratum_pvals) if p < 0.05]\n    \n    # If no features pass strata check, return empty design\n    if not final_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build design using top features (max 4 drivers as requested)\n    drivers = tuple(final_features[:4])  # Changed from MAX_DRIVERS to 4\n    columns = tuple(final_features)\n    \n    # Add interaction terms for correlated features\n    products = []\n    for i, fid1 in enumerate(final_features):\n        for j, fid2 in enumerate(final_features[i+1:], i+1):\n            col1 = feats.column(fid1)\n            col2 = feats.column(fid2)\n            r, _ = stats.pearsonr(feats.x[:, col1], feats.x[:, col2])\n            if abs(r) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Create loadings for weighted score\n    loadings = {}\n    for fid in final_features:\n        col = feats.column(fid)\n        x = feats.x[:, col]\n        y = feats.y\n        tstat, _ = stats.ttest_ind(x[y==1], x[y==0], equal_var=False)\n        loadings[fid] = tstat\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9209,
+  "completion_tokens": 2565,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3333
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3351
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3196
+   }
+  ],
+  "wall_s": 29.4
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-o97uravy",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = []\n    correlated = set()\n    for i, fid1 in enumerate(feats.ids):\n        if fid1 in correlated:\n            continue\n        keep.append(i)\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if fid2 in correlated:\n                continue\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                correlated.add(fid2)\n    \n    # Filter to non-correlated features\n    filtered_ids = [feats.ids[i] for i in keep]\n    filtered_x = feats.x[:, keep]\n    \n    # Calculate effect sizes and select top candidates\n    effects = []\n    for i, fid in enumerate(filtered_ids):\n        y0 = filtered_x[feats.y == 0, i]\n        y1 = filtered_x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effects.append((abs(t_stat), fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    candidates = [fid for _, fid in effects[:10]]\n    \n    # Select drivers using mutual information\n    mi_scores = mutual_info_classif(filtered_x[:, [filtered_ids.index(fid) for fid in candidates]], \n                                   feats.y)\n    sorted_drivers = [candidates[i] for i in np.argsort(mi_scores)[::-1][:MAX_DRIVERS]]\n    \n    # Build design\n    drivers = tuple(sorted_drivers)\n    \n    # Include all features with strong correlations to drivers\n    columns = list(drivers)\n    for fid in filtered_ids:\n        if fid not in columns:\n            # Check if this feature is correlated with any driver\n            for driver in drivers:\n                driver_idx = filtered_ids.index(driver)\n                fid_idx = filtered_ids.index(fid)\n                corr = np.corrcoef(filtered_x[:,driver_idx], filtered_x[:,fid_idx])[0,1]\n                if abs(corr) >= 0.6:\n                    columns.append(fid)\n                    break\n    \n    # Add interaction terms for high-effect features\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            if abs(np.corrcoef(filtered_x[:, filtered_ids.index(fid1)], \n                              filtered_x[:, filtered_ids.index(fid2)])[0,1]) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Weighted score: use top features' standardized values\n    loadings = {}\n    for i, fid in enumerate(columns[:min(5, len(columns))]):  # Top 5 features for scoring\n        loadings[fid] = effects[i][0] if i < len(effects) else 1.0\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    keep = []\n    correlated = set()\n    for i, fid1 in enumerate(feats.ids):\n        if fid1 in correlated:\n            continue\n        keep.append(i)\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if fid2 in correlated:\n                continue\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                correlated.add(fid2)\n    \n    # Filter to non-correlated features\n    filtered_ids = [feats.ids[i] for i in keep]\n    filtered_x = feats.x[:, keep]\n    \n    # Calculate effect sizes and select top candidates\n    effects = []\n    for i, fid in enumerate(filtered_ids):\n        y0 = filtered_x[feats.y == 0, i]\n        y1 = filtered_x[feats.y == 1, i]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effects.append((abs(t_stat), fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    candidates = [fid for _, fid in effects[:10]]\n    \n    # Select drivers using mutual information\n    mi_scores = mutual_info_classif(filtered_x[:, [filtered_ids.index(fid) for fid in candidates]], \n                                   feats.y)\n    sorted_drivers = [candidates[i] for i in np.argsort(mi_scores)[::-1][:MAX_DRIVERS]]\n    \n    # Build design\n    drivers = tuple(sorted_drivers)\n    \n    # Include all features with strong correlations to drivers\n    columns = list(drivers)\n    for fid in filtered_ids:\n        if fid not in columns:\n            # Check if this feature is correlated with any driver\n            for driver in drivers:\n                driver_idx = filtered_ids.index(driver)\n                fid_idx = filtered_ids.index(fid)\n                corr = np.corrcoef(filtered_x[:,driver_idx], filtered_x[:,fid_idx])[0,1]\n                if abs(corr) >= 0.6:\n                    columns.append(fid)\n                    break\n    \n    # Add interaction terms for high-effect features\n    products = []\n    for i, fid1 in enumerate(columns):\n        for j, fid2 in enumerate(columns[i+1:], i+1):\n            if abs(np.corrcoef(filtered_x[:, filtered_ids.index(fid1)], \n                              filtered_x[:, filtered_ids.index(fid2)])[0,1]) >= 0.6:\n                products.append((fid1, fid2))\n    \n    # Weighted score: use top features' standardized values\n    loadings = {}\n    for i, fid in enumerate(columns[:min(5, len(columns))]):  # Top 5 features for scoring\n        loadings[fid] = effects[i][0] if i < len(effects) else 1.0\n    \n    return Design(drivers=drivers, columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8387,
+  "completion_tokens": 2011,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2788
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2758
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2758
+   }
+  ],
+  "wall_s": 44.5
+ }
+}

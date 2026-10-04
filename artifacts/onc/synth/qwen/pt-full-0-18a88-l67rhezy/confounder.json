@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-l67rhezy",
+ "seed": "confounder",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers (clinical/stratum variables)\n    clinical_vars = [fid for fid, typ in zip(feats.ids, feats.types) if typ == 'clinical']\n    \n    if not clinical_vars:\n        # No clinical variables, use all features\n        candidates = list(feats.ids)\n    else:\n        # Use clinical variables as potential drivers\n        candidates = clinical_vars\n    \n    # Filter out near-duplicates based on correlation\n    keep = []\n    used = set()\n    for fid in candidates:\n        if fid in used:\n            continue\n        keep.append(fid)\n        # Find correlated features to exclude\n        for other_fid in candidates:\n            if other_fid != fid and other_fid not in used:\n                col_idx1 = feats.column(fid)\n                col_idx2 = feats.column(other_fid)\n                try:\n                    corr = np.corrcoef(feats.x[:, col_idx1], feats.x[:, col_idx2])[0,1]\n                    if abs(corr) >= 0.6:\n                        used.add(other_fid)\n                except:\n                    pass\n    \n    # Compute effect sizes using t-tests\n    effect_sizes = {}\n    for fid in keep:\n        col_idx = feats.column(fid)\n        try:\n            y0 = feats.x[feats.y==0, col_idx]\n            y1 = feats.x[feats.y==1, col_idx]\n            if len(y0) > 0 and len(y1) > 0:\n                tstat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n                effect_sizes[fid] = abs(tstat)\n        except:\n            pass\n    \n    # Sort by effect size\n    sorted_features = sorted(effect_sizes.items(), key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (max MAX_DRIVERS)\n    drivers = tuple(fid for fid, _ in sorted_features[:MAX_DRIVERS])\n    \n    # If we have a driver, adjust for it in feature selection\n    if drivers:\n        # Get remaining features\n        remaining = [fid for fid in feats.ids if fid not in drivers]\n        remaining_cols = [feats.column(fid) for fid in remaining]\n        \n        # Use mutual information to select features\n        try:\n            if len(remaining) > 0:\n                remaining_data = feats.x[:, remaining_cols]\n                mi_scores = mutual_info_classif(remaining_data, feats.y)\n                selected_indices = np.argsort(mi_scores)[::-1][:min(10, len(remaining))]\n                selected_features = [remaining[i] for i in selected_indices]\n            else:\n                selected_features = []\n        except:\n            selected_features = remaining[:10] if remaining else []\n        \n        # Check for interactions\n        products = []\n        for i, fid1 in enumerate(selected_features):\n            for j, fid2 in enumerate(selected_features[i+1:], i+1):\n                # Check if interaction term would be useful\n                col1 = feats.column(fid1)\n                col2 = feats.column(fid2)\n                try:\n                    interaction = feats.x[:, col1] * feats.x[:, col2]\n                    # Simple check: if interaction improves model significantly\n                    lr1 = LogisticRegression(penalty='l1', solver='liblinear', fit_intercept=True, max_iter=1000)\n                    lr2 = LogisticRegression(penalty='l1', solver='liblinear', fit_intercept=True, max_iter=1000)\n                    \n                    # Fit with just main effects\n                    lr1.fit(feats.x[:, col1].reshape(-1,1), feats.y)\n                    # Fit with interaction\n                    lr2.fit(np.hstack([feats.x[:, col1].reshape(-1,1), interaction.reshape(-1,1)]), feats.y)\n                    \n                    if lr2.score(np.hstack([feats.x[:, col1].reshape(-1,1), interaction.reshape(-1,1)]), feats.y) > \\\n                       lr1.score(feats.x[:, col1].reshape(-1,1), feats.y) + 0.01:\n                        products.append((fid1, fid2))\n                except:\n                    pass\n        \n        return Design(\n            drivers=drivers,\n            columns=tuple(selected_features),\n            products=tuple(products),\n            loadings={fid: 1.0 for fid in selected_features}\n        )\n    \n    # No driver case - simple approach\n    # Just return top features by effect size\n    top_features = tuple(fid for fid, _ in sorted_features[:MAX_DRIVERS])\n    \n    # For no mechanism case, return empty drivers\n    if not top_features:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Simple approach: use all features with high effect sizes\n    # Return top features as columns\n    return Design(\n        drivers=(),\n        columns=top_features,\n        products=(),\n        loadings={fid: 1.0 for fid in top_features}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9912,
+  "completion_tokens": 3380,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nIndexError: list index out of range",
+    "bytes": 4687
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 5506
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 4811
+   }
+  ],
+  "wall_s": 39.9
+ }
+}

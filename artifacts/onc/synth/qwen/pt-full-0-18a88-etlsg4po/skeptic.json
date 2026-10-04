@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-etlsg4po",
+ "seed": "skeptic",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    if not feats.ids:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Check for association with outcome\n    effects = []\n    for i, fid in enumerate(feats.ids):\n        col = feats.column(fid)\n        y = feats.y\n        x = feats.x[:, col]\n        tstat, _ = stats.ttest_ind(x[y==1], x[y==0])\n        effects.append((abs(tstat), fid))\n    \n    effects.sort(reverse=True)\n    \n    # Check stratum consistency\n    stratum_consistent = True\n    if len(set(feats.stratum)) > 1:\n        strata = set(feats.stratum)\n        for s in strata:\n            mask = np.array([x == s for x in feats.stratum])\n            if np.sum(mask) < 2:\n                continue\n            y_s = feats.y[mask]\n            if len(np.unique(y_s)) < 2:\n                continue\n            x_s = feats.x[mask]\n            # For each feature, check if effect is consistent\n            for i, fid in enumerate(feats.ids):\n                col = feats.column(fid)\n                x_f = x_s[:, col]\n                tstat, _ = stats.ttest_ind(x_f[y_s==1], x_f[y_s==0])\n                # Simple check: if effect is very different, mark inconsistent\n                if abs(tstat) < 1.0:  # arbitrary threshold\n                    stratum_consistent = False\n                    break\n            if not stratum_consistent:\n                break\n    \n    # Select top features by effect size\n    top_features = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # Remove near-duplicates based on correlation\n    keep = []\n    used = set()\n    for fid in top_features:\n        if fid in used:\n            continue\n        keep.append(fid)\n        used.add(fid)\n        # Find correlated features to exclude\n        col = feats.column(fid)\n        x_fid = feats.x[:, col]\n        for other_fid in feats.ids:\n            if other_fid == fid or other_fid in used:\n                continue\n            other_col = feats.column(other_fid)\n            x_other = feats.x[:, other_col]\n            corr = np.corrcoef(x_fid, x_other)[0,1]\n            if abs(corr) >= 0.6:\n                used.add(other_fid)\n    \n    # If no mechanism expected, return empty design\n    if not stratum_consistent or len(keep) == 0:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build logistic regression features\n    drivers = tuple(keep[:MAX_DRIVERS])\n    columns = tuple(keep[:MAX_DRIVERS])\n    products = ()\n    loadings = {fid: 1.0 for fid in keep[:MAX_DRIVERS]}\n    \n    # Ensure we don't exceed max drivers in final result\n    drivers = drivers[:MAX_DRIVERS]\n    columns = columns[:MAX_DRIVERS]\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8456,
+  "completion_tokens": 2075,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2791
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3003
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2785
+   }
+  ],
+  "wall_s": 23.7
+ }
+}

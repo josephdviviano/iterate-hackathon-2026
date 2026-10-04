@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-o49j50e0",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import f_classif\nfrom sklearn.metrics import roc_auc_score\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Find features with significant association (p < 0.05)\n    f_scores, p_values = f_classif(feats.x, feats.y)\n    significant_features = [feats.ids[i] for i in range(len(feats.ids)) if p_values[i] < 0.05]\n    \n    # Remove near-duplicates based on correlation > 0.6\n    correlated_pairs = set()\n    for i in range(len(feats.ids)):\n        for j in range(i+1, len(feats.ids)):\n            corr = np.corrcoef(feats.x[:,i], feats.x[:,j])[0,1]\n            if abs(corr) >= 0.6:\n                fid1, fid2 = feats.ids[i], feats.ids[j]\n                correlated_pairs.add((min(fid1, fid2), max(fid1, fid2)))\n    \n    # Build a set of unique features after removing duplicates\n    unique_features = set()\n    for pair in correlated_pairs:\n        # Keep the one with higher absolute effect size\n        idx1 = feats.column(pair[0])\n        idx2 = feats.column(pair[1])\n        effect1 = np.mean(feats.x[feats.y==1, idx1]) - np.mean(feats.x[feats.y==0, idx1])\n        effect2 = np.mean(feats.x[feats.y==1, idx2]) - np.mean(feats.x[feats.y==0, idx2])\n        keep = pair[0] if abs(effect1) > abs(effect2) else pair[1]\n        unique_features.add(keep)\n    \n    # Identify features that are not near-duplicates\n    non_duplicate_features = [fid for fid in feats.ids if fid not in unique_features]\n    \n    # Check for interaction terms among top features\n    best_interaction = None\n    best_auc = 0\n    \n    # Only check top 20 features for efficiency\n    top_features = non_duplicate_features[:20]\n    \n    for i in range(len(top_features)):\n        for j in range(i+1, len(top_features)):\n            fid1, fid2 = top_features[i], top_features[j]\n            col1, col2 = feats.column(fid1), feats.column(fid2)\n            \n            # Create product term\n            product = feats.x[:, col1] * feats.x[:, col2]\n            \n            # Fit logistic regression with intercept, product term, and original terms\n            X = np.column_stack([feats.x[:, col1], feats.x[:, col2], product])\n            model = LogisticRegression(fit_intercept=True, penalty='none', solver='lbfgs')\n            model.fit(X, feats.y)\n            \n            # Predict probabilities\n            probas = model.predict_proba(X)[:, 1]\n            \n            # Calculate AUC\n            auc = roc_auc_score(feats.y, probas)\n            \n            if auc > best_auc:\n                best_auc = auc\n                best_interaction = (fid1, fid2)\n    \n    # Return the result\n    if best_interaction and best_auc > 0.55:\n        drivers = (best_interaction[0], best_interaction[1])\n        columns = (best_interaction[0], best_interaction[1])\n        products = (best_interaction,)\n        loadings = {best_interaction[0]: 1.0, best_interaction[1]: 1.0}\n        return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n    \n    # If no good interaction found, return empty design\n    return Design(drivers=(), columns=(), products=(), loadings={})\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8854,
+  "completion_tokens": 2419,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nsklearn.utils._param_validation.InvalidParameterError: The 'penalty' parameter of LogisticRegression must be a str among {'l1', 'l2', 'elasticnet'} or None. Got 'none' instead.",
+    "bytes": 3309
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "design took 15s on all patients; it must run in under 10s",
+    "bytes": 3146
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "design raised on all patients:\nsklearn.utils._param_validation.InvalidParameterError: The 'penalty' parameter of LogisticRegression must be a str among {'l1', 'l2', 'elasticnet'} or None. Got 'none' instead.",
+    "bytes": 3216
+   }
+  ],
+  "wall_s": 55.9
+ }
+}

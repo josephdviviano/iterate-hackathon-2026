@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-i1fcinoo",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Build set of unique features to keep\n    keep = set(feats.ids)\n    for fid1, fid2 in corr_pairs:\n        if fid1 in keep and fid2 in keep:\n            # Prefer the one with higher t-statistic\n            t1 = feats.x[:, feats.column(fid1)].mean() * np.sqrt(len(feats.x))\n            t2 = feats.x[:, feats.column(fid2)].mean() * np.sqrt(len(feats.x))\n            if abs(t1) < abs(t2):\n                keep.remove(fid1)\n            else:\n                keep.remove(fid2)\n    \n    # Calculate effect sizes using Welch's t-test\n    effects = []\n    for fid in keep:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effects.append((abs(t_stat), fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    drivers = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # For logistic regression, use only top 5 features\n    columns = [fid for _, fid in effects[:5]]\n    \n    # Product terms between top features\n    products = []\n    for i, fid1 in enumerate(columns[:3]):\n        for fid2 in columns[i+1:3]:\n            products.append((fid1, fid2))\n    \n    # Weighted score: sum of top features with weights\n    loadings = {}\n    for i, (effect, fid) in enumerate(effects[:3]):\n        loadings[fid] = effect / effects[0][0] if effects[0][0] != 0 else 1\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                 products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    corr_pairs = []\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if abs(np.corrcoef(feats.x[:, i], feats.x[:, j])[0,1]) >= 0.6:\n                corr_pairs.append((fid1, fid2))\n    \n    # Build set of unique features to keep\n    keep = set(feats.ids)\n    for fid1, fid2 in corr_pairs:\n        if fid1 in keep and fid2 in keep:\n            # Prefer the one with higher t-statistic\n            t1 = feats.x[:, feats.column(fid1)].mean() * np.sqrt(len(feats.x))\n            t2 = feats.x[:, feats.column(fid2)].mean() * np.sqrt(len(feats.x))\n            if abs(t1) < abs(t2):\n                keep.remove(fid1)\n            else:\n                keep.remove(fid2)\n    \n    # Calculate effect sizes using Welch's t-test\n    effects = []\n    for fid in keep:\n        col = feats.column(fid)\n        y0 = feats.x[feats.y == 0, col]\n        y1 = feats.x[feats.y == 1, col]\n        t_stat, _ = stats.ttest_ind(y0, y1, equal_var=False)\n        effects.append((abs(t_stat), fid))\n    \n    # Sort by effect size\n    effects.sort(reverse=True)\n    drivers = [fid for _, fid in effects[:MAX_DRIVERS]]\n    \n    # For logistic regression, use only top 5 features\n    columns = [fid for _, fid in effects[:5]]\n    \n    # Product terms between top features\n    products = []\n    for i, fid1 in enumerate(columns[:3]):\n        for fid2 in columns[i+1:3]:\n            products.append((fid1, fid2))\n    \n    # Weighted score: sum of top features with weights\n    loadings = {}\n    for i, (effect, fid) in enumerate(effects[:3]):\n        loadings[fid] = effect / effects[0][0] if effects[0][0] != 0 else 1\n    \n    return Design(drivers=tuple(drivers), columns=tuple(columns), \n                 products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4923,
+  "completion_tokens": 1073,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2088
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1909
+   }
+  ],
+  "wall_s": 12.3
+ }
+}

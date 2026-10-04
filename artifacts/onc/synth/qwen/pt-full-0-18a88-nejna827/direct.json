@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-nejna827",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Get t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y0, y1)\n            t_stats.append((abs(t_stat), fid))\n        else:\n            t_stats.append((0, fid))\n    \n    # Sort by strength and take top 2\n    t_stats.sort(reverse=True)\n    drivers = [fid for _, fid in t_stats[:MAX_DRIVERS]]\n    \n    # Remove any drivers that are highly correlated with each other\n    if len(drivers) >= 2:\n        idx1 = feats.column(drivers[0])\n        idx2 = feats.column(drivers[1])\n        r = np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0, 1]\n        if abs(r) >= 0.6:\n            # Keep only the stronger one\n            if t_stats[0][0] >= t_stats[1][0]:\n                drivers = [drivers[0]]\n            else:\n                drivers = [drivers[1]]\n    \n    # Return minimal design with just the drivers\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(drivers),\n        products=(),\n        loadings={}\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Get t-statistics for all features\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        y0 = feats.x[feats.y == 0, i]\n        y1 = feats.x[feats.y == 1, i]\n        if len(y0) > 0 and len(y1) > 0:\n            t_stat, _ = stats.ttest_ind(y0, y1)\n            t_stats.append((abs(t_stat), fid))\n        else:\n            t_stats.append((0, fid))\n    \n    # Sort by strength and take top 2\n    t_stats.sort(reverse=True)\n    drivers = [fid for _, fid in t_stats[:MAX_DRIVERS]]\n    \n    # Remove any drivers that are highly correlated with each other\n    if len(drivers) >= 2:\n        idx1 = feats.column(drivers[0])\n        idx2 = feats.column(drivers[1])\n        r = np.corrcoef(feats.x[:, idx1], feats.x[:, idx2])[0, 1]\n        if abs(r) >= 0.6:\n            # Keep only the stronger one\n            if t_stats[0][0] >= t_stats[1][0]:\n                drivers = [drivers[0]]\n            else:\n                drivers = [drivers[1]]\n    \n    # Return minimal design with just the drivers\n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(drivers),\n        products=(),\n        loadings={}\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8232,
+  "completion_tokens": 1418,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2179
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 1511
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 1209
+   }
+  ],
+  "wall_s": 16.5
+ }
+}

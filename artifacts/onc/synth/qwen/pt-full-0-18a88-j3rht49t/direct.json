@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-j3rht49t",
+ "seed": "direct",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            if len(group0) > 0 and len(group1) > 0:\n                t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n                effect_sizes.append(abs(t_stat))\n            else:\n                effect_sizes.append(0)\n        else:\n            # For other features, use correlation with outcome\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            effect_sizes.append(abs(corr))\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top candidates\n    candidates = []\n    seen_ids = set()\n    \n    for idx in sorted_indices:\n        fid = feats.ids[idx]\n        # Skip near-duplicates (correlated features)\n        is_duplicate = False\n        for existing_fid in seen_ids:\n            if abs(np.corrcoef(feats.x[:, feats.column(existing_fid)], \n                               feats.x[:, feats.column(fid)])[0, 1]) >= 0.6:\n                is_duplicate = True\n                break\n        \n        if not is_duplicate:\n            candidates.append(fid)\n            seen_ids.add(fid)\n            if len(candidates) >= MAX_DRIVERS:\n                break\n    \n    # If no strong candidate found, return empty design\n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build the design with minimal terms\n    drivers = tuple(candidates)\n    columns = tuple(candidates)  # Only include drivers in regression\n    products = ()\n    loadings = {fid: 1.0 for fid in candidates}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 2\n\ndef design(feats):\n    # Calculate effect sizes (mean difference in outcome groups)\n    effect_sizes = []\n    for i, fid in enumerate(feats.ids):\n        if feats.types[i] == 'clinical':\n            # For clinical features, use t-test\n            group0 = feats.x[feats.y == 0, i]\n            group1 = feats.x[feats.y == 1, i]\n            if len(group0) > 0 and len(group1) > 0:\n                t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n                effect_sizes.append(abs(t_stat))\n            else:\n                effect_sizes.append(0)\n        else:\n            # For other features, use correlation with outcome\n            corr = np.corrcoef(feats.x[:, i], feats.y)[0, 1]\n            effect_sizes.append(abs(corr))\n    \n    # Sort by effect size\n    sorted_indices = np.argsort(effect_sizes)[::-1]\n    \n    # Select top candidates\n    candidates = []\n    seen_ids = set()\n    \n    for idx in sorted_indices:\n        fid = feats.ids[idx]\n        # Skip near-duplicates (correlated features)\n        is_duplicate = False\n        for existing_fid in seen_ids:\n            if abs(np.corrcoef(feats.x[:, feats.column(existing_fid)], \n                               feats.x[:, feats.column(fid)])[0, 1]) >= 0.6:\n                is_duplicate = True\n                break\n        \n        if not is_duplicate:\n            candidates.append(fid)\n            seen_ids.add(fid)\n            if len(candidates) >= MAX_DRIVERS:\n                break\n    \n    # If no strong candidate found, return empty design\n    if not candidates:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Build the design with minimal terms\n    drivers = tuple(candidates)\n    columns = tuple(candidates)  # Only include drivers in regression\n    products = ()\n    loadings = {fid: 1.0 for fid in candidates}\n    \n    return Design(drivers=drivers, columns=columns, products=products, loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 4730,
+  "completion_tokens": 952,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2078
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 1991
+   }
+  ],
+  "wall_s": 10.9
+ }
+}

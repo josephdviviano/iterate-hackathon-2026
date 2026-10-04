@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-5esrukj7",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to copy_number and expression features\n    relevant_ids = [fid for fid, typ in zip(feats.ids, feats.types) \n                    if typ in ('copy_number', 'expression')]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('HROB6A', 'AYMP15'), ('AYMP15', 'REN19'), ('HROB6A', 'COUP17'),\n        ('RTM5', 'COUP17'), ('YAZ10L', 'COUP17'), ('COUP17', 'XGE2B'),\n        ('EEK16', 'COUP17'), ('KGW19', 'COUP17'), ('HROB6A', 'REN19'),\n        ('QRA4', 'COUP17'), ('EAUP17', 'YAZ10L'), ('EAUP17', 'LYIW19P'),\n        ('HROB6A', 'RTM5'), ('RTM5', 'XGE2B'), ('YAZ10L', 'XGE2B'),\n        ('LZA10', 'COUP17'), ('HROB6A', 'EEK16'), ('HROB6A', 'KGW19'),\n        ('DOVE12', 'COUP17'), ('RTM5', 'EEK16')\n    ]\n    \n    # Keep one feature from each correlated pair\n    keep_ids = set(relevant_ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher effect size (mean_y1-mean_y0)\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            mean_a = np.mean(feats.x[feats.y == 1, idx_a]) - np.mean(feats.x[feats.y == 0, idx_a])\n            mean_b = np.mean(feats.x[feats.y == 1, idx_b]) - np.mean(feats.x[feats.y == 0, idx_b])\n            if abs(mean_a) < abs(mean_b):\n                keep_ids.remove(a)\n            else:\n                keep_ids.remove(b)\n    \n    # Calculate effect sizes using Welch's t-test\n    effects = []\n    for fid in keep_ids:\n        col_idx = feats.column(fid)\n        x1 = feats.x[feats.y == 1, col_idx]\n        x0 = feats.x[feats.y == 0, col_idx]\n        if len(x1) > 0 and len(x0) > 0:\n            t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n            effects.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (max 4 to avoid exceeding limit)\n    drivers = tuple([fid for fid, _ in effects[:4]])\n    \n    # Select features for logistic regression (limit to 5)\n    columns = tuple([fid for fid, _ in effects[:5]])  \n    \n    # Create products of top 2 features only\n    products = []\n    for i in range(min(2, len(columns))):\n        for j in range(i+1, min(2, len(columns))):\n            products.append((columns[i], columns[j]))\n    \n    # Create weighted score using top 3 features\n    loadings = {}\n    for i, (fid, _) in enumerate(effects[:3]):\n        loadings[fid] = 1.0 / (i + 1)  # Inverse rank weighting\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Filter to copy_number and expression features\n    relevant_ids = [fid for fid, typ in zip(feats.ids, feats.types) \n                    if typ in ('copy_number', 'expression')]\n    \n    # Remove near-duplicates (correlated pairs with |r| >= 0.6)\n    correlated_pairs = [\n        ('HROB6A', 'AYMP15'), ('AYMP15', 'REN19'), ('HROB6A', 'COUP17'),\n        ('RTM5', 'COUP17'), ('YAZ10L', 'COUP17'), ('COUP17', 'XGE2B'),\n        ('EEK16', 'COUP17'), ('KGW19', 'COUP17'), ('HROB6A', 'REN19'),\n        ('QRA4', 'COUP17'), ('EAUP17', 'YAZ10L'), ('EAUP17', 'LYIW19P'),\n        ('HROB6A', 'RTM5'), ('RTM5', 'XGE2B'), ('YAZ10L', 'XGE2B'),\n        ('LZA10', 'COUP17'), ('HROB6A', 'EEK16'), ('HROB6A', 'KGW19'),\n        ('DOVE12', 'COUP17'), ('RTM5', 'EEK16')\n    ]\n    \n    # Keep one feature from each correlated pair\n    keep_ids = set(relevant_ids)\n    for a, b in correlated_pairs:\n        if a in keep_ids and b in keep_ids:\n            # Prefer the one with higher effect size (mean_y1-mean_y0)\n            idx_a = feats.column(a)\n            idx_b = feats.column(b)\n            mean_a = np.mean(feats.x[feats.y == 1, idx_a]) - np.mean(feats.x[feats.y == 0, idx_a])\n            mean_b = np.mean(feats.x[feats.y == 1, idx_b]) - np.mean(feats.x[feats.y == 0, idx_b])\n            if abs(mean_a) < abs(mean_b):\n                keep_ids.remove(a)\n            else:\n                keep_ids.remove(b)\n    \n    # Calculate effect sizes using Welch's t-test\n    effects = []\n    for fid in keep_ids:\n        col_idx = feats.column(fid)\n        x1 = feats.x[feats.y == 1, col_idx]\n        x0 = feats.x[feats.y == 0, col_idx]\n        if len(x1) > 0 and len(x0) > 0:\n            t_stat, _ = stats.ttest_ind(x1, x0, equal_var=False)\n            effects.append((fid, abs(t_stat)))\n    \n    # Sort by effect size\n    effects.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top drivers (max 4 to avoid exceeding limit)\n    drivers = tuple([fid for fid, _ in effects[:4]])\n    \n    # Select features for logistic regression (limit to 5)\n    columns = tuple([fid for fid, _ in effects[:5]])  \n    \n    # Create products of top 2 features only\n    products = []\n    for i in range(min(2, len(columns))):\n        for j in range(i+1, min(2, len(columns))):\n            products.append((columns[i], columns[j]))\n    \n    # Create weighted score using top 3 features\n    loadings = {}\n    for i, (fid, _) in enumerate(effects[:3]):\n        loadings[fid] = 1.0 / (i + 1)  # Inverse rank weighting\n    \n    return Design(drivers=drivers, columns=columns, products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8992,
+  "completion_tokens": 2577,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2787
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 2810
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2663
+   }
+  ],
+  "wall_s": 29.0
+ }
+}

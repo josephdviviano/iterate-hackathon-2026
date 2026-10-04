@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-qpr5rvzu",
+ "seed": "confounder",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Calculate correlations between features and outcome\n    correlations = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n        correlations.append((fid, abs(corr)))\n    \n    # Sort by absolute correlation and take top 10\n    correlations.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in correlations[:10]]\n    \n    # Find strong drivers (high t-statistics)\n    drivers = []\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        if abs(t_stat) > 3.0:\n            drivers.append(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select columns with moderate associations\n    columns = []\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        if abs(t_stat) > 1.5:\n            columns.append(fid)\n    \n    # Remove near-duplicates\n    kept_columns = []\n    seen = set()\n    \n    if len(columns) > 1:\n        X_subset = feats.x[:, [feats.column(fid) for fid in columns]]\n        corr_matrix = np.corrcoef(X_subset.T)\n        \n        for i, fid in enumerate(columns):\n            if fid in seen:\n                continue\n            kept_columns.append(fid)\n            seen.add(fid)\n            \n            # Mark highly correlated features as seen\n            for j in range(i+1, len(columns)):\n                if abs(corr_matrix[i, j]) >= 0.6:\n                    seen.add(columns[j])\n    else:\n        kept_columns = columns\n    \n    # Simple product term\n    products = []\n    if len(kept_columns) >= 2:\n        products = [(kept_columns[0], kept_columns[1])]\n    \n    # Weighted loading based on t-statistics\n    loadings = {}\n    for i, fid in enumerate(kept_columns[:3]):\n        col_idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        loadings[fid] = abs(t_stat)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(kept_columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Calculate correlations between features and outcome\n    correlations = []\n    for fid in feats.ids:\n        col_idx = feats.column(fid)\n        corr = np.corrcoef(feats.x[:, col_idx], feats.y)[0, 1]\n        correlations.append((fid, abs(corr)))\n    \n    # Sort by absolute correlation and take top 10\n    correlations.sort(key=lambda x: x[1], reverse=True)\n    top_features = [fid for fid, _ in correlations[:10]]\n    \n    # Find strong drivers (high t-statistics)\n    drivers = []\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        if abs(t_stat) > 3.0:\n            drivers.append(fid)\n            if len(drivers) >= MAX_DRIVERS:\n                break\n    \n    # If no strong drivers found, return empty design\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Select columns with moderate associations\n    columns = []\n    for fid in top_features:\n        col_idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        if abs(t_stat) > 1.5:\n            columns.append(fid)\n    \n    # Remove near-duplicates\n    kept_columns = []\n    seen = set()\n    \n    if len(columns) > 1:\n        X_subset = feats.x[:, [feats.column(fid) for fid in columns]]\n        corr_matrix = np.corrcoef(X_subset.T)\n        \n        for i, fid in enumerate(columns):\n            if fid in seen:\n                continue\n            kept_columns.append(fid)\n            seen.add(fid)\n            \n            # Mark highly correlated features as seen\n            for j in range(i+1, len(columns)):\n                if abs(corr_matrix[i, j]) >= 0.6:\n                    seen.add(columns[j])\n    else:\n        kept_columns = columns\n    \n    # Simple product term\n    products = []\n    if len(kept_columns) >= 2:\n        products = [(kept_columns[0], kept_columns[1])]\n    \n    # Weighted loading based on t-statistics\n    loadings = {}\n    for i, fid in enumerate(kept_columns[:3]):\n        col_idx = feats.column(fid)\n        t_stat, _ = stats.ttest_ind(feats.x[feats.y==1, col_idx], feats.x[feats.y==0, col_idx])\n        loadings[fid] = abs(t_stat)\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(kept_columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 9199,
+  "completion_tokens": 2191,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3248
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: more than 12 design terms; keep the model small",
+    "bytes": 3248
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2511
+   }
+  ],
+  "wall_s": 26.0
+ }
+}

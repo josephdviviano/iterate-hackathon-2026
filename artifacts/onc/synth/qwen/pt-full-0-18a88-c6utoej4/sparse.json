@@ -1,0 +1,27 @@
+{
+ "world_id": "pt-full-0-18a88-c6utoej4",
+ "seed": "sparse",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Filter out duplicates\n    filtered_ids = [ids[i] for i in range(len(ids)) if i not in to_remove]\n    filtered_indices = [i for i in range(len(ids)) if i not in to_remove]\n    filtered_x = x[:, filtered_indices]\n    \n    # Calculate effect sizes (mean difference by outcome)\n    effect_sizes = []\n    for i, fid in enumerate(filtered_ids):\n        group0_mean = np.mean(filtered_x[y==0, i])\n        group1_mean = np.mean(filtered_x[y==1, i])\n        effect_sizes.append(abs(group1_mean - group0_mean))\n    \n    # Sort by effect size\n    sorted_idx = np.argsort(effect_sizes)[::-1]\n    top_ids = [filtered_ids[i] for i in sorted_idx[:MAX_DRIVERS]]\n    \n    # Select drivers with strong effects\n    drivers = []\n    for fid in top_ids:\n        idx = filtered_ids.index(fid)\n        # Check if this feature shows significant difference\n        group0 = filtered_x[y==0, idx]\n        group1 = filtered_x[y==1, idx]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        if abs(t_stat) > 3.0:  # Significant difference\n            drivers.append(fid)\n    \n    # If no strong drivers found, return empty\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to at most 4 drivers\n    drivers = drivers[:4]\n    \n    # Build columns and products from top drivers\n    columns = drivers[:]\n    products = []\n    loadings = {}\n    \n    # Add pairwise interactions between top drivers\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            products.append((drivers[i], drivers[j]))\n            \n    # Weighted score using top features\n    for i, fid in enumerate(drivers):\n        idx = feats.column(fid)\n        # Use effect size as weight\n        loadings[fid] = effect_sizes[sorted_idx[i]]\n        \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Remove near-duplicates based on correlation\n    ids = list(feats.ids)\n    types = list(feats.types)\n    x = feats.x\n    y = feats.y\n    \n    # Build correlation matrix\n    corr_matrix = np.corrcoef(x.T)\n    to_remove = set()\n    for i in range(len(ids)):\n        for j in range(i+1, len(ids)):\n            if abs(corr_matrix[i,j]) >= 0.6:\n                to_remove.add(j)\n    \n    # Filter out duplicates\n    filtered_ids = [ids[i] for i in range(len(ids)) if i not in to_remove]\n    filtered_indices = [i for i in range(len(ids)) if i not in to_remove]\n    filtered_x = x[:, filtered_indices]\n    \n    # Calculate effect sizes (mean difference by outcome)\n    effect_sizes = []\n    for i, fid in enumerate(filtered_ids):\n        group0_mean = np.mean(filtered_x[y==0, i])\n        group1_mean = np.mean(filtered_x[y==1, i])\n        effect_sizes.append(abs(group1_mean - group0_mean))\n    \n    # Sort by effect size\n    sorted_idx = np.argsort(effect_sizes)[::-1]\n    top_ids = [filtered_ids[i] for i in sorted_idx[:MAX_DRIVERS]]\n    \n    # Select drivers with strong effects\n    drivers = []\n    for fid in top_ids:\n        idx = filtered_ids.index(fid)\n        # Check if this feature shows significant difference\n        group0 = filtered_x[y==0, idx]\n        group1 = filtered_x[y==1, idx]\n        t_stat, _ = stats.ttest_ind(group0, group1, equal_var=False)\n        if abs(t_stat) > 3.0:  # Significant difference\n            drivers.append(fid)\n    \n    # If no strong drivers found, return empty\n    if not drivers:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Limit to at most 4 drivers\n    drivers = drivers[:4]\n    \n    # Build columns and products from top drivers\n    columns = drivers[:]\n    products = []\n    loadings = {}\n    \n    # Add pairwise interactions between top drivers\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            products.append((drivers[i], drivers[j]))\n            \n    # Weighted score using top features\n    for i, fid in enumerate(drivers):\n        idx = feats.column(fid)\n        # Use effect size as weight\n        loadings[fid] = effect_sizes[sorted_idx[i]]\n        \n    return Design(drivers=tuple(drivers), columns=tuple(columns), products=tuple(products), loadings=loadings)\n",
+ "meta": {
+  "rounds": 2,
+  "prompt_tokens": 5019,
+  "completion_tokens": 1189,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2422
+   },
+   {
+    "round": 1,
+    "ok": true,
+    "report": "",
+    "bytes": 2379
+   }
+  ],
+  "wall_s": 13.6
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-mg16m2tg",
+ "seed": "interaction",
+ "ok": false,
+ "source": null,
+ "last_source": "import numpy as np\nfrom scipy import stats\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_selection import mutual_info_classif\nfrom collections import defaultdict\n\nMAX_DRIVERS = 5\n\ndef design(feats):\n    # Identify potential drivers based on t-statistics and effect sizes\n    drivers = []\n    strong_features = []\n    \n    # Filter features with |t| > 3.0 or |mean_y1-mean_y0| > 0.2\n    for i, fid in enumerate(feats.ids):\n        # Use the actual t-statistic from the data\n        try:\n            t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        except:\n            t_stat = 0\n        if t_stat > 3.0 or abs(feats.x[:, i].mean()) > 0.2:\n            strong_features.append(fid)\n    \n    # Look for correlated pairs with high correlation (>0.6)\n    correlations = {}\n    for i, fid1 in enumerate(feats.ids):\n        for j, fid2 in enumerate(feats.ids[i+1:], i+1):\n            if i != j:\n                try:\n                    corr = np.corrcoef(feats.x[:, i], feats.x[:, j])[0, 1]\n                except:\n                    corr = 0\n                if abs(corr) >= 0.6:\n                    correlations[(fid1, fid2)] = abs(corr)\n    \n    # Prioritize features with highest t-statistics\n    t_stats = []\n    for i, fid in enumerate(feats.ids):\n        try:\n            t_stat = abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic)\n        except:\n            t_stat = 0\n        t_stats.append((fid, t_stat))\n    \n    t_stats.sort(key=lambda x: x[1], reverse=True)\n    \n    # Select top features for drivers\n    selected_drivers = set()\n    for fid, _ in t_stats[:10]:  # Top 10 features by t-stat\n        if len(selected_drivers) >= MAX_DRIVERS:\n            break\n        if fid in strong_features:\n            selected_drivers.add(fid)\n    \n    # Check for interaction terms among highly correlated features\n    candidates = list(selected_drivers)\n    products = []\n    \n    # Check for products between features that are strongly correlated\n    for fid1 in candidates:\n        for fid2 in candidates:\n            if fid1 < fid2:\n                # Check if they're in our correlation list\n                pair = (fid1, fid2) if fid1 < fid2 else (fid2, fid1)\n                if pair in correlations:\n                    products.append((fid1, fid2))\n    \n    # If we have strong interactions, include them\n    if products:\n        return Design(\n            drivers=tuple(list(selected_drivers)[:MAX_DRIVERS]),\n            columns=tuple(list(selected_drivers)),\n            products=tuple(products),\n            loadings={}\n        )\n    \n    # Otherwise, use simple approach\n    # Select features with significant effect size\n    columns = []\n    for i, fid in enumerate(feats.ids):\n        if abs(feats.x[:, i].mean()) > 0.15:  # Effect size threshold\n            columns.append(fid)\n    \n    # If no clear mechanism, return empty drivers\n    if not columns:\n        return Design(drivers=(), columns=(), products=(), loadings={})\n    \n    # Simple weighted score based on effect sizes\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        loadings[fid] = abs(feats.x[:, i].mean())\n    \n    # Normalize loadings\n    total = sum(loadings.values())\n    if total > 0:\n        for fid in loadings:\n            loadings[fid] /= total\n    \n    return Design(\n        drivers=tuple(list(selected_drivers)[:MAX_DRIVERS]),\n        columns=tuple(columns),\n        products=(),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8947,
+  "completion_tokens": 2466,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "design raised on all patients:\nTypeError: bad operand type for abs(): 'str'",
+    "bytes": 3062
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3324
+   },
+   {
+    "round": 2,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3514
+   }
+  ],
+  "wall_s": 28.1
+ }
+}

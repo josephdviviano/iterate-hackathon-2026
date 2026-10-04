@@ -1,0 +1,33 @@
+{
+ "world_id": "pt-full-0-18a88-al5ydt3z",
+ "seed": "analyst",
+ "ok": true,
+ "source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter to significant features based on t-test\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic) > 2.0:\n            sig_features.append(fid)\n    \n    # Remove near-duplicates\n    keep = set()\n    corr_pairs = [\n        ('TOF14B', 'HII18'), ('IRE15B', 'PRX1'), ('DZLO16', 'ANK11B'),\n        ('MGA13B', 'NVV13B'), ('RWA8B', 'PRX1'), ('SXO17', 'KSQH15'),\n        ('VKO13B', 'PRX1'), ('ANK11B', 'NVV13B'), ('MGA13B', 'ANK11B'),\n        ('DWZT15', 'ANK11B'), ('DZLO16', 'NVV13B'), ('DWZT15', 'NVV13B'),\n        ('PRX1', 'FMQI13L'), ('RWA8B', 'IRE15B'), ('MGA13B', 'DWZT15'),\n        ('TOF14B', 'SXO17'), ('TOF14B', 'KSQH15'), ('ZQYC5', 'PRX1'),\n        ('TYSW1', 'PRX1'), ('DZLO16', 'OGO8')\n    ]\n    \n    for fid in sig_features:\n        # Check if this feature is part of any correlated pair\n        is_correlated = False\n        for pair in corr_pairs:\n            if fid in pair:\n                is_correlated = True\n                # Only add one feature from each pair\n                if pair[0] not in keep and pair[1] not in keep:\n                    # Add the one with higher effect size\n                    effect0 = np.mean(feats.x[feats.y==1, feats.column(pair[0])]) - np.mean(feats.x[feats.y==0, feats.column(pair[0])])\n                    effect1 = np.mean(feats.x[feats.y==1, feats.column(pair[1])]) - np.mean(feats.x[feats.y==0, feats.column(pair[1])])\n                    if abs(effect0) >= abs(effect1):\n                        keep.add(pair[0])\n                    else:\n                        keep.add(pair[1])\n                break\n        \n        # If not correlated, add it\n        if not is_correlated:\n            keep.add(fid)\n    \n    # Select top features by effect size\n    drivers = []\n    scores = []\n    for i, fid in enumerate(feats.ids):\n        if fid in keep:\n            effect = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            scores.append((abs(effect), fid))\n    \n    scores.sort(reverse=True)\n    drivers = [fid for _, fid in scores[:MAX_DRIVERS]]\n    \n    # Build columns and products\n    columns = drivers[:]\n    products = []\n    \n    # Add interaction terms for top features\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            if drivers[i] != drivers[j]:\n                products.append((drivers[i], drivers[j]))\n    \n    # Weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if fid in drivers:\n            effect = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "last_source": "import numpy as np\nfrom scipy import stats\n\nMAX_DRIVERS = 4\n\ndef design(feats):\n    # Filter to significant features based on t-test\n    sig_features = []\n    for i, fid in enumerate(feats.ids):\n        if abs(stats.ttest_ind(feats.x[feats.y==1, i], feats.x[feats.y==0, i]).statistic) > 2.0:\n            sig_features.append(fid)\n    \n    # Remove near-duplicates\n    keep = set()\n    corr_pairs = [\n        ('TOF14B', 'HII18'), ('IRE15B', 'PRX1'), ('DZLO16', 'ANK11B'),\n        ('MGA13B', 'NVV13B'), ('RWA8B', 'PRX1'), ('SXO17', 'KSQH15'),\n        ('VKO13B', 'PRX1'), ('ANK11B', 'NVV13B'), ('MGA13B', 'ANK11B'),\n        ('DWZT15', 'ANK11B'), ('DZLO16', 'NVV13B'), ('DWZT15', 'NVV13B'),\n        ('PRX1', 'FMQI13L'), ('RWA8B', 'IRE15B'), ('MGA13B', 'DWZT15'),\n        ('TOF14B', 'SXO17'), ('TOF14B', 'KSQH15'), ('ZQYC5', 'PRX1'),\n        ('TYSW1', 'PRX1'), ('DZLO16', 'OGO8')\n    ]\n    \n    for fid in sig_features:\n        # Check if this feature is part of any correlated pair\n        is_correlated = False\n        for pair in corr_pairs:\n            if fid in pair:\n                is_correlated = True\n                # Only add one feature from each pair\n                if pair[0] not in keep and pair[1] not in keep:\n                    # Add the one with higher effect size\n                    effect0 = np.mean(feats.x[feats.y==1, feats.column(pair[0])]) - np.mean(feats.x[feats.y==0, feats.column(pair[0])])\n                    effect1 = np.mean(feats.x[feats.y==1, feats.column(pair[1])]) - np.mean(feats.x[feats.y==0, feats.column(pair[1])])\n                    if abs(effect0) >= abs(effect1):\n                        keep.add(pair[0])\n                    else:\n                        keep.add(pair[1])\n                break\n        \n        # If not correlated, add it\n        if not is_correlated:\n            keep.add(fid)\n    \n    # Select top features by effect size\n    drivers = []\n    scores = []\n    for i, fid in enumerate(feats.ids):\n        if fid in keep:\n            effect = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            scores.append((abs(effect), fid))\n    \n    scores.sort(reverse=True)\n    drivers = [fid for _, fid in scores[:MAX_DRIVERS]]\n    \n    # Build columns and products\n    columns = drivers[:]\n    products = []\n    \n    # Add interaction terms for top features\n    for i in range(len(drivers)):\n        for j in range(i+1, len(drivers)):\n            if drivers[i] != drivers[j]:\n                products.append((drivers[i], drivers[j]))\n    \n    # Weighted score using top features\n    loadings = {}\n    for i, fid in enumerate(feats.ids):\n        if fid in drivers:\n            effect = np.mean(feats.x[feats.y==1, i]) - np.mean(feats.x[feats.y==0, i])\n            loadings[fid] = effect\n    \n    return Design(\n        drivers=tuple(drivers),\n        columns=tuple(columns),\n        products=tuple(products),\n        loadings=loadings\n    )\n",
+ "meta": {
+  "rounds": 3,
+  "prompt_tokens": 8920,
+  "completion_tokens": 2547,
+  "round_log": [
+   {
+    "round": 0,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 2616
+   },
+   {
+    "round": 1,
+    "ok": false,
+    "report": "on all patients: 5 drivers; at most 4",
+    "bytes": 3179
+   },
+   {
+    "round": 2,
+    "ok": true,
+    "report": "",
+    "bytes": 2917
+   }
+  ],
+  "wall_s": 29.3
+ }
+}
