@@ -26,7 +26,7 @@ DEFAULTS = {
     "whiten_bias_epochs": 3,
     "whiten_images": 50000,
     "flip": "alternate",
-    "translate": 4,
+    "translate": 2,
     "cutout": 0,
     "widths": [128, 384, 576],
     "bn_momentum": 0.4,
