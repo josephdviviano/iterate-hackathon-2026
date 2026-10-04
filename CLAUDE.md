@@ -20,7 +20,7 @@ NOTES.md should contain log entries with the following structure:
 ## Status
 
 - Track: 2.3 Epistemological agents, selected 2026-10-03. See DESIGN_DOC.md.
-- Deadline: 2026-10-04 15:00 BST (official, per the user at 09:40 BST). No new feature after 12:00.
+- Deadline: 2026-10-04 15:00 BST (official, per the user at 09:40 BST).
 - Repository: private. The papers in research/pdfs are open access. Do not raise licence or privacy caveats about them.
 
 ## External Resources
@@ -91,9 +91,9 @@ points to an entry in RESULTS.md.
 
 | Requirement | What we show | Evidence |
 |---|---|---|
-| Does science | A committee of programs: hypothesize (K seeded programs), predict, probe where they disagree, accept refutation, resynthesize on the probes. Rerun in OPINE-World's environment on seven levels, with the loop closed on three levels and live. Hoeffding's problem is the second science task, certified in exact arithmetic. | R34, R36, H2 |
+| Does science | A committee of programs: hypothesize (K seeded programs), predict, probe where they disagree, accept refutation, resynthesize on the probes. Rerun in OPINE-World's program contract on seven levels, with the loop closed on three levels and live. Hoeffding's problem is the second science task, certified in exact arithmetic. | R34, R36, H2 |
 | Flags what it does not know | Disagreement on effect rows never seen in train, where count-based ontology error is undefined. Conformal sets that abstain. Unanimous error 0.05 against split error 0.34 over seven levels. | R34, R35 (R4, R13, R22 in the earlier object contract) |
-| Calibrated uncertainty | AUROC of vote entropy against error, 0.76 pooled. In OPINE's environment the vote share is close to a probability (ECE 0.04; 0.22 in the object contract). Adaptive conformal sets hold 0.90 coverage on seven levels (pooled 0.95). Self-reported confidence on Hoeffding scored by Brier. | R34, R35, H3 |
+| Calibrated uncertainty | AUROC of vote entropy against error, 0.76 pooled. In OPINE-World's program contract the vote share is close to a probability (ECE 0.04; 0.22 in the object contract). Adaptive conformal sets hold 0.90 coverage on seven levels (pooled 0.95). Self-reported confidence on Hoeffding scored by Brier. | R34, R35, H3 |
 | Falsification | Exact replay admits members. Probes drop refuted members until none survives. Round 2 resynthesizes on the probes: it lifts two of three levels and the live run, loses the one that was nearly right; the passive control lifts as much, so the gain is from the observations, not the counterexample wording. | R34, R36 |
 | Reward design | The reward is exact replay with anti-tabulation checks (`committee.verify`). Disagreement is the exploration signal. An abstain channel in the task text. Exact certification, not float scores, on Hoeffding. | RH1, H2, H12 |
 | Knows when it reward hacks (track header), supporting evidence only | Injected-contradiction 2x2 across Claude and open-weight synthesizers. Held-out gap, literal-mass and MDL-ratio detectors. One hack found in our own artifacts. Demoted by the user on 2026-10-03: one line in the pitch, no further sessions unless everything else is done. | RH1 to RH5 |

@@ -159,7 +159,7 @@ only beside their new-environment counterpart.
 
 | Question | Provisional answer (objects mode) | Entries | Re-established by |
 |---|---|---|---|
-| 1. Does a committee predict better than a single program? | No. The vote equals or sits just under the best single program; the oracle equals the best member. Same in OPINE's environment (pilot). | R3, R23, R33 | P1 |
+| 1. Does a committee predict better than a single program? | No. The vote equals or sits just under the best single program; the oracle equals the best member. Same in OPINE-World's program contract (pilot). | R3, R23, R33 | P1 |
 | 2. Are its predictions calibrated? | The vote share is not (ECE 0.22); the adaptive conformal sets hold 0.90 on all eight levels (0.88 to 0.99) and live (0.91 to 0.96); where the committee is mostly wrong the coverage is bought by abstention, and the selective score prices that. | R22, R27, R29, R30 | P1 (calibrate on the new conditions), P3 |
 | 3. Is disagreement higher when it is wrong? | Yes: unanimous error 0.00 to 0.30, split 0.26 to 1.00; AUROC 0.68 to 1.00, pooled 0.75 (0.66 to 0.84); live split error 0.87 to 1.00. Shared blind spots are not flagged. | R4, R10, R27, R25, R26 | P1, P3 |
 | 4. Does resynthesis after a high-disagreement probe help? | The probe refutes in one move and never selects; resynthesis on it lifts where the observation names one mechanic (ar25 L3 0.48 to 1.00 in three rounds; sk48 0.70 to 0.86; live 0.40 to 0.71 and 0.86), null on three, loss on one; passive control 0.00 to -0.06; the new committee converges. | R23, R24, R26, R27, R28 | P2, P3 |
@@ -188,7 +188,7 @@ step; at the limit record the result, positive or negative.
    its meta says `status: suspended` and the program is the 114-byte stub,
    stop and tell the user; nothing below can run.
 
-### P1. The comparison in OPINE's environment under the final text (77 sessions, about 1.5 h)
+### P1. The comparison in OPINE-World's program contract under the final text (77 sessions, about 1.5 h)
 
 Conditions `baseline_opine_devin` (3 unseeded) and `committee_opine_devin`
 (8 seeded), mode `--frame-out`. Never add to the pilot conditions
@@ -216,7 +216,7 @@ uv run python -m committee.evaluate GAME --level L --train-frac 0.4 --condition 
    (`--condition` is in the port). No kill criterion: this is the
    measurement the user asked for.
 
-### P2. The counterexample round in OPINE's environment (40 to 72 sessions, 1 to 2 h)
+### P2. The counterexample round in OPINE-World's program contract (40 to 72 sessions, 1 to 2 h)
 
 Only on levels where the round-1 vote under P1 is below 0.95 (ar25 L3 was
 at 1.00 in the pilot and would be skipped). Expected: ka59, m0r0, sk48,
@@ -243,7 +243,7 @@ Record R35 (question 4: round 1 against round 2 against passive) and R36
 per level; a second round only where the first lifted the vote by 0.10 or
 more.
 
-### P3. Live play in OPINE's environment (0 to 8 sessions, 45 min)
+### P3. Live play in OPINE-World's program contract (0 to 8 sessions, 45 min)
 
 `committee.live` inherits the mode from the committee it loads (per
 `iterate-10`); test with `--steps 20` before anything else.

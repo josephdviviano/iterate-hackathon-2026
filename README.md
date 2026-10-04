@@ -11,7 +11,7 @@ RESULTS.md for every reported number.
 
 ## Results
 
-Final results, OPINE-World's environment (`frame_out`: the program takes the
+Final results, OPINE-World's program contract (`frame_out`: the program takes the
 object list and the before frame and returns the next frame, admitted when
 every cell matches). Seven levels of six ARC-AGI-3 games, temporal 40% split,
 3 unseeded single programs and 8 seeded members per level, synthesizer Devin
@@ -123,7 +123,7 @@ one behaviour is the warning sign.
 
 ## Demo
 
-The final results, sk48 level 2 in OPINE-World's environment (R34 to R36):
+The final results, sk48 level 2 in OPINE-World's program contract (R34 to R36):
 single programs, the committee and its flag, the effect rows, exploration,
 the conformal sets, and the counterexample round against its passive and
 object-diff controls. Offline, from cached artifacts, about 2 seconds.
@@ -156,15 +156,15 @@ uv run python -m committee.cegis ar25 --level 3 --report      # every stored rou
 uv run python -m committee.cegis ar25 --level 3 --from-probe 1 --runs 8 --backend devin   # round 3
 uv run python -m committee.live ar25 --level 3 --steps 300 --probe 4   # live play, local engine, needs ARC_API_KEY
 uv run python -m committee.experiment ar25 --level 3 --train-frac 0.4 --runs 8 --seeded --backend devin \
-    --condition committee_frameout_devin --frame-out --parallel 4   # OPINE-World's environment: frame in, frame out
+    --condition committee_frameout_devin --frame-out --parallel 4   # OPINE-World's program contract: frame in, frame out
 uv run pytest
 ```
 
 Environment modes (`committee.env`, one implementation for every build). By
 default a program maps the object list to the next object list. `--frame`
-also gives it the 64x64 before frame, where OPINE-World's rule reads the
+also gives it the 64x64 before frame, where OPINE-World's method reads the
 walls, floor and hazards the extractor does not emit. `--frame-out` is
-OPINE-World's rule itself: the program returns the next frame and is
+OPINE-World's contract itself: the program returns the next frame and is
 admitted by frame equality, cell by cell; the released extractor on the
 predicted frame gives the object view for the effect-row analyses. The
 mode is stored in each run's `meta.json`, and `evaluate`, `cegis`,
@@ -262,8 +262,15 @@ P(signal), P(driver) per feature and p(y | x). Disagreement over driver sets
 decides when to buy more data and when to stop. Post-outcome features are
 filtered before any hypothesis sees the data. Rewards: the benchmark score per
 episode, a Brier calibration term and the potential-based drop in disagreement.
-See RESULTS.md entries O1 to O7. Toy and generated worlds are not benchmark
-results (the benchmark worlds ship in a later ONC-AGI release).
+See RESULTS.md entries O1 to O9. Toy and generated worlds are not benchmark
+results. The benchmark worlds are release downloads of ONC-AGI v1.0.0rc3, not
+tracked files; fetch them once into the ignored store directory:
+
+```
+gh release download v1.0.0rc3 -R BradSegal/ONC-AGI -p 'onc-agi-public-train-*' -p SHA256SUMS -D artifacts/onc/benchmark/archives
+(cd artifacts/onc/benchmark/archives && shasum -a 256 -c --ignore-missing SHA256SUMS)
+for s in full-access sequential expressive-full-access expressive-sequential; do mkdir -p artifacts/onc/benchmark/$s && tar -xzf artifacts/onc/benchmark/archives/onc-agi-public-train-$s-1.0.0rc3.tar.gz -C artifacts/onc/benchmark/$s; done
+```
 
 ```
 uv run onc-agi smoke                                          # the benchmark's own reference run
@@ -274,14 +281,17 @@ uv run python -m onc.evaluate --store artifacts/onc/dev --mode both --weighting 
 uv run python -m onc.hacks --store toy                        # reward-hacking checks 1 to 3 (O5)
 uv run python -m onc.arc_lookup --game ar25 --level 3 --train-frac 0.4 --condition committee_devin   # check 5, the ARC lookup-table hack (O6)
 uv run python -m onc.train --store artifacts/onc/dev --arm all --iterations 12   # policy training, arms A to D (O7)
+uv run python -m onc.evaluate --store artifacts/onc/benchmark/full-access --mode full --weighting likelihood --first 120 --out artifacts/onc/eval_bench --tag first120   # committee on the benchmark's first-pass set (O9)
+uv run python -m onc.evaluate --store artifacts/onc/benchmark/full-access --mode full --weighting likelihood --out artifacts/onc/eval_bench --tag all           # committee on all 995 full-access worlds (O9)
+uv run python -m onc.baselines --store artifacts/onc/benchmark/full-access --first 120 --out artifacts/onc/baselines_bench_first120_full-access               # the benchmark's baselines and cheaters on the same set (O9)
 uv run pytest tests/test_onc_committee.py tests/test_onc_rewards.py tests/test_onc_worlds.py tests/test_onc_policy.py tests/test_onc_arc_lookup.py
 ```
 
 Credits for this part:
 
-- Benchmark: ONC-AGI (Bradley Segal, BSD-3-Clause), read from the `external/ONC-AGI`
+- Benchmark: ONC-AGI v1.0.0rc3 (Bradley Segal, BSD-3-Clause), read from the `external/ONC-AGI`
   submodule and installed as a package: its engine, scorer, agent kit, baselines,
-  cheaters and toy fixture worlds. Our dev-world generator reimplements the toy
+  cheaters, toy fixture worlds and the released public-train world sets. Our dev-world generator reimplements the toy
   worlds' shape and roles from its documentation; no code is copied.
 - Libraries that ONC-AGI brings in: pandas, PyArrow, pydantic, SciPy, statsmodels,
   FastAPI, Uvicorn. We call SciPy (clustering, tests) and scikit-learn (logistic

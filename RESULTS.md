@@ -1719,7 +1719,7 @@ by another session, uncommitted at the time of these runs) makes the program
 take the 64 by 64 before frame as well as the object list and, in
 `frame_out`, return the next frame; admission is frame equality on every
 training transition, and the released extractor run on the predicted frame
-gives the object view. `frame_out` is OPINE-World's rule. These runs used the
+gives the object view. `frame_out` is OPINE-World's contract. These runs used the
 port's first task text, which still described the object contract and added
 the frame contract as an addendum; the review's corrected text landed after
 they started, so this is a pilot. Same splits, seeds and synthesizer as R4.
@@ -2251,6 +2251,67 @@ patients it often cannot. No single template is good everywhere: block and
 interaction alone are near the floor, and the median single hypothesis
 trails the committee by 0.18 to 0.22 on full access and by 0.18 on dev
 sequential.
+
+## O9. The committee on the released ONC-AGI benchmark worlds, full access
+
+ONC-AGI v1.0.0rc3 (2026-10-04) released 2,489 public-train worlds built
+from seven real cohorts (TCGA-BRCA, SCAN-B, METABRIC, TCGA pan-cancer,
+MSK-IMPACT, NHANES, pooled TCGA-BRCA with SCAN-B), each with an oracle
+certificate and an answer key. Store `onc-agi-public-train-full-access`:
+995 full-access worlds, 12 roles, 53 to 54 features, 337 to 889 patients,
+difficulty tiers 0 to 2 balanced, 20 percent null. Scorer
+`scorer-1.0+473dec6f`, the digest of the benchmark's published first-pass
+table. The first-pass set is the first 120 worlds in store order (98 signal,
+22 null), as the benchmark's README defines it; all 120 are METABRIC.
+Committee: likelihood weights, default tau, seed 0, the policy fixed from
+the toy and dev worlds (O2, O4); nothing was tuned on these worlds.
+
+| Agent, first 120 full-access worlds | DS | 95% | Find | Restraint | Abstain on signal | Restrain on null | s |
+|---|---|---|---|---|---|---|---|
+| committee (ours) | 0.438 | [0.33, 0.54] | 0.54 | 0.81 | 0.10 | 0.91 | 249 |
+| forward_score | 0.373 | [0.27, 0.48] | 0.51 | 0.73 | 0.22 | 0.95 | 1 |
+| GPT 6 Luna (the benchmark's published run, not rerun here) | 0.286 | [0.16, 0.40] | 0.54 | 0.53 | | | |
+| univariate_bh | 0.276 | [0.19, 0.36] | 0.38 | 0.73 | 0.22 | 0.95 | 2 |
+| lasso | 0.222 | [0.11, 0.33] | 0.43 | 0.51 | 0.31 | 0.82 | 401 |
+| stability | 0.219 | [0.15, 0.30] | 0.35 | 0.63 | 0.37 | 1.00 | 5 |
+| elastic_net | 0.171 | [0.08, 0.26] | 0.40 | 0.43 | 0.35 | 0.77 | 414 |
+| random_forest | 0.131 | [0.06, 0.22] | 0.34 | 0.38 | 0.07 | 0.45 | 77 |
+| 12 cheaters and random | 0.000 | | | | | | |
+| oracle | 1.000 | [1.00, 1.00] | 1.00 | 1.00 | 0.00 | 1.00 | 1 |
+
+Our rerun of the benchmark's baselines matches its published table to three
+decimals on every deterministic agent (random_forest 0.131 against the
+published 0.124; the forest is seeded), which checks the store, the scorer
+and the world selection. Knockoffs is not installed.
+
+Reading. The committee leads the best baseline by 0.065 of Discovery Score
+and the intervals overlap. The margin is Restraint (0.81 against 0.73): the
+committee abstains on 10 percent of signal worlds where forward selection
+abstains on 22 percent, at a small cost on nulls (0.91 against 0.95). Find
+equals the published GPT 6 Luna run (0.54) with Restraint 0.81 against 0.53.
+Per role, Find on signal worlds is 0.70 to 0.82 on mediator, generating,
+hidden cause, leak, shift and module; 0.43 to 0.50 on confounder and wrong
+type; 0.34 on collider; 0.17 on interaction and 0.11 on effect modifier,
+where the committee abstains on about half the worlds (0.44, 0.56). On the
+dev worlds the interaction member was admitted exactly on those roles (O8);
+on the real cohorts with 53 features it is not. ECE of P(signal) 0.08; ECE
+of P(driver) 0.57 (mean list 2.9 features against 2.15 true; the committee
+lists extra features at high probability, as on the dev worlds). No leaks.
+Find is 1 on 41 of 98 signal worlds and 0 on 30.
+
+All 995 full-access worlds: pending (see the row below when it lands).
+
+Runs: 1 per agent, deterministic. Split: public_train only. Baseline: the
+benchmark's baselines and cheaters on the same 120 worlds and scorer.
+Commands: `uv run python -m onc.evaluate --store
+artifacts/onc/benchmark/full-access --mode full --weighting likelihood
+--first 120 --out artifacts/onc/eval_bench --tag first120`; `uv run python
+-m onc.baselines --store artifacts/onc/benchmark/full-access --first 120
+--out artifacts/onc/baselines_bench_first120_full-access`. Outputs
+`artifacts/onc/eval_bench_first120_full-access.{json,md}`,
+`artifacts/onc/baselines_bench_first120_full-access.{json,md}`. The world
+store is a release download (README, ONC section). Commit: uncommitted,
+base add7c5b.
 
 ## IF1. Idea-filter committee, backtest on the speedrun programme's evaluated ideas
 
@@ -2840,7 +2901,7 @@ the channel does nothing for it.
 | Command | `uv run python -m rewardhack.bio --model openai/gpt-oss-120b --max-model-len 20000` |
 | Commit | uncommitted, base a718512 |
 
-## R34. Seven levels in OPINE-World's environment: single programs against the committee
+## R34. Seven levels in OPINE-World's program contract: single programs against the committee
 
 The definitive rerun of R3, R4, R6, R17 and R27 under the environment port
 (`committee.env`, mode `frame_out`, commit `eec1677`) and its final task
@@ -2900,7 +2961,7 @@ Reading:
 | Command | `uv run python -m committee.experiment GAME --level L --train-frac 0.4 --runs 3 --backend devin --frame-out --condition baseline_opine_devin --parallel 3`; `... --runs 8 --seeded --frame-out --condition committee_opine_devin --parallel 4`; `uv run python -m committee.summary` (writes `artifacts/summary_opine.json`) |
 | Commit | e20b07f |
 
-## R35. Calibration in OPINE-World's environment: vote share, isotonic map, conformal sets
+## R35. Calibration in OPINE-World's program contract: vote share, isotonic map, conformal sets
 
 R22 rerun on the seven R34 committees (`committee.calibrate --condition
 committee_opine_devin`), 376 held-out transitions.
@@ -2948,7 +3009,7 @@ Reading:
 | Command | `uv run python -m committee.calibrate --levels ar25:3,m0r0:3,sk48:2,ar25:7,ls20:3,ka59:2,g50t:1 --condition committee_opine_devin --out artifacts/calibration_opine.json` |
 | Commit | e20b07f |
 
-## R36. The counterexample round in OPINE-World's environment: active, passive and object-diff arms, and the live round
+## R36. The counterexample round in OPINE-World's program contract: active, passive and object-diff arms, and the live round
 
 R24, R30 and R31 rerun on the R34 committees of the three levels under 0.95
 (m0r0 L3, ka59 L2, sk48 L2), plus the live loop of R26 on ar25 L3. Round 1
