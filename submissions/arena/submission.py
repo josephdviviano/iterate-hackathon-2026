@@ -40,7 +40,7 @@ DEFAULTS = dict(
     lr_peak=0.23,
     lr_start=0.2,
     lr_end=0.0,
-    res_schedule=((18, 5),),  # (resolution, epochs) stages before full 32px training
+    res_schedule=((18, 4), (24, 2)),  # (resolution, epochs) stages before full 32px training
 )
 
 
