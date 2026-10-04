@@ -31,7 +31,7 @@ DEFAULTS = {
     "widths": [128, 384, 576],
     "bn_momentum": 0.4,
     "scaling_factor": 1 / 9,
-    "compile_mode": "default",
+    "compile_mode": "max-autotune",
     "warmup_steps": 3,
 }
 
