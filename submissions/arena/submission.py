@@ -16,7 +16,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 DEFAULTS = {
-    "epochs": 11,
+    "epochs": 9.5,
     "batch_size": 1536,
     "lr": 9.0,  # per 1024 examples
     "momentum": 0.85,
@@ -36,6 +36,8 @@ DEFAULTS = {
     "lowres_frac": 0.5,  # fraction of steps trained at reduced resolution
     "lowres_size": 24,
     "lowres_antialias": True,
+    "muon_lr": 0.24,  # Muon on block conv filters; None keeps SGD for them
+    "muon_momentum": 0.6,
 }
 
 CIFAR_MEAN = (0.5071, 0.4865, 0.4409)
@@ -200,7 +202,8 @@ def build(context: BuildContext):
     bs = cfg["batch_size"]
     x = torch.rand(bs, 3, 32, 32, device=device, dtype=torch.float16)
     y = torch.randint(0, context.num_classes, (bs,), device=device)
-    opt = make_optimizer(model, cfg)
+    state.muon = make_muon(model, cfg)
+    opts = make_optimizers(model, cfg, state.muon)
     model.train()
     sizes = [32] + ([cfg["lowres_size"]] if cfg["lowres_frac"] > 0 else [])
     for size in sizes:
@@ -208,8 +211,9 @@ def build(context: BuildContext):
         for _ in range(cfg["warmup_steps"]):
             loss = compiled(xs, y)
             loss.backward()
-            opt.step()
-            opt.zero_grad(set_to_none=True)
+            for opt in opts:
+                opt.step()
+                opt.zero_grad(set_to_none=True)
     # Warm the whole prepare/train path (H2D copy, whitening eigh, augmentation, fused SGD,
     # Lookahead) on synthetic data of the real shape, so trial 1 pays no lazy-init cost.
     synthetic = TrainingData(
@@ -220,7 +224,7 @@ def build(context: BuildContext):
     state.cfg = {**cfg, "epochs": 0.1}
     train(state)
     state.cfg = cfg
-    del state.padded, state.labels, state.flip_mask, state.optimizer, state.ema
+    del state.padded, state.labels, state.flip_mask, state.optimizers, state.ema
     model.eval()
     with torch.inference_mode():
         for b in (1, 7, 1024):
@@ -236,7 +240,121 @@ def downsample(x, size, cfg):
     )
 
 
-def make_optimizer(model, cfg):
+def _muon_update(params, grads, bufs, lr, momentum: float, eps: float = 1e-7):
+    """One Muon step for groups of same-shape conv filters, batched per group.
+
+    Nesterov momentum, per-tensor weight renorm to sqrt(out), Newton-Schulz (3 steps, bf16)
+    orthogonalization of the update, then p -= lr * update. Mutates params and bufs in place.
+    """
+    a, b, c = (3.4445, -4.7750, 2.0315)
+
+    def norms(T):  # per-matrix Frobenius norm of [k, ...]
+        return T.float().flatten(1).norm(dim=1)
+
+    def nhwc(ts):  # channels_last filters viewed as contiguous [out, kh, kw, in]
+        return [x.permute(0, 2, 3, 1) for x in ts]
+
+    for ps, gs, bs in zip(params, grads, bufs):
+        # Newton-Schulz and the norms are invariant to permuting the (in, kh, kw) columns, so
+        # work in the memory order of the channels_last tensors.
+        ps, gs, bs = nhwc(ps), nhwc(gs), nhwc(bs)
+        k, out = len(ps), ps[0].shape[0]
+        G = torch.stack(gs)
+        B = torch.stack(bs).mul_(momentum).add_(G)
+        torch._foreach_copy_(bs, list(B.unbind(0)))
+        U = G.add(B, alpha=momentum)
+        X = U.reshape(k, out, -1).bfloat16()
+        X = X / (norms(X).view(k, 1, 1) + eps).to(X.dtype)
+        transposed = X.shape[1] > X.shape[2]
+        if transposed:
+            X = X.mT
+        for _ in range(3):
+            A = X @ X.mT
+            Bm = b * A + c * A @ A
+            X = a * X + Bm @ X
+        if transposed:
+            X = X.mT
+        P = torch.stack(ps)
+        P = P * (out**0.5 / norms(P)).view(k, 1, 1, 1, 1)
+        P = P - lr * X.view(P.shape).to(P.dtype)
+        torch._foreach_copy_(ps, list(P.unbind(0)))
+
+
+_muon_update_compiled = torch.compile(_muon_update, dynamic=False)
+
+
+class Muon:
+    """Muon for conv filters. Same-shape filters are stacked; the whole update is one compiled
+    function captured once as a CUDA graph over static grad/momentum buffers (built in build,
+    reused across trials; reset() zeroes the momentum)."""
+
+    def __init__(self, params, lr, momentum):
+        groups = {}
+        for p in params:
+            groups.setdefault(tuple(p.shape), []).append(p)
+        self.groups = list(groups.values())
+        self.params = [p for ps in self.groups for p in ps]
+        self.bufs = [[torch.zeros_like(p) for p in ps] for ps in self.groups]
+        self.grads = [[torch.zeros_like(p) for p in ps] for ps in self.groups]
+        self.flat_grads = [g for gs in self.grads for g in gs]
+        self.momentum = momentum
+        self.lr = torch.zeros((), device=params[0].device)
+        self.param_groups = [dict(params=params, lr=lr, base_lr=lr)]
+        self.graph = None
+
+    def _update(self):
+        _muon_update_compiled(self.groups, self.grads, self.bufs, self.lr, self.momentum)
+
+    @torch.no_grad()
+    def capture(self):
+        """Warm up and capture the update. Leaves params changed: call before the reset in prepare."""
+        stream = torch.cuda.Stream()
+        stream.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(stream):
+            for _ in range(3):
+                self._update()
+        torch.cuda.current_stream().wait_stream(stream)
+        self.graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(self.graph):
+            self._update()
+
+    @torch.no_grad()
+    def reset(self):
+        torch._foreach_zero_([b for bs in self.bufs for b in bs])
+
+    @torch.no_grad()
+    def step(self):
+        self.lr.fill_(self.param_groups[0]["lr"])
+        torch._foreach_copy_(self.flat_grads, [p.grad for p in self.params])
+        if self.graph is not None:
+            self.graph.replay()
+        else:
+            self._update()
+
+    def zero_grad(self, set_to_none=True):
+        for p in self.params:
+            p.grad = None
+
+
+def make_muon(model, cfg):
+    if not cfg["muon_lr"]:
+        return None
+    params = [p for k, p in model.named_parameters() if p.ndim == 4 and not k.startswith("whiten")]
+    muon = Muon(params, lr=cfg["muon_lr"], momentum=cfg["muon_momentum"])
+    if params[0].is_cuda:
+        muon.capture()
+    return muon
+
+
+def make_optimizers(model, cfg, muon):
+    if muon is None:
+        return [make_sgd(model, cfg)]
+    muon.reset()
+    return [make_sgd(model, cfg, exclude=muon.params), muon]
+
+
+def make_sgd(model, cfg, exclude=()):
+    excluded = {id(p) for p in exclude}
     momentum = cfg["momentum"]
     kilostep_scale = 1024 * (1 + 1 / (1 - momentum))
     lr = cfg["lr"] / kilostep_scale
@@ -247,7 +365,10 @@ def make_optimizer(model, cfg):
     others = [
         p
         for k, p in model.named_parameters()
-        if "norm" not in k and p.requires_grad and p is not model.whiten.bias
+        if "norm" not in k
+        and p.requires_grad
+        and p is not model.whiten.bias
+        and id(p) not in excluded
     ]
     groups = [
         dict(params=norm_biases, lr=lr_biases, weight_decay=wd / lr_biases, base_lr=lr_biases),
@@ -272,7 +393,7 @@ def prepare(state, data: TrainingData, seed: int) -> None:
     r = cfg["translate"]
     state.padded = F.pad(imgs, (r, r, r, r), mode="reflect") if r > 0 else imgs
     state.flip_mask = torch.rand(len(imgs), device=device) < 0.5
-    state.optimizer = make_optimizer(model, cfg)
+    state.optimizers = make_optimizers(model, cfg, state.muon)
     state.ema = [t for t in list(model.parameters()) + list(model.buffers()) if t.is_floating_point()]
     state.ema = [t.detach().clone() for t in state.ema]
 
@@ -280,7 +401,7 @@ def prepare(state, data: TrainingData, seed: int) -> None:
 def train(state) -> nn.Module:
     cfg = state.cfg
     model = state.model
-    opt = state.optimizer
+    opts = state.optimizers
     bs = cfg["batch_size"]
     n = len(state.labels)
     steps_per_epoch = n // bs
@@ -310,17 +431,19 @@ def train(state) -> nn.Module:
                 break
             idx = perm[i * bs : (i + 1) * bs]
             f = lr_factor(step)
-            for g in opt.param_groups:
-                g["lr"] = g["base_lr"] * f
-                if g.get("whiten") and step >= whiten_steps:
-                    g["lr"] = 0.0
+            for opt in opts:
+                for g in opt.param_groups:
+                    g["lr"] = g["base_lr"] * f
+                    if g.get("whiten") and step >= whiten_steps:
+                        g["lr"] = 0.0
             x = aug[idx]
             if step < lowres_steps:
                 x = downsample(x, cfg["lowres_size"], cfg)
             loss = state.compiled(x, state.labels[idx])
             loss.backward()
-            opt.step()
-            opt.zero_grad(set_to_none=True)
+            for opt in opts:
+                opt.step()
+                opt.zero_grad(set_to_none=True)
             step += 1
             if step % 5 == 0:
                 with torch.no_grad():
