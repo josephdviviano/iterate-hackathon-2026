@@ -17,7 +17,7 @@ MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
 
 DEFAULTS = dict(
-    epochs=9,
+    epochs=8.5,
     batch_size=512,
     lr=11.5,  # per 1024 examples (summed loss)
     momentum=0.85,
@@ -25,8 +25,9 @@ DEFAULTS = dict(
     bias_scaler=64.0,
     label_smoothing=0.2,
     widths=(256, 768, 1024),
+    whiten_kernel=2,
     bn_momentum=0.6,
-    scaling_factor=1 / 9,
+    scaling_factor=0.25,
     translate=2,
     whiten_bias_epochs=3,
     compile_mode=None,
@@ -75,12 +76,12 @@ class ConvGroup(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self, widths, bn_momentum, scaling_factor, num_classes):
+    def __init__(self, widths, bn_momentum, scaling_factor, num_classes, whiten_kernel=2):
         super().__init__()
         self.register_buffer("mean", MEAN.view(1, 3, 1, 1).clone(), persistent=False)
         self.register_buffer("std", STD.view(1, 3, 1, 1).clone(), persistent=False)
-        whiten_width = 2 * 3 * 2**2
-        self.whiten = Conv(3, whiten_width, kernel_size=2, padding=0, bias=True)
+        whiten_width = 2 * 3 * whiten_kernel**2
+        self.whiten = Conv(3, whiten_width, kernel_size=whiten_kernel, padding=0, bias=True)
         self.whiten.weight.requires_grad = False
         self.layers = nn.Sequential(
             ConvGroup(whiten_width, widths[0], bn_momentum),
@@ -143,7 +144,7 @@ def build(context: BuildContext):
     hyp = make_hyp(context.parameters)
     device = context.device
     torch.backends.cudnn.benchmark = hyp["cudnn_benchmark"]
-    model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes)
+    model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes, hyp["whiten_kernel"])
     model = model.to(device).to(memory_format=torch.channels_last)
     use_cuda = device.type == "cuda"
     step_fn = torch.compile(model.features, mode=hyp["compile_mode"], dynamic=False) if use_cuda else model.features
