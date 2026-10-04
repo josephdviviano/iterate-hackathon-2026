@@ -62,6 +62,8 @@
     - E5 baseline grid launched on Modal (`rewardhack.baseline`): levels tr87 L1, ls20 L3, re86 L5; the 2x2; 3 runs per cell; backends Devin, gpt-oss-120b (20k context), gpt-oss-20b, all frame output; 36 `modal run` cells, 9 at a time, logs in artifacts/rewardhack/baseline_logs, manifest baseline_manifest.json.
     - Bio impossible-task evaluation (`rewardhack.bio`): one ground-truth function removed from the definitions per protocol; outcomes ok, omit, fabricate, abstain; 100 protocols x 4 conditions for gpt-oss-120b and gpt-oss-20b against the same engine containers. Artifacts artifacts/rewardhack/bio/<model>/<condition>.jsonl and .summary.json.
     - Bio complete for gpt-oss-120b and 20b (RESULTS.md RH13): with one needed function removed, both omit the step silently 100/100 in every condition; the abstain channel is never used; 1-2% fabrication on intact tasks for the 20b. Modal engine stopped afterwards.
+    - Report updated (Claude Doc "Epistemological Agent: Method and Results", rev 29): the reward-hacking subsection now carries a methods-difference table (ARC committee vs ARC reward-hacking harness vs bio impossible task), the frozen-environment ARC findings (RH4, RH9, RH10, RH12) and the bio table (RH13); the old E1-E3 model table was removed because its RESULTS entries were discarded. Known-gaps bullet updated.
+    - Report restructured on the user's request (rev 32): "The six questions, in both environments". Under Q1 to Q5 a Bio paragraph from B3, B4, B5 beside the ARC result; new Q6 "Does the agent game its reward or fabricate what it cannot do?" holding the methods-difference table, the frozen-environment ARC findings (RH4, RH9, RH10, RH12) and the bio omission result (RH13). Four figures (research/figures/, one per question) put ARC and bio on one axis each. The old reward-hacking subsection under Supporting evidence was removed.
     - Priority change relayed by iterate-62 (22:55): the submission leads with epistemic uncertainty; reward hacking is one line of supporting evidence. The Devin grid is step Q in HANDOFF.md, last and optional. Supporting claims that rest on kept results: RH4, RH10, RH11, RH13.
   DEFERRED:
     - Claude family (Opus, Sonnet, Haiku) cells of the E5 grid and bio: need `claude-auth` on Modal; iterate-62 reports the user decided against Claude synthesis. Command once set: `uv run python -m rewardhack.baseline --backends claude:opus claude:sonnet claude:haiku`.
@@ -463,9 +465,27 @@
     - B6, `scigym.calibration`: one minus the spread as confidence, ECE and Brier, the R22 wrapper (split conformal over systems and the online rule), and the reaction-level share against truth. The wrapper keeps coverage and spends it on rejections; the reaction-level flag is weak (unanimous reactions right 11 to 26 percent of the time).
     - `committee_probe_nocx`: resynthesis of refuted members on the data alone (the ARC passive control's analog for the counterexample text); `chooses_probe` and `uses_counterexample` read the arm name; test mutant-checked.
     - `SCIGYM_EPS` override with tagged directories (`--eps`, `--tag`); the container sets the environment before importing the model module (the first launch would have run at 0.15 silently).
-    - Tolerance-0.5 arms launched 09:47 BST for both models (Qwen also runs the no-counterexample arm); B7 when they land.
+    - B7: tolerance-0.5 arms for both models plus the Qwen no-counterexample arm (26 to 30 systems each; a few hit the 5,400 s container limit, Modal usage was not exhausted). Probe committee highest on both models (0.22 against 0.18 to 0.19), no-counterexample 0.17; intervals overlap. Written after the 12:00 feature stop: write-up only, no new runs.
     - `scigym.figures`: F1 per arm and tolerance, agreement against right, reaction share against truth (`artifacts/figures/scigym.png`).
   DEFERRED:
     - A random experiment order arm, an unseeded arm, K 8, budget 8 to 20, a second batch per arm: each a 90 minute Modal run; listed in the handoff.
   ABANDONED:
     - A first launch of the tolerance arms at 09:20 hit cold vLLM servers (503 on every call, zero members); the empty results were removed from the volume and the servers warmed by polling before the relaunch.
+
+- [jdv] - ONC-AGI rc3 benchmark worlds, the template committee on them, and the ARC synthesizer on ONC (O9, O10) - this commit
+  The released 2,489 worlds fetched and verified; the committee scored on the first-pass set and on all 995 full-access worlds; model-written hypothesis programs from Qwen and Devin as committee members.
+  DONE:
+    - `external/ONC-AGI` bumped c89fe0a to 036d553 (v1.0.0rc3); lock and install refreshed; 18 ONC tests pass. The scorer digest matches the benchmark's published table.
+    - The four world sets (995, 996, 248, 250 worlds) downloaded, checksums verified, extracted to the ignored `artifacts/onc/benchmark/`; README gives the fetch commands. The installed rc1 could not read survival worlds; rc3 reads all four sets.
+    - `onc.evaluate` selects worlds by the card's mode, not the toy id suffix; `--first N` on `onc.evaluate` and `onc.baselines` for the benchmark's first-pass set; undefined scores print as n/a.
+    - O9: template committee DS 0.438 [0.33, 0.54] on the first 120 (forward_score 0.373, GPT 6 Luna 0.286 published; our baseline rerun matches the published table to three decimals); 0.391 [0.35, 0.43] on all 995, stable over seven cohort sources. Weak roles: interaction, effect modifier, mixture, collider.
+    - `onc.synth`: model-written `design(feats) -> Design` programs as committee members (restricted exec, checker with repair rounds, per-world cache, Qwen on Modal and Devin sessions). Two tests, mutant-checked.
+    - `committee.headline`: the cross-environment headline figure with 95% intervals (score single against committee, AUROC of disagreement against wrong, error when agreed or split), drawn from `committee.table` rows; `artifacts/figures/headline.{png,svg}`, embedded in the README.
+    - `committee.table`: one table of every committee result (ARC levels and pooled, ONC sets and conditions, BioProt, SciGym) with the same columns: single, committee, best member, AUROC of disagreement against wrong, wrong when agreed and when split, ECE, conformal coverage. Writes `artifacts/uncertainty_table.{md,csv}`. Every ONC template and program also run alone (`single:*`).
+    - O10: 958 Qwen programs (0.72 admissible) and 120 Devin programs (1.00). Templates 0.44 against eight Qwen programs 0.15 (120 worlds) and four Devin programs 0.30 (30 worlds); four Devin seeds collapse to one design; mixing programs into the templates lowers restraint on nulls (0.91 to 0.59). Cause: admission by CV log loss scores the fit, not the claim.
+  DEFERRED:
+    - Expressive sets (248 and 250 worlds, survival outcomes, missing cells, up to 417 features): the committee runs on them (86 s on the widest world) but 248 worlds take about 3 hours single-process; rc3's `onc-agi play --workers` runs our agent class in threads if wanted.
+    - Sequential mode on the released worlds: not run; three times the full-access cost on the dev worlds.
+    - Baselines on all 995: not rerun; the first-pass table is the like-for-like comparison.
+    - A claim-scoring admission rule for synthesized members (O10 point 4): a new feature, past the freeze.
+    - The checker runs a program in-process; a runaway program held the last two Qwen syntheses. A subprocess time limit would fix it.
