@@ -60,3 +60,4 @@ Arena3: six arms, one autonomous agent each, on the CIFAR-100 speedrun task. The
 - Claude Code with Claude Opus 5.5 (Anthropic): the autonomous research agents and the meta-step LLM calls.
 - arXiv API and OpenAlex API: the literature feed.
 - PyTorch, torchvision and uv: the speedrun task's environment.
+- [ONC-AGI](https://github.com/BradSegal/ONC-AGI) (BSD 3-Clause, Bradley Segal): ARC-style biomarker-discovery worlds with planted mechanisms, kept as a read-only reference in `external/onc-agi`.
