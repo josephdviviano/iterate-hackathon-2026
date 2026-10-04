@@ -93,7 +93,7 @@ class Net(nn.Module):
     def features(self, x):
         x = F.gelu(self.whiten(x))
         x = self.layers(x)
-        x = F.adaptive_max_pool2d(x, 1).flatten(1)
+        x = F.max_pool2d(x, x.shape[2:]).flatten(1)
         return self.head(x) * self.scaling_factor
 
     def forward(self, x):
@@ -167,6 +167,13 @@ def build(context: BuildContext):
                         loss = F.cross_entropy(step_fn(x), state.labels[:bs], reduction="sum")
                     loss.backward()
             model.zero_grad(set_to_none=True)
+        # Warm up eval-mode shapes (cudnn.benchmark autotuning) on synthetic inputs.
+        model.eval()
+        with torch.inference_mode():
+            for b in (context.eval_batch_size, 10000 % context.eval_batch_size):
+                if b:
+                    model(torch.rand(b, 3, 32, 32, device=device))
+        model.train()
         torch.cuda.synchronize()
         state.images = state.labels = state.optimizer = None
     return state
@@ -213,6 +220,7 @@ def prepare(state, data: TrainingData, seed: int) -> None:
         ],
         momentum=momentum,
         nesterov=True,
+        fused=state.device.type == "cuda",
     )
     for g in state.optimizer.param_groups:
         g["initial_lr"] = g["lr"]
