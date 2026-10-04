@@ -11,7 +11,7 @@ from torch import nn
 from benchmark.api import BuildContext, TrainingData
 
 HYP = {
-    "epochs": 10.0,
+    "epochs": 9.5,
     "batch_size": 2000,
     "lr": 9.0,
     "momentum": 0.85,
@@ -285,6 +285,8 @@ def build(context: BuildContext):
             for b in (1, 784, 1024):
                 model(torch.rand(b, 3, 32, 32, device=device))
         torch.cuda.synchronize()
+        # Every training shape is compiled now; a recompile inside a trial is a bug.
+        torch._dynamo.config.error_on_recompile = True
     return state
 
 
@@ -324,16 +326,24 @@ def train(state) -> nn.Module:
     ema_every = hyp["ema_every"]
     alpha = 0.95**5 * (np.arange(total_steps + 1) / total_steps) ** 3
     lookahead = Lookahead(state.model) if ema_every else None
+    # Resolution switches at fixed fractions of the total step count.
+    resolution = [
+        [r for start, r in hyp["resolutions"] if k >= start * total_steps][-1]
+        for k in range(total_steps)
+    ]
     step = 0
     for epoch in range(math.ceil(hyp["epochs"])):
         epoch_images = augment(state.padded, state.flip_mask, epoch, hyp["translate"])
-        res = [r for start, r in hyp["resolutions"] if epoch >= start * hyp["epochs"]][-1]
-        if res != epoch_images.shape[-1]:
-            epoch_images = F.interpolate(
-                epoch_images, size=(res, res), mode="bilinear", antialias=True, align_corners=False
-            )
         perm = torch.randperm(n, device=state.padded.device)
-        epoch_images = epoch_images[perm].contiguous(memory_format=torch.channels_last)
+        epoch_steps = resolution[epoch * steps_per_epoch : (epoch + 1) * steps_per_epoch]
+        versions = {}
+        for res in sorted(set(epoch_steps)):
+            images = epoch_images
+            if res != images.shape[-1]:
+                images = F.interpolate(
+                    images, size=(res, res), mode="bilinear", antialias=True, align_corners=False
+                )
+            versions[res] = images[perm].contiguous(memory_format=torch.channels_last)
         epoch_labels = state.labels[perm]
         for i in range(steps_per_epoch):
             if step >= total_steps:
@@ -344,7 +354,7 @@ def train(state) -> nn.Module:
                 for g in opt.param_groups:
                     if g.get("whiten"):
                         g["lr"] = 0.0
-            x = epoch_images[i * bs : (i + 1) * bs]
+            x = versions[resolution[step]][i * bs : (i + 1) * bs]
             y = epoch_labels[i * bs : (i + 1) * bs]
             train_step(model, opt, x, y, hyp["label_smoothing"])
             step += 1
