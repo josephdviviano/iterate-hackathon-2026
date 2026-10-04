@@ -28,10 +28,11 @@ def run_remote(payload: dict) -> dict:
     import os
     from pathlib import Path
 
+    os.environ.update(payload["env"])  # before the scigym imports: the admission tolerance is read at import
+
     from scigym.data import load_systems
     from scigym.loop import _job
 
-    os.environ.update(payload["env"])
     system = next(s for s in load_systems() if s.id == payload["system_id"])
     out = _job((system, payload["arm"], payload["model"], payload["k"], payload["budget"], payload["rounds"], payload["max_calls"]))
     d = Path("/results") / f"{payload['arm']}_{payload['model']}{payload.get('tag', '')}"
