@@ -14,10 +14,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ARMS = {
     "baseline-r1": "greedy loop (karpathy/autoresearch), run 1",
     "baseline-r2": "greedy loop (karpathy/autoresearch), run 2",
-    "hypothesis": "reflective: hypotheses + world model + pre-registration",
-    "hypothesis-lit": "reflective + literature feed",
-    "hypothesis-dr": "reflective + forced deep research",
-    "hypothesis-unc": "reflective + uncertainty committee",
+    "hypothesis": "reflexive: hypotheses + world model + pre-registration",
+    "hypothesis-lit": "reflexive + literature feed",
+    "hypothesis-dr": "reflexive + forced deep research",
+    "hypothesis-unc": "reflexive + uncertainty committee",
 }
 
 

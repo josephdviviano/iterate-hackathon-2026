@@ -11,14 +11,14 @@
 
 | Arm | Framework | Experiments | Kept | First feasible | Fastest feasible |
 |---|---|---|---|---|---|
-| hypothesis | reflective | 141 | 24 | 7.22 s (E001) | 4.19 s (E133), acc 0.7550 |
-| hypothesis-dr | reflective + deep research | 84 | 29 | 9.28 s (E001) | 4.57 s (E083), acc 0.7556 |
+| hypothesis | reflexive | 141 | 24 | 7.22 s (E001) | 4.19 s (E133), acc 0.7550 |
+| hypothesis-dr | reflexive + deep research | 84 | 29 | 9.28 s (E001) | 4.57 s (E083), acc 0.7556 |
 | baseline-r2 | greedy | 32 | 24 | 23.38 s (E001) | 4.65 s (E030), acc 0.7568 |
-| hypothesis-lit | reflective + literature | 72 | 26 | 8.71 s (E007) | 4.82 s (E068), acc 0.7547 |
-| hypothesis-unc | reflective + uncertainty committee | 66 | 22 | 9.10 s (E005) | 4.99 s (E052), acc 0.7555 |
+| hypothesis-lit | reflexive + literature | 72 | 26 | 8.71 s (E007) | 4.82 s (E068), acc 0.7547 |
+| hypothesis-unc | reflexive + uncertainty committee | 66 | 22 | 9.10 s (E005) | 4.99 s (E052), acc 0.7555 |
 | baseline-r1 | greedy | 37 | 27 | 31.90 s (E001) | 5.05 s (E036), acc 0.7559 |
 
 **Caveats.**
 - This is one run per arm, so the ranking has no error bars.
-- The reflective arms started from a published airbench96-style recipe and the greedy arms from their own first recipe. Compare the final times with that in mind.
+- The reflexive arms started from a published airbench96-style recipe and the greedy arms from their own first recipe. Compare the final times with that in mind.
 - The kept results sit 0.0017 to 0.0038 above the 0.753 gate on 3 trials. The official evaluation uses 40 trials, so recipes at the margin can fall below the 0.75 target there.

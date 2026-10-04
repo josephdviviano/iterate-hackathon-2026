@@ -1,4 +1,4 @@
-# Reflective Autoresearch
+# Reflexive Autoresearch
 
 Track 1.1 (Autoresearch framework), shown on the Track 1.2 CIFAR-100 speedrun task.
 
@@ -16,7 +16,7 @@ The harness keeps three concerns apart, so a comparison between frameworks measu
 framework/
   core/ar.py              runs and measures experiments for any framework, from task.json
   baseline/program.md     upstream greedy loop (try, keep if better, else reset)
-  hypothesis/             reflective loop: hypothesis tree, idea queue, world model,
+  hypothesis/             reflexive loop: hypothesis tree, idea queue, world model,
                           pre-registration, meta-steps (ideate / revise) while runs are in flight
   hypothesis-lit/         + asynchronous literature feed (arXiv, OpenAlex)
   hypothesis-dr/          + forced deep-research step
@@ -45,7 +45,7 @@ Arena3: six arms, one autonomous agent each, on the CIFAR-100 speedrun task. The
 
 | Arm | Experiments | Fastest feasible |
 |---|---|---|
-| hypothesis (reflective) | 141 | 4.19 s, acc 0.7550 |
+| hypothesis (reflexive) | 141 | 4.19 s, acc 0.7550 |
 | hypothesis-dr | 84 | 4.57 s, acc 0.7556 |
 | baseline-r2 (greedy) | 32 | 4.65 s, acc 0.7568 |
 | hypothesis-lit | 72 | 4.82 s, acc 0.7547 |
