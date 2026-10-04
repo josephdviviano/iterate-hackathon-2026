@@ -60,7 +60,7 @@ def fig_accuracy(summary: dict, out: Path) -> Path:
     ax.plot(x, [r["vote"] for r in rows], "o", color=BLUE, ms=8, zorder=5, label="committee vote (8 members)")
     ax.set_xticks(x, [r["level"] for r in rows])
     ax.set_ylim(0.3, 1.03)
-    _style(ax, "Held-out accuracy per level, OPINE-World's environment (R34)", "accuracy")
+    _style(ax, "Held-out accuracy per level under OPINE-World's program contract (R34)", "accuracy")
     ax.legend(loc="lower left", fontsize=8.5, frameon=False, ncol=2)
     fig.tight_layout()
     fig.savefig(out / "q1_accuracy.png", dpi=160)
