@@ -44,6 +44,7 @@ DEFAULTS = {
     "tail_weight": 0.3,
     "whiten_bias_epochs": 3,
     "translate": 2,
+    "translate_late": 1,  # translate magnitude in the 28/32 px phases; 0 keeps "translate"
     "cutout": 0,
     "widths": [128, 384, 576],
     "depth": 3,  # convs per group; the third adds a residual connection
@@ -394,6 +395,8 @@ def prepare(state, data: TrainingData, seed: int) -> None:
 
     # Alternating flip: flip a random half once, then mirror everything on odd epochs.
     images = batch_flip_lr(images)
+    if hyp["translate_late"]:  # separate translate magnitude for the 28/32 px phases
+        state.images_late = F.pad(images, (hyp["translate_late"],) * 4, "reflect")
     if hyp["translate"]:
         images = F.pad(images, (hyp["translate"],) * 4, "reflect")
     state.images = images
@@ -487,12 +490,9 @@ def _fit(state, total_steps, size=None, batch_size=None, freeze_at=None):
     seen, epoch = 0, 0
     net.train()
     while seen < total:
-        images = batch_crop(state.images, 32) if hyp["translate"] else state.images
-        if epoch % 2 == 1:
-            images = images.flip(-1)
-        if hyp["cutout"]:
-            images = batch_cutout(images, hyp["cutout"])
+        images = None  # this epoch's augmented images, built on first use
         order = torch.randperm(n, device=labels.device)
+        images_late = None
         i = 0
         while seen < total:
             progress = seen / total
@@ -502,7 +502,20 @@ def _fit(state, total_steps, size=None, batch_size=None, freeze_at=None):
                 break
             idx = order[i : i + bs]
             i += bs
-            x = images[idx]
+            if hyp["translate_late"] and step_size >= 28:
+                if images_late is None:  # same flip parity, its own translate magnitude
+                    images_late = batch_crop(state.images_late, 32)
+                    if epoch % 2 == 1:
+                        images_late = images_late.flip(-1)
+                x = images_late[idx]
+            else:
+                if images is None:
+                    images = batch_crop(state.images, 32) if hyp["translate"] else state.images
+                    if epoch % 2 == 1:
+                        images = images.flip(-1)
+                    if hyp["cutout"]:
+                        images = batch_cutout(images, hyp["cutout"])
+                x = images[idx]
             if step_size != 32:
                 x = F.interpolate(x, size=(step_size, step_size), mode="bilinear", antialias=True)
                 x = x.contiguous(memory_format=torch.channels_last)
