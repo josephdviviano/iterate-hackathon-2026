@@ -13,6 +13,7 @@ from torch import nn
 
 from benchmark.api import BuildContext, TrainingData
 
+ACT = ["gelu"]
 DTYPE = {"bf16": torch.bfloat16, "fp16": torch.float16}
 MEAN = torch.tensor([0.5071, 0.4865, 0.4409])
 STD = torch.tensor([0.2673, 0.2564, 0.2762])
@@ -28,6 +29,7 @@ DEFAULTS = dict(
     widths=(64, 256, 768),
     whiten_kernel=2,
     depth=3,
+    act="silu",
     bn_momentum=0.6,
     scaling_factor=0.2,
     translate=2,
@@ -81,7 +83,7 @@ class ConvGroup(nn.Module):
         if depth >= 2:
             self.conv2 = Conv(cout, cout)
             self.norm2 = BatchNorm(cout, bn_momentum)
-        self.activ = nn.GELU()
+        self.activ = {"gelu": nn.GELU(), "silu": nn.SiLU(), "gelu_tanh": nn.GELU(approximate="tanh")}[ACT[0]]
 
     def forward(self, x):
         x = self.activ(self.norm1(self.pool(self.conv1(x))))
@@ -113,7 +115,7 @@ class Net(nn.Module):
         self.scaling_factor = scaling_factor
 
     def features(self, x):
-        x = F.gelu(self.whiten(x))
+        x = F.silu(self.whiten(x)) if ACT[0] == "silu" else F.gelu(self.whiten(x))
         x = self.layers(x)
         x = F.max_pool2d(x, x.shape[2:]).flatten(1)
         return self.head(x) * self.scaling_factor
@@ -168,6 +170,7 @@ def build(context: BuildContext):
     hyp = make_hyp(context.parameters)
     device = context.device
     torch.backends.cudnn.benchmark = hyp["cudnn_benchmark"]
+    ACT[0] = hyp["act"]
     model = Net(hyp["widths"], hyp["bn_momentum"], hyp["scaling_factor"], context.num_classes, hyp["whiten_kernel"], hyp["depth"])
     model = model.to(device).to(memory_format=torch.channels_last)
     use_cuda = device.type == "cuda"
