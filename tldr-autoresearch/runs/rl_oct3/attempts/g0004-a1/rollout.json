@@ -1,0 +1,142 @@
+{
+ "attempt_id": "g0004-a1",
+ "group": 4,
+ "k": 1,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.016319244141126,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "8df8d1e3edac486a41a327f4c5f6b30b65941057",
+  "val_bpb": 1.0130246725361405,
+  "evals": [
+   1.0130246725361405
+  ],
+  "train_sha256": "c3244192738e4bfe172e1368dc860d495d6ebcb870d586a2c0d68c1f3374acd4",
+  "run_id": "20261003-210059-50f966"
+ },
+ "policy": {
+  "name": "oct3-v3",
+  "version": 3,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v3"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.016319 did not improve on the current best 1.013025 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": false,
+ "insights_in_context": [],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-220742-7ec95b",
+  "attempt_id": "g0004-a1",
+  "ts": "2026-10-03T22:07:42+00:00",
+  "wall_s": 385.5,
+  "head": "8df8d1e3edac486a41a327f4c5f6b30b65941057",
+  "branch": "HEAD",
+  "train_sha256": "e97d2ca969a603d1c93d097e32af005bd05da8d7cb90e83016569227fa484630",
+  "train_ast_sha256": "9ad08933fa6d49c10d2e683d825f316ca8e57b8a60a878a298681071e97c87a0",
+  "parent_train_sha256": "c3244192738e4bfe172e1368dc860d495d6ebcb870d586a2c0d68c1f3374acd4",
+  "parent_rev": "8df8d1e3edac486a41a327f4c5f6b30b65941057",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "value embeddings on all layers (retry near-miss on top of autotune depth-9 best)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.016319244141126,
+  "metrics": {
+   "val_bpb": 1.016319244141126,
+   "training_seconds": 300.0,
+   "total_seconds": 382.7,
+   "peak_vram_mb": 25889.5,
+   "mfu_percent": 22.56,
+   "total_tokens_M": 237.9,
+   "num_steps": 1815,
+   "num_params_M": 74.5,
+   "depth": 9,
+   "t_train_trusted": 303.5,
+   "val_bpb_stdout": 1.016319,
+   "t_to_eval": 361.6
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-220742-7ec95b/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-220742-7ec95b/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "4aa143347c61e1d4fba5eee0a15191b99910a048fe591652e945e3c7aa431291",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-220742-7ec95b/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 4,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 22.543477408005856,
+     "event": "eval",
+     "future_max_abs": 22.432241439819336,
+     "max_mem_mb": 25889.4912109375,
+     "n_eval": 1,
+     "t_to_eval": 361.55673404700065,
+     "t_train2": 58.01369760000671,
+     "train_batches": 1816,
+     "val_bpb": 1.016319244141126,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 384.10092654800246
+   }
+  },
+  "ts_end": "2026-10-03T22:14:08+00:00",
+  "last_step": {
+   "step": 1814,
+   "pct": 100.0,
+   "loss": 2.849511,
+   "dt_ms": 166,
+   "tok_per_sec": 788044,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.012560553567088,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0037586905740378818,
+  "seq": 43
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 664.7999439239502
+ },
+ "desc": "value embeddings on all layers (retry near-miss on top of autotune depth-9 best)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0004-a1/calls.jsonl",
+ "t_end": 1791065659.5035584,
+ "insight": {
+  "hint": "Do not enable value embeddings on every layer; the previous all-layer VE result was not a true win over the relevant max-autotune baseline.",
+  "judge": {
+   "summary": "The agent selected the idea of enabling value embeddings on all transformer layers instead of the current alternating pattern, reasoning that a previous all-layer value-embedding run had looked slightly better than its nearby baseline and might transfer to the current best configuration. It implemented this with a one-line change to `has_ve` in `train.py`, making it return `True` for every layer, committed the change, and ran the experiment. The run completed successfully but produced `val_bpb = 1.016319`, which is worse than the current best of `1.013025` by about `0.0033`, so the attempt did not improve the benchmark.",
+   "feedback": "The decisive error was in the experimental choice itself: the agent treated an already-discarded all-layer value-embedding result as a promising near-miss and stacked it onto the current best without sufficient evidence that it would help in the current lineage. The prior all-layer VE result was not a reliable win over the relevant max-autotune baseline; it was worse than the then-best, and the agent’s comparison to a different non-autotune/lineage baseline was not a fair basis for expecting improvement. In code, this mistake appears in the edited `has_ve` function, which unconditionally enabled value embeddings on every layer and added capacity/parameters that did not improve validation quality under the fixed training budget. The first wrong point is therefore the edit that changed the value-embedding schedule from the alternating pattern to all layers.",
+   "wrong_step_id": 4,
+   "corrected_step": "def has_ve(layer_idx, n_layer):\n    \"\"\"Returns True if layer should have Value Embedding (alternating, last always included).\"\"\"\n    return layer_idx % 2 == (n_layer - 1) % 2",
+   "hint": "Do not enable value embeddings on every layer; the previous all-layer VE result was not a true win over the relevant max-autotune baseline."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent selected the idea of enabling value embeddings on all transformer layers instead of the current alternating pattern, reasoning that a previous all-layer value-embedding run had looked slightly better than its nearby baseline and might transfer to the current best configuration. It implemented this with a one-line change to `has_ve` in `train.py`, making it return `True` for every layer, committed the change, and ran the experiment. The run completed successfully but produced `val_bpb = 1.016319`, which is worse than the current best of `1.013025` by about `0.0033`, so the attempt did not improve the benchmark.\",\n  \"feedback\": \"The decisive error was in the experimental choice itself: the agent treated an already-discarded all-layer value-embedding result as a promising near-miss and stacked it onto the current best without sufficient evidence that it would help in the current lineage. The prior all-layer VE result was not a reliable win over the relevant max-autotune baseline; it was worse than the then-best, and the agent’s comparison to a different non-autotune/lineage baseline was not a fair basis for expecting improvement. In code, this mistake appears in the edited `has_ve` function, which unconditionally enabled value embeddings on every layer and added capacity/parameters that did not improve validation quality under the fixed training budget. The first wrong point is therefore the edit that changed the value-embedding schedule from the alternating pattern to all layers.\",\n  \"wrong_step_id\": 4,\n  \"corrected_step\": \"def has_ve(layer_idx, n_layer):\\n    \\\"\\\"\\\"Returns True if layer should have Value Embedding (alternating, last always included).\\\"\\\"\\\"\\n    return layer_idx % 2 == (n_layer - 1) % 2\",\n  \"hint\": \"Do not enable value embeddings on every layer; the previous all-layer VE result was not a true win over the relevant max-autotune baseline.\"\n}",
+  "prompt_chars": 22525,
+  "wall_s": 92.72379302978516
+ }
+}

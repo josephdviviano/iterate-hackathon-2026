@@ -1,0 +1,15 @@
+diff --git a/train.py b/train.py
+index d5a0a91..1cb28b4 100644
+--- a/train.py
++++ b/train.py
+@@ -126,8 +126,8 @@ class CausalSelfAttention(nn.Module):
+ class MLP(nn.Module):
+     def __init__(self, config):
+         super().__init__()
+-        self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd, bias=False)
+-        self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd, bias=False)
++        self.c_fc = nn.Linear(config.n_embd, 3 * config.n_embd, bias=False)
++        self.c_proj = nn.Linear(3 * config.n_embd, config.n_embd, bias=False)
+ 
+     def forward(self, x):
+         x = self.c_fc(x)

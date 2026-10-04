@@ -1,0 +1,203 @@
+{
+ "attempt_id": "g0001-a5",
+ "group": 1,
+ "k": 5,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0553236776904362,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "080da8ba1ed840fcf4da3ecb2b3e9111ba029ba1",
+  "val_bpb": 1.0481943841752341,
+  "evals": [
+   1.0481943841752341
+  ],
+  "train_sha256": "a1fb6118ac2b7cc2178d7f4b8965f8baeab62485a6154198305db331b892631f",
+  "run_id": "20261004-113029-e3e9c1"
+ },
+ "policy": {
+  "name": "oct3-v5",
+  "version": 5,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v5"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.055324 did not improve on the current best 1.048194 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "The single-line embedding-LR increase was too small to beat the best by the required 0.0005 margin; choose a higher-impact change next."
+  },
+  {
+   "idx": 2,
+   "hint": "The agent made another small LR nudge even though the recent results showed the current LRs were already near optimal and a more promising next experiment should have targeted a structural or less-tested knob rather than increasing the lm_head learning rate."
+  },
+  {
+   "idx": 3,
+   "hint": "A single favorable val_bpb run is not a win unless a reproducible re-run confirms it beyond the required margin."
+  },
+  {
+   "idx": 4,
+   "hint": "Changing HEAD_DIM alone also shrank the model, so isolate the head-count change by keeping n_embd fixed at 384."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261004-124323-186b73",
+  "attempt_id": "g0001-a5",
+  "ts": "2026-10-04T12:43:23+00:00",
+  "wall_s": 342.9,
+  "head": "080da8ba1ed840fcf4da3ecb2b3e9111ba029ba1",
+  "branch": "HEAD",
+  "train_sha256": "34ea91c25ce5782b911fb64b9c1e704660ff86736240e9f390b301f6cfbbcee2",
+  "train_ast_sha256": "3909981c574bb05f72a8993dfed5e8469cb5c50fe908cb1cf044dacc354a15fb",
+  "parent_train_sha256": "a1fb6118ac2b7cc2178d7f4b8965f8baeab62485a6154198305db331b892631f",
+  "parent_rev": "080da8ba1ed840fcf4da3ecb2b3e9111ba029ba1",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "isolate head-count change: HEAD_DIM 128->64 with n_embd fixed at 384 (3->6 heads, same FLOPs)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0553236776904362,
+  "metrics": {
+   "val_bpb": 1.0553236776904362,
+   "training_seconds": 300.1,
+   "total_seconds": 336.1,
+   "peak_vram_mb": 23448.2,
+   "mfu_percent": 17.94,
+   "total_tokens_M": 510.1,
+   "num_steps": 1946,
+   "num_params_M": 24.6,
+   "depth": 5,
+   "t_train_trusted": 300.3,
+   "t_train_source": "step_anchor",
+   "t_train_limit": 310.0,
+   "t_train_batch2": 306.5,
+   "t_step_anchor": 22.6,
+   "t_step1": 20.8,
+   "opt_steps": 1946,
+   "train_batches": 1947,
+   "train_batches_at_step1": 2,
+   "train_batches_at_anchor": 12,
+   "val_bpb_stdout": 1.055324,
+   "t_to_eval": 322.9
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/h2h/x1/rl/runs/20261004-124323-186b73/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/h2h/x1/rl/runs/20261004-124323-186b73/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "agent_head": null,
+  "parent_ast_sha256": "ee1540771bfccc117821727440376396ca7da5feae094a83a4ee28895dcf2564",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/h2h/x1/rl/runs/20261004-124323-186b73/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 11,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 128,
+     "causal_max_abs": 0.0,
+     "eval_s": 18.19517422899662,
+     "event": "eval",
+     "future_max_abs": 25.73025131225586,
+     "judge": true,
+     "max_mem_mb": 23448.23291015625,
+     "n_eval": 1,
+     "n_optimizers": 1,
+     "opt_anchors": [
+      [
+       "MuonAdamW",
+       22.597
+      ]
+     ],
+     "opt_steps": 1946,
+     "probe_t": 758,
+     "step_hook": true,
+     "t_step1": 20.753223615000024,
+     "t_step_anchor": 22.59707935100596,
+     "t_to_eval": 322.88648230700346,
+     "t_train2": 16.34613098099362,
+     "train_batches": 1947,
+     "train_batches_at_anchor": 12,
+     "train_batches_at_step1": 2,
+     "transport": "ipc",
+     "val_bpb": 1.0553236776904362,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "judge": true,
+    "no_autotune": true,
+    "val_masked": true,
+    "warmup_opt_steps": 11
+   },
+   "end": {
+    "child_rc": 0,
+    "event": "end",
+    "n_eval": 1,
+    "n_optimizers": 1,
+    "opt_anchors": [
+     [
+      "MuonAdamW",
+      22.597
+     ]
+    ],
+    "opt_steps": 1946,
+    "protocol_errors": 0,
+    "step_hook": true,
+    "t": 342.35672026799875,
+    "t_step1": 20.753223615000024,
+    "t_step_anchor": 22.59707935100596,
+    "train_batches_at_anchor": 12,
+    "train_batches_at_step1": 2
+   }
+  },
+  "ts_end": "2026-10-04T12:49:06+00:00",
+  "last_step": {
+   "step": 1945,
+   "pct": 100.0,
+   "loss": 2.94899,
+   "dt_ms": 155,
+   "tok_per_sec": 1690773,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.047996418945131,
+  "parent_n": 2,
+  "delta_vs_parent": -0.007327258745305265,
+  "seq": 17
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 392.0255637168884
+ },
+ "desc": "isolate head-count change: HEAD_DIM 128->64 with n_embd fixed at 384 (3->6 heads, same FLOPs)",
+ "calls_path": "$RLTLDR_ROOT/data/h2h/x1/rl/attempts/g0001-a5/calls.jsonl",
+ "t_end": 1791118156.0400422,
+ "insight": {
+  "hint": "The experiment was implemented correctly but was a negative result: keep the 128-dim heads and try a different optimization hyperparameter instead.",
+  "judge": {
+   "summary": "The agent tried to isolate the effect of the previously failed head-size change by keeping the current 5-layer, 384-dim model size fixed while reducing the attention head dimension from 128 to 64. In train.py, it replaced the ASPECT_RATIO-based model-dimension calculation with a fixed MODEL_DIM = 384 and HEAD_DIM = 64, producing 6 heads of dimension 64 instead of 3 heads of dimension 128, with the same model dimension and parameter count. The experiment ran successfully without crashing, but it did not improve the metric: val_bpb was 1.055324 versus the current best 1.048194, with somewhat lower throughput (1946 steps / 510.1M tokens versus 2005 steps / 525.6M tokens).",
+   "feedback": "There does not appear to be an implementation bug: the edited code consistently uses the new fixed model dimension and head dimension, the run completes, and the parameter count matches the intended 384-dim model. The decisive issue is that the architectural hypothesis itself failed: making the heads narrower (6x64 instead of 3x128) both increased runtime overhead enough to reduce total tokens seen in the fixed 5-minute budget and worsened validation loss. Therefore, the earlier failure with HEAD_DIM=64 was not mainly caused by the simultaneous n_embd reduction; 128-dim heads appear preferable in this small-model setting. For a future attempt, keep the current architecture and focus on optimization details that have shown sensitivity, such as a small warmdown or warmup adjustment, rather than further reducing the head dimension.",
+   "wrong_step_id": -1,
+   "corrected_step": "",
+   "hint": "The experiment was implemented correctly but was a negative result: keep the 128-dim heads and try a different optimization hyperparameter instead."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent tried to isolate the effect of the previously failed head-size change by keeping the current 5-layer, 384-dim model size fixed while reducing the attention head dimension from 128 to 64. In train.py, it replaced the ASPECT_RATIO-based model-dimension calculation with a fixed MODEL_DIM = 384 and HEAD_DIM = 64, producing 6 heads of dimension 64 instead of 3 heads of dimension 128, with the same model dimension and parameter count. The experiment ran successfully without crashing, but it did not improve the metric: val_bpb was 1.055324 versus the current best 1.048194, with somewhat lower throughput (1946 steps / 510.1M tokens versus 2005 steps / 525.6M tokens).\",\n  \"feedback\": \"There does not appear to be an implementation bug: the edited code consistently uses the new fixed model dimension and head dimension, the run completes, and the parameter count matches the intended 384-dim model. The decisive issue is that the architectural hypothesis itself failed: making the heads narrower (6x64 instead of 3x128) both increased runtime overhead enough to reduce total tokens seen in the fixed 5-minute budget and worsened validation loss. Therefore, the earlier failure with HEAD_DIM=64 was not mainly caused by the simultaneous n_embd reduction; 128-dim heads appear preferable in this small-model setting. For a future attempt, keep the current architecture and focus on optimization details that have shown sensitivity, such as a small warmdown or warmup adjustment, rather than further reducing the head dimension.\",\n  \"wrong_step_id\": -1,\n  \"corrected_step\": \"\",\n  \"hint\": \"The experiment was implemented correctly but was a negative result: keep the 128-dim heads and try a different optimization hyperparameter instead.\"\n}",
+  "prompt_chars": 17463,
+  "wall_s": 95.29529786109924
+ }
+}

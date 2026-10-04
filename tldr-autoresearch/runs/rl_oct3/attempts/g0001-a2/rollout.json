@@ -1,0 +1,144 @@
+{
+ "attempt_id": "g0001-a2",
+ "group": 1,
+ "k": 2,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0195151906881617,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "val_bpb": 1.0198602420773322,
+  "evals": [
+   1.0198602420773322
+  ],
+  "train_sha256": "bb2d210fe0303c6fcaed3c0c759599e761ff83ee3db63c7c125639ef54ee00f4",
+  "run_id": "20261003-172515-086f7c"
+ },
+ "policy": {
+  "name": "oct3-v1",
+  "version": 1,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v1"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.019515 did not improve on the current best 1.019860 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "The history supports extending the linear warmdown further, not replacing it with an untested cosine shape."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-173840-42878e",
+  "attempt_id": "g0001-a2",
+  "ts": "2026-10-03T17:38:40+00:00",
+  "wall_s": 330.1,
+  "head": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "branch": "HEAD",
+  "train_sha256": "bb7a77e4a9feb99d609d32bd1d539bad3078eda597da0f8dfd905cb47ae27fb7",
+  "train_ast_sha256": "fa79eaf298d26e8cbfdf0c4d5afa0e87d759d901c4e91b4f8ac9bab046b72098",
+  "parent_train_sha256": "bb2d210fe0303c6fcaed3c0c759599e761ff83ee3db63c7c125639ef54ee00f4",
+  "parent_rev": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "lengthen LR warmdown 0.7 -> 0.9",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0195151906881617,
+  "metrics": {
+   "val_bpb": 1.0195151906881617,
+   "training_seconds": 300.1,
+   "total_seconds": 327.6,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.22,
+   "total_tokens_M": 252.4,
+   "num_steps": 1926,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.019515,
+   "t_to_eval": 313.4
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-173840-42878e/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-173840-42878e/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "466054de29552e88d36da0e0fcac943ce835042c2768124d6802a656e2889476",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-173840-42878e/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.66717843799779,
+     "event": "eval",
+     "future_max_abs": 21.61165428161621,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.3763172470026,
+     "val_bpb": 1.0195151906881617,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 329.0442064939998
+   }
+  },
+  "ts_end": "2026-10-03T17:44:10+00:00",
+  "last_step": {
+   "step": 1925,
+   "pct": 100.0,
+   "loss": 2.863158,
+   "dt_ms": 157,
+   "tok_per_sec": 835905,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0196974596140955,
+  "parent_n": 2,
+  "delta_vs_parent": 0.00018226892593387056,
+  "seq": 13
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 353.5052695274353
+ },
+ "desc": "lengthen LR warmdown 0.7 -> 0.9",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0001-a2/calls.jsonl",
+ "t_end": 1791049458.2080626,
+ "insight": {
+  "hint": "You picked a too-small continuation of an already-saturating warmdown axis instead of trying a more impactful untested hyperparameter.",
+  "judge": {
+   "summary": "The agent continued the most recent successful axis by increasing the linear learning-rate warmdown fraction from 0.7 to 0.9 with a one-line change to WARMDOWN_RATIO in train.py. It committed the change and ran the experiment once. The run completed successfully with val_bpb 1.019515 and peak VRAM about 22.7 GB, which is only a 0.000345 improvement over the current best 1.019860, below the required 0.0005 improvement threshold, so the experiment failed to be kept.",
+   "feedback": "The failure was not a crash or incorrect implementation; it was an experiment-selection mistake. The agent chose a very small continuation of an already-diminishing hyperparameter change, and the resulting delta was too small to pass the acceptance threshold. The decisive error was in choosing WARMDOWN_RATIO = 0.9 as the next one-line experiment when the historical trend already suggested limited remaining gain on that axis. A stronger candidate would have targeted a different unexplored setting with more potential magnitude, rather than making another marginal warmdown tweak.",
+   "wrong_step_id": 2,
+   "corrected_step": "WEIGHT_DECAY = 0.1      # cautious weight decay for Muon",
+   "hint": "You picked a too-small continuation of an already-saturating warmdown axis instead of trying a more impactful untested hyperparameter."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent continued the most recent successful axis by increasing the linear learning-rate warmdown fraction from 0.7 to 0.9 with a one-line change to WARMDOWN_RATIO in train.py. It committed the change and ran the experiment once. The run completed successfully with val_bpb 1.019515 and peak VRAM about 22.7 GB, which is only a 0.000345 improvement over the current best 1.019860, below the required 0.0005 improvement threshold, so the experiment failed to be kept.\",\n  \"feedback\": \"The failure was not a crash or incorrect implementation; it was an experiment-selection mistake. The agent chose a very small continuation of an already-diminishing hyperparameter change, and the resulting delta was too small to pass the acceptance threshold. The decisive error was in choosing WARMDOWN_RATIO = 0.9 as the next one-line experiment when the historical trend already suggested limited remaining gain on that axis. A stronger candidate would have targeted a different unexplored setting with more potential magnitude, rather than making another marginal warmdown tweak.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"WEIGHT_DECAY = 0.1      # cautious weight decay for Muon\",\n  \"hint\": \"You picked a too-small continuation of an already-saturating warmdown axis instead of trying a more impactful untested hyperparameter.\"\n}",
+  "prompt_chars": 13417,
+  "wall_s": 90.55491852760315
+ }
+}

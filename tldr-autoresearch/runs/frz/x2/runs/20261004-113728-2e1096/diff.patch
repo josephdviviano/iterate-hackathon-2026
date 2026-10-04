@@ -1,0 +1,13 @@
+diff --git a/train.py b/train.py
+index 9e35be1..a9166a6 100644
+--- a/train.py
++++ b/train.py
+@@ -459,7 +459,7 @@ class MuonAdamW(torch.optim.Optimizer):
+ # Model architecture
+ ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO
+ HEAD_DIM = 128          # target head dimension for attention
+-WINDOW_PATTERN = "SSSL" # sliding window pattern: L=full, S=half context
++WINDOW_PATTERN = "LLLL" # sliding window pattern: L=full, S=half context (all full for small model)
+ 
+ # Optimization
+ TOTAL_BATCH_SIZE = 2**17 # ~131K tokens per optimizer step (halved again from 2^18; the 2^18 run was a big win so push the same direction)

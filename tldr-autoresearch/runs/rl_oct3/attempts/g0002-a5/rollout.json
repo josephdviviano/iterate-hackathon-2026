@@ -1,0 +1,152 @@
+{
+ "attempt_id": "g0002-a5",
+ "group": 2,
+ "k": 5,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.026737114122951,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "val_bpb": 1.0169535025171206,
+  "evals": [
+   1.0169535025171206
+  ],
+  "train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "run_id": "20261003-185840-8515a2"
+ },
+ "policy": {
+  "name": "oct3-v2",
+  "version": 2,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v2"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.026737 did not improve on the current best 1.016954 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 2,
+   "hint": "Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead."
+  },
+  {
+   "idx": 3,
+   "hint": "Changing DEPTH alone also changed the model width in this setup, so you must explicitly hold MODEL_DIM at 512 for a true depth-9 comparison."
+  },
+  {
+   "idx": 4,
+   "hint": "An apparent win must be confirmed with one fresh re-run before declaring the experiment successful."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-194232-1574bf",
+  "attempt_id": "g0002-a5",
+  "ts": "2026-10-03T19:42:32+00:00",
+  "wall_s": 336.2,
+  "head": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "branch": "HEAD",
+  "train_sha256": "26019b4e2f0cfe45a899c22df02183ebeeaa4c41ff407482486f12cf9cd83476",
+  "train_ast_sha256": "ffa7a59e96a974773e1387666c2e3aaa4134c81e2471e717287169efc59c6273",
+  "parent_train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "parent_rev": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "halve head dimension 128 -> 64 (8 heads instead of 4)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.026737114122951,
+  "metrics": {
+   "val_bpb": 1.026737114122951,
+   "training_seconds": 300.1,
+   "total_seconds": 333.6,
+   "peak_vram_mb": 22702.0,
+   "mfu_percent": 20.82,
+   "total_tokens_M": 246.9,
+   "num_steps": 1884,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.026737,
+   "t_to_eval": 315.9
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-194232-1574bf/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-194232-1574bf/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "c79b088c0f0fd3e5b93a7bec565e4b36bdb250317a7436690c423b4c71849719",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-194232-1574bf/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 19.161682112000562,
+     "event": "eval",
+     "future_max_abs": 23.447162628173828,
+     "max_mem_mb": 22701.96240234375,
+     "n_eval": 1,
+     "t_to_eval": 315.8778554679993,
+     "val_bpb": 1.026737114122951,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 335.04027856799803
+   }
+  },
+  "ts_end": "2026-10-03T19:48:08+00:00",
+  "last_step": {
+   "step": 1883,
+   "pct": 100.0,
+   "loss": 2.873606,
+   "dt_ms": 160,
+   "tok_per_sec": 817438,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0169081747663617,
+  "parent_n": 2,
+  "delta_vs_parent": -0.00982893935658935,
+  "seq": 28
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 781.5701375007629
+ },
+ "desc": "halve head dimension 128 -> 64 (8 heads instead of 4)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0002-a5/calls.jsonl",
+ "t_end": 1791056901.0284681,
+ "insight": {
+  "hint": "The head-dimension change itself was the mistake: 4 heads of dimension 128 were much better than 8 heads of dimension 64, so HEAD_DIM should have stayed at 128.",
+  "judge": {
+   "summary": "The agent selected an untested architectural lever and changed the attention head dimension in train.py from HEAD_DIM = 128 to HEAD_DIM = 64. With the model dimension fixed at 512, this increased the number of attention heads from 4 to 8 while keeping the total model width and approximate parameter count the same. The agent committed this one-line change and ran the experiment. The run completed without crashing and produced val_bpb = 1.026737 with peak_vram_mb = 22702.0, which is clearly worse than the current best val_bpb = 1.016954, so the harness did not accept it as an improvement.",
+   "feedback": "The implementation itself was not buggy: the edit was syntactically valid, committed, ran to completion, and used roughly the same VRAM and model size. The failure was the experimental choice: halving the head dimension from 128 to 64 produced a large regression of about 0.0098 bits per byte, far outside measurement noise. The decisive mistake was choosing HEAD_DIM = 64 as the one change, since the model strongly preferred the original 4 heads of dimension 128 over 8 heads of dimension 64. The corrected step should have kept the original head dimension, i.e. not made that edit, or chosen a different experiment with stronger expected value.",
+   "wrong_step_id": "3",
+   "corrected_step": "HEAD_DIM = 128          # target head dimension for attention",
+   "hint": "The head-dimension change itself was the mistake: 4 heads of dimension 128 were much better than 8 heads of dimension 64, so HEAD_DIM should have stayed at 128."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent selected an untested architectural lever and changed the attention head dimension in train.py from HEAD_DIM = 128 to HEAD_DIM = 64. With the model dimension fixed at 512, this increased the number of attention heads from 4 to 8 while keeping the total model width and approximate parameter count the same. The agent committed this one-line change and ran the experiment. The run completed without crashing and produced val_bpb = 1.026737 with peak_vram_mb = 22702.0, which is clearly worse than the current best val_bpb = 1.016954, so the harness did not accept it as an improvement.\",\n  \"feedback\": \"The implementation itself was not buggy: the edit was syntactically valid, committed, ran to completion, and used roughly the same VRAM and model size. The failure was the experimental choice: halving the head dimension from 128 to 64 produced a large regression of about 0.0098 bits per byte, far outside measurement noise. The decisive mistake was choosing HEAD_DIM = 64 as the one change, since the model strongly preferred the original 4 heads of dimension 128 over 8 heads of dimension 64. The corrected step should have kept the original head dimension, i.e. not made that edit, or chosen a different experiment with stronger expected value.\",\n  \"wrong_step_id\": \"3\",\n  \"corrected_step\": \"HEAD_DIM = 128          # target head dimension for attention\",\n  \"hint\": \"The head-dimension change itself was the mistake: 4 heads of dimension 128 were much better than 8 heads of dimension 64, so HEAD_DIM should have stayed at 128.\"\n}",
+  "prompt_chars": 17076,
+  "wall_s": 91.89742851257324
+ }
+}

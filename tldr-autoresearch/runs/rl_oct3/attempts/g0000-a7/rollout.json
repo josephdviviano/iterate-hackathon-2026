@@ -1,0 +1,156 @@
+{
+ "attempt_id": "g0000-a7",
+ "group": 0,
+ "k": 7,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0246855622271152,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "e7baeb5efdc0c046ac35df5d8ddd02ae42644755",
+  "val_bpb": 1.0216361682989887,
+  "evals": [
+   1.0216361682989887
+  ],
+  "train_sha256": "0b735b5c1fd30cf0bf7e98516138029a4d1ab52e06f82d4c514dc4f3f7467ab6",
+  "run_id": "20261003-164839-677097"
+ },
+ "policy": {
+  "name": "qwen3.8-27b-fp8",
+  "version": 0,
+  "path": null
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.024686 did not improve on the current best 1.021636 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Do not increase model size under a fixed compute budget; the larger model trained on too few tokens and got worse, so try a smaller/deeper-or-thinner model or a faster setup instead."
+  },
+  {
+   "idx": 2,
+   "hint": "The failed deeper experiment did not justify making the model thinner, so the next experiment should avoid changing model capacity and instead test a same-size speedup or optimizer/schedule improvement."
+  },
+  {
+   "idx": 5,
+   "hint": "You kept halving the batch size after the gains had already collapsed from ~0.056 to ~0.0024, so the curve peaked at 2^17 and the third halving cost ~0.0115 — hold the batch at 2^17 and pick a different experiment."
+  },
+  {
+   "idx": 6,
+   "hint": "The 'bf16 CE' change was a no-op — the bf16 cross-entropy stays in fp32 under autocast anyway (identical VRAM and step count prove it) — so pick an experiment that changes training dynamics (e.g., LR schedule shape or magnitude) instead of a micro-optimization that doesn't take effect."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-171237-8123c6",
+  "attempt_id": "g0000-a7",
+  "ts": "2026-10-03T17:12:37+00:00",
+  "wall_s": 330.3,
+  "head": "e7baeb5efdc0c046ac35df5d8ddd02ae42644755",
+  "branch": "HEAD",
+  "train_sha256": "0f69d2230b7f5a86d4fd37666670284262a9f93f8a99ed9aaa56da35a8be49f8",
+  "train_ast_sha256": "8434c222eb481dec9d9d9f0273ddf724a55e836633b30071ee9dcbf18d1711d6",
+  "parent_train_sha256": "0b735b5c1fd30cf0bf7e98516138029a4d1ab52e06f82d4c514dc4f3f7467ab6",
+  "parent_rev": "e7baeb5efdc0c046ac35df5d8ddd02ae42644755",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "shorten LR warmdown 0.5 -> 0.35",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0246855622271152,
+  "metrics": {
+   "val_bpb": 1.0246855622271152,
+   "training_seconds": 300.1,
+   "total_seconds": 327.8,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.22,
+   "total_tokens_M": 252.4,
+   "num_steps": 1926,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.024686,
+   "t_to_eval": 313.5
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-171237-8123c6/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-171237-8123c6/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "801a3524cfb220f28bb0a2d753b57ce730eb4d666132f55763ac1c55da931a1e",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-171237-8123c6/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.764474111001618,
+     "event": "eval",
+     "future_max_abs": 22.748821258544922,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.4566537119972,
+     "val_bpb": 1.0246855622271152,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 329.22183084800054
+   }
+  },
+  "ts_end": "2026-10-03T17:18:08+00:00",
+  "last_step": {
+   "step": 1925,
+   "pct": 100.0,
+   "loss": 2.878651,
+   "dt_ms": 157,
+   "tok_per_sec": 836540,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0216807508506944,
+  "parent_n": 2,
+  "delta_vs_parent": -0.003004811376420724,
+  "seq": 9
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 351.83739042282104
+ },
+ "desc": "shorten LR warmdown 0.5 -> 0.35",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0000-a7/calls.jsonl",
+ "t_end": 1791047893.2321062,
+ "insight": {
+  "hint": "Instead of shortening the warmdown, try the opposite schedule direction or a different LR-schedule knob, since reducing the low-LR tail made val_bpb worse.",
+  "judge": {
+   "summary": "The agent inspected the current train.py and results, then chose a learning-rate-schedule experiment: shorten the LR warmdown fraction from 0.5 to 0.35 while keeping the final LR at zero, hypothesizing that spending more of the 5-minute budget at full LR would help. It made that one-line change in train.py, committed it, and ran the experiment. The run completed successfully but produced val_bpb 1.024686, which is about 0.003 worse than the current best 1.021636, so it did not meet the improvement threshold.",
+   "feedback": "The implementation and execution were mechanically correct: the edit was clean, the script ran, and the evaluation contract was satisfied. The failure was in the experimental reasoning. The decisive mistake was choosing to reduce WARMDOWN_RATIO from 0.5 to 0.35; that makes the model stay at high LR for a longer fraction of the fixed training budget and removes part of the low-LR tail that appears to be useful for this small fixed-time run. The first wrong step was therefore the schedule-shape choice in the edit, not the commit or run.",
+   "wrong_step_id": 2,
+   "corrected_step": "WARMDOWN_RATIO = 0.65   # fraction of time budget for LR warmdown",
+   "hint": "Instead of shortening the warmdown, try the opposite schedule direction or a different LR-schedule knob, since reducing the low-LR tail made val_bpb worse."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent inspected the current train.py and results, then chose a learning-rate-schedule experiment: shorten the LR warmdown fraction from 0.5 to 0.35 while keeping the final LR at zero, hypothesizing that spending more of the 5-minute budget at full LR would help. It made that one-line change in train.py, committed it, and ran the experiment. The run completed successfully but produced val_bpb 1.024686, which is about 0.003 worse than the current best 1.021636, so it did not meet the improvement threshold.\",\n  \"feedback\": \"The implementation and execution were mechanically correct: the edit was clean, the script ran, and the evaluation contract was satisfied. The failure was in the experimental reasoning. The decisive mistake was choosing to reduce WARMDOWN_RATIO from 0.5 to 0.35; that makes the model stay at high LR for a longer fraction of the fixed training budget and removes part of the low-LR tail that appears to be useful for this small fixed-time run. The first wrong step was therefore the schedule-shape choice in the edit, not the commit or run.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"WARMDOWN_RATIO = 0.65   # fraction of time budget for LR warmdown\",\n  \"hint\": \"Instead of shortening the warmdown, try the opposite schedule direction or a different LR-schedule knob, since reducing the low-LR tail made val_bpb worse.\"\n}",
+  "prompt_chars": 14097,
+  "wall_s": 63.921372175216675
+ }
+}

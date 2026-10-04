@@ -1,0 +1,40 @@
+diff --git a/train.py b/train.py
+index 96e7f71..3b720d1 100644
+--- a/train.py
++++ b/train.py
+@@ -459,13 +459,13 @@ class MuonAdamW(torch.optim.Optimizer):
+ # Model architecture
+ ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO
+ HEAD_DIM = 128          # target head dimension for attention
+-WINDOW_PATTERN = "SSSL" # sliding window pattern: L=full, S=half context
++WINDOW_PATTERN = "L"    # sliding window pattern: L=full, S=half context
+ 
+ # Optimization
+-TOTAL_BATCH_SIZE = 2**19 # ~524K tokens per optimizer step
+-EMBEDDING_LR = 0.6      # learning rate for token embeddings (Adam)
++TOTAL_BATCH_SIZE = 2**17 # ~131K tokens per optimizer step
++EMBEDDING_LR = 1.5      # learning rate for token embeddings (Adam)
+ UNEMBEDDING_LR = 0.004  # learning rate for lm_head (Adam)
+-MATRIX_LR = 0.04        # learning rate for matrix parameters (Muon)
++MATRIX_LR = 0.02        # learning rate for matrix parameters (Muon)
+ SCALAR_LR = 0.5         # learning rate for per-layer scalars (Adam)
+ WEIGHT_DECAY = 0.2      # cautious weight decay for Muon
+ ADAM_BETAS = (0.8, 0.95) # Adam beta1, beta2
+@@ -475,7 +475,7 @@ FINAL_LR_FRAC = 0.0     # final LR as fraction of initial
+ 
+ # Model size
+ DEPTH = 8               # number of transformer layers
+-DEVICE_BATCH_SIZE = 128  # per-device batch size (reduce if OOM)
++DEVICE_BATCH_SIZE = 64  # per-device batch size (reduce if OOM)
+ 
+ # ---------------------------------------------------------------------------
+ # Setup: tokenizer, model, optimizer, dataloader
+@@ -536,7 +536,7 @@ if not USE_FA3:  # build block masks eagerly, outside the compiled graph
+     for (w, _) in set(model.window_sizes):
+         if 0 <= w < MAX_SEQ_LEN:
+             get_block_mask(MAX_SEQ_LEN, w, device)
+-model = torch.compile(model, dynamic=False)
++model = torch.compile(model, dynamic=False, mode="max-autotune-no-cudagraphs")
+ 
+ train_loader = make_dataloader(tokenizer, DEVICE_BATCH_SIZE, MAX_SEQ_LEN, "train")
+ x, y, epoch = next(train_loader)  # prefetch first batch

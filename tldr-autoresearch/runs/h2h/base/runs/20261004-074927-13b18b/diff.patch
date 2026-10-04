@@ -1,0 +1,123 @@
+diff --git a/train.py b/train.py
+index 96e7f71..3f00ae9 100644
+--- a/train.py
++++ b/train.py
+@@ -285,7 +285,7 @@ class GPT(nn.Module):
+             group_params = [p for p in matrix_params if p.shape == shape]
+             param_groups.append(dict(
+                 kind='muon', params=group_params, lr=matrix_lr,
+-                momentum=0.95, ns_steps=5, beta2=0.95, weight_decay=weight_decay,
++                momentum=0.95, ns_steps=4, beta2=0.95, weight_decay=weight_decay,
+             ))
+         optimizer = MuonAdamW(param_groups)
+         for group in optimizer.param_groups:
+@@ -306,10 +306,11 @@ class GPT(nn.Module):
+             x = block(x, ve, cos_sin, self.window_sizes[i])
+         x = norm(x)
+ 
+-        softcap = 15
++        softcap = 0
+         logits = self.lm_head(x)
+         logits = logits.float()
+-        logits = softcap * torch.tanh(logits / softcap)
++        if softcap > 0:
++            logits = softcap * torch.tanh(logits / softcap)
+ 
+         if targets is not None:
+             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1),
+@@ -457,25 +458,25 @@ class MuonAdamW(torch.optim.Optimizer):
+ # ---------------------------------------------------------------------------
+ 
+ # Model architecture
+-ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO
++ASPECT_RATIO = 56       # model_dim = depth * ASPECT_RATIO
+ HEAD_DIM = 128          # target head dimension for attention
+-WINDOW_PATTERN = "SSSL" # sliding window pattern: L=full, S=half context
++WINDOW_PATTERN = "L"    # sliding window pattern: L=full, S=half context
+ 
+ # Optimization
+-TOTAL_BATCH_SIZE = 2**19 # ~524K tokens per optimizer step
++TOTAL_BATCH_SIZE = 2**17 # ~131K tokens per optimizer step
+ EMBEDDING_LR = 0.6      # learning rate for token embeddings (Adam)
+ UNEMBEDDING_LR = 0.004  # learning rate for lm_head (Adam)
+ MATRIX_LR = 0.04        # learning rate for matrix parameters (Muon)
+ SCALAR_LR = 0.5         # learning rate for per-layer scalars (Adam)
+-WEIGHT_DECAY = 0.2      # cautious weight decay for Muon
++WEIGHT_DECAY = 0.1      # cautious weight decay for Muon
+ ADAM_BETAS = (0.8, 0.95) # Adam beta1, beta2
+ WARMUP_RATIO = 0.0      # fraction of time budget for LR warmup
+-WARMDOWN_RATIO = 0.5    # fraction of time budget for LR warmdown
++WARMDOWN_RATIO = 0.85   # fraction of time budget for LR warmdown
+ FINAL_LR_FRAC = 0.0     # final LR as fraction of initial
+ 
+ # Model size
+-DEPTH = 8               # number of transformer layers
+-DEVICE_BATCH_SIZE = 128  # per-device batch size (reduce if OOM)
++DEPTH = 9               # number of transformer layers
++DEVICE_BATCH_SIZE = 64   # per-device batch size (reduce if OOM)
+ 
+ # ---------------------------------------------------------------------------
+ # Setup: tokenizer, model, optimizer, dataloader
+@@ -536,7 +537,7 @@ if not USE_FA3:  # build block masks eagerly, outside the compiled graph
+     for (w, _) in set(model.window_sizes):
+         if 0 <= w < MAX_SEQ_LEN:
+             get_block_mask(MAX_SEQ_LEN, w, device)
+-model = torch.compile(model, dynamic=False)
++model = torch.compile(model, dynamic=False, mode="max-autotune")
+ 
+ train_loader = make_dataloader(tokenizer, DEVICE_BATCH_SIZE, MAX_SEQ_LEN, "train")
+ x, y, epoch = next(train_loader)  # prefetch first batch
+@@ -570,17 +571,39 @@ t_start_training = time.time()
+ smooth_train_loss = 0
+ total_training_time = 0
+ step = 0
++PROFILE_STR = "n/a"
+ 
+ while True:
+     torch.cuda.synchronize()
+     t0 = time.time()
+     for micro_step in range(grad_accum_steps):
+-        with autocast_ctx:
+-            loss = model(x, y)
+-        train_loss = loss.detach()
+-        loss = loss / grad_accum_steps
+-        loss.backward()
+-        x, y, epoch = next(train_loader)
++        if step == 20:
++            torch.cuda.synchronize()
++            t_fwd = time.time()
++            with autocast_ctx:
++                loss = model(x, y)
++            torch.cuda.synchronize()
++            t_bwd = time.time()
++            train_loss = loss.detach()
++            loss = loss / grad_accum_steps
++            loss.backward()
++            torch.cuda.synchronize()
++            t_opt = time.time()
++            x, y, epoch = next(train_loader)
++            torch.cuda.synchronize()
++            t_load = time.time()
++            optimizer.step()
++            torch.cuda.synchronize()
++            t_done = time.time()
++            print(f"[profile] fwd: {(t_bwd-t_fwd)*1000:.1f}ms bwd: {(t_opt-t_bwd)*1000:.1f}ms load: {(t_load-t_opt)*1000:.1f}ms opt: {(t_done-t_load)*1000:.1f}ms", flush=True)
++            PROFILE_STR = f"fwd {(t_bwd-t_fwd)*1000:.1f}ms bwd {(t_opt-t_bwd)*1000:.1f}ms load {(t_load-t_opt)*1000:.1f}ms opt {(t_done-t_load)*1000:.1f}ms"
++        else:
++            with autocast_ctx:
++                loss = model(x, y)
++            train_loss = loss.detach()
++            loss = loss / grad_accum_steps
++            loss.backward()
++            x, y, epoch = next(train_loader)
+ 
+     # Progress and schedules
+     progress = min(total_training_time / TIME_BUDGET, 1.0)
+@@ -650,6 +673,7 @@ steady_state_mfu = 100 * num_flops_per_token * TOTAL_BATCH_SIZE * (step - 10) /
+ peak_vram_mb = torch.cuda.max_memory_allocated() / 1024 / 1024
+ 
+ print("---")
++print(f"profile:          {PROFILE_STR}")
+ print(f"val_bpb:          {val_bpb:.6f}")
+ print(f"training_seconds: {total_training_time:.1f}")
+ print(f"total_seconds:    {t_end - t_start:.1f}")

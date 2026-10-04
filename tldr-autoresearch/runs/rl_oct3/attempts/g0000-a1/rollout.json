@@ -1,0 +1,142 @@
+{
+ "attempt_id": "g0000-a1",
+ "group": 0,
+ "k": 1,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.1056157416674286,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "23f06a8ac9699cf97153e3b44d8454bf4de80bfb",
+  "val_bpb": 1.0799413515696483,
+  "evals": [
+   1.0800244049226273,
+   1.0797958026665053,
+   1.07994979449654,
+   1.0799954041929212
+  ],
+  "train_sha256": "45696ba1f163c0173862c52d7ce07aa154a186803d50d84f35acff689481c954",
+  "run_id": "20261003-153058-23c247"
+ },
+ "policy": {
+  "name": "qwen3.8-27b-fp8",
+  "version": 0,
+  "path": null
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.105616 did not improve on the current best 1.079941 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": false,
+ "insights_in_context": [],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-161439-a2cab0",
+  "attempt_id": "g0000-a1",
+  "ts": "2026-10-03T16:14:39+00:00",
+  "wall_s": 354.0,
+  "head": "23f06a8ac9699cf97153e3b44d8454bf4de80bfb",
+  "branch": "HEAD",
+  "train_sha256": "766cc815c216e26246c58e72e8fc78d2b2fd1e89e13b81ac0b75da49650ccdee",
+  "train_ast_sha256": "c430e368254452a58fd745eb9d32a6ec6f761e4cb67bf556fb7ecdca8f6e4535",
+  "parent_train_sha256": "45696ba1f163c0173862c52d7ce07aa154a186803d50d84f35acff689481c954",
+  "parent_rev": "23f06a8ac9699cf97153e3b44d8454bf4de80bfb",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "increase depth 8 -> 9 (dim 512 -> 640)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.1056157416674286,
+  "metrics": {
+   "val_bpb": 1.1056157416674286,
+   "training_seconds": 300.6,
+   "total_seconds": 351.4,
+   "peak_vram_mb": 61869.5,
+   "mfu_percent": 22.2,
+   "total_tokens_M": 174.1,
+   "num_steps": 332,
+   "num_params_M": 80.9,
+   "depth": 9,
+   "val_bpb_stdout": 1.105616,
+   "t_to_eval": 329.6
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-161439-a2cab0/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-161439-a2cab0/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "b604b39e391771668b5d4a08518d136784e542f5e2eef72bfa722357221d2592",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-161439-a2cab0/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 128,
+     "causal_max_abs": 0.0,
+     "eval_s": 23.22065214199938,
+     "event": "eval",
+     "future_max_abs": 22.274763107299805,
+     "max_mem_mb": 61869.544921875,
+     "n_eval": 1,
+     "t_to_eval": 329.6064090809996,
+     "val_bpb": 1.1056157416674286,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 352.82780719499897
+   }
+  },
+  "ts_end": "2026-10-03T16:20:33+00:00",
+  "last_step": {
+   "step": 331,
+   "pct": 99.9,
+   "loss": 3.103084,
+   "dt_ms": 935,
+   "tok_per_sec": 560578,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0800244049226273,
+  "parent_n": 1,
+  "delta_vs_parent": -0.025591336744801296,
+  "seq": 1
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 428.12680196762085
+ },
+ "desc": "increase depth 8 -> 9 (dim 512 -> 640)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0000-a1/calls.jsonl",
+ "t_end": 1791044440.220482,
+ "insight": {
+  "hint": "Do not increase model size under a fixed compute budget; the larger model trained on too few tokens and got worse, so try a smaller/deeper-or-thinner model or a faster setup instead.",
+  "judge": {
+   "summary": "The agent tried a single model-size scaling experiment by changing one line in train.py from DEPTH = 8 to DEPTH = 9. With the existing aspect-ratio/head-dim logic, this increased the model from about 50.3M to 80.9M parameters. The run completed successfully but produced val_bpb = 1.105616, which is worse than the current best of 1.079941 by about 0.0257. The larger model also consumed more compute per token, reducing the number of training steps from about 506 to 332 and total tokens from about 265.3M to 174.1M within the 5-minute budget.",
+   "feedback": "The error was in the experiment choice/reasoning, not in the code execution: increasing DEPTH made the model substantially larger, so the fixed wall-clock FLOPs budget bought far fewer tokens. The harness statistics show the larger depth-9 model reached only 174.1M tokens versus 265.3M for the depth-8 baseline, and the result was much worse, indicating the baseline is already at or above the useful compute-optimal size for this budget. The agent should not have increased model size; a first correction would be to avoid that edit and instead test the opposite direction or a throughput-improving change.",
+   "wrong_step_id": 3,
+   "corrected_step": "DEPTH = 7               # number of transformer layers",
+   "hint": "Do not increase model size under a fixed compute budget; the larger model trained on too few tokens and got worse, so try a smaller/deeper-or-thinner model or a faster setup instead."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent tried a single model-size scaling experiment by changing one line in train.py from DEPTH = 8 to DEPTH = 9. With the existing aspect-ratio/head-dim logic, this increased the model from about 50.3M to 80.9M parameters. The run completed successfully but produced val_bpb = 1.105616, which is worse than the current best of 1.079941 by about 0.0257. The larger model also consumed more compute per token, reducing the number of training steps from about 506 to 332 and total tokens from about 265.3M to 174.1M within the 5-minute budget.\",\n  \"feedback\": \"The error was in the experiment choice/reasoning, not in the code execution: increasing DEPTH made the model substantially larger, so the fixed wall-clock FLOPs budget bought far fewer tokens. The harness statistics show the larger depth-9 model reached only 174.1M tokens versus 265.3M for the depth-8 baseline, and the result was much worse, indicating the baseline is already at or above the useful compute-optimal size for this budget. The agent should not have increased model size; a first correction would be to avoid that edit and instead test the opposite direction or a throughput-improving change.\",\n  \"wrong_step_id\": 3,\n  \"corrected_step\": \"DEPTH = 7               # number of transformer layers\",\n  \"hint\": \"Do not increase model size under a fixed compute budget; the larger model trained on too few tokens and got worse, so try a smaller/deeper-or-thinner model or a faster setup instead.\"\n}",
+  "prompt_chars": 18137,
+  "wall_s": 64.8033013343811
+ }
+}

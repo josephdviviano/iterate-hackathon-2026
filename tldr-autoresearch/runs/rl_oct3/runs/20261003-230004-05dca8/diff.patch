@@ -1,0 +1,27 @@
+diff --git a/train.py b/train.py
+index 640cc90..8bdf9b3 100644
+--- a/train.py
++++ b/train.py
+@@ -221,10 +221,11 @@ class GPT(nn.Module):
+ 
+     def _compute_window_sizes(self, config):
+         pattern = config.window_pattern.upper()
+-        assert all(c in "SL" for c in pattern)
++        assert all(c in "SML" for c in pattern)
+         long_window = config.sequence_len
++        medium_window = long_window // 2
+         short_window = long_window // 8
+-        char_to_window = {"L": (long_window, 0), "S": (short_window, 0)}
++        char_to_window = {"L": (long_window, 0), "M": (medium_window, 0), "S": (short_window, 0)}
+         window_sizes = []
+         for layer_idx in range(config.n_layer):
+             char = pattern[layer_idx % len(pattern)]
+@@ -458,7 +459,7 @@ class MuonAdamW(torch.optim.Optimizer):
+ 
+ # Model architecture
+ HEAD_DIM = 128          # target head dimension for attention
+-WINDOW_PATTERN = "SSLL" # sliding window pattern: L=full, S=half context
++WINDOW_PATTERN = "SSMM" # sliding window pattern: M=full/2 context, S=full/8 context (last layer always full)
+ 
+ # Optimization
+ TOTAL_BATCH_SIZE = 2**17 # ~131K tokens per optimizer step (smaller batch -> more updates per token)

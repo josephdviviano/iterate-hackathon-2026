@@ -1,0 +1,24 @@
+diff --git a/train.py b/train.py
+index d5a0a91..ac84595 100644
+--- a/train.py
++++ b/train.py
+@@ -5,7 +5,9 @@ Usage: uv run train.py
+ """
+ 
+ import os
+-os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
++# Note: no PYTORCH_ALLOC_CONF=expandable_segments here: CUDA graphs (used via
++# torch.compile mode="max-autotune") need their private graph memory pools, which
++# are incompatible with expandable segments.
+ os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+ 
+ import gc
+@@ -536,7 +538,7 @@ if not USE_FA3:  # build block masks eagerly, outside the compiled graph
+     for (w, _) in set(model.window_sizes):
+         if 0 <= w < MAX_SEQ_LEN:
+             get_block_mask(MAX_SEQ_LEN, w, device)
+-model = torch.compile(model, dynamic=False, mode="max-autotune-no-cudagraphs")
++model = torch.compile(model, dynamic=False, mode="max-autotune")  # max-autotune GEMM tuning + CUDA graphs
+ 
+ train_loader = make_dataloader(tokenizer, DEVICE_BATCH_SIZE, MAX_SEQ_LEN, "train")
+ x, y, epoch = next(train_loader)  # prefetch first batch

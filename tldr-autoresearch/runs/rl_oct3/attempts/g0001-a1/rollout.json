@@ -1,0 +1,139 @@
+{
+ "attempt_id": "g0001-a1",
+ "group": 1,
+ "k": 1,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0236288902039896,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "val_bpb": 1.0198602420773322,
+  "evals": [
+   1.0198602420773322
+  ],
+  "train_sha256": "bb2d210fe0303c6fcaed3c0c759599e761ff83ee3db63c7c125639ef54ee00f4",
+  "run_id": "20261003-172515-086f7c"
+ },
+ "policy": {
+  "name": "qwen3.8-27b-fp8",
+  "version": 0,
+  "path": null
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.023629 did not improve on the current best 1.019860 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": false,
+ "insights_in_context": [],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-173146-bb746c",
+  "attempt_id": "g0001-a1",
+  "ts": "2026-10-03T17:31:46+00:00",
+  "wall_s": 330.1,
+  "head": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "branch": "HEAD",
+  "train_sha256": "ad24b4e77ad03c1797c3696f6583050c7b0dae3b7c5baf412e5b243ee3695770",
+  "train_ast_sha256": "134d6521318e4dec72a344b7b0446200c11387838cedc0eb0a5dc49add9497dc",
+  "parent_train_sha256": "bb2d210fe0303c6fcaed3c0c759599e761ff83ee3db63c7c125639ef54ee00f4",
+  "parent_rev": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "cosine LR warmdown instead of linear",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0236288902039896,
+  "metrics": {
+   "val_bpb": 1.0236288902039896,
+   "training_seconds": 300.1,
+   "total_seconds": 327.6,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.21,
+   "total_tokens_M": 252.3,
+   "num_steps": 1925,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.023629,
+   "t_to_eval": 313.4
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-173146-bb746c/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-173146-bb746c/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "466054de29552e88d36da0e0fcac943ce835042c2768124d6802a656e2889476",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-173146-bb746c/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 5,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.635019805999036,
+     "event": "eval",
+     "future_max_abs": 23.483564376831055,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.3835273120021,
+     "val_bpb": 1.0236288902039896,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 329.01924666500054
+   }
+  },
+  "ts_end": "2026-10-03T17:37:16+00:00",
+  "last_step": {
+   "step": 1924,
+   "pct": 100.0,
+   "loss": 2.877838,
+   "dt_ms": 157,
+   "tok_per_sec": 836219,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0196974596140955,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0039314305898940916,
+  "seq": 12
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 386.46913480758667
+ },
+ "desc": "cosine LR warmdown instead of linear",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0001-a1/calls.jsonl",
+ "t_end": 1791049041.45112,
+ "insight": {
+  "hint": "The history supports extending the linear warmdown further, not replacing it with an untested cosine shape.",
+  "judge": {
+   "summary": "The agent kept the current model, batch size, and 0.7 warmdown length, but changed only the LR warmdown shape in train.py from linear cooldown to cosine decay using the same WARMDOWN_RATIO and FINAL_LR_FRAC. It sanity-checked the multiplier values, committed the change, and ran one experiment. The run completed normally with similar step count, memory, and parameters, but produced val_bpb 1.023629, which is worse than the current best 1.019860 by far more than the required margin, so the experiment was not an improvement.",
+   "feedback": "The implementation itself appears correct and the run satisfied the evaluation contract; the failure is that the cosine warmdown hypothesis was empirically worse than the existing linear warmdown. The decisive mistake was choosing a shape change with no evidence it would beat the already optimized linear schedule, rather than pursuing the more directly supported next step in the trend shown by results.tsv. The code change is not buggy, but the selected experiment was too speculative relative to the history.",
+   "wrong_step_id": 2,
+   "corrected_step": "WARMDOWN_RATIO = 0.8",
+   "hint": "The history supports extending the linear warmdown further, not replacing it with an untested cosine shape."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent kept the current model, batch size, and 0.7 warmdown length, but changed only the LR warmdown shape in train.py from linear cooldown to cosine decay using the same WARMDOWN_RATIO and FINAL_LR_FRAC. It sanity-checked the multiplier values, committed the change, and ran one experiment. The run completed normally with similar step count, memory, and parameters, but produced val_bpb 1.023629, which is worse than the current best 1.019860 by far more than the required margin, so the experiment was not an improvement.\",\n  \"feedback\": \"The implementation itself appears correct and the run satisfied the evaluation contract; the failure is that the cosine warmdown hypothesis was empirically worse than the existing linear warmdown. The decisive mistake was choosing a shape change with no evidence it would beat the already optimized linear schedule, rather than pursuing the more directly supported next step in the trend shown by results.tsv. The code change is not buggy, but the selected experiment was too speculative relative to the history.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"WARMDOWN_RATIO = 0.8\",\n  \"hint\": \"The history supports extending the linear warmdown further, not replacing it with an untested cosine shape.\"\n}",
+  "prompt_chars": 13858,
+  "wall_s": 63.17050647735596
+ }
+}

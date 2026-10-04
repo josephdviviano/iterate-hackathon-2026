@@ -1,0 +1,17 @@
+commit	val_bpb	memory_gb	status	description
+23f06a8	1.079925	44.0	keep	baseline (mean of 6 runs)
+63604b8	1.113336	66.4	discard	scale model up: DEPTH 8 -> 10
+ba2247f	1.106269	26.5	discard	shrink model: DEPTH 8 -> 6 (more tokens in fixed budget)
+bf7d65e	1.024208	43.8	keep	halve TOTAL_BATCH_SIZE 2^19 -> 2^18 [re-run 1.024208]
+19fd00e	1.021257	22.1	keep	halve TOTAL_BATCH_SIZE 2^18 -> 2^17 [re-run 1.021257]
+8be437c	1.028319	22.1	discard	raise Muon MATRIX_LR 0.04 -> 0.06 (match 4x smaller batch)
+d60f2fe	1.032891	11.3	discard	halve TOTAL_BATCH_SIZE 2^17 -> 2^16
+2c7768b	1.021071	22.1	discard	WINDOW_PATTERN SSSL -> LLLL (full attention)
+2c6d820	1.021469	22.1	discard	async dataloader prefetch: overlap CPU packing with GPU compute [invalid: over_time_budget]
+2b693ab	1.019018	22.1	keep	shorten S sliding window 1024 -> 512 for higher tokens/sec [re-run 1.019018]
+967f652	1.016960	22.1	keep	shorten S sliding window 512 -> 256 for higher tokens/sec [re-run 1.016960]
+b81c19e	1.018494	22.1	discard	WINDOW_PATTERN SSSL -> SSSS: window more layers for higher tokens/sec
+1030fdf	1.021672	20.3	discard	GQA 2:1: n_kv_head = n_head//2 to cut k/v matmul FLOPs and value_embed params
+c360038	1.015454	22.1	keep	shorten S sliding window 256 -> 128 for higher tokens/sec [re-run 1.015454]
+2d55a30	1.016059	22.1	discard	shorten L long window 2048 -> 1024 for higher tokens/sec
+f55b4ef	1.017205	22.1	discard	shorten S sliding window 128 -> 64 for higher tokens/sec

@@ -1,0 +1,236 @@
+{
+ "attempt_id": "g0000-a8",
+ "group": 0,
+ "k": 8,
+ "success": true,
+ "reward": 1.0,
+ "status": "keep",
+ "val_bpb": 1.0195346771508587,
+ "confirm_mean": 1.0198602420773322,
+ "confirm": [
+  {
+   "run_id": "20261003-172515-086f7c",
+   "attempt_id": "g0000-a8-confirm1",
+   "ts": "2026-10-03T17:25:15+00:00",
+   "wall_s": 339.7,
+   "head": "e7baeb5efdc0c046ac35df5d8ddd02ae42644755",
+   "branch": "HEAD",
+   "train_sha256": "bb2d210fe0303c6fcaed3c0c759599e761ff83ee3db63c7c125639ef54ee00f4",
+   "train_ast_sha256": "466054de29552e88d36da0e0fcac943ce835042c2768124d6802a656e2889476",
+   "parent_train_sha256": "0b735b5c1fd30cf0bf7e98516138029a4d1ab52e06f82d4c514dc4f3f7467ab6",
+   "parent_rev": "e7baeb5efdc0c046ac35df5d8ddd02ae42644755",
+   "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+   "desc": "lengthen LR warmdown 0.5 -> 0.7 [confirmation re-run]",
+   "status": "ok",
+   "returncode": 0,
+   "val_bpb": 1.0198602420773322,
+   "metrics": {
+    "val_bpb": 1.0198602420773322,
+    "training_seconds": 300.1,
+    "total_seconds": 337.1,
+    "peak_vram_mb": 22653.5,
+    "mfu_percent": 20.22,
+    "total_tokens_M": 252.4,
+    "num_steps": 1926,
+    "num_params_M": 50.3,
+    "depth": 8,
+    "val_bpb_stdout": 1.01986,
+    "t_to_eval": 320.1
+   },
+   "error_tail": null,
+   "flags": [
+    "reeval"
+   ],
+   "diff_path": "$RLTLDR_ROOT/data/runs/20261003-172515-086f7c/diff.patch",
+   "log_path": "$RLTLDR_ROOT/data/runs/20261003-172515-086f7c/run.log",
+   "gpu": "GPU2-UUID",
+   "max_runs": 1,
+   "timeout_s": 660,
+   "parent_ast_sha256": "801a3524cfb220f28bb0a2d753b57ce730eb4d666132f55763ac1c55da931a1e",
+   "mode": "dirty",
+   "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-172515-086f7c/train.py",
+   "deps_git_hashes": [
+    "94ae3298925ddae47821f703faf44d4e3b8381bb",
+    "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+   ],
+   "diff_lines": 2,
+   "trusted": {
+    "valid": true,
+    "evals": [
+     {
+      "batch_size": 64,
+      "causal_max_abs": 0.0,
+      "eval_s": 18.485768438000378,
+      "event": "eval",
+      "future_max_abs": 22.29974365234375,
+      "max_mem_mb": 22653.45654296875,
+      "n_eval": 1,
+      "t_to_eval": 320.0505019420016,
+      "val_bpb": 1.0198602420773322,
+      "val_leak": []
+     }
+    ],
+    "val_leak": [],
+    "bad_lines": 0,
+    "start": {
+     "event": "start",
+     "no_autotune": true
+    },
+    "end": {
+     "event": "end",
+     "n_eval": 1,
+     "t": 338.5370001219999
+    }
+   },
+   "ts_end": "2026-10-03T17:30:54+00:00",
+   "last_step": {
+    "step": 1925,
+    "pct": 100.0,
+    "loss": 2.864773,
+    "dt_ms": 157,
+    "tok_per_sec": 836098,
+    "epoch": 1,
+    "remaining_s": 0
+   },
+   "parent_val_bpb": 1.0216807508506944,
+   "parent_n": 2,
+   "delta_vs_parent": 0.0018205087733622616,
+   "seq": 11
+  }
+ ],
+ "parent": {
+  "commit": "e7baeb5efdc0c046ac35df5d8ddd02ae42644755",
+  "val_bpb": 1.0216361682989887,
+  "evals": [
+   1.0216361682989887
+  ],
+  "train_sha256": "0b735b5c1fd30cf0bf7e98516138029a4d1ab52e06f82d4c514dc4f3f7467ab6",
+  "run_id": "20261003-164839-677097"
+ },
+ "policy": {
+  "name": "qwen3.8-27b-fp8",
+  "version": 0,
+  "path": null
+ },
+ "verdict": [],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Do not increase model size under a fixed compute budget; the larger model trained on too few tokens and got worse, so try a smaller/deeper-or-thinner model or a faster setup instead."
+  },
+  {
+   "idx": 2,
+   "hint": "The failed deeper experiment did not justify making the model thinner, so the next experiment should avoid changing model capacity and instead test a same-size speedup or optimizer/schedule improvement."
+  },
+  {
+   "idx": 5,
+   "hint": "You kept halving the batch size after the gains had already collapsed from ~0.056 to ~0.0024, so the curve peaked at 2^17 and the third halving cost ~0.0115 — hold the batch at 2^17 and pick a different experiment."
+  },
+  {
+   "idx": 6,
+   "hint": "The 'bf16 CE' change was a no-op — the bf16 cross-entropy stays in fp32 under autocast anyway (identical VRAM and step count prove it) — so pick an experiment that changes training dynamics (e.g., LR schedule shape or magnitude) instead of a micro-optimization that doesn't take effect."
+  },
+  {
+   "idx": 7,
+   "hint": "Instead of shortening the warmdown, try the opposite schedule direction or a different LR-schedule knob, since reducing the low-LR tail made val_bpb worse."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-171939-d1bf2a",
+  "attempt_id": "g0000-a8",
+  "ts": "2026-10-03T17:19:39+00:00",
+  "wall_s": 330.0,
+  "head": "e7baeb5efdc0c046ac35df5d8ddd02ae42644755",
+  "branch": "HEAD",
+  "train_sha256": "bb2d210fe0303c6fcaed3c0c759599e761ff83ee3db63c7c125639ef54ee00f4",
+  "train_ast_sha256": "466054de29552e88d36da0e0fcac943ce835042c2768124d6802a656e2889476",
+  "parent_train_sha256": "0b735b5c1fd30cf0bf7e98516138029a4d1ab52e06f82d4c514dc4f3f7467ab6",
+  "parent_rev": "e7baeb5efdc0c046ac35df5d8ddd02ae42644755",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "lengthen LR warmdown 0.5 -> 0.7",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0195346771508587,
+  "metrics": {
+   "val_bpb": 1.0195346771508587,
+   "training_seconds": 300.0,
+   "total_seconds": 327.5,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.21,
+   "total_tokens_M": 252.3,
+   "num_steps": 1925,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.019535,
+   "t_to_eval": 313.2
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-171939-d1bf2a/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-171939-d1bf2a/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "801a3524cfb220f28bb0a2d753b57ce730eb4d666132f55763ac1c55da931a1e",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-171939-d1bf2a/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.675002907999442,
+     "event": "eval",
+     "future_max_abs": 22.315078735351562,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.2122218780023,
+     "val_bpb": 1.0195346771508587,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 328.88792005100186
+   }
+  },
+  "ts_end": "2026-10-03T17:25:09+00:00",
+  "last_step": {
+   "step": 1924,
+   "pct": 100.0,
+   "loss": 2.866216,
+   "dt_ms": 157,
+   "tok_per_sec": 835861,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0216807508506944,
+  "parent_n": 2,
+  "delta_vs_parent": 0.002146073699835771,
+  "seq": 10
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 357.75604462623596
+ },
+ "desc": "lengthen LR warmdown 0.5 -> 0.7",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0000-a8/calls.jsonl",
+ "t_end": 1791048654.903955,
+ "insight": null
+}

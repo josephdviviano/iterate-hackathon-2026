@@ -1,0 +1,142 @@
+{
+ "attempt_id": "g0004-a4",
+ "group": 4,
+ "k": 4,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0074756062269754,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "val_bpb": 1.0076966286985174,
+  "evals": [
+   1.0076966286985174
+  ],
+  "train_sha256": "a5605ead4d0cc51c367041cce4b3a3a20faeb270f22c742eeccccf25c1329b32",
+  "run_id": "20261003-223841-969d6c"
+ },
+ "policy": {
+  "name": "oct3-v4",
+  "version": 4,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v4"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.007476 did not improve on the current best 1.007697 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": false,
+ "insights_in_context": [],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-224813-9b30cb",
+  "attempt_id": "g0004-a4",
+  "ts": "2026-10-03T22:48:13+00:00",
+  "wall_s": 376.8,
+  "head": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "branch": "HEAD",
+  "train_sha256": "77f3a0caa2955aab3da5db5989a5b048c83438a344ec02fa0176411ea72cc27d",
+  "train_ast_sha256": "8a60001e247a5380a4e9a69d2fba40ebd4937a73ca2eb576587b58f83009836b",
+  "parent_train_sha256": "a5605ead4d0cc51c367041cce4b3a3a20faeb270f22c742eeccccf25c1329b32",
+  "parent_rev": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "shorten sliding window 256 -> 128 for cheaper S-layer attention (more updates)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0074756062269754,
+  "metrics": {
+   "val_bpb": 1.0074756062269754,
+   "training_seconds": 300.1,
+   "total_seconds": 373.5,
+   "peak_vram_mb": 26046.0,
+   "mfu_percent": 22.55,
+   "total_tokens_M": 257.7,
+   "num_steps": 1966,
+   "num_params_M": 57.7,
+   "depth": 9,
+   "t_train_trusted": 302.8,
+   "val_bpb_stdout": 1.007476,
+   "t_to_eval": 348.3
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-224813-9b30cb/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-224813-9b30cb/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "e323ef73ae205db881366c73725cca64d74a91530b1b742e4055015b94a1dd9c",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-224813-9b30cb/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 26.682645087996207,
+     "event": "eval",
+     "future_max_abs": 23.66389274597168,
+     "max_mem_mb": 26046.02490234375,
+     "n_eval": 1,
+     "t_to_eval": 348.28458571300143,
+     "t_train2": 45.515549839001324,
+     "train_batches": 1967,
+     "val_bpb": 1.0074756062269754,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 374.96797748300014
+   }
+  },
+  "ts_end": "2026-10-03T22:54:30+00:00",
+  "last_step": {
+   "step": 1965,
+   "pct": 100.0,
+   "loss": 2.803011,
+   "dt_ms": 153,
+   "tok_per_sec": 854783,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0076483113657055,
+  "parent_n": 2,
+  "delta_vs_parent": 0.0001727051387301337,
+  "seq": 48
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 508.171443939209
+ },
+ "desc": "shorten sliding window 256 -> 128 for cheaper S-layer attention (more updates)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0004-a4/calls.jsonl",
+ "t_end": 1791068079.4529982,
+ "insight": {
+  "hint": "The sliding-window-shortening line had already plateaued, so the 256->128 change was a low-EV extrapolation whose ~0.0002 expected gain was below the 0.0005 keep-threshold; pick an experiment with a realistic chance of beating the best by more than 0.0005 instead.",
+  "judge": {
+   "summary": "Continuing the most recent winning line (shorter S-layer sliding window -> cheaper attention -> more optimizer updates), the agent changed exactly one line in train.py so that the S-layer window becomes 128 instead of 256, i.e. `short_window = long_window // 8` -> `long_window // 16` (with sequence_len = 2048 this yields 128), committed it, and ran the experiment. The run succeeded (no crash) and produced val_bpb = 1.007476 (peak_vram 26.0 GB, 1966 steps), which is a 0.000221 improvement over the current best of 1.007697 but well below the required 0.0005 margin, so the harness discards it as not a confirmed improvement.",
+   "feedback": "This was not a code bug: the one-line edit exactly implements the stated 256->128 window change, and the run is valid. The error is in the experiment-selection reasoning. The sliding-window line had already plateaued: by the time the S-window is 256, S-layer attention is a small share of a GEMM-dominated step, so halving it again saves almost no step time, and the extra updates it buys do not compensate for losing long-range context in the 5 S layers. The agent explicitly noted 'the gains may diminish' but still spent its single run on an extrapolation whose expected gain (~0.0002, inside the ~0.0002 measurement noise) was below the 0.0005 keep-threshold. Because only ONE experiment is allowed per session, betting it on a near-no-op was the decisive mistake; the agent should have recognized the diminishing returns and instead targeted a bottleneck with expected gain above 0.0005 (e.g. a GEMM/optimizer-side change or a different architectural knob) rather than continuing a line that had already bottomed out at window 256.",
+   "wrong_step_id": -1,
+   "corrected_step": "",
+   "hint": "The sliding-window-shortening line had already plateaued, so the 256->128 change was a low-EV extrapolation whose ~0.0002 expected gain was below the 0.0005 keep-threshold; pick an experiment with a realistic chance of beating the best by more than 0.0005 instead."
+  },
+  "raw": "\n\n```json\n{\n  \"summary\": \"Continuing the most recent winning line (shorter S-layer sliding window -> cheaper attention -> more optimizer updates), the agent changed exactly one line in train.py so that the S-layer window becomes 128 instead of 256, i.e. `short_window = long_window // 8` -> `long_window // 16` (with sequence_len = 2048 this yields 128), committed it, and ran the experiment. The run succeeded (no crash) and produced val_bpb = 1.007476 (peak_vram 26.0 GB, 1966 steps), which is a 0.000221 improvement over the current best of 1.007697 but well below the required 0.0005 margin, so the harness discards it as not a confirmed improvement.\",\n  \"feedback\": \"This was not a code bug: the one-line edit exactly implements the stated 256->128 window change, and the run is valid. The error is in the experiment-selection reasoning. The sliding-window line had already plateaued: by the time the S-window is 256, S-layer attention is a small share of a GEMM-dominated step, so halving it again saves almost no step time, and the extra updates it buys do not compensate for losing long-range context in the 5 S layers. The agent explicitly noted 'the gains may diminish' but still spent its single run on an extrapolation whose expected gain (~0.0002, inside the ~0.0002 measurement noise) was below the 0.0005 keep-threshold. Because only ONE experiment is allowed per session, betting it on a near-no-op was the decisive mistake; the agent should have recognized the diminishing returns and instead targeted a bottleneck with expected gain above 0.0005 (e.g. a GEMM/optimizer-side change or a different architectural knob) rather than continuing a line that had already bottomed out at window 256.\",\n  \"wrong_step_id\": -1,\n  \"corrected_step\": \"\",\n  \"hint\": \"The sliding-window-shortening line had already plateaued, so the 256->128 change was a low-EV extrapolation whose ~0.0002 expected gain was below the 0.0005 keep-threshold; pick an experiment with a realistic chance of beating the best by more than 0.0005 instead.\"\n}\n```",
+  "prompt_chars": 17665,
+  "wall_s": 96.72316360473633
+ }
+}

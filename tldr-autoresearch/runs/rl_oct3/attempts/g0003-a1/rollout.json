@@ -1,0 +1,139 @@
+{
+ "attempt_id": "g0003-a1",
+ "group": 3,
+ "k": 1,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.016363671210071,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "val_bpb": 1.0137109484151645,
+  "evals": [
+   1.0137109484151645
+  ],
+  "train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "run_id": "20261003-200009-7e25ed"
+ },
+ "policy": {
+  "name": "oct3-v2",
+  "version": 2,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v2"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.016364 did not improve on the current best 1.013711 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": false,
+ "insights_in_context": [],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-203027-c6d74c",
+  "attempt_id": "g0003-a1",
+  "ts": "2026-10-03T20:30:27+00:00",
+  "wall_s": 385.2,
+  "head": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "branch": "HEAD",
+  "train_sha256": "daf92a3835d9671bdfc35523a7a65505dd5eb25c2523183c159bd4c5dae61675",
+  "train_ast_sha256": "24d6ac787c9d0daca3b67e9a10022acd714951f6e819fb04f5922071732451d1",
+  "parent_train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "parent_rev": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "reduce MLP expansion 4x -> 3x for cheaper steps / more updates",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.016363671210071,
+  "metrics": {
+   "val_bpb": 1.016363671210071,
+   "training_seconds": 300.0,
+   "total_seconds": 382.2,
+   "peak_vram_mb": 21648.1,
+   "mfu_percent": 22.44,
+   "total_tokens_M": 295.4,
+   "num_steps": 2254,
+   "num_params_M": 46.1,
+   "depth": 8,
+   "val_bpb_stdout": 1.016364,
+   "t_to_eval": 358.3
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-203027-c6d74c/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-203027-c6d74c/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "a00770dbae1512567b8a601e51c38b8b5d6f5374719486d80a8d3bd25bf6bb5d",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-203027-c6d74c/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 4,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 25.30628969600002,
+     "event": "eval",
+     "future_max_abs": 21.785978317260742,
+     "max_mem_mb": 21648.14208984375,
+     "n_eval": 1,
+     "t_to_eval": 358.29838752700016,
+     "val_bpb": 1.016363671210071,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 383.6053841520006
+   }
+  },
+  "ts_end": "2026-10-03T20:36:52+00:00",
+  "last_step": {
+   "step": 2253,
+   "pct": 100.0,
+   "loss": 2.839733,
+   "dt_ms": 134,
+   "tok_per_sec": 979752,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0138485903277128,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0025150808823581894,
+  "seq": 34
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 601.9255499839783
+ },
+ "desc": "reduce MLP expansion 4x -> 3x for cheaper steps / more updates",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0003-a1/calls.jsonl",
+ "t_end": 1791059822.7587073,
+ "insight": {
+  "hint": "Reducing MLP capacity to buy more steps made the model under-capacity, so the experiment should not have shrunk the 4x MLP expansion.",
+  "judge": {
+   "summary": "The agent tried to buy more optimizer steps by reducing the transformer MLP expansion ratio from 4x to 3x in train.py. It edited the two MLP linear layers to use 3 * config.n_embd instead of 4 * config.n_embd, committed the change, and ran the experiment. The run completed successfully and produced val_bpb = 1.016364 with peak VRAM 21.6 GB, which is clearly worse than the current best 1.013711 and therefore failed the improvement threshold.",
+   "feedback": "The code change was implemented correctly and the run was valid, so this is not a syntax or execution bug. The decisive mistake was the experimental premise: the agent assumed the model was limited by optimizer-step count and that removing MLP FLOPs/parameters would improve val_bpb by enabling more steps. The result refutes that assumption: the run gained about 9% more steps and tokens (2254 vs 2063 steps, 295.4M vs 270.4M tokens) while reducing parameters from 50.3M to 46.1M, but val_bpb worsened by about 0.0027. This indicates the model is capacity-limited at this compute budget, not update-count-limited. The first wrong decision was choosing this capacity-reduction experiment in the first place, rather than an untried capacity or efficiency-preserving variant such as revisiting the near-miss depth-9 + SSLL configuration on the current max-autotune baseline.",
+   "wrong_step_id": 5,
+   "corrected_step": "        self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd, bias=False)\n        self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd, bias=False)",
+   "hint": "Reducing MLP capacity to buy more steps made the model under-capacity, so the experiment should not have shrunk the 4x MLP expansion."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent tried to buy more optimizer steps by reducing the transformer MLP expansion ratio from 4x to 3x in train.py. It edited the two MLP linear layers to use 3 * config.n_embd instead of 4 * config.n_embd, committed the change, and ran the experiment. The run completed successfully and produced val_bpb = 1.016364 with peak VRAM 21.6 GB, which is clearly worse than the current best 1.013711 and therefore failed the improvement threshold.\",\n  \"feedback\": \"The code change was implemented correctly and the run was valid, so this is not a syntax or execution bug. The decisive mistake was the experimental premise: the agent assumed the model was limited by optimizer-step count and that removing MLP FLOPs/parameters would improve val_bpb by enabling more steps. The result refutes that assumption: the run gained about 9% more steps and tokens (2254 vs 2063 steps, 295.4M vs 270.4M tokens) while reducing parameters from 50.3M to 46.1M, but val_bpb worsened by about 0.0027. This indicates the model is capacity-limited at this compute budget, not update-count-limited. The first wrong decision was choosing this capacity-reduction experiment in the first place, rather than an untried capacity or efficiency-preserving variant such as revisiting the near-miss depth-9 + SSLL configuration on the current max-autotune baseline.\",\n  \"wrong_step_id\": 5,\n  \"corrected_step\": \"        self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd, bias=False)\\n        self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd, bias=False)\",\n  \"hint\": \"Reducing MLP capacity to buy more steps made the model under-capacity, so the experiment should not have shrunk the 4x MLP expansion.\"\n}",
+  "prompt_chars": 20819,
+  "wall_s": 262.2750434875488
+ }
+}

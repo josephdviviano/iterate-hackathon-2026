@@ -1,0 +1,16 @@
+commit	val_bpb	memory_gb	status	description
+8721165	1.079779	44.0	keep	baseline
+3da42df	1.024218	43.8	keep	halve TOTAL_BATCH_SIZE to 2^18
+637703b	1.021767	22.1	keep	halve batch again to 2^17 (device 64)
+a4f80a0	1.020785	22.1	keep	window pattern SSSL -> L
+6ef9f36	1.018630	22.1	keep	matrix lr 0.04 -> 0.03
+2beb2d2	1.017200	22.1	keep	matrix lr 0.03 -> 0.02
+8e38303	1.016649	22.1	keep	embedding lr 0.6 -> 1.0
+3bc0a30	1.013395	24.1	keep	compile max-autotune-no-cudagraphs
+57e2e98	0.000000	0.0	crash	remove value embeddings (NameError, fixed)
+353dc41	1.026081	23.6	discard	remove value embeddings (worse)
+29a94bc	0.000000	0.0	crash	device batch 128 (exceeds total batch 2^17)
+4f993d5	1.013216	26.7	keep	depth 9 same width 512 (repeat: 1.0132)
+f0c1757	1.012210	26.7	keep	rotary base 10000 -> 50000
+98eee3c	0.000000	0.0	crash	muon mlp only (assert bug, fixed)
+0ef8aba	1.054896	26.7	discard	muon mlp only, adamw attn 0.02 (worse)

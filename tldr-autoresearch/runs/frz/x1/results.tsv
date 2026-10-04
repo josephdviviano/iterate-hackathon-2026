@@ -1,0 +1,17 @@
+commit	val_bpb	memory_gb	status	description
+23f06a8	1.079925	44.0	keep	baseline (mean of 6 runs)
+63604b8	1.112880	66.4	discard	scale up: DEPTH 8->10, n_embd 512->640
+fb7708e	1.067101	22.9	keep	shrink model: DEPTH 8->5 (n_embd 512->384) to increase tokens/param [re-run 1.067101]
+c641743	1.118889	14.1	discard	shrink model: DEPTH 5->4 (n_embd 384->256) to increase tokens/param
+a375f81	1.059184	22.9	keep	shorten LR warmdown: WARMDOWN_RATIO 0.5 -> 0.25 [re-run 1.059184]
+080da8b	1.048194	22.9	keep	halve TOTAL_BATCH_SIZE 2^19 -> 2^18 for more optimizer steps (grad_accum 2->1) [re-run 1.048194]
+5f628e2	1.050861	11.5	discard	halve TOTAL_BATCH_SIZE 2^18 -> 2^17 (device batch 64) for more optimizer steps
+f7ffeb6	1.048922	22.9	discard	raise Muon MATRIX_LR 0.04 -> 0.05
+fcc5c7d	1.051749	22.9	discard	shorten LR warmdown: WARMDOWN_RATIO 0.25 -> 0.15
+82336cb	1.047913	22.9	discard	raise EMBEDDING_LR 0.6 -> 0.8 for faster embedding learning
+c6e4c8c	1.049009	22.9	discard	double UNEMBEDDING_LR 0.004 -> 0.008 for faster lm_head learning
+3d70f35	1.047039	26.4	discard	scale depth 5 -> 6 (same n_embd 384) for more capacity at fixed time budget [re-run 1.049674]
+8642213	1.070157	19.7	discard	reduce HEAD_DIM 128->64: more attention heads (3->5) + smaller n_embd (384->320)
+34ea91c	1.055324	22.9	discard	isolate head-count change: HEAD_DIM 128->64 with n_embd fixed at 384 (3->6 heads, same FLOPs)
+70bf718	1.047513	22.9	keep	longer attention windows: WINDOW_PATTERN SSSL -> SLLL (near-zero extra FLOPs) [re-run 1.047513]
+47e459e	1.047356	22.9	discard	WINDOW_PATTERN SLLL -> LLLL: all layers full-attention

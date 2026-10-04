@@ -1,0 +1,13 @@
+diff --git a/train.py b/train.py
+index 3ca7b07..d5a0a91 100644
+--- a/train.py
++++ b/train.py
+@@ -536,7 +536,7 @@ if not USE_FA3:  # build block masks eagerly, outside the compiled graph
+     for (w, _) in set(model.window_sizes):
+         if 0 <= w < MAX_SEQ_LEN:
+             get_block_mask(MAX_SEQ_LEN, w, device)
+-model = torch.compile(model, dynamic=False)
++model = torch.compile(model, dynamic=False, mode="max-autotune-no-cudagraphs")
+ 
+ train_loader = make_dataloader(tokenizer, DEVICE_BATCH_SIZE, MAX_SEQ_LEN, "train")
+ x, y, epoch = next(train_loader)  # prefetch first batch

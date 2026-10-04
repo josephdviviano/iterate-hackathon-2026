@@ -1,0 +1,242 @@
+{
+ "attempt_id": "g0001-a5",
+ "group": 1,
+ "k": 5,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0170593644456167,
+ "confirm_mean": 1.0173971448858277,
+ "confirm": [
+  {
+   "run_id": "20261003-181130-5a2e8d",
+   "attempt_id": "g0001-a5-confirm1",
+   "ts": "2026-10-03T18:11:30+00:00",
+   "wall_s": 339.9,
+   "head": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+   "branch": "HEAD",
+   "train_sha256": "632a11ffdb50949f423cce68356c20e4789480f26d61364e1953b22b1ccccbdc",
+   "train_ast_sha256": "389e79b3cbf9d47bc7afd3e5f21078b748390733ad69b328f47c8a4acc997ae3",
+   "parent_train_sha256": "492c53b6b893980a2a1d789486fa945f811bb513f2dd24642b505bbdfd2ae888",
+   "parent_rev": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+   "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+   "desc": "lower Muon matrix LR 0.03 -> 0.025 [confirmation re-run]",
+   "status": "ok",
+   "returncode": 0,
+   "val_bpb": 1.0173971448858277,
+   "metrics": {
+    "val_bpb": 1.0173971448858277,
+    "training_seconds": 300.0,
+    "total_seconds": 337.3,
+    "peak_vram_mb": 22653.5,
+    "mfu_percent": 20.21,
+    "total_tokens_M": 252.3,
+    "num_steps": 1925,
+    "num_params_M": 50.3,
+    "depth": 8,
+    "val_bpb_stdout": 1.017397,
+    "t_to_eval": 320.2
+   },
+   "error_tail": null,
+   "flags": [
+    "reeval"
+   ],
+   "diff_path": "$RLTLDR_ROOT/data/runs/20261003-181130-5a2e8d/diff.patch",
+   "log_path": "$RLTLDR_ROOT/data/runs/20261003-181130-5a2e8d/run.log",
+   "gpu": "GPU2-UUID",
+   "max_runs": 1,
+   "timeout_s": 660,
+   "parent_ast_sha256": "16a61bae506b3fb43bc4576916aabf7c7b1c49e2b88bad9e62d0f120cbfcc8bf",
+   "mode": "dirty",
+   "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-181130-5a2e8d/train.py",
+   "deps_git_hashes": [
+    "94ae3298925ddae47821f703faf44d4e3b8381bb",
+    "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+   ],
+   "diff_lines": 2,
+   "trusted": {
+    "valid": true,
+    "evals": [
+     {
+      "batch_size": 64,
+      "causal_max_abs": 0.0,
+      "eval_s": 18.49608953600182,
+      "event": "eval",
+      "future_max_abs": 22.570484161376953,
+      "max_mem_mb": 22653.45654296875,
+      "n_eval": 1,
+      "t_to_eval": 320.2146288299991,
+      "val_bpb": 1.0173971448858277,
+      "val_leak": []
+     }
+    ],
+    "val_leak": [],
+    "bad_lines": 0,
+    "start": {
+     "event": "start",
+     "no_autotune": true
+    },
+    "end": {
+     "event": "end",
+     "n_eval": 1,
+     "t": 338.7114615970022
+    }
+   },
+   "ts_end": "2026-10-03T18:17:10+00:00",
+   "last_step": {
+    "step": 1924,
+    "pct": 100.0,
+    "loss": 2.860873,
+    "dt_ms": 157,
+    "tok_per_sec": 835383,
+    "epoch": 1,
+    "remaining_s": 0
+   },
+   "parent_val_bpb": 1.0176975197414182,
+   "parent_n": 2,
+   "delta_vs_parent": 0.000300374855590535,
+   "seq": 18
+  }
+ ],
+ "parent": {
+  "commit": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "val_bpb": 1.0176044380166172,
+  "evals": [
+   1.0176044380166172
+  ],
+  "train_sha256": "492c53b6b893980a2a1d789486fa945f811bb513f2dd24642b505bbdfd2ae888",
+  "run_id": "20261003-175940-65935d"
+ },
+ "policy": {
+  "name": "oct3-v1",
+  "version": 1,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v1"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment's run gave val_bpb = 1.017059, which looked better than the current best 1.017604, but the harness's independent re-run(s) of the same code gave 1.017397, which did not beat the best by the required margin of 0.0005: the first result did not reproduce."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "The history supports extending the linear warmdown further, not replacing it with an untested cosine shape."
+  },
+  {
+   "idx": 2,
+   "hint": "You picked a too-small continuation of an already-saturating warmdown axis instead of trying a more impactful untested hyperparameter."
+  },
+  {
+   "idx": 3,
+   "hint": "Instead of raising the Muon matrix LR, try a smaller downward change from the current 0.04 value."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-180552-46b6cc",
+  "attempt_id": "g0001-a5",
+  "ts": "2026-10-03T18:05:52+00:00",
+  "wall_s": 330.2,
+  "head": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "branch": "HEAD",
+  "train_sha256": "632a11ffdb50949f423cce68356c20e4789480f26d61364e1953b22b1ccccbdc",
+  "train_ast_sha256": "389e79b3cbf9d47bc7afd3e5f21078b748390733ad69b328f47c8a4acc997ae3",
+  "parent_train_sha256": "492c53b6b893980a2a1d789486fa945f811bb513f2dd24642b505bbdfd2ae888",
+  "parent_rev": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "lower Muon matrix LR 0.03 -> 0.025",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0170593644456167,
+  "metrics": {
+   "val_bpb": 1.0170593644456167,
+   "training_seconds": 300.1,
+   "total_seconds": 327.7,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.21,
+   "total_tokens_M": 252.3,
+   "num_steps": 1925,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.017059,
+   "t_to_eval": 313.5
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-180552-46b6cc/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-180552-46b6cc/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "16a61bae506b3fb43bc4576916aabf7c7b1c49e2b88bad9e62d0f120cbfcc8bf",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-180552-46b6cc/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.619122870000865,
+     "event": "eval",
+     "future_max_abs": 24.03308868408203,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.4602991419997,
+     "val_bpb": 1.0170593644456167,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 329.0801192550025
+   }
+  },
+  "ts_end": "2026-10-03T18:11:22+00:00",
+  "last_step": {
+   "step": 1924,
+   "pct": 100.0,
+   "loss": 2.859256,
+   "dt_ms": 157,
+   "tok_per_sec": 836014,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0176975197414182,
+  "parent_n": 2,
+  "delta_vs_parent": 0.000638155295801468,
+  "seq": 17
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 370.263596534729
+ },
+ "desc": "lower Muon matrix LR 0.03 -> 0.025",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0001-a5/calls.jsonl",
+ "t_end": 1791051430.4725869,
+ "insight": {
+  "hint": "Do not commit a tiny hyperparameter tweak whose apparent gain is only barely above the noise threshold; choose a change with a larger expected effect or verify that the margin is robust.",
+  "judge": {
+   "summary": "The agent continued the most recently successful hyperparameter axis by lowering the Muon matrix learning rate in train.py from 0.03 to 0.025, committed the one-line change, and ran the experiment. The initial run reported val_bpb 1.017059, nominally better than the current best 1.017604 by more than the required 0.0005 margin. However, the harness re-run of the same code gave val_bpb 1.017397, which did not beat the current best by the required margin, so the apparent improvement was not confirmed and the experiment was discarded.",
+   "feedback": "The failure was not a syntax or runtime error; it was an under-powered micro-tune. Changing MATRIX_LR from 0.03 to 0.025 produced an initial result that was only marginally better than the current best, and the independent re-run was clearly within the noise band around the previous best. The decisive error was treating that single apparent win as evidence of a real improvement and framing it as a confirmed gain in the summary. For a change to be worth committing, the expected or observed effect should be comfortably larger than measurement noise, especially when the prior step on the same axis already showed diminishing returns.",
+   "wrong_step_id": 2,
+   "corrected_step": "MATRIX_LR = 0.03        # learning rate for matrix parameters (Muon)",
+   "hint": "Do not commit a tiny hyperparameter tweak whose apparent gain is only barely above the noise threshold; choose a change with a larger expected effect or verify that the margin is robust."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent continued the most recently successful hyperparameter axis by lowering the Muon matrix learning rate in train.py from 0.03 to 0.025, committed the one-line change, and ran the experiment. The initial run reported val_bpb 1.017059, nominally better than the current best 1.017604 by more than the required 0.0005 margin. However, the harness re-run of the same code gave val_bpb 1.017397, which did not beat the current best by the required margin, so the apparent improvement was not confirmed and the experiment was discarded.\",\n  \"feedback\": \"The failure was not a syntax or runtime error; it was an under-powered micro-tune. Changing MATRIX_LR from 0.03 to 0.025 produced an initial result that was only marginally better than the current best, and the independent re-run was clearly within the noise band around the previous best. The decisive error was treating that single apparent win as evidence of a real improvement and framing it as a confirmed gain in the summary. For a change to be worth committing, the expected or observed effect should be comfortably larger than measurement noise, especially when the prior step on the same axis already showed diminishing returns.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"MATRIX_LR = 0.03        # learning rate for matrix parameters (Muon)\",\n  \"hint\": \"Do not commit a tiny hyperparameter tweak whose apparent gain is only barely above the noise threshold; choose a change with a larger expected effect or verify that the margin is robust.\"\n}",
+  "prompt_chars": 12534,
+  "wall_s": 91.2398681640625
+ }
+}

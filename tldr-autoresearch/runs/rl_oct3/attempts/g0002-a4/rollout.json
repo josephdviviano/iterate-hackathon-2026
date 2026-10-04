@@ -1,0 +1,238 @@
+{
+ "attempt_id": "g0002-a4",
+ "group": 2,
+ "k": 4,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0161315775140127,
+ "confirm_mean": 1.016600596586163,
+ "confirm": [
+  {
+   "run_id": "20261003-192804-5400a3",
+   "attempt_id": "g0002-a4-confirm1",
+   "ts": "2026-10-03T19:28:04+00:00",
+   "wall_s": 342.4,
+   "head": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+   "branch": "HEAD",
+   "train_sha256": "92dcc93d73c7a07d85b74d81d9b6554297c9402c50158e060a39f2a1ad2995b4",
+   "train_ast_sha256": "c013ceb73553ac5d949792d3ce9416ae766347c307fb1fbbc38751a947567565",
+   "parent_train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+   "parent_rev": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+   "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+   "desc": "depth 8 -> 9 with width held at 512 (explicit MODEL_DIM) and SSLL pattern [confirmation re-run]",
+   "status": "ok",
+   "returncode": 0,
+   "val_bpb": 1.016600596586163,
+   "metrics": {
+    "val_bpb": 1.016600596586163,
+    "training_seconds": 300.1,
+    "total_seconds": 339.8,
+    "peak_vram_mb": 25277.5,
+    "mfu_percent": 21.66,
+    "total_tokens_M": 228.5,
+    "num_steps": 1743,
+    "num_params_M": 57.7,
+    "depth": 9,
+    "val_bpb_stdout": 1.016601,
+    "t_to_eval": 321.6
+   },
+   "error_tail": null,
+   "flags": [
+    "reeval"
+   ],
+   "diff_path": "$RLTLDR_ROOT/data/runs/20261003-192804-5400a3/diff.patch",
+   "log_path": "$RLTLDR_ROOT/data/runs/20261003-192804-5400a3/run.log",
+   "gpu": "GPU2-UUID",
+   "max_runs": 1,
+   "timeout_s": 660,
+   "parent_ast_sha256": "c79b088c0f0fd3e5b93a7bec565e4b36bdb250317a7436690c423b4c71849719",
+   "mode": "dirty",
+   "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-192804-5400a3/train.py",
+   "deps_git_hashes": [
+    "94ae3298925ddae47821f703faf44d4e3b8381bb",
+    "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+   ],
+   "diff_lines": 7,
+   "trusted": {
+    "valid": true,
+    "evals": [
+     {
+      "batch_size": 64,
+      "causal_max_abs": 0.0,
+      "eval_s": 19.50330915700033,
+      "event": "eval",
+      "future_max_abs": 22.381614685058594,
+      "max_mem_mb": 25277.48486328125,
+      "n_eval": 1,
+      "t_to_eval": 321.64929286999904,
+      "val_bpb": 1.016600596586163,
+      "val_leak": []
+     }
+    ],
+    "val_leak": [],
+    "bad_lines": 0,
+    "start": {
+     "event": "start",
+     "no_autotune": true
+    },
+    "end": {
+     "event": "end",
+     "n_eval": 1,
+     "t": 341.153338447999
+    }
+   },
+   "ts_end": "2026-10-03T19:33:46+00:00",
+   "last_step": {
+    "step": 1742,
+    "pct": 100.0,
+    "loss": 2.86115,
+    "dt_ms": 173,
+    "tok_per_sec": 756410,
+    "epoch": 1,
+    "remaining_s": 0
+   },
+   "parent_val_bpb": 1.0169081747663617,
+   "parent_n": 2,
+   "delta_vs_parent": 0.00030757818019866434,
+   "seq": 27
+  }
+ ],
+ "parent": {
+  "commit": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "val_bpb": 1.0169535025171206,
+  "evals": [
+   1.0169535025171206
+  ],
+  "train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "run_id": "20261003-185840-8515a2"
+ },
+ "policy": {
+  "name": "oct3-v2",
+  "version": 2,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v2"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment's run gave val_bpb = 1.016132, which looked better than the current best 1.016954, but the harness's independent re-run(s) of the same code gave 1.016601, which did not beat the best by the required margin of 0.0005: the first result did not reproduce."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 2,
+   "hint": "Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead."
+  },
+  {
+   "idx": 3,
+   "hint": "Changing DEPTH alone also changed the model width in this setup, so you must explicitly hold MODEL_DIM at 512 for a true depth-9 comparison."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-192218-8dd5c8",
+  "attempt_id": "g0002-a4",
+  "ts": "2026-10-03T19:22:18+00:00",
+  "wall_s": 337.5,
+  "head": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "branch": "HEAD",
+  "train_sha256": "92dcc93d73c7a07d85b74d81d9b6554297c9402c50158e060a39f2a1ad2995b4",
+  "train_ast_sha256": "c013ceb73553ac5d949792d3ce9416ae766347c307fb1fbbc38751a947567565",
+  "parent_train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "parent_rev": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "depth 8 -> 9 with width held at 512 (explicit MODEL_DIM) and SSLL pattern",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0161315775140127,
+  "metrics": {
+   "val_bpb": 1.0161315775140127,
+   "training_seconds": 300.1,
+   "total_seconds": 334.9,
+   "peak_vram_mb": 25277.5,
+   "mfu_percent": 21.66,
+   "total_tokens_M": 228.5,
+   "num_steps": 1743,
+   "num_params_M": 57.7,
+   "depth": 9,
+   "val_bpb_stdout": 1.016132,
+   "t_to_eval": 316.8
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-192218-8dd5c8/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-192218-8dd5c8/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "c79b088c0f0fd3e5b93a7bec565e4b36bdb250317a7436690c423b4c71849719",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-192218-8dd5c8/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 7,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 19.51786815200103,
+     "event": "eval",
+     "future_max_abs": 21.66794776916504,
+     "max_mem_mb": 25277.48486328125,
+     "n_eval": 1,
+     "t_to_eval": 316.8365320310004,
+     "val_bpb": 1.0161315775140127,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 336.3551427700004
+   }
+  },
+  "ts_end": "2026-10-03T19:27:56+00:00",
+  "last_step": {
+   "step": 1742,
+   "pct": 100.0,
+   "loss": 2.860065,
+   "dt_ms": 173,
+   "tok_per_sec": 756721,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0169081747663617,
+  "parent_n": 2,
+  "delta_vs_parent": 0.0007765972523490206,
+  "seq": 26
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 419.2065145969391
+ },
+ "desc": "depth 8 -> 9 with width held at 512 (explicit MODEL_DIM) and SSLL pattern",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0002-a4/calls.jsonl",
+ "t_end": 1791056026.6591637,
+ "insight": {
+  "hint": "An apparent win must be confirmed with one fresh re-run before declaring the experiment successful.",
+  "judge": {
+   "summary": "The agent attempted a cleaner depth-9 variant of the current best by replacing the aspect-ratio-based width calculation with a fixed MODEL_DIM = 512, increasing DEPTH from 8 to 9 while keeping the winning SSLL window pattern. This made the model deeper without widening it to 640 as in the earlier bad depth-9/SSLL attempt. The first run reported val_bpb 1.016132, which appears to beat the current best 1.016954 by more than the 0.0005 margin. However, the independent confirmation re-run gave val_bpb 1.016601, which does not beat the current best by the required margin, so the apparent improvement was not reproduced and the experiment failed.",
+   "feedback": "The decisive problem is that the agent treated a single apparent win as final without performing the required fresh confirmation re-run. The first measured value, 1.016132, looked like an improvement, but the follow-up re-run, 1.016601, was only marginally better than the previous best and fell short of the 0.0005 confirmation threshold. Therefore the improvement was noise or an unstable run, not a robust result. The agent should have stopped after the initial run only as an apparent win, then rerun the identical committed code once before claiming success; the final summary should have reported the unconfirmed result and the re-run outcome, not declared the idea a win.",
+   "wrong_step_id": 7,
+   "corrected_step": "cd $RLTLDR_ROOT/autoresearch && ./run.sh \"depth 8 -> 9 with width held at 512 (explicit MODEL_DIM) and SSLL pattern (confirm re-run)\"",
+   "hint": "An apparent win must be confirmed with one fresh re-run before declaring the experiment successful."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent attempted a cleaner depth-9 variant of the current best by replacing the aspect-ratio-based width calculation with a fixed MODEL_DIM = 512, increasing DEPTH from 8 to 9 while keeping the winning SSLL window pattern. This made the model deeper without widening it to 640 as in the earlier bad depth-9/SSLL attempt. The first run reported val_bpb 1.016132, which appears to beat the current best 1.016954 by more than the 0.0005 margin. However, the independent confirmation re-run gave val_bpb 1.016601, which does not beat the current best by the required margin, so the apparent improvement was not reproduced and the experiment failed.\",\n  \"feedback\": \"The decisive problem is that the agent treated a single apparent win as final without performing the required fresh confirmation re-run. The first measured value, 1.016132, looked like an improvement, but the follow-up re-run, 1.016601, was only marginally better than the previous best and fell short of the 0.0005 confirmation threshold. Therefore the improvement was noise or an unstable run, not a robust result. The agent should have stopped after the initial run only as an apparent win, then rerun the identical committed code once before claiming success; the final summary should have reported the unconfirmed result and the re-run outcome, not declared the idea a win.\",\n  \"wrong_step_id\": 7,\n  \"corrected_step\": \"cd $RLTLDR_ROOT/autoresearch && ./run.sh \\\"depth 8 -> 9 with width held at 512 (explicit MODEL_DIM) and SSLL pattern (confirm re-run)\\\"\",\n  \"hint\": \"An apparent win must be confirmed with one fresh re-run before declaring the experiment successful.\"\n}",
+  "prompt_chars": 19968,
+  "wall_s": 92.71462631225586
+ }
+}

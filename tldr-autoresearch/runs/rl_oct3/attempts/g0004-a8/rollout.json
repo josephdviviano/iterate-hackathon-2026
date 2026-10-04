@@ -1,0 +1,163 @@
+{
+ "attempt_id": "g0004-a8",
+ "group": 4,
+ "k": 8,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0088681055712505,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "val_bpb": 1.0076966286985174,
+  "evals": [
+   1.0076966286985174
+  ],
+  "train_sha256": "a5605ead4d0cc51c367041cce4b3a3a20faeb270f22c742eeccccf25c1329b32",
+  "run_id": "20261003-223841-969d6c"
+ },
+ "policy": {
+  "name": "oct3-v4",
+  "version": 4,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v4"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.008868 did not improve on the current best 1.007697 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Do not enable value embeddings on every layer; the previous all-layer VE result was not a true win over the relevant max-autotune baseline."
+  },
+  {
+   "idx": 4,
+   "hint": "The sliding-window-shortening line had already plateaued, so the 256->128 change was a low-EV extrapolation whose ~0.0002 expected gain was below the 0.0005 keep-threshold; pick an experiment with a realistic chance of beating the best by more than 0.0005 instead."
+  },
+  {
+   "idx": 5,
+   "hint": "Do not shorten the long-range L layers to 1024; the model still needs full 2048 context in more than the final layer, so choose a non-context-sacrificing experiment instead."
+  },
+  {
+   "idx": 6,
+   "hint": "Raising Muon momentum to 0.97 hurt, so the momentum knob should not have been increased; if revisiting it, test lowering the steady-state momentum instead."
+  },
+  {
+   "idx": 7,
+   "hint": "The experiment was executed correctly but the hypothesis was wrong: 0.95 is already the optimal Muon momentum, and both raising and lowering it degrade val_bpb, so this hyperparameter is exhausted in both directions and a future session should target a different unexplored knob (e.g. an intermediate sliding window between 128 and 256, or a re-run of the 256→128 near-miss to rule out noise)."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-233207-f1e09b",
+  "attempt_id": "g0004-a8",
+  "ts": "2026-10-03T23:32:07+00:00",
+  "wall_s": 351.8,
+  "head": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "branch": "HEAD",
+  "train_sha256": "9a09d91b2265b1175fbdc20e90672e823c147ab861ba53936b24d2e8304ed122",
+  "train_ast_sha256": "023f726d0c6424d56c2c10f90a84ea1a4452006ba6e1f7cf3e8f5d87f3917e9d",
+  "parent_train_sha256": "a5605ead4d0cc51c367041cce4b3a3a20faeb270f22c742eeccccf25c1329b32",
+  "parent_rev": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "floor LR warmdown at 10% of initial (FINAL_LR_FRAC 0.0 -> 0.1)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0088681055712505,
+  "metrics": {
+   "val_bpb": 1.0088681055712505,
+   "training_seconds": 300.1,
+   "total_seconds": 349.1,
+   "peak_vram_mb": 25277.5,
+   "mfu_percent": 22.57,
+   "total_tokens_M": 254.9,
+   "num_steps": 1945,
+   "num_params_M": 57.7,
+   "depth": 9,
+   "t_train_trusted": 302.7,
+   "val_bpb_stdout": 1.008868,
+   "t_to_eval": 333.1
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-233207-f1e09b/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-233207-f1e09b/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "e323ef73ae205db881366c73725cca64d74a91530b1b742e4055015b94a1dd9c",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-233207-f1e09b/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 17.422164226998575,
+     "event": "eval",
+     "future_max_abs": 23.029491424560547,
+     "max_mem_mb": 25277.48486328125,
+     "n_eval": 1,
+     "t_to_eval": 333.0773330150041,
+     "t_train2": 30.36337096000352,
+     "train_batches": 1946,
+     "val_bpb": 1.0088681055712505,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 350.5001592990011
+   }
+  },
+  "ts_end": "2026-10-03T23:37:59+00:00",
+  "last_step": {
+   "step": 1944,
+   "pct": 100.0,
+   "loss": 2.819226,
+   "dt_ms": 155,
+   "tok_per_sec": 844380,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0076483113657055,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0012197942055449662,
+  "seq": 52
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 519.7086622714996
+ },
+ "desc": "floor LR warmdown at 10% of initial (FINAL_LR_FRAC 0.0 -> 0.1)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0004-a8/calls.jsonl",
+ "t_end": 1791070688.4271116,
+ "insight": {
+  "hint": "Test final-LR floors with a much smaller value like 0.01 instead of the aggressive 10% floor.",
+  "judge": {
+   "summary": "The agent reviewed the experiment history and chose to test a nonzero final learning-rate floor, changing FINAL_LR_FRAC from 0.0 to 0.1 in train.py while leaving WARMDOWN_RATIO at 0.7. The motivation was that the schedule otherwise decays linearly to zero over the final 70% of the fixed budget, and a small floor might let the model continue making progress at the end. The experiment ran successfully with unchanged model size and similar memory, but produced val_bpb 1.008868, which is about 0.001171 worse than the current best 1.007697, so the run failed the improvement threshold and was not kept.",
+   "feedback": "The implementation was clean, but the decisive mistake was choosing a 10% final-LR floor as the experiment. That is a large perturbation to the tail of training: with WARMDOWN_RATIO = 0.7, the optimizer would still be at 10% of its initial LRs for a substantial final interval, effectively preventing the usual end-of-training stabilization that decaying LR to zero provides. The first error in the reasoning was not that FINAL_LR_FRAC is unsupported, but that 0.1 was an unnecessarily aggressive test of the idea. If the goal was to test whether a final LR floor can be useful, the first variant should have been much smaller, e.g. 0.01 or 0.02, so any benefit would have to appear with minimal added late-training noise before moving in the worse direction.",
+   "wrong_step_id": 2,
+   "corrected_step": "FINAL_LR_FRAC = 0.01     # small final LR floor if testing nonzero decay end",
+   "hint": "Test final-LR floors with a much smaller value like 0.01 instead of the aggressive 10% floor."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent reviewed the experiment history and chose to test a nonzero final learning-rate floor, changing FINAL_LR_FRAC from 0.0 to 0.1 in train.py while leaving WARMDOWN_RATIO at 0.7. The motivation was that the schedule otherwise decays linearly to zero over the final 70% of the fixed budget, and a small floor might let the model continue making progress at the end. The experiment ran successfully with unchanged model size and similar memory, but produced val_bpb 1.008868, which is about 0.001171 worse than the current best 1.007697, so the run failed the improvement threshold and was not kept.\",\n  \"feedback\": \"The implementation was clean, but the decisive mistake was choosing a 10% final-LR floor as the experiment. That is a large perturbation to the tail of training: with WARMDOWN_RATIO = 0.7, the optimizer would still be at 10% of its initial LRs for a substantial final interval, effectively preventing the usual end-of-training stabilization that decaying LR to zero provides. The first error in the reasoning was not that FINAL_LR_FRAC is unsupported, but that 0.1 was an unnecessarily aggressive test of the idea. If the goal was to test whether a final LR floor can be useful, the first variant should have been much smaller, e.g. 0.01 or 0.02, so any benefit would have to appear with minimal added late-training noise before moving in the worse direction.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"FINAL_LR_FRAC = 0.01     # small final LR floor if testing nonzero decay end\",\n  \"hint\": \"Test final-LR floors with a much smaller value like 0.01 instead of the aggressive 10% floor.\"\n}",
+  "prompt_chars": 18579,
+  "wall_s": 92.2989501953125
+ }
+}

@@ -1,0 +1,148 @@
+{
+ "attempt_id": "g0001-a3",
+ "group": 1,
+ "k": 3,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.024978757453244,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "val_bpb": 1.0198602420773322,
+  "evals": [
+   1.0198602420773322
+  ],
+  "train_sha256": "bb2d210fe0303c6fcaed3c0c759599e761ff83ee3db63c7c125639ef54ee00f4",
+  "run_id": "20261003-172515-086f7c"
+ },
+ "policy": {
+  "name": "oct3-v1",
+  "version": 1,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v1"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.024979 did not improve on the current best 1.019860 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "The history supports extending the linear warmdown further, not replacing it with an untested cosine shape."
+  },
+  {
+   "idx": 2,
+   "hint": "You picked a too-small continuation of an already-saturating warmdown axis instead of trying a more impactful untested hyperparameter."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-174630-866eab",
+  "attempt_id": "g0001-a3",
+  "ts": "2026-10-03T17:46:30+00:00",
+  "wall_s": 330.2,
+  "head": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "branch": "HEAD",
+  "train_sha256": "86bee16ed8577c71a28d86a928cce6ea9a213542a410dc25583660229427a288",
+  "train_ast_sha256": "4f6d8dfac9256df36c55605063b3b992df80ce5435890e079d7a25305ef203a8",
+  "parent_train_sha256": "bb2d210fe0303c6fcaed3c0c759599e761ff83ee3db63c7c125639ef54ee00f4",
+  "parent_rev": "a70048eb124cdee37ee3efab18f10eb3bbebfa3e",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "raise Muon matrix LR 0.04 -> 0.06",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.024978757453244,
+  "metrics": {
+   "val_bpb": 1.024978757453244,
+   "training_seconds": 300.1,
+   "total_seconds": 327.7,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.22,
+   "total_tokens_M": 252.4,
+   "num_steps": 1926,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.024979,
+   "t_to_eval": 313.3
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-174630-866eab/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-174630-866eab/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "466054de29552e88d36da0e0fcac943ce835042c2768124d6802a656e2889476",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-174630-866eab/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.806728527000814,
+     "event": "eval",
+     "future_max_abs": 21.146202087402344,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.34037463300047,
+     "val_bpb": 1.024978757453244,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 329.1477956100025
+   }
+  },
+  "ts_end": "2026-10-03T17:52:00+00:00",
+  "last_step": {
+   "step": 1925,
+   "pct": 100.0,
+   "loss": 2.879467,
+   "dt_ms": 157,
+   "tok_per_sec": 835977,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0196974596140955,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0052812978391485466,
+  "seq": 14
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 380.2264151573181
+ },
+ "desc": "raise Muon matrix LR 0.04 -> 0.06",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0001-a3/calls.jsonl",
+ "t_end": 1791049929.0597513,
+ "insight": {
+  "hint": "Instead of raising the Muon matrix LR, try a smaller downward change from the current 0.04 value.",
+  "judge": {
+   "summary": "The agent kept the current best architecture and hyperparameters except for one Muon hyperparameter: it raised the matrix learning rate from 0.04 to 0.06 in train.py, committed that one-line change, and ran the experiment once. The run completed without errors with the same compute profile as the baseline (1926 steps, ~252M tokens, ~22.6 GB peak VRAM), but the validation metric was val_bpb = 1.024979, which is worse than the current best 1.019860 by far more than the 0.0005 improvement threshold.",
+   "feedback": "There was no implementation or execution bug: the edit was syntactically valid, committed, and the run completed. The failure is in the experimental hypothesis: increasing the Muon matrix LR by 50% made the result substantially worse, so the direction (or at least that magnitude) was the wrong choice for this configuration. The decisive error was choosing a large upward LR sweep as the next experiment; with the current setup, the matrix LR axis should be probed more conservatively, likely downward from 0.04, rather than assuming a higher LR would improve the 5-minute budget result.",
+   "wrong_step_id": 2,
+   "corrected_step": "MATRIX_LR = 0.03        # learning rate for matrix parameters (Muon)",
+   "hint": "Instead of raising the Muon matrix LR, try a smaller downward change from the current 0.04 value."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent kept the current best architecture and hyperparameters except for one Muon hyperparameter: it raised the matrix learning rate from 0.04 to 0.06 in train.py, committed that one-line change, and ran the experiment once. The run completed without errors with the same compute profile as the baseline (1926 steps, ~252M tokens, ~22.6 GB peak VRAM), but the validation metric was val_bpb = 1.024979, which is worse than the current best 1.019860 by far more than the 0.0005 improvement threshold.\",\n  \"feedback\": \"There was no implementation or execution bug: the edit was syntactically valid, committed, and the run completed. The failure is in the experimental hypothesis: increasing the Muon matrix LR by 50% made the result substantially worse, so the direction (or at least that magnitude) was the wrong choice for this configuration. The decisive error was choosing a large upward LR sweep as the next experiment; with the current setup, the matrix LR axis should be probed more conservatively, likely downward from 0.04, rather than assuming a higher LR would improve the 5-minute budget result.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"MATRIX_LR = 0.03        # learning rate for matrix parameters (Muon)\",\n  \"hint\": \"Instead of raising the Muon matrix LR, try a smaller downward change from the current 0.04 value.\"\n}",
+  "prompt_chars": 13935,
+  "wall_s": 90.84383463859558
+ }
+}

@@ -1,0 +1,156 @@
+{
+ "attempt_id": "g0002-a7",
+ "group": 2,
+ "k": 7,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0137987290830364,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "val_bpb": 1.0137109484151645,
+  "evals": [
+   1.0137109484151645
+  ],
+  "train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "run_id": "20261003-200009-7e25ed"
+ },
+ "policy": {
+  "name": "oct3-v2",
+  "version": 2,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v2"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.013799 did not improve on the current best 1.013711 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 2,
+   "hint": "Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead."
+  },
+  {
+   "idx": 3,
+   "hint": "Changing DEPTH alone also changed the model width in this setup, so you must explicitly hold MODEL_DIM at 512 for a true depth-9 comparison."
+  },
+  {
+   "idx": 4,
+   "hint": "An apparent win must be confirmed with one fresh re-run before declaring the experiment successful."
+  },
+  {
+   "idx": 5,
+   "hint": "The head-dimension change itself was the mistake: 4 heads of dimension 128 were much better than 8 heads of dimension 64, so HEAD_DIM should have stayed at 128."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-200843-373eda",
+  "attempt_id": "g0002-a7",
+  "ts": "2026-10-03T20:08:43+00:00",
+  "wall_s": 358.9,
+  "head": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "branch": "HEAD",
+  "train_sha256": "90ef4ba7219dae56d00fe7b16afc7d1ba1fcc8eaa983927e889d12fad26522bc",
+  "train_ast_sha256": "0cacadd8de30fa84e0fef81a01238992285b1c1fe69533e2a22d2a34c7dff0b2",
+  "parent_train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "parent_rev": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "lengthen LR warmdown 0.7 -> 0.8",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0137987290830364,
+  "metrics": {
+   "val_bpb": 1.0137987290830364,
+   "training_seconds": 300.1,
+   "total_seconds": 356.2,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 22.81,
+   "total_tokens_M": 270.4,
+   "num_steps": 2063,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.013799,
+   "t_to_eval": 338.8
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-200843-373eda/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-200843-373eda/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "a00770dbae1512567b8a601e51c38b8b5d6f5374719486d80a8d3bd25bf6bb5d",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-200843-373eda/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 18.83302238500255,
+     "event": "eval",
+     "future_max_abs": 22.480859756469727,
+     "max_mem_mb": 22653.45849609375,
+     "n_eval": 1,
+     "t_to_eval": 338.82442915499996,
+     "val_bpb": 1.0137987290830364,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 357.658213824001
+   }
+  },
+  "ts_end": "2026-10-03T20:14:42+00:00",
+  "last_step": {
+   "step": 2062,
+   "pct": 100.0,
+   "loss": 2.839846,
+   "dt_ms": 146,
+   "tok_per_sec": 896242,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0138485903277128,
+  "parent_n": 2,
+  "delta_vs_parent": 4.986124467643016e-05,
+  "seq": 32
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 438.9640688896179
+ },
+ "desc": "lengthen LR warmdown 0.7 -> 0.8",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0002-a7/calls.jsonl",
+ "t_end": 1791058492.9428341,
+ "insight": {
+  "hint": "Do not spend the one experiment on a tiny interpolation of an already-tuned hyperparameter when the historical evidence is within noise; choose an untried knob with a more plausible chance of beating the threshold.",
+  "judge": {
+   "summary": "The agent read the repo and experiment history, then chose a small untested point in the LR warmdown sweep by changing WARMDOWN_RATIO from 0.7 to 0.8 in train.py. It committed this one-line change and ran the experiment. The run completed successfully with val_bpb 1.013799 and peak VRAM about 22.6 GB, which is slightly worse than the current best 1.013711 and therefore does not meet the required improvement threshold.",
+   "feedback": "The decisive problem was not a code bug but a low-value experimental choice: the agent treated a 0.000345 pre-compile near-miss at warmdown 0.9 as evidence that 0.8 might uncover a new optimum, even though that difference was within noise and measured before the current best was achieved by max-autotune compilation. After the compile change, the only post-change comparison is 0.7 (current best) versus 0.8, and a 0.1 shift in an already-tuned linear warmdown fraction is unlikely to produce the required >0.0005 val_bpb improvement. The reasoning should have prioritized an unexplored axis with larger plausible effect, such as weight decay, unembedding LR, Muon momentum, or attention KV heads, rather than interpolating a small local schedule value.",
+   "wrong_step_id": 3,
+   "corrected_step": "WEIGHT_DECAY = 0.1      # cautious weight decay for Muon",
+   "hint": "Do not spend the one experiment on a tiny interpolation of an already-tuned hyperparameter when the historical evidence is within noise; choose an untried knob with a more plausible chance of beating the threshold."
+  },
+  "raw": "\n\n{\n\"summary\": \"The agent read the repo and experiment history, then chose a small untested point in the LR warmdown sweep by changing WARMDOWN_RATIO from 0.7 to 0.8 in train.py. It committed this one-line change and ran the experiment. The run completed successfully with val_bpb 1.013799 and peak VRAM about 22.6 GB, which is slightly worse than the current best 1.013711 and therefore does not meet the required improvement threshold.\",\n\"feedback\": \"The decisive problem was not a code bug but a low-value experimental choice: the agent treated a 0.000345 pre-compile near-miss at warmdown 0.9 as evidence that 0.8 might uncover a new optimum, even though that difference was within noise and measured before the current best was achieved by max-autotune compilation. After the compile change, the only post-change comparison is 0.7 (current best) versus 0.8, and a 0.1 shift in an already-tuned linear warmdown fraction is unlikely to produce the required >0.0005 val_bpb improvement. The reasoning should have prioritized an unexplored axis with larger plausible effect, such as weight decay, unembedding LR, Muon momentum, or attention KV heads, rather than interpolating a small local schedule value.\",\n\"wrong_step_id\": 3,\n\"corrected_step\": \"WEIGHT_DECAY = 0.1      # cautious weight decay for Muon\",\n\"hint\": \"Do not spend the one experiment on a tiny interpolation of an already-tuned hyperparameter when the historical evidence is within noise; choose an untried knob with a more plausible chance of beating the threshold.\"\n}",
+  "prompt_chars": 17228,
+  "wall_s": 93.15350794792175
+ }
+}

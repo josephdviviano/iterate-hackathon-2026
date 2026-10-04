@@ -1,0 +1,155 @@
+{
+ "attempt_id": "g0004-a6",
+ "group": 4,
+ "k": 6,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.00880565847633,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "val_bpb": 1.0076966286985174,
+  "evals": [
+   1.0076966286985174
+  ],
+  "train_sha256": "a5605ead4d0cc51c367041cce4b3a3a20faeb270f22c742eeccccf25c1329b32",
+  "run_id": "20261003-223841-969d6c"
+ },
+ "policy": {
+  "name": "oct3-v4",
+  "version": 4,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v4"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.008806 did not improve on the current best 1.007697 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Do not enable value embeddings on every layer; the previous all-layer VE result was not a true win over the relevant max-autotune baseline."
+  },
+  {
+   "idx": 4,
+   "hint": "The sliding-window-shortening line had already plateaued, so the 256->128 change was a low-EV extrapolation whose ~0.0002 expected gain was below the 0.0005 keep-threshold; pick an experiment with a realistic chance of beating the best by more than 0.0005 instead."
+  },
+  {
+   "idx": 5,
+   "hint": "Do not shorten the long-range L layers to 1024; the model still needs full 2048 context in more than the final layer, so choose a non-context-sacrificing experiment instead."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-231407-5073ee",
+  "attempt_id": "g0004-a6",
+  "ts": "2026-10-03T23:14:07+00:00",
+  "wall_s": 352.2,
+  "head": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "branch": "HEAD",
+  "train_sha256": "b22170e1cad48c4562ae27fc59e3ec7bdf2da5c39408a47febc6534e31a1cdd7",
+  "train_ast_sha256": "2d735b5c592b76419d786e56f2cd051b8d9336caba98890037ec58c9921edc66",
+  "parent_train_sha256": "a5605ead4d0cc51c367041cce4b3a3a20faeb270f22c742eeccccf25c1329b32",
+  "parent_rev": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "raise steady-state Muon momentum 0.95 -> 0.97",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.00880565847633,
+  "metrics": {
+   "val_bpb": 1.00880565847633,
+   "training_seconds": 300.0,
+   "total_seconds": 349.5,
+   "peak_vram_mb": 25277.5,
+   "mfu_percent": 22.57,
+   "total_tokens_M": 254.9,
+   "num_steps": 1945,
+   "num_params_M": 57.7,
+   "depth": 9,
+   "t_train_trusted": 302.7,
+   "val_bpb_stdout": 1.008806,
+   "t_to_eval": 333.1
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-231407-5073ee/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-231407-5073ee/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "e323ef73ae205db881366c73725cca64d74a91530b1b742e4055015b94a1dd9c",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-231407-5073ee/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 17.86250631599978,
+     "event": "eval",
+     "future_max_abs": 22.823028564453125,
+     "max_mem_mb": 25277.48486328125,
+     "n_eval": 1,
+     "t_to_eval": 333.05491829699895,
+     "t_train2": 30.40263767899887,
+     "train_batches": 1946,
+     "val_bpb": 1.00880565847633,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 350.9181088729965
+   }
+  },
+  "ts_end": "2026-10-03T23:19:59+00:00",
+  "last_step": {
+   "step": 1944,
+   "pct": 100.0,
+   "loss": 2.817499,
+   "dt_ms": 155,
+   "tok_per_sec": 844126,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0076483113657055,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0011573471106245403,
+  "seq": 50
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 716.9788503646851
+ },
+ "desc": "raise steady-state Muon momentum 0.95 -> 0.97",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0004-a6/calls.jsonl",
+ "t_end": 1791069608.8199804,
+ "insight": {
+  "hint": "Raising Muon momentum to 0.97 hurt, so the momentum knob should not have been increased; if revisiting it, test lowering the steady-state momentum instead.",
+  "judge": {
+   "summary": "The agent inspected the repository and history, then chose to test a small optimizer-knob change: raising the steady-state Muon momentum from 0.95 to 0.97 while keeping the 0.85-to-steady-state ramp over 300 steps unchanged. It made a one-line edit to get_muon_momentum in train.py, committed it, and ran the experiment. The run completed without crashing, but produced val_bpb 1.008806, which is worse than the current best 1.007697 and therefore not an improvement.",
+   "feedback": "The implementation itself was clean: the committed diff only changed the terminal Muon momentum value from 0.95 to 0.97, and the run executed successfully. The failure is empirical, not a code bug: the hypothesis that higher momentum would smooth updates and improve val_bpb was not supported, and the result was about 0.0011 bpb worse than the best. The decisive mistake was choosing that direction at the point where the momentum schedule was edited, rather than selecting a different untried lever or testing the opposite direction if momentum was to be explored.",
+   "wrong_step_id": 4,
+   "corrected_step": "def get_muon_momentum(step):\n    frac = min(step / 300, 1)\n    return (1 - frac) * 0.85 + frac * 0.93",
+   "hint": "Raising Muon momentum to 0.97 hurt, so the momentum knob should not have been increased; if revisiting it, test lowering the steady-state momentum instead."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent inspected the repository and history, then chose to test a small optimizer-knob change: raising the steady-state Muon momentum from 0.95 to 0.97 while keeping the 0.85-to-steady-state ramp over 300 steps unchanged. It made a one-line edit to get_muon_momentum in train.py, committed it, and ran the experiment. The run completed without crashing, but produced val_bpb 1.008806, which is worse than the current best 1.007697 and therefore not an improvement.\",\n  \"feedback\": \"The implementation itself was clean: the committed diff only changed the terminal Muon momentum value from 0.95 to 0.97, and the run executed successfully. The failure is empirical, not a code bug: the hypothesis that higher momentum would smooth updates and improve val_bpb was not supported, and the result was about 0.0011 bpb worse than the best. The decisive mistake was choosing that direction at the point where the momentum schedule was edited, rather than selecting a different untried lever or testing the opposite direction if momentum was to be explored.\",\n  \"wrong_step_id\": 4,\n  \"corrected_step\": \"def get_muon_momentum(step):\\n    frac = min(step / 300, 1)\\n    return (1 - frac) * 0.85 + frac * 0.93\",\n  \"hint\": \"Raising Muon momentum to 0.97 hurt, so the momentum knob should not have been increased; if revisiting it, test lowering the steady-state momentum instead.\"\n}",
+  "prompt_chars": 21109,
+  "wall_s": 91.50190997123718
+ }
+}

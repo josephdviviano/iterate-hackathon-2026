@@ -1,0 +1,30 @@
+diff --git a/train.py b/train.py
+index e678d5f..646ecf1 100644
+--- a/train.py
++++ b/train.py
+@@ -457,8 +457,8 @@ class MuonAdamW(torch.optim.Optimizer):
+ # ---------------------------------------------------------------------------
+ 
+ # Model architecture
+-ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO
+-HEAD_DIM = 128          # target head dimension for attention
++MODEL_DIM = 384         # fixed model dimension (decoupled from depth)
++HEAD_DIM = 64           # head dimension for attention (384/64 = 6 heads)
+ WINDOW_PATTERN = "SSSL" # sliding window pattern: L=full, S=half context
+ 
+ # Optimization
+@@ -494,12 +494,11 @@ vocab_size = tokenizer.get_vocab_size()
+ print(f"Vocab size: {vocab_size:,}")
+ 
+ def build_model_config(depth):
+-    base_dim = depth * ASPECT_RATIO
+-    model_dim = ((base_dim + HEAD_DIM - 1) // HEAD_DIM) * HEAD_DIM
+-    num_heads = model_dim // HEAD_DIM
++    assert MODEL_DIM % HEAD_DIM == 0
++    num_heads = MODEL_DIM // HEAD_DIM
+     return GPTConfig(
+         sequence_len=MAX_SEQ_LEN, vocab_size=vocab_size,
+-        n_layer=depth, n_head=num_heads, n_kv_head=num_heads, n_embd=model_dim,
++        n_layer=depth, n_head=num_heads, n_kv_head=num_heads, n_embd=MODEL_DIM,
+         window_pattern=WINDOW_PATTERN,
+     )

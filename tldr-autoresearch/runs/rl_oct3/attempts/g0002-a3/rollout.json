@@ -1,0 +1,144 @@
+{
+ "attempt_id": "g0002-a3",
+ "group": 2,
+ "k": 3,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0285375251520783,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "val_bpb": 1.0169535025171206,
+  "evals": [
+   1.0169535025171206
+  ],
+  "train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "run_id": "20261003-185840-8515a2"
+ },
+ "policy": {
+  "name": "oct3-v2",
+  "version": 2,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v2"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.028538 did not improve on the current best 1.016954 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 2,
+   "hint": "Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-191328-5e4687",
+  "attempt_id": "g0002-a3",
+  "ts": "2026-10-03T19:13:28+00:00",
+  "wall_s": 341.9,
+  "head": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "branch": "HEAD",
+  "train_sha256": "ebcb8ba5cb8d3aab17653998d351f28e955b4c63581def123bd11c2fdce28ec9",
+  "train_ast_sha256": "c9bd11e7314da1e9d49edf83a07e673726fc2e5f11b4b5a2013e8d9a01c561d0",
+  "parent_train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "parent_rev": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "depth 8 -> 9 with SSLL pattern (combining near-miss depth increase with winning window pattern)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0285375251520783,
+  "metrics": {
+   "val_bpb": 1.0285375251520783,
+   "training_seconds": 300.1,
+   "total_seconds": 339.4,
+   "peak_vram_mb": 31158.9,
+   "mfu_percent": 22.33,
+   "total_tokens_M": 164.2,
+   "num_steps": 1253,
+   "num_params_M": 80.9,
+   "depth": 9,
+   "val_bpb_stdout": 1.028538,
+   "t_to_eval": 317.7
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-191328-5e4687/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-191328-5e4687/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "c79b088c0f0fd3e5b93a7bec565e4b36bdb250317a7436690c423b4c71849719",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-191328-5e4687/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 23.150389935999556,
+     "event": "eval",
+     "future_max_abs": 22.867008209228516,
+     "max_mem_mb": 31158.916015625,
+     "n_eval": 1,
+     "t_to_eval": 317.68288239899994,
+     "val_bpb": 1.0285375251520783,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 340.8340469399991
+   }
+  },
+  "ts_end": "2026-10-03T19:19:10+00:00",
+  "last_step": {
+   "step": 1252,
+   "pct": 100.0,
+   "loss": 2.871682,
+   "dt_ms": 242,
+   "tok_per_sec": 542707,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0169081747663617,
+  "parent_n": 2,
+  "delta_vs_parent": -0.011629350385716553,
+  "seq": 25
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 419.39919805526733
+ },
+ "desc": "depth 8 -> 9 with SSLL pattern (combining near-miss depth increase with winning window pattern)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0002-a3/calls.jsonl",
+ "t_end": 1791055170.4731627,
+ "insight": {
+  "hint": "Changing DEPTH alone also changed the model width in this setup, so you must explicitly hold MODEL_DIM at 512 for a true depth-9 comparison.",
+  "judge": {
+   "summary": "The agent kept the current best SSLL window pattern and tried to combine it with the previously near-miss depth increase by changing only DEPTH from 8 to 9 in train.py. The harness ran the experiment successfully, but it produced val_bpb 1.028538, far worse than the current best 1.016954. The run also used much fewer tokens/steps and more parameters/VRAM than the best, consistent with the model silently growing from dim 512 to a larger size when depth was increased.",
+   "feedback": "The decisive error was in the edit to train.py: the agent intended a depth-9 experiment at the same model width (the near-miss 5a793e0 explicitly held width at 512), but only changed DEPTH = 8 to DEPTH = 9. In this codebase the model dimension is derived from DEPTH and the aspect-ratio/rounding rule, so depth 9 did not remain a 512-wide model; it became a much larger model (reported num_params_M = 80.9 vs 50.3 for the best). That changed the experiment from 'add one layer at fixed width' to 'train a substantially larger model for the same wall-clock budget', causing underfitting and a large regression. The first mistake is therefore the insufficient code change: increasing depth without explicitly fixing/holding MODEL_DIM (or equivalent width parameter) at 512.",
+   "wrong_step_id": 2,
+   "corrected_step": "DEPTH = 9               # number of transformer layers\n# Keep the same 512-wide model instead of letting the dimension scale with depth.\nMODEL_DIM = 512          # explicitly hold width at the depth-8 value\nASPECT_RATIO = 512 // DEPTH  # only if ASPECT_RATIO is still used downstream; prevents implied widening",
+   "hint": "Changing DEPTH alone also changed the model width in this setup, so you must explicitly hold MODEL_DIM at 512 for a true depth-9 comparison."
+  },
+  "raw": "\n{\n\"summary\": \"The agent kept the current best SSLL window pattern and tried to combine it with the previously near-miss depth increase by changing only DEPTH from 8 to 9 in train.py. The harness ran the experiment successfully, but it produced val_bpb 1.028538, far worse than the current best 1.016954. The run also used much fewer tokens/steps and more parameters/VRAM than the best, consistent with the model silently growing from dim 512 to a larger size when depth was increased.\",\n\"feedback\": \"The decisive error was in the edit to train.py: the agent intended a depth-9 experiment at the same model width (the near-miss 5a793e0 explicitly held width at 512), but only changed DEPTH = 8 to DEPTH = 9. In this codebase the model dimension is derived from DEPTH and the aspect-ratio/rounding rule, so depth 9 did not remain a 512-wide model; it became a much larger model (reported num_params_M = 80.9 vs 50.3 for the best). That changed the experiment from 'add one layer at fixed width' to 'train a substantially larger model for the same wall-clock budget', causing underfitting and a large regression. The first mistake is therefore the insufficient code change: increasing depth without explicitly fixing/holding MODEL_DIM (or equivalent width parameter) at 512.\",\n\"wrong_step_id\": 2,\n\"corrected_step\": \"DEPTH = 9               # number of transformer layers\\n# Keep the same 512-wide model instead of letting the dimension scale with depth.\\nMODEL_DIM = 512          # explicitly hold width at the depth-8 value\\nASPECT_RATIO = 512 // DEPTH  # only if ASPECT_RATIO is still used downstream; prevents implied widening\",\n\"hint\": \"Changing DEPTH alone also changed the model width in this setup, so you must explicitly hold MODEL_DIM at 512 for a true depth-9 comparison.\"\n}",
+  "prompt_chars": 15626,
+  "wall_s": 94.3352530002594
+ }
+}

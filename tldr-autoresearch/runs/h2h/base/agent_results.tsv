@@ -1,0 +1,66 @@
+commit	val_bpb	memory_gb	status	description
+8721165	1.079700	44.0	keep	baseline
+88972eb	1.078666	44.0	keep	full-causal L everywhere (drop S windows)
+8d5d7a1	1.110612	66.5	discard	depth 10 (85.9M params, too few tokens)
+9d29181	1.103383	54.1	discard	aspect 80 (dim 640, 70.8M params)
+a30ea7f	1.022054	43.8	keep	batch 2^18 (grad_accum 1, 2x steps)
+c94fb29	1.020630	22.1	keep	batch 2^17 (device 64)
+7089abe	1.031733	11.3	discard	batch 2^16 (too small, noisy)
+95fb028	1.023583	22.1	discard	warmdown 0.35
+1727257	1.017722	22.1	keep	max-autotune compile
+80583b1	1.016914	22.1	keep	muon ns_steps 4
+831ffa1	1.019431	22.1	discard	matrix_lr 0.05
+e812a6c	1.017943	22.1	discard	embedding_lr 0.8
+d59284e	1.015496	22.1	keep	warmdown 0.65
+efeb95e	1.015036	22.1	keep	warmdown 0.75
+f5f4cbe	1.014770	22.1	keep	warmdown 0.85
+7a537a1	1.014803	22.1	discard	warmdown 0.95
+24b86c2	1.014951	22.1	keep	warmdown 0.85 (recheck, noise ~0.0002)
+a5b462f	1.025430	22.1	discard	remove QK norm
+677a74c	1.020178	22.1	discard	softcap 30
+b2bc01c	1.018898	22.1	discard	GQA 2 kv heads
+f2441cf	0.000000	0.0	crash	disable value embeddings (ve_gate None-grad bug)
+f2441cf	1.027039	22.1	discard	disable value embeddings
+d0bdfde	1.016141	22.1	discard	unembedding_lr 0.006
+d487fc1	1.018651	22.1	discard	warmup 0.05
+e38519d	1.014019	22.1	keep	weight_decay 0.1
+bea4325	1.015774	22.1	discard	weight_decay 0.05
+b39be68	1.022002	43.8	discard	batch 2^18 retest
+8a7fe04	1.015672	22.1	discard	final_lr_frac 0.1
+e1b4e1c	1.012257	25.5	keep	depth 9 dim 512
+f3ef7e2	1.015617	26.8	discard	depth 10 dim 512
+4bb48ec	1.014212	25.5	discard	muon momentum 0.97
+727335b	1.013162	25.5	discard	embedding_lr 0.4
+5f6872a	1.020282	25.5	discard	head_dim 64
+c86d434	1.014760	25.5	discard	adam beta1 0.9
+d513b7d	1.013268	25.5	discard	SSSL retest
+5017d1e	1.012225	25.5	keep	matrix_lr 0.035 (run1, at noise)
+5017d1e	1.012736	25.5	discard	matrix_lr 0.035 (run2, within noise)
+3df0e8c	1.012751	25.5	discard	softcap 10
+cad99a5	1.012222	25.5	discard	scalar_lr 1.0 (noise)
+2ea21ee	1.017391	25.5	discard	ns_steps 3
+ef3868b	0.000000	0.0	crash	cudagraphs option conflict
+3c9a333	1.014962	25.5	discard	triton cudagraphs (slower)
+a818065	1.025272	25.5	discard	loader buffer 10000 (slower packing)
+8e19588	1.015868	25.5	discard	swiglu mlp
+1588f0c	1.015564	25.5	discard	fused qkv (no speedup)
+63bcf93	1.082619	25.5	discard	eager no compile (much slower)
+b88f6c2	1.018524	25.5	discard	no softcap
+2b2ad41	1.013648	25.5	discard	ve_lr 0.9
+8ee9179	1.012467	25.5	keep	VE_LR refactor (ve_lr=0.6, dropped profiling scaffolding)
+489a251	1.019750	25.5	discard	muon lm_head
+8928ae0	1.012557	25.5	discard	bf16 logits (no speedup)
+e1faba7	1.012620	25.5	discard	momentum warmup 150 (noise)
+d3431cd	1.012722	25.5	discard	wd 0.15 (noise+)
+30ea5d4	1.013329	25.5	discard	embedding_lr 0.5
+6d22de7	1.012476	25.5	discard	muon beta2 0.98 (noise)
+b21c13b	1.016442	25.5	discard	depth10 mlp3x
+6559d01	1.012084	25.5	keep	softcap 12 run1
+6559d01	1.013000	25.5	discard	softcap 12 run2 (no win)
+3cc043e	1.022185	25.5	discard	2x256 heads
+bf583e4	1.018164	25.5	discard	ve last4 only
+9d6cad3	1.020759	43.8	discard	batch 2^18 at d9 (still worse)
+bd45e28	1.015831	25.5	discard	warmup 0.02
+5db5946	1.012371	25.5	keep	fullgraph compile (guard, at noise)
+2650314	1.013425	25.5	discard	x0 init 0.2
+de812ed	1.013202	25.5	discard	softcap 18

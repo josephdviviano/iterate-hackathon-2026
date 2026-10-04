@@ -1,0 +1,139 @@
+{
+ "attempt_id": "g0002-a2",
+ "group": 2,
+ "k": 2,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0176281352932557,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "val_bpb": 1.0169535025171206,
+  "evals": [
+   1.0169535025171206
+  ],
+  "train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "run_id": "20261003-185840-8515a2"
+ },
+ "policy": {
+  "name": "oct3-v2",
+  "version": 2,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v2"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.017628 did not improve on the current best 1.016954 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": false,
+ "insights_in_context": [],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-190517-9fdb9c",
+  "attempt_id": "g0002-a2",
+  "ts": "2026-10-03T19:05:17+00:00",
+  "wall_s": 334.9,
+  "head": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "branch": "HEAD",
+  "train_sha256": "6b3fac4044aeeaadf7672babfc8f7d37ca9187f54945c7f85958ee4520b1e269",
+  "train_ast_sha256": "f3734d1fd40b092aee69ba7be0da86cd2068cf0c4cd18129194c2f660eddaa3d",
+  "parent_train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "parent_rev": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "all layers full attention: window pattern SSLL -> L",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0176281352932557,
+  "metrics": {
+   "val_bpb": 1.0176281352932557,
+   "training_seconds": 300.1,
+   "total_seconds": 332.3,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 24.16,
+   "total_tokens_M": 260.4,
+   "num_steps": 1987,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.017628,
+   "t_to_eval": 315.6
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-190517-9fdb9c/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-190517-9fdb9c/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "c79b088c0f0fd3e5b93a7bec565e4b36bdb250317a7436690c423b4c71849719",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-190517-9fdb9c/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 18.104288285998337,
+     "event": "eval",
+     "future_max_abs": 21.767122268676758,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 315.5785687000025,
+     "val_bpb": 1.0176281352932557,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 333.68355860500014
+   }
+  },
+  "ts_end": "2026-10-03T19:10:52+00:00",
+  "last_step": {
+   "step": 1986,
+   "pct": 100.0,
+   "loss": 2.843455,
+   "dt_ms": 152,
+   "tok_per_sec": 862749,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0169081747663617,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0007199605268939369,
+  "seq": 24
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 400.0563051700592
+ },
+ "desc": "all layers full attention: window pattern SSLL -> L",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0002-a2/calls.jsonl",
+ "t_end": 1791054660.5395825,
+ "insight": {
+  "hint": "Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead.",
+  "judge": {
+   "summary": "The agent continued the previous successful architectural trend of increasing full-attention coverage by changing WINDOW_PATTERN from \"SSLL\" to \"L\", making all 8 layers use full 2048-token context. The edit was minimal, committed, and run successfully within the time budget, producing val_bpb 1.017628 with peak VRAM about 22.7 GB. This was worse than the current best 1.016954, so the experiment did not meet the improvement threshold and was rejected by the harness.",
+   "feedback": "The decisive mistake was the experimental choice in the edit step: replacing the best known mixed-window pattern with all-full attention. The code change itself was valid, but the hypothesis that giving every layer full context would help was not supported by the result. The current best SSLL already had 4 full-attention layers; moving to 8 full-attention layers changed the compute/update/quality tradeoff in the wrong direction. The agent should have stopped at the supported improvement (SSLL) or tested a more conservative, untried variant rather than extrapolating the pattern to its extreme.",
+   "wrong_step_id": 2,
+   "corrected_step": "WINDOW_PATTERN = \"SSLL\" # sliding window pattern: L=full, S=half context",
+   "hint": "Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent continued the previous successful architectural trend of increasing full-attention coverage by changing WINDOW_PATTERN from \\\"SSLL\\\" to \\\"L\\\", making all 8 layers use full 2048-token context. The edit was minimal, committed, and run successfully within the time budget, producing val_bpb 1.017628 with peak VRAM about 22.7 GB. This was worse than the current best 1.016954, so the experiment did not meet the improvement threshold and was rejected by the harness.\",\n  \"feedback\": \"The decisive mistake was the experimental choice in the edit step: replacing the best known mixed-window pattern with all-full attention. The code change itself was valid, but the hypothesis that giving every layer full context would help was not supported by the result. The current best SSLL already had 4 full-attention layers; moving to 8 full-attention layers changed the compute/update/quality tradeoff in the wrong direction. The agent should have stopped at the supported improvement (SSLL) or tested a more conservative, untried variant rather than extrapolating the pattern to its extreme.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"WINDOW_PATTERN = \\\"SSLL\\\" # sliding window pattern: L=full, S=half context\",\n  \"hint\": \"Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead.\"\n}",
+  "prompt_chars": 14205,
+  "wall_s": 90.45955228805542
+ }
+}

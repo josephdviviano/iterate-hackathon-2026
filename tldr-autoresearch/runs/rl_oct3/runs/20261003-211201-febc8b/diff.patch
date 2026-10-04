@@ -1,0 +1,20 @@
+diff --git a/train.py b/train.py
+index d5a0a91..4fa2121 100644
+--- a/train.py
++++ b/train.py
+@@ -459,6 +459,7 @@ class MuonAdamW(torch.optim.Optimizer):
+ # Model architecture
+ ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO
+ HEAD_DIM = 128          # target head dimension for attention
++KV_HEADS = 2            # number of KV heads (GQA: fewer than query heads -> cheaper attention)
+ WINDOW_PATTERN = "SSLL" # sliding window pattern: L=full, S=half context
+ 
+ # Optimization
+@@ -499,7 +500,7 @@ def build_model_config(depth):
+     num_heads = model_dim // HEAD_DIM
+     return GPTConfig(
+         sequence_len=MAX_SEQ_LEN, vocab_size=vocab_size,
+-        n_layer=depth, n_head=num_heads, n_kv_head=num_heads, n_embd=model_dim,
++        n_layer=depth, n_head=num_heads, n_kv_head=KV_HEADS, n_embd=model_dim,
+         window_pattern=WINDOW_PATTERN,
+     )

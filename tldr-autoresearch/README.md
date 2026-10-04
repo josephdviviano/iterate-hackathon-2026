@@ -71,7 +71,7 @@ was flagged and its re-run refused (RESULTS.md, R3).
 ## Results
 
 All numbers are from [`RESULTS.md`](RESULTS.md), which lists the metric, runs, split, baseline, command and commit
-for each. The tables are in [`results/`](results/). The metric is val_bpb on autoresearch's pinned validation shard
+for each. The tables are in [`results/`](results/); the raw run records (every experiment prompt, agent transcript, `train.py` and log) are in [`runs/`](runs/). The metric is val_bpb on autoresearch's pinned validation shard
 (lower is better). The baseline is 1.079941 (unmodified `train.py`, mean of 4 runs).
 
 | | result |
@@ -174,6 +174,7 @@ patches/                    our sm_120 attention patch and harness program.md fo
 tests/                      h2h, sandbox and trainer tests
 docs/                       DESIGN (method + deviations), SETUP, RETROSPECTIVE (mid-run analysis), H2H_SPEC, AR_RUN
 results/                    derived result tables (see RESULTS.md)
+runs/                       raw run records: ledgers, experiment prompts, rollouts, agent transcripts, train.py + logs (runs/README.md)
 ```
 
 ## Credits

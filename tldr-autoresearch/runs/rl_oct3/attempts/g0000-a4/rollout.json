@@ -1,0 +1,224 @@
+{
+ "attempt_id": "g0000-a4",
+ "group": 0,
+ "k": 4,
+ "success": true,
+ "reward": 1.0,
+ "status": "keep",
+ "val_bpb": 1.0217253334024003,
+ "confirm_mean": 1.0216361682989887,
+ "confirm": [
+  {
+   "run_id": "20261003-164839-677097",
+   "attempt_id": "g0000-a4-confirm1",
+   "ts": "2026-10-03T16:48:39+00:00",
+   "wall_s": 339.7,
+   "head": "4754fe1068baf8b718c062eea070397cdff358a4",
+   "branch": "HEAD",
+   "train_sha256": "0b735b5c1fd30cf0bf7e98516138029a4d1ab52e06f82d4c514dc4f3f7467ab6",
+   "train_ast_sha256": "801a3524cfb220f28bb0a2d753b57ce730eb4d666132f55763ac1c55da931a1e",
+   "parent_train_sha256": "573728837d3af51c58d91571546ee4484d734a297a8181a22f8aa4f8a82c3b9b",
+   "parent_rev": "4754fe1068baf8b718c062eea070397cdff358a4",
+   "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+   "desc": "halve batch size again 2^18 -> 2^17 (dev batch 128 -> 64) [confirmation re-run]",
+   "status": "ok",
+   "returncode": 0,
+   "val_bpb": 1.0216361682989887,
+   "metrics": {
+    "val_bpb": 1.0216361682989887,
+    "training_seconds": 300.1,
+    "total_seconds": 337.1,
+    "peak_vram_mb": 22653.5,
+    "mfu_percent": 20.22,
+    "total_tokens_M": 252.4,
+    "num_steps": 1926,
+    "num_params_M": 50.3,
+    "depth": 8,
+    "val_bpb_stdout": 1.021636,
+    "t_to_eval": 320.0
+   },
+   "error_tail": null,
+   "flags": [
+    "reeval"
+   ],
+   "diff_path": "$RLTLDR_ROOT/data/runs/20261003-164839-677097/diff.patch",
+   "log_path": "$RLTLDR_ROOT/data/runs/20261003-164839-677097/run.log",
+   "gpu": "GPU2-UUID",
+   "max_runs": 1,
+   "timeout_s": 660,
+   "parent_ast_sha256": "c6f237701c730c9188bc83ebbe86d9cf3a7c050ebbc2204e62a14736ece31dda",
+   "mode": "dirty",
+   "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-164839-677097/train.py",
+   "deps_git_hashes": [
+    "94ae3298925ddae47821f703faf44d4e3b8381bb",
+    "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+   ],
+   "diff_lines": 4,
+   "trusted": {
+    "valid": true,
+    "evals": [
+     {
+      "batch_size": 64,
+      "causal_max_abs": 0.0,
+      "eval_s": 18.4343600659995,
+      "event": "eval",
+      "future_max_abs": 21.61614227294922,
+      "max_mem_mb": 22653.45654296875,
+      "n_eval": 1,
+      "t_to_eval": 320.0469856230011,
+      "val_bpb": 1.0216361682989887,
+      "val_leak": []
+     }
+    ],
+    "val_leak": [],
+    "bad_lines": 0,
+    "start": {
+     "event": "start",
+     "no_autotune": true
+    },
+    "end": {
+     "event": "end",
+     "n_eval": 1,
+     "t": 338.4820468879989
+    }
+   },
+   "ts_end": "2026-10-03T16:54:19+00:00",
+   "last_step": {
+    "step": 1925,
+    "pct": 100.0,
+    "loss": 2.869702,
+    "dt_ms": 157,
+    "tok_per_sec": 836353,
+    "epoch": 1,
+    "remaining_s": 0
+   },
+   "parent_val_bpb": 1.0241412362513058,
+   "parent_n": 2,
+   "delta_vs_parent": 0.002505067952317086,
+   "seq": 6
+  }
+ ],
+ "parent": {
+  "commit": "4754fe1068baf8b718c062eea070397cdff358a4",
+  "val_bpb": 1.0239883604893063,
+  "evals": [
+   1.0239883604893063
+  ],
+  "train_sha256": "573728837d3af51c58d91571546ee4484d734a297a8181a22f8aa4f8a82c3b9b",
+  "run_id": "20261003-163649-d45fcf"
+ },
+ "policy": {
+  "name": "qwen3.8-27b-fp8",
+  "version": 0,
+  "path": null
+ },
+ "verdict": [],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Do not increase model size under a fixed compute budget; the larger model trained on too few tokens and got worse, so try a smaller/deeper-or-thinner model or a faster setup instead."
+  },
+  {
+   "idx": 2,
+   "hint": "The failed deeper experiment did not justify making the model thinner, so the next experiment should avoid changing model capacity and instead test a same-size speedup or optimizer/schedule improvement."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-164304-e422cb",
+  "attempt_id": "g0000-a4",
+  "ts": "2026-10-03T16:43:04+00:00",
+  "wall_s": 330.1,
+  "head": "4754fe1068baf8b718c062eea070397cdff358a4",
+  "branch": "HEAD",
+  "train_sha256": "0b735b5c1fd30cf0bf7e98516138029a4d1ab52e06f82d4c514dc4f3f7467ab6",
+  "train_ast_sha256": "801a3524cfb220f28bb0a2d753b57ce730eb4d666132f55763ac1c55da931a1e",
+  "parent_train_sha256": "573728837d3af51c58d91571546ee4484d734a297a8181a22f8aa4f8a82c3b9b",
+  "parent_rev": "4754fe1068baf8b718c062eea070397cdff358a4",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "halve batch size again 2^18 -> 2^17 (dev batch 128 -> 64)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0217253334024003,
+  "metrics": {
+   "val_bpb": 1.0217253334024003,
+   "training_seconds": 300.1,
+   "total_seconds": 327.5,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.22,
+   "total_tokens_M": 252.4,
+   "num_steps": 1926,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.021725,
+   "t_to_eval": 313.3
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-164304-e422cb/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-164304-e422cb/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "c6f237701c730c9188bc83ebbe86d9cf3a7c050ebbc2204e62a14736ece31dda",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-164304-e422cb/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 4,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.64744717099893,
+     "event": "eval",
+     "future_max_abs": 22.420562744140625,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.3340041219999,
+     "val_bpb": 1.0217253334024003,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 328.98214999300035
+   }
+  },
+  "ts_end": "2026-10-03T16:48:34+00:00",
+  "last_step": {
+   "step": 1925,
+   "pct": 100.0,
+   "loss": 2.86995,
+   "dt_ms": 157,
+   "tok_per_sec": 836145,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0241412362513058,
+  "parent_n": 2,
+  "delta_vs_parent": 0.0024159028489054712,
+  "seq": 5
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 368.78961086273193
+ },
+ "desc": "halve batch size again 2^18 -> 2^17 (dev batch 128 -> 64)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0000-a4/calls.jsonl",
+ "t_end": 1791046459.7246172,
+ "insight": null
+}

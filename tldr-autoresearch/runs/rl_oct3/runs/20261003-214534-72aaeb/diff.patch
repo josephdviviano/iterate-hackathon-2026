@@ -1,0 +1,51 @@
+diff --git a/train.py b/train.py
+index 170f395..dbb403c 100644
+--- a/train.py
++++ b/train.py
+@@ -10,7 +10,9 @@ os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+ 
+ import gc
+ import math
++import threading
+ import time
++from queue import Queue
+ from dataclasses import dataclass, asdict
+ 
+ import torch
+@@ -52,6 +54,17 @@ def attention(q, k, v, window_size):
+ 
+ from prepare import MAX_SEQ_LEN, TIME_BUDGET, Tokenizer, make_dataloader, evaluate_bpb
+ 
++def make_prefetcher(loader, depth=8):
++    """Run the dataloader in a background thread so CPU packing overlaps with GPU compute.
++    The loader reuses a single GPU buffer, so we clone each batch into private storage."""
++    q = Queue(maxsize=depth)
++    def worker():
++        while True:
++            x, y, epoch = next(loader)
++            q.put((x.clone(), y.clone(), epoch))
++    threading.Thread(target=worker, daemon=True).start()
++    return q.get
++
+ # ---------------------------------------------------------------------------
+ # GPT Model
+ # ---------------------------------------------------------------------------
+@@ -538,7 +551,8 @@ if not USE_FA3:  # build block masks eagerly, outside the compiled graph
+ model = torch.compile(model, dynamic=False, mode="max-autotune-no-cudagraphs")
+ 
+ train_loader = make_dataloader(tokenizer, DEVICE_BATCH_SIZE, MAX_SEQ_LEN, "train")
+-x, y, epoch = next(train_loader)  # prefetch first batch
++get_batch = make_prefetcher(train_loader)
++x, y, epoch = get_batch()  # prefetch first batch
+ 
+ print(f"Time budget: {TIME_BUDGET}s")
+ print(f"Gradient accumulation steps: {grad_accum_steps}")
+@@ -579,7 +593,7 @@ while True:
+         train_loss = loss.detach()
+         loss = loss / grad_accum_steps
+         loss.backward()
+-        x, y, epoch = next(train_loader)
++        x, y, epoch = get_batch()
+ 
+     # Progress and schedules
+     progress = min(total_training_time / TIME_BUDGET, 1.0)

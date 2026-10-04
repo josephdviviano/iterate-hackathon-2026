@@ -1,0 +1,18 @@
+Vocab size: 8,192
+Model config: {'sequence_len': 2048, 'vocab_size': 8192, 'n_layer': 8, 'n_head': 4, 'n_kv_head': 4, 'n_embd': 512, 'window_pattern': 'L'}
+Traceback (most recent call last):
+  File "~/.ar/ar_bootstrap.py", line 627, in <module>
+    child_main(sys.argv[2], int(sys.argv[3]), "--val-masked" in sys.argv[4:])
+  File "~/.ar/ar_bootstrap.py", line 326, in child_main
+    runpy.run_path(os.path.join(workdir, "train.py"), run_name="__main__")
+  File "~/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/lib/python3.10/runpy.py", line 289, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "~/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "~/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "~/autoresearch/train.py", line 500, in <module>
+    model = GPT(config)
+  File "~/autoresearch/train.py", line 162, in __init__
+    cos, sin = self._precompute_rotary_embeddings(self.rotary_seq_len, head_dim)
+NameError: name 'head_dim' is not defined

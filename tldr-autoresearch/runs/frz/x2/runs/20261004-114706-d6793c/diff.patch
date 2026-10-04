@@ -1,0 +1,58 @@
+diff --git a/train.py b/train.py
+index 9e35be1..400b032 100644
+--- a/train.py
++++ b/train.py
+@@ -10,7 +10,9 @@ os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+ 
+ import gc
+ import math
++import threading
+ import time
++from queue import Queue
+ from dataclasses import dataclass, asdict
+ 
+ import torch
+@@ -539,7 +541,23 @@ if not USE_FA3:  # build block masks eagerly, outside the compiled graph
+ model = torch.compile(model, dynamic=False)
+ 
+ train_loader = make_dataloader(tokenizer, DEVICE_BATCH_SIZE, MAX_SEQ_LEN, "train")
+-x, y, epoch = next(train_loader)  # prefetch first batch
++
++# Async dataloader: packing/tokenizing on the CPU is on the critical path when
++# consumed inline in the training loop (it stalls GPU work enqueuing). Run the
++# loader in a background thread and hand batches through a small queue. The
++# loader reuses the same pinned/GPU buffers every step, so the producer copies
++# each batch out before the next one can overwrite it.
++data_q = Queue(maxsize=2)
++stop_prefetch = threading.Event()
++
++def _prefetch_loop(loader, q, stop_evt):
++    while not stop_evt.is_set():
++        x, y, ep = next(loader)
++        q.put((x.clone(), y.clone(), ep))
++
++prefetch_thread = threading.Thread(target=_prefetch_loop, args=(train_loader, data_q, stop_prefetch), daemon=True)
++prefetch_thread.start()
++x, y, epoch = data_q.get()  # first batch
+ 
+ print(f"Time budget: {TIME_BUDGET}s")
+ print(f"Gradient accumulation steps: {grad_accum_steps}")
+@@ -580,7 +598,7 @@ while True:
+         train_loss = loss.detach()
+         loss = loss / grad_accum_steps
+         loss.backward()
+-        x, y, epoch = next(train_loader)
++        x, y, epoch = data_q.get()
+ 
+     # Progress and schedules
+     progress = min(total_training_time / TIME_BUDGET, 1.0)
+@@ -636,6 +654,9 @@ while True:
+ 
+ print()  # newline after \r training log
+ 
++stop_prefetch.set()
++prefetch_thread.join(timeout=10)
++
+ total_tokens = step * TOTAL_BATCH_SIZE
+ 
+ # Final eval

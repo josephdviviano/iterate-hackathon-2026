@@ -1,0 +1,147 @@
+{
+ "attempt_id": "g0000-a2",
+ "group": 0,
+ "k": 2,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0841676488253482,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "23f06a8ac9699cf97153e3b44d8454bf4de80bfb",
+  "val_bpb": 1.0799413515696483,
+  "evals": [
+   1.0800244049226273,
+   1.0797958026665053,
+   1.07994979449654,
+   1.0799954041929212
+  ],
+  "train_sha256": "45696ba1f163c0173862c52d7ce07aa154a186803d50d84f35acff689481c954",
+  "run_id": "20261003-153058-23c247"
+ },
+ "policy": {
+  "name": "qwen3.8-27b-fp8",
+  "version": 0,
+  "path": null
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.084168 did not improve on the current best 1.079941 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Do not increase model size under a fixed compute budget; the larger model trained on too few tokens and got worse, so try a smaller/deeper-or-thinner model or a faster setup instead."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-162253-621709",
+  "attempt_id": "g0000-a2",
+  "ts": "2026-10-03T16:22:53+00:00",
+  "wall_s": 340.6,
+  "head": "23f06a8ac9699cf97153e3b44d8454bf4de80bfb",
+  "branch": "HEAD",
+  "train_sha256": "fcb16fa77091e91f93454e4860de261e2f29851d7ace4b622b7401530023669a",
+  "train_ast_sha256": "ff9d639f043e770100433a4c6d86c1c764720b156d4552a2915d45f9d54f5651",
+  "parent_train_sha256": "45696ba1f163c0173862c52d7ce07aa154a186803d50d84f35acff689481c954",
+  "parent_rev": "23f06a8ac9699cf97153e3b44d8454bf4de80bfb",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "thinner model: dim 512 -> 384 (aspect 64 -> 48)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0841676488253482,
+  "metrics": {
+   "val_bpb": 1.0841676488253482,
+   "training_seconds": 300.2,
+   "total_seconds": 337.9,
+   "peak_vram_mb": 34737.4,
+   "mfu_percent": 17.85,
+   "total_tokens_M": 356.5,
+   "num_steps": 680,
+   "num_params_M": 33.0,
+   "depth": 8,
+   "val_bpb_stdout": 1.084168,
+   "t_to_eval": 322.7
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-162253-621709/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-162253-621709/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "b604b39e391771668b5d4a08518d136784e542f5e2eef72bfa722357221d2592",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-162253-621709/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 128,
+     "causal_max_abs": 0.0,
+     "eval_s": 16.664672220000284,
+     "event": "eval",
+     "future_max_abs": 21.216108322143555,
+     "max_mem_mb": 34737.412109375,
+     "n_eval": 1,
+     "t_to_eval": 322.698982300999,
+     "val_bpb": 1.0841676488253482,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 339.36438284699943
+   }
+  },
+  "ts_end": "2026-10-03T16:28:34+00:00",
+  "last_step": {
+   "step": 679,
+   "pct": 99.9,
+   "loss": 3.038742,
+   "dt_ms": 449,
+   "tok_per_sec": 1168049,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0800244049226273,
+  "parent_n": 1,
+  "delta_vs_parent": -0.004143243902720917,
+  "seq": 2
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 416.1914794445038
+ },
+ "desc": "thinner model: dim 512 -> 384 (aspect 64 -> 48)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0000-a2/calls.jsonl",
+ "t_end": 1791044921.287749,
+ "insight": {
+  "hint": "The failed deeper experiment did not justify making the model thinner, so the next experiment should avoid changing model capacity and instead test a same-size speedup or optimizer/schedule improvement.",
+  "judge": {
+   "summary": "The agent read the current baseline and prior result, inferred from the failed depth-8-to-9 experiment that the model may be token-starved under the 300-second budget, and tested the opposite size hypothesis by making the model thinner. It changed only ASPECT_RATIO from 64 to 48 in train.py, reducing model_dim from 512 to 384 (3 heads of 128) while keeping depth 8, committed the change, and ran the experiment. The run completed successfully with val_bpb 1.084168 and peak VRAM 34.7 GB, which is worse than the current best 1.079941 by about 0.0042 bits per byte, so the experiment did not meet the improvement threshold.",
+   "feedback": "The implementation and execution were valid: the code ran, respected the one-experiment contract, and produced a measurable result. The mistake was a research-hypothesis mistake at the point where the agent chose to reduce model width. The prior deeper-and-larger run only showed that increasing size and reducing tokens was bad; it did not establish that the baseline was token-starved, and the thinner run showed that reducing capacity by roughly 35% hurts more than the extra tokens help. The decisive error was editing ASPECT_RATIO rather than choosing a same-capacity or throughput/optimization experiment that preserves the baseline model size.",
+   "wrong_step_id": 3,
+   "corrected_step": "",
+   "hint": "The failed deeper experiment did not justify making the model thinner, so the next experiment should avoid changing model capacity and instead test a same-size speedup or optimizer/schedule improvement."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent read the current baseline and prior result, inferred from the failed depth-8-to-9 experiment that the model may be token-starved under the 300-second budget, and tested the opposite size hypothesis by making the model thinner. It changed only ASPECT_RATIO from 64 to 48 in train.py, reducing model_dim from 512 to 384 (3 heads of 128) while keeping depth 8, committed the change, and ran the experiment. The run completed successfully with val_bpb 1.084168 and peak VRAM 34.7 GB, which is worse than the current best 1.079941 by about 0.0042 bits per byte, so the experiment did not meet the improvement threshold.\",\n  \"feedback\": \"The implementation and execution were valid: the code ran, respected the one-experiment contract, and produced a measurable result. The mistake was a research-hypothesis mistake at the point where the agent chose to reduce model width. The prior deeper-and-larger run only showed that increasing size and reducing tokens was bad; it did not establish that the baseline was token-starved, and the thinner run showed that reducing capacity by roughly 35% hurts more than the extra tokens help. The decisive error was editing ASPECT_RATIO rather than choosing a same-capacity or throughput/optimization experiment that preserves the baseline model size.\",\n  \"wrong_step_id\": 3,\n  \"corrected_step\": \"\",\n  \"hint\": \"The failed deeper experiment did not justify making the model thinner, so the next experiment should avoid changing model capacity and instead test a same-size speedup or optimizer/schedule improvement.\"\n}",
+  "prompt_chars": 13947,
+  "wall_s": 64.46305775642395
+ }
+}

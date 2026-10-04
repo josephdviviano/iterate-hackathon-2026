@@ -1,0 +1,155 @@
+{
+ "attempt_id": "g0003-a4",
+ "group": 3,
+ "k": 4,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0209608571494393,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "val_bpb": 1.0137109484151645,
+  "evals": [
+   1.0137109484151645
+  ],
+  "train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "run_id": "20261003-200009-7e25ed"
+ },
+ "policy": {
+  "name": "oct3-v3",
+  "version": 3,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v3"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.020961 did not improve on the current best 1.013711 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Reducing MLP capacity to buy more steps made the model under-capacity, so the experiment should not have shrunk the 4x MLP expansion."
+  },
+  {
+   "idx": 2,
+   "hint": "The bad choice was treating extra value-embedding tables as free capacity when they actually cost steps and undertrained within the fixed time budget."
+  },
+  {
+   "idx": 3,
+   "hint": "Do not increase depth to 9 at the same width; the extra layer made the rerun exceed the wall-clock budget."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-211201-febc8b",
+  "attempt_id": "g0003-a4",
+  "ts": "2026-10-03T21:12:01+00:00",
+  "wall_s": 435.9,
+  "head": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "branch": "HEAD",
+  "train_sha256": "02e9f980cbd33860ad4d408c93149eabbbf493ec83c42ee4797990fb6163923b",
+  "train_ast_sha256": "cdd3906434e90198a5bf92ed28abe27ffc646bf7953098f9308c9083bd39fe73",
+  "parent_train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "parent_rev": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "GQA: 4 -> 2 KV heads for cheaper K/V projections and attention",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0209608571494393,
+  "metrics": {
+   "val_bpb": 1.0209608571494393,
+   "training_seconds": 300.1,
+   "total_seconds": 432.9,
+   "peak_vram_mb": 21372.1,
+   "mfu_percent": 22.55,
+   "total_tokens_M": 281.4,
+   "num_steps": 2147,
+   "num_params_M": 39.8,
+   "depth": 8,
+   "t_train_trusted": 305.0,
+   "val_bpb_stdout": 1.020961,
+   "t_to_eval": 401.9
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-211201-febc8b/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-211201-febc8b/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "a00770dbae1512567b8a601e51c38b8b5d6f5374719486d80a8d3bd25bf6bb5d",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-211201-febc8b/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 3,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 32.353540099000384,
+     "event": "eval",
+     "future_max_abs": 21.67236328125,
+     "max_mem_mb": 21372.14794921875,
+     "n_eval": 1,
+     "t_to_eval": 401.93758002400136,
+     "t_train2": 96.8959848010054,
+     "train_batches": 2148,
+     "val_bpb": 1.0209608571494393,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 434.2917881989997
+   }
+  },
+  "ts_end": "2026-10-03T21:19:17+00:00",
+  "last_step": {
+   "step": 2146,
+   "pct": 100.0,
+   "loss": 2.85939,
+   "dt_ms": 141,
+   "tok_per_sec": 931647,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0138485903277128,
+  "parent_n": 2,
+  "delta_vs_parent": -0.007112266821726498,
+  "seq": 38
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 526.4630880355835
+ },
+ "desc": "GQA: 4 -> 2 KV heads for cheaper K/V projections and attention",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0003-a4/calls.jsonl",
+ "t_end": 1791062365.3252723,
+ "insight": {
+  "hint": "Don't buy steps by cutting model capacity the way batch-halving did — GQA removed ~21% of params for only a ~4% speedup, so pick a capacity-neutral speedup or a small capacity/optimizer change instead.",
+  "judge": {
+   "summary": "The agent read train.py and the experiment history, then chose to reduce model capacity via Grouped-Query Attention (GQA) as a way to 'buy more optimizer updates per time budget,' reasoning by analogy to the two successful batch-size-halving wins. Concretely, in step 3 it added a `KV_HEADS = 2` constant and changed `build_model_config` from `n_kv_head=num_heads` (4) to `n_kv_head=KV_HEADS` (2), halving the K/V projection parameters and KV memory traffic while leaving the Q path, MLP, and width untouched. It committed this (commit fc12797) and ran it once via ./run.sh. The run completed without crashing: val_bpb = 1.020961, peak_vram 21372 MB. This is a clear regression versus the current best 1.013711 (Δ ≈ +0.0073, far above the 0.0005 noise threshold), so the harness discards it. The agent correctly reported the loss and hypothesized that the capacity loss outweighed the modest speedup.",
+   "feedback": "The code and execution were clean (no bug, single successful run, correctly recorded), so the failure is a reasoning/strategy error, not a code error. The decisive flaw is the false analogy to the batch-halving wins. Those wins raised the number of optimizer steps while keeping the model's capacity identical — the extra per-token compute was redundant, so more updates was a pure win. GQA, in contrast, buys steps by *removing model capacity*: the run dropped from 50.3M to 39.8M params (~21% fewer) yet only gained ~4% more steps (2147 vs 2063) and ~4% more tokens (281.4M vs 270.4M). The premise that GQA was 'much less aggressive than the failed 3x MLP' was wrong — in parameter terms it is more aggressive (~21% cut vs ~12%). At dim=512 with 4 heads the attention is already small relative to the MLP and embeddings, and attention FLOPs scale with the number of query heads (unchanged), so GQA saved almost no compute; the ~4% speedup is far too small to repay a ~21% capacity cut, hence the val_bpb regression. The first error is the assumption that 'any way to buy more steps' is equivalent; here the speedup was overestimated and the capacity cost underestimated. The corrected move is to pick a capacity-neutral or capacity-preserving speedup (or a small capacity-increase/optimizer tweak) rather than shrinking the network to gain steps.",
+   "wrong_step_id": 3,
+   "corrected_step": "ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO\nHEAD_DIM = 128          # target head dimension for attention\nWINDOW_PATTERN = \"SSLL\" # sliding window pattern: L=full, S=half context\n\n# Optimization",
+   "hint": "Don't buy steps by cutting model capacity the way batch-halving did — GQA removed ~21% of params for only a ~4% speedup, so pick a capacity-neutral speedup or a small capacity/optimizer change instead."
+  },
+  "raw": "\n\n{\n\"summary\": \"The agent read train.py and the experiment history, then chose to reduce model capacity via Grouped-Query Attention (GQA) as a way to 'buy more optimizer updates per time budget,' reasoning by analogy to the two successful batch-size-halving wins. Concretely, in step 3 it added a `KV_HEADS = 2` constant and changed `build_model_config` from `n_kv_head=num_heads` (4) to `n_kv_head=KV_HEADS` (2), halving the K/V projection parameters and KV memory traffic while leaving the Q path, MLP, and width untouched. It committed this (commit fc12797) and ran it once via ./run.sh. The run completed without crashing: val_bpb = 1.020961, peak_vram 21372 MB. This is a clear regression versus the current best 1.013711 (Δ ≈ +0.0073, far above the 0.0005 noise threshold), so the harness discards it. The agent correctly reported the loss and hypothesized that the capacity loss outweighed the modest speedup.\",\n\"feedback\": \"The code and execution were clean (no bug, single successful run, correctly recorded), so the failure is a reasoning/strategy error, not a code error. The decisive flaw is the false analogy to the batch-halving wins. Those wins raised the number of optimizer steps while keeping the model's capacity identical — the extra per-token compute was redundant, so more updates was a pure win. GQA, in contrast, buys steps by *removing model capacity*: the run dropped from 50.3M to 39.8M params (~21% fewer) yet only gained ~4% more steps (2147 vs 2063) and ~4% more tokens (281.4M vs 270.4M). The premise that GQA was 'much less aggressive than the failed 3x MLP' was wrong — in parameter terms it is more aggressive (~21% cut vs ~12%). At dim=512 with 4 heads the attention is already small relative to the MLP and embeddings, and attention FLOPs scale with the number of query heads (unchanged), so GQA saved almost no compute; the ~4% speedup is far too small to repay a ~21% capacity cut, hence the val_bpb regression. The first error is the assumption that 'any way to buy more steps' is equivalent; here the speedup was overestimated and the capacity cost underestimated. The corrected move is to pick a capacity-neutral or capacity-preserving speedup (or a small capacity-increase/optimizer tweak) rather than shrinking the network to gain steps.\",\n\"wrong_step_id\": 3,\n\"corrected_step\": \"ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO\\nHEAD_DIM = 128          # target head dimension for attention\\nWINDOW_PATTERN = \\\"SSLL\\\" # sliding window pattern: L=full, S=half context\\n\\n# Optimization\",\n\"hint\": \"Don't buy steps by cutting model capacity the way batch-halving did — GQA removed ~21% of params for only a ~4% speedup, so pick a capacity-neutral speedup or a small capacity/optimizer change instead.\"\n}",
+  "prompt_chars": 17785,
+  "wall_s": 98.52699875831604
+ }
+}

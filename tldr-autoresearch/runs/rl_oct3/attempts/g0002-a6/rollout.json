@@ -1,0 +1,232 @@
+{
+ "attempt_id": "g0002-a6",
+ "group": 2,
+ "k": 6,
+ "success": true,
+ "reward": 1.0,
+ "status": "keep",
+ "val_bpb": 1.0139862322402609,
+ "confirm_mean": 1.0137109484151645,
+ "confirm": [
+  {
+   "run_id": "20261003-200009-7e25ed",
+   "attempt_id": "g0002-a6-confirm1",
+   "ts": "2026-10-03T20:00:09+00:00",
+   "wall_s": 443.7,
+   "head": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+   "branch": "HEAD",
+   "train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+   "train_ast_sha256": "a00770dbae1512567b8a601e51c38b8b5d6f5374719486d80a8d3bd25bf6bb5d",
+   "parent_train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+   "parent_rev": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+   "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+   "desc": "compile model with max-autotune GEMM tuning (no cudagraphs) [confirmation re-run]",
+   "status": "ok",
+   "returncode": 0,
+   "val_bpb": 1.0137109484151645,
+   "metrics": {
+    "val_bpb": 1.0137109484151645,
+    "training_seconds": 300.1,
+    "total_seconds": 440.8,
+    "peak_vram_mb": 24750.3,
+    "mfu_percent": 22.81,
+    "total_tokens_M": 270.4,
+    "num_steps": 2063,
+    "num_params_M": 50.3,
+    "depth": 8,
+    "val_bpb_stdout": 1.013711,
+    "t_to_eval": 410.1
+   },
+   "error_tail": null,
+   "flags": [
+    "reeval"
+   ],
+   "diff_path": "$RLTLDR_ROOT/data/runs/20261003-200009-7e25ed/diff.patch",
+   "log_path": "$RLTLDR_ROOT/data/runs/20261003-200009-7e25ed/run.log",
+   "gpu": "GPU2-UUID",
+   "max_runs": 1,
+   "timeout_s": 660,
+   "parent_ast_sha256": "c79b088c0f0fd3e5b93a7bec565e4b36bdb250317a7436690c423b4c71849719",
+   "mode": "dirty",
+   "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-200009-7e25ed/train.py",
+   "deps_git_hashes": [
+    "94ae3298925ddae47821f703faf44d4e3b8381bb",
+    "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+   ],
+   "diff_lines": 2,
+   "trusted": {
+    "valid": true,
+    "evals": [
+     {
+      "batch_size": 64,
+      "causal_max_abs": 0.0,
+      "eval_s": 32.09912674500083,
+      "event": "eval",
+      "future_max_abs": 23.751018524169922,
+      "max_mem_mb": 24750.26708984375,
+      "n_eval": 1,
+      "t_to_eval": 410.0904773080001,
+      "val_bpb": 1.0137109484151645,
+      "val_leak": []
+     }
+    ],
+    "val_leak": [],
+    "bad_lines": 0,
+    "start": {
+     "event": "start",
+     "no_autotune": true
+    },
+    "end": {
+     "event": "end",
+     "n_eval": 1,
+     "t": 442.1903104039993
+    }
+   },
+   "ts_end": "2026-10-03T20:07:33+00:00",
+   "last_step": {
+    "step": 2062,
+    "pct": 100.0,
+    "loss": 2.83951,
+    "dt_ms": 146,
+    "tok_per_sec": 895747,
+    "epoch": 1,
+    "remaining_s": 0
+   },
+   "parent_val_bpb": 1.0169081747663617,
+   "parent_n": 2,
+   "delta_vs_parent": 0.0031972263511972354,
+   "seq": 31
+  }
+ ],
+ "parent": {
+  "commit": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "val_bpb": 1.0169535025171206,
+  "evals": [
+   1.0169535025171206
+  ],
+  "train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "run_id": "20261003-185840-8515a2"
+ },
+ "policy": {
+  "name": "oct3-v2",
+  "version": 2,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v2"
+ },
+ "verdict": [],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 2,
+   "hint": "Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead."
+  },
+  {
+   "idx": 3,
+   "hint": "Changing DEPTH alone also changed the model width in this setup, so you must explicitly hold MODEL_DIM at 512 for a true depth-9 comparison."
+  },
+  {
+   "idx": 4,
+   "hint": "An apparent win must be confirmed with one fresh re-run before declaring the experiment successful."
+  },
+  {
+   "idx": 5,
+   "hint": "The head-dimension change itself was the mistake: 4 heads of dimension 128 were much better than 8 heads of dimension 64, so HEAD_DIM should have stayed at 128."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-195232-27df50",
+  "attempt_id": "g0002-a6",
+  "ts": "2026-10-03T19:52:32+00:00",
+  "wall_s": 435.3,
+  "head": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "branch": "HEAD",
+  "train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "train_ast_sha256": "a00770dbae1512567b8a601e51c38b8b5d6f5374719486d80a8d3bd25bf6bb5d",
+  "parent_train_sha256": "558b4329d148dff4155a701cf89f148ab98a3d49e23d82242e3535cd9feebe34",
+  "parent_rev": "3536249c071be01c4ce7b7d02656cac10cac87ef",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "compile model with max-autotune GEMM tuning (no cudagraphs)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0139862322402609,
+  "metrics": {
+   "val_bpb": 1.0139862322402609,
+   "training_seconds": 300.1,
+   "total_seconds": 432.4,
+   "peak_vram_mb": 24750.3,
+   "mfu_percent": 22.8,
+   "total_tokens_M": 270.4,
+   "num_steps": 2063,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.013986,
+   "t_to_eval": 402.2
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-195232-27df50/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-195232-27df50/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "c79b088c0f0fd3e5b93a7bec565e4b36bdb250317a7436690c423b4c71849719",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-195232-27df50/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 31.599312152000493,
+     "event": "eval",
+     "future_max_abs": 21.048383712768555,
+     "max_mem_mb": 24750.26708984375,
+     "n_eval": 1,
+     "t_to_eval": 402.21075916799964,
+     "val_bpb": 1.0139862322402609,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 433.8107515590018
+   }
+  },
+  "ts_end": "2026-10-03T19:59:47+00:00",
+  "last_step": {
+   "step": 2062,
+   "pct": 100.0,
+   "loss": 2.84094,
+   "dt_ms": 146,
+   "tok_per_sec": 896285,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0169081747663617,
+  "parent_n": 2,
+  "delta_vs_parent": 0.0029219425261008958,
+  "seq": 29
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 616.4398407936096
+ },
+ "desc": "compile model with max-autotune GEMM tuning (no cudagraphs)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0002-a6/calls.jsonl",
+ "t_end": 1791058053.8916433,
+ "insight": null
+}

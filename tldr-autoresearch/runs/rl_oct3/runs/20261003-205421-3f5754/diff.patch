@@ -1,0 +1,32 @@
+diff --git a/train.py b/train.py
+index d5a0a91..170f395 100644
+--- a/train.py
++++ b/train.py
+@@ -457,7 +457,6 @@ class MuonAdamW(torch.optim.Optimizer):
+ # ---------------------------------------------------------------------------
+ 
+ # Model architecture
+-ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO
+ HEAD_DIM = 128          # target head dimension for attention
+ WINDOW_PATTERN = "SSLL" # sliding window pattern: L=full, S=half context
+ 
+@@ -474,7 +473,8 @@ WARMDOWN_RATIO = 0.7    # fraction of time budget for LR warmdown
+ FINAL_LR_FRAC = 0.0     # final LR as fraction of initial
+ 
+ # Model size
+-DEPTH = 8               # number of transformer layers
++DEPTH = 9               # number of transformer layers
++MODEL_DIM = 512         # explicit model width (held at 512 to keep steps cheap as depth grows)
+ DEVICE_BATCH_SIZE = 64   # per-device batch size (reduce if OOM)
+ 
+ # ---------------------------------------------------------------------------
+@@ -494,8 +494,7 @@ vocab_size = tokenizer.get_vocab_size()
+ print(f"Vocab size: {vocab_size:,}")
+ 
+ def build_model_config(depth):
+-    base_dim = depth * ASPECT_RATIO
+-    model_dim = ((base_dim + HEAD_DIM - 1) // HEAD_DIM) * HEAD_DIM
++    model_dim = MODEL_DIM
+     num_heads = model_dim // HEAD_DIM
+     return GPTConfig(
+         sequence_len=MAX_SEQ_LEN, vocab_size=vocab_size,

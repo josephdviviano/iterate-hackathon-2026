@@ -1,0 +1,15 @@
+diff --git a/train.py b/train.py
+index 237eb8c..01ce7b0 100644
+--- a/train.py
++++ b/train.py
+@@ -222,8 +222,8 @@ class GPT(nn.Module):
+     def _compute_window_sizes(self, config):
+         pattern = config.window_pattern.upper()
+         assert all(c in "SL" for c in pattern)
+-        long_window = config.sequence_len
+-        short_window = long_window // 16  # S=128: 1024->512->256 each won; keep halving while attention FLOPs still matter, quality stayed window-insensitive
++        long_window = config.sequence_len // 2  # L=1024: S is down to 128 (S FLOPs negligible); L layers are now the dominant attention cost, halve them for ~7% higher tokens/sec
++        short_window = long_window // 8  # S=128 (unchanged)
+         char_to_window = {"L": (long_window, 0), "S": (short_window, 0)}
+         window_sizes = []
+         for layer_idx in range(config.n_layer):

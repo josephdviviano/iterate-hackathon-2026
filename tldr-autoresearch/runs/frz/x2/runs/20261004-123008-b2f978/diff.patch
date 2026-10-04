@@ -1,0 +1,12 @@
+diff --git a/train.py b/train.py
+index 68e3484..21064ec 100644
+--- a/train.py
++++ b/train.py
+@@ -499,7 +499,7 @@ def build_model_config(depth):
+     num_heads = model_dim // HEAD_DIM
+     return GPTConfig(
+         sequence_len=MAX_SEQ_LEN, vocab_size=vocab_size,
+-        n_layer=depth, n_head=num_heads, n_kv_head=num_heads, n_embd=model_dim,
++        n_layer=depth, n_head=num_heads, n_kv_head=num_heads // 2, n_embd=model_dim,
+         window_pattern=WINDOW_PATTERN,
+     )

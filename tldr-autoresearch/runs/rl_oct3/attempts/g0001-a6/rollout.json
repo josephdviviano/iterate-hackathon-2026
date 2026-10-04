@@ -1,0 +1,156 @@
+{
+ "attempt_id": "g0001-a6",
+ "group": 1,
+ "k": 6,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0188620209226942,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "val_bpb": 1.0176044380166172,
+  "evals": [
+   1.0176044380166172
+  ],
+  "train_sha256": "492c53b6b893980a2a1d789486fa945f811bb513f2dd24642b505bbdfd2ae888",
+  "run_id": "20261003-175940-65935d"
+ },
+ "policy": {
+  "name": "oct3-v1",
+  "version": 1,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v1"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.018862 did not improve on the current best 1.017604 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "The history supports extending the linear warmdown further, not replacing it with an untested cosine shape."
+  },
+  {
+   "idx": 2,
+   "hint": "You picked a too-small continuation of an already-saturating warmdown axis instead of trying a more impactful untested hyperparameter."
+  },
+  {
+   "idx": 3,
+   "hint": "Instead of raising the Muon matrix LR, try a smaller downward change from the current 0.04 value."
+  },
+  {
+   "idx": 5,
+   "hint": "Do not commit a tiny hyperparameter tweak whose apparent gain is only barely above the noise threshold; choose a change with a larger expected effect or verify that the margin is robust."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-182214-9cffcf",
+  "attempt_id": "g0001-a6",
+  "ts": "2026-10-03T18:22:14+00:00",
+  "wall_s": 330.1,
+  "head": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "branch": "HEAD",
+  "train_sha256": "d6560d87fbaf555ca25287285c94da44bdbd57d83048a44bc2b3d042a3ff0b5c",
+  "train_ast_sha256": "99fa3fd4333359d818adf7e7a6b3d0fe14fc44286a80905036191986f1e9e86b",
+  "parent_train_sha256": "492c53b6b893980a2a1d789486fa945f811bb513f2dd24642b505bbdfd2ae888",
+  "parent_rev": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "raise AdamW embedding LR 0.6 -> 0.8",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0188620209226942,
+  "metrics": {
+   "val_bpb": 1.0188620209226942,
+   "training_seconds": 300.0,
+   "total_seconds": 327.6,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.21,
+   "total_tokens_M": 252.3,
+   "num_steps": 1925,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.018862,
+   "t_to_eval": 313.3
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-182214-9cffcf/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-182214-9cffcf/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "16a61bae506b3fb43bc4576916aabf7c7b1c49e2b88bad9e62d0f120cbfcc8bf",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-182214-9cffcf/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.717639267000777,
+     "event": "eval",
+     "future_max_abs": 21.119808197021484,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.3056373099971,
+     "val_bpb": 1.0188620209226942,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 329.02396885099733
+   }
+  },
+  "ts_end": "2026-10-03T18:27:44+00:00",
+  "last_step": {
+   "step": 1924,
+   "pct": 100.0,
+   "loss": 2.863938,
+   "dt_ms": 157,
+   "tok_per_sec": 835953,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0176975197414182,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0011645011812759787,
+  "seq": 19
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 553.9457178115845
+ },
+ "desc": "raise AdamW embedding LR 0.6 -> 0.8",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0001-a6/calls.jsonl",
+ "t_end": 1791052075.7417114,
+ "insight": {
+  "hint": "The mistake was an aggressive, untested increase in EMBEDDING_LR; the empirical result shows that raising it hurt, so the embedding-LR axis should be probed conservatively in the other direction or not chosen at all.",
+  "judge": {
+   "summary": "The agent inspected train.py, the git history, and results.tsv, then concluded that several obvious single-knob axes (batch size, warmdown ratio, Muon matrix LR) were already bracketed. It chose the untested EMBEDDING_LR knob, hypothesized that the large embedding/value-embedding parameter group was undertrained, and made a one-line change from EMBEDDING_LR = 0.6 to EMBEDDING_LR = 0.8. After committing and running the experiment, the model trained cleanly with the same memory footprint, but val_bpb was 1.018862, worse than the current best 1.017604 by about 0.00126, so the run failed to improve the benchmark.",
+   "feedback": "The code change itself was valid and ran without error, so the failure came from the experimental choice rather than a crash or implementation bug. The decisive mistake was selecting and applying an unsupported direction on an untested hyperparameter: increasing EMBEDDING_LR from 0.6 to 0.8. The prior results show the current configuration is already near a local optimum, and the only evidence in the history supports small, conservative refinements of already-promising axes rather than aggressive moves on new ones. The agent's reasoning also overestimated the case by relying on an inaccurate parameter-count narrative and by assuming that a larger LR for embeddings must help in an undertrained regime; the empirical result shows that the higher embedding LR made optimization worse, likely by destabilizing updates. At step 5, instead of raising EMBEDDING_LR to 0.8, the agent should have either avoided that aggressive change or tested the opposite direction with a modest decrease if it wanted to probe the embedding-LR axis.",
+   "wrong_step_id": 5,
+   "corrected_step": "EMBEDDING_LR = 0.45     # learning rate for token embeddings (Adam)",
+   "hint": "The mistake was an aggressive, untested increase in EMBEDDING_LR; the empirical result shows that raising it hurt, so the embedding-LR axis should be probed conservatively in the other direction or not chosen at all."
+  },
+  "raw": "\n\n{\n\"summary\": \"The agent inspected train.py, the git history, and results.tsv, then concluded that several obvious single-knob axes (batch size, warmdown ratio, Muon matrix LR) were already bracketed. It chose the untested EMBEDDING_LR knob, hypothesized that the large embedding/value-embedding parameter group was undertrained, and made a one-line change from EMBEDDING_LR = 0.6 to EMBEDDING_LR = 0.8. After committing and running the experiment, the model trained cleanly with the same memory footprint, but val_bpb was 1.018862, worse than the current best 1.017604 by about 0.00126, so the run failed to improve the benchmark.\",\n\"feedback\": \"The code change itself was valid and ran without error, so the failure came from the experimental choice rather than a crash or implementation bug. The decisive mistake was selecting and applying an unsupported direction on an untested hyperparameter: increasing EMBEDDING_LR from 0.6 to 0.8. The prior results show the current configuration is already near a local optimum, and the only evidence in the history supports small, conservative refinements of already-promising axes rather than aggressive moves on new ones. The agent's reasoning also overestimated the case by relying on an inaccurate parameter-count narrative and by assuming that a larger LR for embeddings must help in an undertrained regime; the empirical result shows that the higher embedding LR made optimization worse, likely by destabilizing updates. At step 5, instead of raising EMBEDDING_LR to 0.8, the agent should have either avoided that aggressive change or tested the opposite direction with a modest decrease if it wanted to probe the embedding-LR axis.\",\n\"wrong_step_id\": 5,\n\"corrected_step\": \"EMBEDDING_LR = 0.45     # learning rate for token embeddings (Adam)\",\n\"hint\": \"The mistake was an aggressive, untested increase in EMBEDDING_LR; the empirical result shows that raising it hurt, so the embedding-LR axis should be probed conservatively in the other direction or not chosen at all.\"\n}",
+  "prompt_chars": 21852,
+  "wall_s": 95.21377182006836
+ }
+}

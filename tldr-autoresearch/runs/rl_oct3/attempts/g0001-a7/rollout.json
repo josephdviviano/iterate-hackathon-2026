@@ -1,0 +1,160 @@
+{
+ "attempt_id": "g0001-a7",
+ "group": 1,
+ "k": 7,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0178850141128015,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "val_bpb": 1.0176044380166172,
+  "evals": [
+   1.0176044380166172
+  ],
+  "train_sha256": "492c53b6b893980a2a1d789486fa945f811bb513f2dd24642b505bbdfd2ae888",
+  "run_id": "20261003-175940-65935d"
+ },
+ "policy": {
+  "name": "oct3-v1",
+  "version": 1,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v1"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.017885 did not improve on the current best 1.017604 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "The history supports extending the linear warmdown further, not replacing it with an untested cosine shape."
+  },
+  {
+   "idx": 2,
+   "hint": "You picked a too-small continuation of an already-saturating warmdown axis instead of trying a more impactful untested hyperparameter."
+  },
+  {
+   "idx": 3,
+   "hint": "Instead of raising the Muon matrix LR, try a smaller downward change from the current 0.04 value."
+  },
+  {
+   "idx": 5,
+   "hint": "Do not commit a tiny hyperparameter tweak whose apparent gain is only barely above the noise threshold; choose a change with a larger expected effect or verify that the margin is robust."
+  },
+  {
+   "idx": 6,
+   "hint": "The mistake was an aggressive, untested increase in EMBEDDING_LR; the empirical result shows that raising it hurt, so the embedding-LR axis should be probed conservatively in the other direction or not chosen at all."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-183034-34413e",
+  "attempt_id": "g0001-a7",
+  "ts": "2026-10-03T18:30:34+00:00",
+  "wall_s": 330.1,
+  "head": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "branch": "HEAD",
+  "train_sha256": "beb255f6f25847ce06df227f9ea4f2ad56d8a71952286ae6fc5f6f701387d673",
+  "train_ast_sha256": "ceff288b80fd6328c6c565686a432942d0395ade86835a80a1eb9e0ef49485ea",
+  "parent_train_sha256": "492c53b6b893980a2a1d789486fa945f811bb513f2dd24642b505bbdfd2ae888",
+  "parent_rev": "9f5cf405c7539f55ea40cc65ea9822be9a169140",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "lower AdamW embedding LR 0.6 -> 0.45",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0178850141128015,
+  "metrics": {
+   "val_bpb": 1.0178850141128015,
+   "training_seconds": 300.0,
+   "total_seconds": 327.6,
+   "peak_vram_mb": 22653.5,
+   "mfu_percent": 20.21,
+   "total_tokens_M": 252.3,
+   "num_steps": 1925,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.017885,
+   "t_to_eval": 313.4
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-183034-34413e/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-183034-34413e/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "16a61bae506b3fb43bc4576916aabf7c7b1c49e2b88bad9e62d0f120cbfcc8bf",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-183034-34413e/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 15.673381528999016,
+     "event": "eval",
+     "future_max_abs": 22.71928596496582,
+     "max_mem_mb": 22653.45654296875,
+     "n_eval": 1,
+     "t_to_eval": 313.36756402600076,
+     "val_bpb": 1.0178850141128015,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 329.0416632810011
+   }
+  },
+  "ts_end": "2026-10-03T18:36:05+00:00",
+  "last_step": {
+   "step": 1924,
+   "pct": 100.0,
+   "loss": 2.861871,
+   "dt_ms": 157,
+   "tok_per_sec": 836276,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0176975197414182,
+  "parent_n": 2,
+  "delta_vs_parent": -0.00018749437138332326,
+  "seq": 20
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 405.2017152309418
+ },
+ "desc": "lower AdamW embedding LR 0.6 -> 0.45",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0001-a7/calls.jsonl",
+ "t_end": 1791052576.2312975,
+ "insight": {
+  "hint": "The embedding LR axis looked nearly saturated, so the experiment should have targeted a larger untested architectural axis like depth rather than making another aggressive learning-rate probe.",
+  "judge": {
+   "summary": "The agent read the current train.py and results history, then made a single simple edit: lowering the AdamW embedding learning rate from 0.6 to 0.45, motivated by the fact that a previous increase to 0.8 had hurt performance. The agent committed this change and ran one experiment. The run completed successfully with val_bpb 1.017885 and unchanged memory usage, which is slightly worse than the current best 1.017604, so the attempt did not qualify as an improvement.",
+   "feedback": "The decisive error was not a code bug but the experimental choice: the agent interpreted the failure of embedding LR 0.8 as evidence that the embedding LR axis should be probed downward, and then chose an overly aggressive downward step, 0.6 -> 0.45. The result shows the surface is not strongly improved by lowering the embedding LR; 0.45 is still slightly worse than 0.6, so the hypothesis that the current value was 'too hot' was not validated. A more careful move would have been either a much smaller embedding-LR probe if that axis were still the target, or, better, choosing one of the explicitly untested higher-impact axes mentioned by the agent itself, such as changing the model depth or attention pattern, rather than continuing to fine-tune a nearly saturated learning-rate constant.",
+   "wrong_step_id": 2,
+   "corrected_step": "edit path=$RLTLDR_ROOT/autoresearch/train.py edits=[{oldText:'DEPTH = 8', newText:'DEPTH = 7'}]",
+   "hint": "The embedding LR axis looked nearly saturated, so the experiment should have targeted a larger untested architectural axis like depth rather than making another aggressive learning-rate probe."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent read the current train.py and results history, then made a single simple edit: lowering the AdamW embedding learning rate from 0.6 to 0.45, motivated by the fact that a previous increase to 0.8 had hurt performance. The agent committed this change and ran one experiment. The run completed successfully with val_bpb 1.017885 and unchanged memory usage, which is slightly worse than the current best 1.017604, so the attempt did not qualify as an improvement.\",\n  \"feedback\": \"The decisive error was not a code bug but the experimental choice: the agent interpreted the failure of embedding LR 0.8 as evidence that the embedding LR axis should be probed downward, and then chose an overly aggressive downward step, 0.6 -> 0.45. The result shows the surface is not strongly improved by lowering the embedding LR; 0.45 is still slightly worse than 0.6, so the hypothesis that the current value was 'too hot' was not validated. A more careful move would have been either a much smaller embedding-LR probe if that axis were still the target, or, better, choosing one of the explicitly untested higher-impact axes mentioned by the agent itself, such as changing the model depth or attention pattern, rather than continuing to fine-tune a nearly saturated learning-rate constant.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"edit path=$RLTLDR_ROOT/autoresearch/train.py edits=[{oldText:'DEPTH = 8', newText:'DEPTH = 7'}]\",\n  \"hint\": \"The embedding LR axis looked nearly saturated, so the experiment should have targeted a larger untested architectural axis like depth rather than making another aggressive learning-rate probe.\"\n}",
+  "prompt_chars": 15278,
+  "wall_s": 93.07589435577393
+ }
+}

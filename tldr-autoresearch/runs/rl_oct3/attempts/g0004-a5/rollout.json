@@ -1,0 +1,151 @@
+{
+ "attempt_id": "g0004-a5",
+ "group": 4,
+ "k": 5,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0081007518222675,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "val_bpb": 1.0076966286985174,
+  "evals": [
+   1.0076966286985174
+  ],
+  "train_sha256": "a5605ead4d0cc51c367041cce4b3a3a20faeb270f22c742eeccccf25c1329b32",
+  "run_id": "20261003-223841-969d6c"
+ },
+ "policy": {
+  "name": "oct3-v4",
+  "version": 4,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v4"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.008101 did not improve on the current best 1.007697 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Do not enable value embeddings on every layer; the previous all-layer VE result was not a true win over the relevant max-autotune baseline."
+  },
+  {
+   "idx": 4,
+   "hint": "The sliding-window-shortening line had already plateaued, so the 256->128 change was a low-EV extrapolation whose ~0.0002 expected gain was below the 0.0005 keep-threshold; pick an experiment with a realistic chance of beating the best by more than 0.0005 instead."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-230004-05dca8",
+  "attempt_id": "g0004-a5",
+  "ts": "2026-10-03T23:00:04+00:00",
+  "wall_s": 382.4,
+  "head": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "branch": "HEAD",
+  "train_sha256": "00cf8ee68d459c104901ed36c68dcadff554f39067ae797b8bf52b21a37c9895",
+  "train_ast_sha256": "0ea3be03ed31aaa6aa333a057a25fb00fa42d51ec38d26d9fdfb03a2b6164dcf",
+  "parent_train_sha256": "a5605ead4d0cc51c367041cce4b3a3a20faeb270f22c742eeccccf25c1329b32",
+  "parent_rev": "7b7d25378d53522040e7951154d57a6abf4a45c8",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "introduce medium window 1024 for L layers (SSMM), last layer stays full",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0081007518222675,
+  "metrics": {
+   "val_bpb": 1.0081007518222675,
+   "training_seconds": 300.0,
+   "total_seconds": 379.5,
+   "peak_vram_mb": 25277.5,
+   "mfu_percent": 20.22,
+   "total_tokens_M": 252.3,
+   "num_steps": 1925,
+   "num_params_M": 57.7,
+   "depth": 9,
+   "t_train_trusted": 302.6,
+   "val_bpb_stdout": 1.008101,
+   "t_to_eval": 355.4
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-230004-05dca8/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-230004-05dca8/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "e323ef73ae205db881366c73725cca64d74a91530b1b742e4055015b94a1dd9c",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-230004-05dca8/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 7,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 25.532887444998778,
+     "event": "eval",
+     "future_max_abs": 23.60201644897461,
+     "max_mem_mb": 25277.48681640625,
+     "n_eval": 1,
+     "t_to_eval": 355.3793984990043,
+     "t_train2": 52.740683726005955,
+     "train_batches": 1926,
+     "val_bpb": 1.0081007518222675,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 380.91302397000254
+   }
+  },
+  "ts_end": "2026-10-03T23:06:26+00:00",
+  "last_step": {
+   "step": 1924,
+   "pct": 99.9,
+   "loss": 2.834758,
+   "dt_ms": 157,
+   "tok_per_sec": 835152,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0076483113657055,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0004524404565620088,
+  "seq": 49
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 621.6282267570496
+ },
+ "desc": "introduce medium window 1024 for L layers (SSMM), last layer stays full",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0004-a5/calls.jsonl",
+ "t_end": 1791068797.8862329,
+ "insight": {
+  "hint": "Do not shorten the long-range L layers to 1024; the model still needs full 2048 context in more than the final layer, so choose a non-context-sacrificing experiment instead.",
+  "judge": {
+   "summary": "The agent kept the current architecture and optimizer, and changed the sliding-window attention pattern from SSLL to SSMM by adding a new 'M' window of 1024 tokens (half of the 2048 sequence length), while assuming the final layer would still use full 2048 context. The goal was to reduce attention FLOPs in the formerly full-context layers and buy more optimizer updates within the 5-minute budget. The run completed cleanly and produced val_bpb 1.008101 with peak VRAM 25.3 GB, which is worse than the current best 1.007697 and does not satisfy the required >0.0005 improvement threshold.",
+   "feedback": "The implementation appears functionally correct, so the failure is primarily a research-hypothesis error rather than a code bug. The agent assumed that replacing four full-2048 L layers with 1024-token M layers would be cheap enough to be compensated by extra optimizer updates. The result shows that the long-range quality cost was not offset; val_bpb increased, and the step/token count did not show the hoped-for large gain in the comparison statistics. The first decisive mistake was choosing this window-shortening edit as the experiment, specifically setting WINDOW_PATTERN to \"SSMM\" and mapping 'M' to sequence_len // 2. After the recent 256 -> 128 short-window run failed to give a robust improvement, further sacrificing long-range context was a risky direction, and the 1024 compromise still removed too much long-range attention from the upper/latter layers.",
+   "wrong_step_id": 3,
+   "corrected_step": "",
+   "hint": "Do not shorten the long-range L layers to 1024; the model still needs full 2048 context in more than the final layer, so choose a non-context-sacrificing experiment instead."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent kept the current architecture and optimizer, and changed the sliding-window attention pattern from SSLL to SSMM by adding a new 'M' window of 1024 tokens (half of the 2048 sequence length), while assuming the final layer would still use full 2048 context. The goal was to reduce attention FLOPs in the formerly full-context layers and buy more optimizer updates within the 5-minute budget. The run completed cleanly and produced val_bpb 1.008101 with peak VRAM 25.3 GB, which is worse than the current best 1.007697 and does not satisfy the required >0.0005 improvement threshold.\",\n  \"feedback\": \"The implementation appears functionally correct, so the failure is primarily a research-hypothesis error rather than a code bug. The agent assumed that replacing four full-2048 L layers with 1024-token M layers would be cheap enough to be compensated by extra optimizer updates. The result shows that the long-range quality cost was not offset; val_bpb increased, and the step/token count did not show the hoped-for large gain in the comparison statistics. The first decisive mistake was choosing this window-shortening edit as the experiment, specifically setting WINDOW_PATTERN to \\\"SSMM\\\" and mapping 'M' to sequence_len // 2. After the recent 256 -> 128 short-window run failed to give a robust improvement, further sacrificing long-range context was a risky direction, and the 1024 compromise still removed too much long-range attention from the upper/latter layers.\",\n  \"wrong_step_id\": 3,\n  \"corrected_step\": \"\",\n  \"hint\": \"Do not shorten the long-range L layers to 1024; the model still needs full 2048 context in more than the final layer, so choose a non-context-sacrificing experiment instead.\"\n}",
+  "prompt_chars": 18462,
+  "wall_s": 93.8671178817749
+ }
+}

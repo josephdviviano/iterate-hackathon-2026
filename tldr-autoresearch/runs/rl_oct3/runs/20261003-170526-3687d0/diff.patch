@@ -1,0 +1,32 @@
+diff --git a/train.py b/train.py
+index d5f9e9a..355bd83 100644
+--- a/train.py
++++ b/train.py
+@@ -292,7 +292,7 @@ class GPT(nn.Module):
+             group["initial_lr"] = group["lr"]
+         return optimizer
+ 
+-    def forward(self, idx, targets=None, reduction='mean'):
++    def forward(self, idx, targets=None, reduction='mean', fp32_loss=True):
+         B, T = idx.size()
+         assert T <= self.cos.size(1)
+         cos_sin = self.cos[:, :T], self.sin[:, :T]
+@@ -308,7 +308,8 @@ class GPT(nn.Module):
+ 
+         softcap = 15
+         logits = self.lm_head(x)
+-        logits = logits.float()
++        if fp32_loss:
++            logits = logits.float()
+         logits = softcap * torch.tanh(logits / softcap)
+ 
+         if targets is not None:
+@@ -576,7 +577,7 @@ while True:
+     t0 = time.time()
+     for micro_step in range(grad_accum_steps):
+         with autocast_ctx:
+-            loss = model(x, y)
++            loss = model(x, y, fp32_loss=False)  # bf16 CE: half the logits memory traffic vs fp32
+         train_loss = loss.detach()
+         loss = loss / grad_accum_steps
+         loss.backward()

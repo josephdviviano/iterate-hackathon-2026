@@ -1,0 +1,159 @@
+{
+ "attempt_id": "g0003-a6",
+ "group": 3,
+ "k": 6,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.0131572620576814,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "8df8d1e3edac486a41a327f4c5f6b30b65941057",
+  "val_bpb": 1.0130246725361405,
+  "evals": [
+   1.0130246725361405
+  ],
+  "train_sha256": "c3244192738e4bfe172e1368dc860d495d6ebcb870d586a2c0d68c1f3374acd4",
+  "run_id": "20261003-210059-50f966"
+ },
+ "policy": {
+  "name": "oct3-v3",
+  "version": 3,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v3"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.013157 did not improve on the current best 1.013025 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 1,
+   "hint": "Reducing MLP capacity to buy more steps made the model under-capacity, so the experiment should not have shrunk the 4x MLP expansion."
+  },
+  {
+   "idx": 2,
+   "hint": "The bad choice was treating extra value-embedding tables as free capacity when they actually cost steps and undertrained within the fixed time budget."
+  },
+  {
+   "idx": 4,
+   "hint": "Don't buy steps by cutting model capacity the way batch-halving did — GQA removed ~21% of params for only a ~4% speedup, so pick a capacity-neutral speedup or a small capacity/optimizer change instead."
+  },
+  {
+   "idx": 5,
+   "hint": "Depth 10 at width 512 costs too many optimizer steps for this 5-minute budget, so stop pushing depth and try an optimizer or efficiency-neutral change instead."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-213224-491f25",
+  "attempt_id": "g0003-a6",
+  "ts": "2026-10-03T21:32:24+00:00",
+  "wall_s": 360.1,
+  "head": "8df8d1e3edac486a41a327f4c5f6b30b65941057",
+  "branch": "HEAD",
+  "train_sha256": "42bffcbcfbd2e510af026c8db3d0ab99af68ca1500f5bfe23817bda5f5eea0ef",
+  "train_ast_sha256": "412bc6c17efea0e880b3b5549fd6fc46b6363ff380536587b2a9623fb916af3c",
+  "parent_train_sha256": "c3244192738e4bfe172e1368dc860d495d6ebcb870d586a2c0d68c1f3374acd4",
+  "parent_rev": "8df8d1e3edac486a41a327f4c5f6b30b65941057",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "raise AdamW unembedding (lm_head) LR 0.004 -> 0.008",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.0131572620576814,
+  "metrics": {
+   "val_bpb": 1.0131572620576814,
+   "training_seconds": 300.1,
+   "total_seconds": 357.3,
+   "peak_vram_mb": 25277.5,
+   "mfu_percent": 22.96,
+   "total_tokens_M": 242.1,
+   "num_steps": 1847,
+   "num_params_M": 57.7,
+   "depth": 9,
+   "t_train_trusted": 302.8,
+   "val_bpb_stdout": 1.013157,
+   "t_to_eval": 340.9
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-213224-491f25/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-213224-491f25/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "4aa143347c61e1d4fba5eee0a15191b99910a048fe591652e945e3c7aa431291",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-213224-491f25/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 2,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 17.892513954997412,
+     "event": "eval",
+     "future_max_abs": 21.6566162109375,
+     "max_mem_mb": 25277.48486328125,
+     "n_eval": 1,
+     "t_to_eval": 340.86869911399845,
+     "t_train2": 38.10824876999686,
+     "train_batches": 1848,
+     "val_bpb": 1.0131572620576814,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 358.7618679189982
+   }
+  },
+  "ts_end": "2026-10-03T21:38:24+00:00",
+  "last_step": {
+   "step": 1846,
+   "pct": 100.0,
+   "loss": 2.850338,
+   "dt_ms": 163,
+   "tok_per_sec": 801721,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.012560553567088,
+  "parent_n": 2,
+  "delta_vs_parent": -0.0005967084905933451,
+  "seq": 40
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 402.9431402683258
+ },
+ "desc": "raise AdamW unembedding (lm_head) LR 0.004 -> 0.008",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0003-a6/calls.jsonl",
+ "t_end": 1791063511.9887092,
+ "insight": {
+  "hint": "The change itself was valid, but the chosen experiment was too low-prior to clear the required improvement threshold.",
+  "judge": {
+   "summary": "The agent examined the current best train.py and experiment history, then performed one small optimizer-knob experiment: it changed the AdamW learning rate for the unembedding/lm_head parameters from 0.004 to 0.008 and ran the standard training script. The run completed successfully with val_bpb = 1.013157, compared with the current best 1.013025, so it did not beat the baseline by the required 0.0005 margin and was treated as a non-improvement.",
+   "feedback": "There was no code or harness violation: the edit was simple, the run completed, and the evaluation contract appears to have been followed. The decisive problem was the experimental choice itself. Raising UNEMBEDDING_LR from 0.004 to 0.008 was a low-prior, capacity-neutral single-parameter tweak with no strong historical signal that the unembedding LR was limiting performance. The result moved val_bpb by only +0.000132, which is within the noise floor and far below the required +0.0005 improvement threshold. The first substantive mistake was therefore selecting and implementing this particular LR increase in the train.py edit, rather than choosing a higher-leverage untried idea with a better chance of clearing the improvement bar.",
+   "wrong_step_id": 2,
+   "corrected_step": "",
+   "hint": "The change itself was valid, but the chosen experiment was too low-prior to clear the required improvement threshold."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent examined the current best train.py and experiment history, then performed one small optimizer-knob experiment: it changed the AdamW learning rate for the unembedding/lm_head parameters from 0.004 to 0.008 and ran the standard training script. The run completed successfully with val_bpb = 1.013157, compared with the current best 1.013025, so it did not beat the baseline by the required 0.0005 margin and was treated as a non-improvement.\",\n  \"feedback\": \"There was no code or harness violation: the edit was simple, the run completed, and the evaluation contract appears to have been followed. The decisive problem was the experimental choice itself. Raising UNEMBEDDING_LR from 0.004 to 0.008 was a low-prior, capacity-neutral single-parameter tweak with no strong historical signal that the unembedding LR was limiting performance. The result moved val_bpb by only +0.000132, which is within the noise floor and far below the required +0.0005 improvement threshold. The first substantive mistake was therefore selecting and implementing this particular LR increase in the train.py edit, rather than choosing a higher-leverage untried idea with a better chance of clearing the improvement bar.\",\n  \"wrong_step_id\": 2,\n  \"corrected_step\": \"\",\n  \"hint\": \"The change itself was valid, but the chosen experiment was too low-prior to clear the required improvement threshold.\"\n}",
+  "prompt_chars": 15321,
+  "wall_s": 92.16560220718384
+ }
+}

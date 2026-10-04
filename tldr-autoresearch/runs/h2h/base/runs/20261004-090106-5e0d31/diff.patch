@@ -1,0 +1,110 @@
+diff --git a/train.py b/train.py
+index 96e7f71..22f4b1f 100644
+--- a/train.py
++++ b/train.py
+@@ -65,6 +65,7 @@ class GPTConfig:
+     n_kv_head: int = 6
+     n_embd: int = 768
+     window_pattern: str = "SSSL"
++    mlp_ratio: int = 4
+ 
+ 
+ def norm(x):
+@@ -126,8 +127,8 @@ class CausalSelfAttention(nn.Module):
+ class MLP(nn.Module):
+     def __init__(self, config):
+         super().__init__()
+-        self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd, bias=False)
+-        self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd, bias=False)
++        self.c_fc = nn.Linear(config.n_embd, config.mlp_ratio * config.n_embd, bias=False)
++        self.c_proj = nn.Linear(config.mlp_ratio * config.n_embd, config.n_embd, bias=False)
+ 
+     def forward(self, x):
+         x = self.c_fc(x)
+@@ -261,7 +262,7 @@ class GPT(nn.Module):
+         }
+ 
+     def setup_optimizer(self, unembedding_lr=0.004, embedding_lr=0.2, matrix_lr=0.02,
+-                        weight_decay=0.0, adam_betas=(0.8, 0.95), scalar_lr=0.5):
++                        weight_decay=0.0, adam_betas=(0.8, 0.95), scalar_lr=0.5, ve_lr=0.2):
+         model_dim = self.config.n_embd
+         matrix_params = list(self.transformer.h.parameters())
+         value_embeds_params = list(self.value_embeds.parameters())
+@@ -277,7 +278,7 @@ class GPT(nn.Module):
+         param_groups = [
+             dict(kind='adamw', params=lm_head_params, lr=unembedding_lr * dmodel_lr_scale, betas=adam_betas, eps=1e-10, weight_decay=0.0),
+             dict(kind='adamw', params=embedding_params, lr=embedding_lr * dmodel_lr_scale, betas=adam_betas, eps=1e-10, weight_decay=0.0),
+-            dict(kind='adamw', params=value_embeds_params, lr=embedding_lr * dmodel_lr_scale, betas=adam_betas, eps=1e-10, weight_decay=0.0),
++            dict(kind='adamw', params=value_embeds_params, lr=ve_lr * dmodel_lr_scale, betas=adam_betas, eps=1e-10, weight_decay=0.0),
+             dict(kind='adamw', params=resid_params, lr=scalar_lr * 0.01, betas=adam_betas, eps=1e-10, weight_decay=0.0),
+             dict(kind='adamw', params=x0_params, lr=scalar_lr, betas=(0.96, 0.95), eps=1e-10, weight_decay=0.0),
+         ]
+@@ -285,7 +286,7 @@ class GPT(nn.Module):
+             group_params = [p for p in matrix_params if p.shape == shape]
+             param_groups.append(dict(
+                 kind='muon', params=group_params, lr=matrix_lr,
+-                momentum=0.95, ns_steps=5, beta2=0.95, weight_decay=weight_decay,
++                momentum=0.95, ns_steps=4, beta2=0.95, weight_decay=weight_decay,
+             ))
+         optimizer = MuonAdamW(param_groups)
+         for group in optimizer.param_groups:
+@@ -457,25 +458,27 @@ class MuonAdamW(torch.optim.Optimizer):
+ # ---------------------------------------------------------------------------
+ 
+ # Model architecture
+-ASPECT_RATIO = 64       # model_dim = depth * ASPECT_RATIO
++ASPECT_RATIO = 51       # model_dim = depth * ASPECT_RATIO
+ HEAD_DIM = 128          # target head dimension for attention
+-WINDOW_PATTERN = "SSSL" # sliding window pattern: L=full, S=half context
++WINDOW_PATTERN = "L"    # sliding window pattern: L=full, S=half context
++MLP_RATIO = 3           # MLP hidden size multiplier
+ 
+ # Optimization
+-TOTAL_BATCH_SIZE = 2**19 # ~524K tokens per optimizer step
++TOTAL_BATCH_SIZE = 2**17 # ~131K tokens per optimizer step
+ EMBEDDING_LR = 0.6      # learning rate for token embeddings (Adam)
+ UNEMBEDDING_LR = 0.004  # learning rate for lm_head (Adam)
+ MATRIX_LR = 0.04        # learning rate for matrix parameters (Muon)
+ SCALAR_LR = 0.5         # learning rate for per-layer scalars (Adam)
+-WEIGHT_DECAY = 0.2      # cautious weight decay for Muon
++WEIGHT_DECAY = 0.1      # cautious weight decay for Muon
++VE_LR = 0.6             # learning rate for value embeddings (Adam)
+ ADAM_BETAS = (0.8, 0.95) # Adam beta1, beta2
+ WARMUP_RATIO = 0.0      # fraction of time budget for LR warmup
+-WARMDOWN_RATIO = 0.5    # fraction of time budget for LR warmdown
++WARMDOWN_RATIO = 0.85   # fraction of time budget for LR warmdown
+ FINAL_LR_FRAC = 0.0     # final LR as fraction of initial
+ 
+ # Model size
+-DEPTH = 8               # number of transformer layers
+-DEVICE_BATCH_SIZE = 128  # per-device batch size (reduce if OOM)
++DEPTH = 10              # number of transformer layers
++DEVICE_BATCH_SIZE = 64   # per-device batch size (reduce if OOM)
+ 
+ # ---------------------------------------------------------------------------
+ # Setup: tokenizer, model, optimizer, dataloader
+@@ -500,7 +503,7 @@ def build_model_config(depth):
+     return GPTConfig(
+         sequence_len=MAX_SEQ_LEN, vocab_size=vocab_size,
+         n_layer=depth, n_head=num_heads, n_kv_head=num_heads, n_embd=model_dim,
+-        window_pattern=WINDOW_PATTERN,
++        window_pattern=WINDOW_PATTERN, mlp_ratio=MLP_RATIO,
+     )
+ 
+ config = build_model_config(DEPTH)
+@@ -530,13 +533,14 @@ optimizer = model.setup_optimizer(
+     adam_betas=ADAM_BETAS,
+     matrix_lr=MATRIX_LR,
+     weight_decay=WEIGHT_DECAY,
++    ve_lr=VE_LR,
+ )
+ 
+ if not USE_FA3:  # build block masks eagerly, outside the compiled graph
+     for (w, _) in set(model.window_sizes):
+         if 0 <= w < MAX_SEQ_LEN:
+             get_block_mask(MAX_SEQ_LEN, w, device)
+-model = torch.compile(model, dynamic=False)
++model = torch.compile(model, dynamic=False, mode="max-autotune")
+ 
+ train_loader = make_dataloader(tokenizer, DEVICE_BATCH_SIZE, MAX_SEQ_LEN, "train")
+ x, y, epoch = next(train_loader)  # prefetch first batch

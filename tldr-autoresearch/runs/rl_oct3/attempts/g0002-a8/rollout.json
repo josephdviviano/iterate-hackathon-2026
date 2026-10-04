@@ -1,0 +1,160 @@
+{
+ "attempt_id": "g0002-a8",
+ "group": 2,
+ "k": 8,
+ "success": false,
+ "reward": 0.0,
+ "status": "discard",
+ "val_bpb": 1.013857852467711,
+ "confirm_mean": null,
+ "confirm": null,
+ "parent": {
+  "commit": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "val_bpb": 1.0137109484151645,
+  "evals": [
+   1.0137109484151645
+  ],
+  "train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "run_id": "20261003-200009-7e25ed"
+ },
+ "policy": {
+  "name": "oct3-v2",
+  "version": 2,
+  "path": "$RLTLDR_ROOT/data/adapters/policy-v2"
+ },
+ "verdict": [
+  "Rollout FAILED: the experiment ran, but val_bpb = 1.013858 did not improve on the current best 1.013711 by more than the required 0.0005 (lower is better)."
+ ],
+ "conditioned": true,
+ "insights_in_context": [
+  {
+   "idx": 2,
+   "hint": "Do not extrapolate the successful SSLL change to all-full attention; the mixed-window pattern was the winning point, so keep or refine around SSLL instead."
+  },
+  {
+   "idx": 3,
+   "hint": "Changing DEPTH alone also changed the model width in this setup, so you must explicitly hold MODEL_DIM at 512 for a true depth-9 comparison."
+  },
+  {
+   "idx": 4,
+   "hint": "An apparent win must be confirmed with one fresh re-run before declaring the experiment successful."
+  },
+  {
+   "idx": 5,
+   "hint": "The head-dimension change itself was the mistake: 4 heads of dimension 128 were much better than 8 heads of dimension 64, so HEAD_DIM should have stayed at 128."
+  },
+  {
+   "idx": 7,
+   "hint": "Do not spend the one experiment on a tiny interpolation of an already-tuned hyperparameter when the historical evidence is within noise; choose an untried knob with a more plausible chance of beating the threshold."
+  }
+ ],
+ "n_runs": 1,
+ "outcome": {
+  "run_id": "20261003-201911-411df4",
+  "attempt_id": "g0002-a8",
+  "ts": "2026-10-03T20:19:11+00:00",
+  "wall_s": 363.5,
+  "head": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "branch": "HEAD",
+  "train_sha256": "dcad79f3c1f2925bfa16f06d1a9d73ad39a927c024e3dc0d97cfe93938422504",
+  "train_ast_sha256": "86511fb89f0be56050f8e5e9a52268d25fb56292ae66135a0368675caf8124dc",
+  "parent_train_sha256": "73a374c8b609f7e61c7e7da4ef18e910e64b8b830cbc2c3e8d23512589ca2c1e",
+  "parent_rev": "5332936f34cc6c5b150805991f2ad2421f388cbb",
+  "prepare_sha256": "4f2ba9cbb8ba8c4a3d35be405a913e2f3be3af9aea103ed52ef7b2a662058150",
+  "desc": "enable CUDA graphs via compile mode=max-autotune (drop expandable_segments)",
+  "status": "ok",
+  "returncode": 0,
+  "val_bpb": 1.013857852467711,
+  "metrics": {
+   "val_bpb": 1.013857852467711,
+   "training_seconds": 300.1,
+   "total_seconds": 360.7,
+   "peak_vram_mb": 22645.3,
+   "mfu_percent": 22.85,
+   "total_tokens_M": 270.9,
+   "num_steps": 2067,
+   "num_params_M": 50.3,
+   "depth": 8,
+   "val_bpb_stdout": 1.013858,
+   "t_to_eval": 340.4
+  },
+  "error_tail": null,
+  "flags": [],
+  "diff_path": "$RLTLDR_ROOT/data/runs/20261003-201911-411df4/diff.patch",
+  "log_path": "$RLTLDR_ROOT/data/runs/20261003-201911-411df4/run.log",
+  "gpu": "GPU2-UUID",
+  "max_runs": 3,
+  "timeout_s": 660,
+  "parent_ast_sha256": "a00770dbae1512567b8a601e51c38b8b5d6f5374719486d80a8d3bd25bf6bb5d",
+  "mode": "dirty",
+  "train_copy_path": "$RLTLDR_ROOT/data/runs/20261003-201911-411df4/train.py",
+  "deps_git_hashes": [
+   "94ae3298925ddae47821f703faf44d4e3b8381bb",
+   "c840d62f5285b5ce4b5fe62f135cfe8a47bc9915"
+  ],
+  "diff_lines": 6,
+  "trusted": {
+   "valid": true,
+   "evals": [
+    {
+     "batch_size": 64,
+     "causal_max_abs": 0.0,
+     "eval_s": 21.706476940002176,
+     "event": "eval",
+     "future_max_abs": 22.886398315429688,
+     "max_mem_mb": 22645.33740234375,
+     "n_eval": 1,
+     "t_to_eval": 340.38451251199876,
+     "val_bpb": 1.013857852467711,
+     "val_leak": []
+    }
+   ],
+   "val_leak": [],
+   "bad_lines": 0,
+   "start": {
+    "event": "start",
+    "no_autotune": true
+   },
+   "end": {
+    "event": "end",
+    "n_eval": 1,
+    "t": 362.091641867999
+   }
+  },
+  "ts_end": "2026-10-03T20:25:14+00:00",
+  "last_step": {
+   "step": 2066,
+   "pct": 100.0,
+   "loss": 2.843997,
+   "dt_ms": 146,
+   "tok_per_sec": 897950,
+   "epoch": 1,
+   "remaining_s": 0
+  },
+  "parent_val_bpb": 1.0138485903277128,
+  "parent_n": 2,
+  "delta_vs_parent": -9.262139998300611e-06,
+  "seq": 33
+ },
+ "pi": {
+  "returncode": 0,
+  "timed_out": false,
+  "wall_s": 540.0987207889557
+ },
+ "desc": "enable CUDA graphs via compile mode=max-autotune (drop expandable_segments)",
+ "calls_path": "$RLTLDR_ROOT/data/attempts/g0002-a8/calls.jsonl",
+ "t_end": 1791059126.2767174,
+ "insight": {
+  "hint": "Enabling CUDA graphs was too small a speed lever for this compiled setup, so the experiment should have focused on reducing per-token compute or changing optimization rather than just removing kernel launch overhead.",
+  "judge": {
+   "summary": "The agent read the current train.py and results, chose a speed-focused experiment, and modified the final torch.compile call from mode=\"max-autotune-no-cudagraphs\" to mode=\"max-autotune\" in order to enable CUDA graphs while preserving the existing max-autotune GEMM tuning. It also removed the PYTORCH_ALLOC_CONF expandable_segments:True setting, believing it was incompatible with CUDA graph memory pools. After fixing an accidental missing import os, it committed the change and ran the official experiment. The run completed successfully with val_bpb 1.013858 and peak VRAM about 22.6 GB, which was slightly worse than the current best 1.013711 and therefore did not satisfy the improvement threshold.",
+   "feedback": "The implementation itself was mostly clean and the run did not crash, so this was not a simple code bug. The decisive error was in the experimental choice and its expected payoff: switching from max-autotune-no-cudagraphs to max-autotune to enable CUDA graphs was treated as a likely meaningful speed lever, but the final statistics show only a negligible increase in training steps (2067 vs 2063 for the current best) and no val_bpb improvement. In other words, the first substantive mistake was assuming that CUDA graph capture would reduce per-step overhead enough to produce a measurable quality gain on this already-compiled, relatively large-batch workload. A better next experiment should target a more direct reduction in compute per token or a stronger optimizer/architecture change, rather than another small execution-engine micro-optimization whose effect is easily washed out by noise.",
+   "wrong_step_id": 4,
+   "corrected_step": "model = torch.compile(model, dynamic=False, mode=\"max-autotune-no-cudagraphs\")",
+   "hint": "Enabling CUDA graphs was too small a speed lever for this compiled setup, so the experiment should have focused on reducing per-token compute or changing optimization rather than just removing kernel launch overhead."
+  },
+  "raw": "\n\n{\n  \"summary\": \"The agent read the current train.py and results, chose a speed-focused experiment, and modified the final torch.compile call from mode=\\\"max-autotune-no-cudagraphs\\\" to mode=\\\"max-autotune\\\" in order to enable CUDA graphs while preserving the existing max-autotune GEMM tuning. It also removed the PYTORCH_ALLOC_CONF expandable_segments:True setting, believing it was incompatible with CUDA graph memory pools. After fixing an accidental missing import os, it committed the change and ran the official experiment. The run completed successfully with val_bpb 1.013858 and peak VRAM about 22.6 GB, which was slightly worse than the current best 1.013711 and therefore did not satisfy the improvement threshold.\",\n  \"feedback\": \"The implementation itself was mostly clean and the run did not crash, so this was not a simple code bug. The decisive error was in the experimental choice and its expected payoff: switching from max-autotune-no-cudagraphs to max-autotune to enable CUDA graphs was treated as a likely meaningful speed lever, but the final statistics show only a negligible increase in training steps (2067 vs 2063 for the current best) and no val_bpb improvement. In other words, the first substantive mistake was assuming that CUDA graph capture would reduce per-step overhead enough to produce a measurable quality gain on this already-compiled, relatively large-batch workload. A better next experiment should target a more direct reduction in compute per token or a stronger optimizer/architecture change, rather than another small execution-engine micro-optimization whose effect is easily washed out by noise.\",\n  \"wrong_step_id\": 4,\n  \"corrected_step\": \"model = torch.compile(model, dynamic=False, mode=\\\"max-autotune-no-cudagraphs\\\")\",\n  \"hint\": \"Enabling CUDA graphs was too small a speed lever for this compiled setup, so the experiment should have focused on reducing per-token compute or changing optimization rather than just removing kernel launch overhead.\"\n}",
+  "prompt_chars": 20339,
+  "wall_s": 94.45224809646606
+ }
+}
