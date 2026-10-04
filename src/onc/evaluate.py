@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 from onc_agi.adapters.cli import fixture_store
-from onc_agi.core.schema import Tier
+from onc_agi.core.schema import Mode, Tier
 from onc_agi.infra.bundles import FileWorldStore
 from onc_agi.services.kit import PipelineAgent, evaluate
 
@@ -33,9 +33,12 @@ def open_store(name: str) -> FileWorldStore:
     return FileWorldStore(fixture_store() if name == "toy" else Path(name))
 
 
-def world_ids(store: FileWorldStore, mode: str, limit: int | None = None) -> list[str]:
-    suffix = "-full" if mode == "full" else "-seq"
-    ids = [w for w in store.world_ids(Tier.PUBLIC_TRAIN) if w.endswith(suffix)]
+def world_ids(store: FileWorldStore, mode: str, limit: int | None = None, first: int | None = None) -> list[str]:
+    wanted = Mode.FULL_ACCESS if mode == "full" else Mode.SEQUENTIAL
+    ids = [w for w in store.world_ids(Tier.PUBLIC_TRAIN) if store.card(w).mode is wanted]
+    if first:
+        # The benchmark's first-pass set is the first N worlds in store order.
+        return ids[:first]
     if limit and limit < len(ids):
         # An even stride over the sorted ids keeps every role, null worlds included, in the sample.
         step = len(ids) / limit
@@ -45,6 +48,25 @@ def world_ids(store: FileWorldStore, mode: str, limit: int | None = None) -> lis
 
 def make_agent(policy: Policy, acquisition: str, logs: dict[str, EpisodeLog]):
     """The committee behind each acquisition design; ``logs`` collects the per-world probabilities."""
+    if acquisition.startswith("single:"):
+        # single:templates:NAME runs one template with the null hypothesis; single:MODEL:SEED one cached program
+        _, model, name = acquisition.split(":")
+        if model == "templates":
+            agent = CommitteeAgent(Policy(**{**policy.__dict__, "templates": ("null", name)}), name=f"single_{name}")
+        else:
+            from onc.synth import SynthCommitteeAgent
+
+            agent = SynthCommitteeAgent(policy, model=model, k=1, members="synth", seeds=(name,))
+        agent.logs = logs
+        return agent
+    if acquisition.startswith("synth:") or acquisition.startswith("both:"):
+        # members:k:model, full access only; the programs come from the onc.synth cache
+        from onc.synth import SynthCommitteeAgent
+
+        members, k, model = acquisition.split(":")
+        agent = SynthCommitteeAgent(policy, model=model, k=int(k), members=members)
+        agent.logs = logs
+        return agent
     if acquisition in ("disagreement", "random", "all"):
         agent = CommitteeAgent(Policy(**{**policy.__dict__, "acquisition": acquisition}), name=f"committee_{acquisition}")
         agent.logs = logs
@@ -154,6 +176,11 @@ def summarise(store: FileWorldStore, name: str, acquisition: str, policy: Policy
     }
 
 
+def _f(x, spec: str = "{:.3f}") -> str:
+    """Scores are None when a set has no null or no signal world."""
+    return "n/a" if x is None else spec.format(x)
+
+
 def table(rows: list[dict]) -> str:
     head = "| Condition | DS | 95% | Find | Restraint | Strict | Leak | Cost | Eff | Acq gap | ECE P(sig) | ECE P(drv) | Brier held-out | ACI cov / commit | R_task | R_cal | R_dis |"
     out = [head, "|" + "---|" * 17]
@@ -162,8 +189,8 @@ def table(rows: list[dict]) -> str:
         ho = r["held_out"]
         cov = f"{ho['aci_coverage']:.2f} / {ho['aci_committed']:.2f}" if ho.get("n") else "n/a"
         out.append(
-            f"| {r['label']} | {r['discovery_score']:.3f} | [{r['interval'][0]:+.2f}, {r['interval'][1]:+.2f}] | {r['find']:.2f} | {r['restraint']:+.2f} | "
-            f"{r['strict']:.2f} | {r['leak_rate']:.2f} | {r['mean_data_cost']:.0f} | {r['mean_efficiency']:.2f} | {al.get('acquisition_gap', float('nan')):.2f} | "
+            f"| {r['label']} | {_f(r['discovery_score'])} | [{_f(r['interval'][0], '{:+.2f}')}, {_f(r['interval'][1], '{:+.2f}')}] | {_f(r['find'], '{:.2f}')} | {_f(r['restraint'], '{:+.2f}')} | "
+            f"{_f(r['strict'], '{:.2f}')} | {r['leak_rate']:.2f} | {r['mean_data_cost']:.0f} | {r['mean_efficiency']:.2f} | {al.get('acquisition_gap', float('nan')):.2f} | "
             f"{r['p_signal'].get('ece', float('nan')):.2f} | {r['p_driver'].get('ece', float('nan')):.2f} | {ho.get('brier', float('nan')):.3f} | {cov} | "
             f"{r['reward']['r_task']:+.2f} | {r['reward']['r_cal']:+.2f} | {r['reward']['r_dis']:+.2f} |"
         )
@@ -176,8 +203,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mode", default="both", choices=["full", "seq", "both"])
     parser.add_argument("--weighting", default="likelihood,equal")
     parser.add_argument("--acquisition", default="disagreement,random,pipeline,staged")
+    parser.add_argument("--members", default="templates", help="full access: templates, or comma-separated synth:K:MODEL / both:K:MODEL conditions over cached programs")
     parser.add_argument("--tau", type=float, default=Policy.tau)
-    parser.add_argument("--limit", type=int)
+    parser.add_argument("--limit", type=int, help="an even stride over the worlds")
+    parser.add_argument("--first", type=int, help="the first N worlds in store order (the benchmark's first-pass set)")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--out", default="artifacts/onc/eval")
     parser.add_argument("--tag", default="")
@@ -186,15 +215,15 @@ def main(argv: list[str] | None = None) -> int:
     store = open_store(args.store)
     rows = []
     for mode in (["full", "seq"] if args.mode == "both" else [args.mode]):
-        ids = world_ids(store, mode, args.limit)
+        ids = world_ids(store, mode, args.limit, args.first)
         for weighting in args.weighting.split(","):
             policy = Policy(tau=args.tau, weighting=weighting, seed=args.seed)
-            for acquisition in (args.acquisition.split(",") if mode == "seq" else ["disagreement"]):
+            for acquisition in (args.acquisition.split(",") if mode == "seq" else (["disagreement"] if args.members == "templates" else args.members.split(","))):
                 row = run_condition(store, ids, policy, acquisition)
                 row["mode"], row["weighting"] = mode, weighting
-                row["label"] = f"{mode} / {weighting} / {acquisition}" if mode == "seq" else f"{mode} / {weighting}"
+                row["label"] = f"{mode} / {weighting} / {acquisition}" if mode == "seq" or acquisition != "disagreement" else f"{mode} / {weighting}"
                 rows.append(row)
-                print(f"{row['label']:40s} DS {row['discovery_score']:.3f} cost {row['mean_data_cost']:.0f} {row['seconds']:.0f}s", flush=True)
+                print(f"{row['label']:40s} DS {_f(row['discovery_score'])} cost {row['mean_data_cost']:.0f} {row['seconds']:.0f}s", flush=True)
     stem = Path(args.out).with_name(Path(args.out).name + (f"_{args.tag}" if args.tag else "") + f"_{Path(args.store).name}")
     stem.parent.mkdir(parents=True, exist_ok=True)
     stem.with_suffix(".json").write_text(json.dumps({"store": args.store, "conditions": rows}, indent=1, default=float))

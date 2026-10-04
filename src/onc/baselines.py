@@ -89,8 +89,8 @@ def record(name: str, mode: Mode, card: Scorecard, seconds: float) -> dict[str, 
     }
 
 
-def run(store: FileWorldStore, bootstrap_draws: int = BOOTSTRAP_DRAWS) -> dict[str, Any]:
-    ids = store.world_ids(Tier.PUBLIC_TRAIN)
+def run(store: FileWorldStore, bootstrap_draws: int = BOOTSTRAP_DRAWS, first: int | None = None) -> dict[str, Any]:
+    ids = store.world_ids(Tier.PUBLIC_TRAIN)[:first] if first else store.world_ids(Tier.PUBLIC_TRAIN)
     by_mode: dict[Mode, list[str]] = {m: [] for m in Mode}
     for wid in ids:
         by_mode[store.world(wid).card.mode].append(wid)
@@ -177,9 +177,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--store", help="world store directory (default: the shipped toy worlds)")
     parser.add_argument("--out", default="artifacts/onc/baselines", help="output path without extension")
     parser.add_argument("--bootstrap-draws", type=int, default=BOOTSTRAP_DRAWS)
+    parser.add_argument("--first", type=int, help="the first N worlds in store order (the benchmark's first-pass set)")
     args = parser.parse_args(argv)
     store = FileWorldStore(Path(args.store) if args.store else fixture_store())
-    report = run(store, bootstrap_draws=args.bootstrap_draws)
+    report = run(store, bootstrap_draws=args.bootstrap_draws, first=args.first)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.with_suffix(".json").write_text(json.dumps(report, indent=1))
