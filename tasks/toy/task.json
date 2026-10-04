@@ -1,0 +1,14 @@
+{
+  "name": "toy",
+  "editable": ["model/"],
+  "setup": [],
+  "run": "python3 train.py",
+  "timeout_s": 60,
+  "metrics": {
+    "loss": {"regex": "^loss: ([-0-9.eE+]+)$"},
+    "time": {"regex": "^time: ([-0-9.eE+]+)$"}
+  },
+  "objective": {"metric": "time", "direction": "minimize"},
+  "constraints": [{"metric": "loss", "op": "<=", "value": 0.6}],
+  "infeasible_order": {"metric": "loss", "direction": "minimize"}
+}
